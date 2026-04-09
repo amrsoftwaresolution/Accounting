@@ -21,6 +21,9 @@ return [
         'localhost',
     ],
 
+
+    
+
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
      * Their responsibility is making Laravel features tenant-aware.
@@ -51,7 +54,7 @@ return [
          * Tenant database names are created like this:
          * prefix + tenant_id + suffix.
          */
-        'prefix' => 'tenant',
+        'prefix' => '',
         'suffix' => '',
 
         /**

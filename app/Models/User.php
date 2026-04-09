@@ -11,27 +11,43 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory;
+
+    use Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
+     *
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    'name',
+    'email',
+    'password',
+    'role',
+    'phone',
+    'is_active',
+    'hire_date',
+    'manager_id',
+];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
     ];
 
     /**
@@ -46,4 +62,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+   public function manager()
+{
+    return $this->belongsTo(User::class, 'manager_id');
+}
+
+public function employees()
+{
+    return $this->hasMany(User::class, 'manager_id');
+}
 }
