@@ -42,7 +42,7 @@ class ChartOfAccController extends Controller
             'account_code' => $request->input('account_code'),
             'account_name' => $request->input('account_name'),
             'account_type' => $request->input('account_type'),
-            'account_sub_type' => $request->input('account_sub_type'),
+            'account_sub_type' => $request->input('account_sub_type'), 
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
         ]);
