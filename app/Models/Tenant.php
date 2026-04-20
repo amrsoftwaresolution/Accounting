@@ -37,16 +37,3 @@ public function getDatabaseName()
 
 
 }
-
-
-
-
-Schema::create('journal_entry_lines', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('journal_entry_id')->constrained('journal_entries')->onDelete('cascade');
-            $table->foreignId('account_id')->constrained('accounts');
-            $table->decimal('debit', 15, 2)->default(0);
-            $table->decimal('credit', 15, 2)->default(0);
-            $table->text('description')->nullable();
-            $table->timestamps();
-        });

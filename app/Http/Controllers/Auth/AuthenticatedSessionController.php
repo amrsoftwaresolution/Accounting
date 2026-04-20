@@ -14,9 +14,7 @@ use App\Models\Tenant;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
+
     public function create(): Response
     {
         return Inertia::render('Auth/Login', [
@@ -25,34 +23,24 @@ class AuthenticatedSessionController extends Controller
         ]);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-public function store(LoginRequest $request): RedirectResponse
+public function store(LoginRequest $request)
 {
     $request->authenticate();
     $request->session()->regenerate();
 
     $user = $request->user();
 
-    // DEFAULT: tenant dashboard (same domain)
-    $redirectUrl = '/dashboard';
-
-    // IF USER HAS TENANT
     if ($user->tenant_id) {
 
         $tenant = Tenant::with('domains')->find($user->tenant_id);
-
         $domain = $tenant?->domains?->first()?->domain;
 
         if ($domain) {
-
-            // IMPORTANT: use SAME host format Laravel expects
-            $redirectUrl = "http://{$domain}:8000/dashboard";
+            return Inertia::location("http://{$domain}:8000/dashboard");
         }
     }
 
-    return redirect()->to($redirectUrl);
+    return Inertia::location('/dashboard');
 }
 
     public function destroy(Request $request): RedirectResponse

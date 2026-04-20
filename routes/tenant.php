@@ -12,11 +12,6 @@ use App\Http\Controllers\Accounting\JournalEntryController;
 
 use Inertia\Inertia;
 
-/*
-|--------------------------------------------------------------------------
-| TENANT ROUTES (MAIN APP)
-|--------------------------------------------------------------------------
-*/
 Route::middleware([
     'web',
     Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,

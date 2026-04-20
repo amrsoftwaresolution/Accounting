@@ -5,6 +5,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
+
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -12,15 +14,13 @@ export default function Login({ status, canResetPassword }) {
         password: '',
         remember: false,
     });
+const submit = (e) => {
+    e.preventDefault();
 
-    const submit = (e) => {
-        e.preventDefault();
-
-        post(route('login'), {
-            onFinish: () => reset('password'),
-        });
-    };
-
+    router.post(route('login'), data, {
+        onFinish: () => reset('password'),
+    });
+};
     return (
         <GuestLayout>
             <Head title="Log in" />
