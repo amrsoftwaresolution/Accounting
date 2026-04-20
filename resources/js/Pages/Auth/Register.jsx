@@ -43,6 +43,20 @@ export default function Register() {
                     <InputError message={errors.name} className="mt-2" />
                 </div>
 
+                <div>
+                    <InputLabel htmlFor="Company" value="Company" />
+
+                    <input
+                        type="text"
+                        placeholder="Company Name"
+                        onChange={(e) => setData('company', e.target.value)}
+                    />
+
+                    <InputError message={errors.name} className="mt-2" />
+                </div>
+
+
+
                 <div className="mt-4">
                     <InputLabel htmlFor="email" value="Email" />
 

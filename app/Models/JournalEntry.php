@@ -22,6 +22,7 @@ class JournalEntry extends Model
         return $this->hasMany(JournalEntryLine::class);
     }
 
+
     public function user()
     {
         return $this->belongsTo(User::class, 'created_by');

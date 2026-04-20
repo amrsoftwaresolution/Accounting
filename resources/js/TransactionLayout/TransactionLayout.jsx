@@ -4,6 +4,8 @@ export default function TransactionLayout({
     title,
     amount,
     children,
+    onSave,          // ✅ ADD
+    onSaveAndNew     // ✅ ADD (optional)
 }) {
     return (
         <div className="flex flex-col h-screen bg-white">
@@ -21,19 +23,28 @@ export default function TransactionLayout({
 
                 {/* Left - Cancel */}
                 <button
-                    className="border border-green-600 text-green-600 bg-white px-6 py-2 rounded text-sm font-medium hover:bg-green-50">
-                    Cancel
-                </button>
+    onClick={() => router.visit('/journal-entries')} // or wherever
+    className="border border-green-600 text-green-600 bg-white px-6 py-2 rounded text-sm font-medium hover:bg-green-50"
+>
+    Cancel
+</button>
 
                 {/* Right - Save & Save and new */}
                 <div className="flex gap-4">
-                    <button className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded text-sm font-medium">
-                        Save
-                    </button>
-                    <button className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded text-sm font-medium">
-                        Save and new
-                    </button>
-                </div>
+    <button
+        onClick={onSave}   // 🔥 CONNECTED
+        className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded text-sm font-medium"
+    >
+        Save
+    </button>
+
+    <button
+        onClick={onSaveAndNew} // optional
+        className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded text-sm font-medium"
+    >
+        Save and new
+    </button>
+</div>
             </div>
         </div>
     );

@@ -7,6 +7,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAcc;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+
 
 class ChartOfAccController extends Controller
 {
@@ -38,11 +41,10 @@ class ChartOfAccController extends Controller
         ]);
 
         ChartOfAcc::create([
-            'team_id' => null,
             'account_code' => $request->input('account_code'),
             'account_name' => $request->input('account_name'),
             'account_type' => $request->input('account_type'),
-            'account_sub_type' => $request->input('account_sub_type'), 
+            'account_sub_type' => $request->input('account_sub_type'),
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
         ]);

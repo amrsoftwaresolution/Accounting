@@ -18,4 +18,35 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'name', // Add a name column for the company name
         ];
     }
+
+    public static function booted()
+{
+    static::creating(function ($tenant) {
+        $name = request()->company ?? 'tenant';
+
+        $clean = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $name));
+
+        $tenant->id = $clean; // ❗ REMOVE uniqid()
+    });
 }
+//STORING TENANT DB NAME
+public function getDatabaseName()
+{
+    return $this->id;
+}
+
+
+}
+
+
+
+
+Schema::create('journal_entry_lines', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('journal_entry_id')->constrained('journal_entries')->onDelete('cascade');
+            $table->foreignId('account_id')->constrained('accounts');
+            $table->decimal('debit', 15, 2)->default(0);
+            $table->decimal('credit', 15, 2)->default(0);
+            $table->text('description')->nullable();
+            $table->timestamps();
+        });

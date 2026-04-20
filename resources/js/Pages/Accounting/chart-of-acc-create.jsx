@@ -149,7 +149,7 @@ export default function ChartOfAccCreate() {
                                 />
                                 {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                             </div>
-
+                            
                             <div className="flex items-center space-x-2">
                                 <input
                                     id="is_active"

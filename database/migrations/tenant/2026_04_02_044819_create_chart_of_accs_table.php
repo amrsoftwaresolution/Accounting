@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('teams', function (Blueprint $table) {
+        Schema::create('chart_of_accs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('account_code')->unique();
+            $table->string('account_name');
+            $table->enum('account_type', ['asset', 'liability', 'equity', 'income', 'expense']);
             $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('teams');
+        Schema::dropIfExists('chart_of_accs');
     }
 };

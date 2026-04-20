@@ -8,7 +8,7 @@ class JournalEntryLine extends Model
 {
     protected $fillable = [
         'journal_entry_id',
-        'chart_of_accs_id',
+        'account_id',
         'debit',
         'credit',
         'description'
@@ -16,8 +16,9 @@ class JournalEntryLine extends Model
 
     public function entry()
     {
-        return $this->belongsTo(JournalEntry::class, 'journal_entry_id');
+        return $this->belongsTo(JournalEntry::class);
     }
+
 
     public function account()
     {

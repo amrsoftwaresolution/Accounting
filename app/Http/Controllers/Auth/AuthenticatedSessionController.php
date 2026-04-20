@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Tenant;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -27,18 +28,33 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
-    {
-        $request->authenticate();
+public function store(LoginRequest $request): RedirectResponse
+{
+    $request->authenticate();
+    $request->session()->regenerate();
 
-        $request->session()->regenerate();
+    $user = $request->user();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+    // DEFAULT: tenant dashboard (same domain)
+    $redirectUrl = '/dashboard';
+
+    // IF USER HAS TENANT
+    if ($user->tenant_id) {
+
+        $tenant = Tenant::with('domains')->find($user->tenant_id);
+
+        $domain = $tenant?->domains?->first()?->domain;
+
+        if ($domain) {
+
+            // IMPORTANT: use SAME host format Laravel expects
+            $redirectUrl = "http://{$domain}:8000/dashboard";
+        }
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
+    return redirect()->to($redirectUrl);
+}
+
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();

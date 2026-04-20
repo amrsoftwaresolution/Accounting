@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Tenant;
 
 class User extends Authenticatable
 {
@@ -30,6 +31,7 @@ class User extends Authenticatable
     'is_active',
     'hire_date',
     'manager_id',
+    'tenant_id',
 ];
 
     /**
@@ -71,5 +73,9 @@ class User extends Authenticatable
 public function employees()
 {
     return $this->hasMany(User::class, 'manager_id');
+}
+public function tenant()
+{
+    return $this->belongsTo(Tenant::class);
 }
 }

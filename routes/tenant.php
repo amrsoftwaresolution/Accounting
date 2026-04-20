@@ -5,34 +5,43 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
-use Illuminate\Foundation\Application;
-use Inertia\Inertia;
 
+use App\Http\Controllers\Accounting\ChartOfAccController;
+use App\Http\Controllers\Team\TeamController;
+use App\Http\Controllers\Accounting\JournalEntryController;
+
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
-| Tenant Routes
+| TENANT ROUTES (MAIN APP)
 |--------------------------------------------------------------------------
-|
-| Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider.
-|
-| Feel free to customize them however you want. Good luck!
-|
 */
-
 Route::middleware([
     'web',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
+    Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+    Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
 ])->group(function () {
-   Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+
+    Route::get('/', function () {
+        return redirect('/dashboard');
+    });
+
+    Route::get('/dashboard', fn () =>
+        Inertia::render('Dashboard')
+    )->middleware('auth')->name('dashboard');
+
+    Route::middleware('auth')->group(function () {
+
+        Route::get('/expense', fn () => Inertia::render('Transaction/ExpenseForm'))->name('expense');
+        Route::get('/journal', fn () => Inertia::render('Transaction/JournalEntryForm'))->name('journal');
+        Route::get('/transfer', fn () => Inertia::render('Transaction/TransferForm'))->name('transfer');
+        Route::get('/invoice', fn () => Inertia::render('Transaction/InvoiceForm'))->name('invoice');
+        Route::get('/payment', fn () => Inertia::render('Transaction/ReceivePaymentForm'))->name('payment');
+
+        Route::resource('chart-of-account', ChartOfAccController::class);
+        Route::resource('team', TeamController::class);
+        Route::resource('journal-entries', JournalEntryController::class);
+    });
 
 });
