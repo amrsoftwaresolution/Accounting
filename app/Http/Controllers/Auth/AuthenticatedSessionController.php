@@ -11,37 +11,32 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Tenant;
+use App\Models\User;
 
 class AuthenticatedSessionController extends Controller
 {
 
-    public function create(): Response
+    public function create(): Response|RedirectResponse
     {
+        if (User::count() === 0) {
+            return redirect()->route('register');
+        }
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
         ]);
     }
 
-public function store(LoginRequest $request)
-{
-    $request->authenticate();
-    $request->session()->regenerate();
+    public function store(LoginRequest $request)
+    {
+        $request->authenticate();
+        $request->session()->regenerate();
 
-    $user = $request->user();
-
-    if ($user->tenant_id) {
-
-        $tenant = Tenant::with('domains')->find($user->tenant_id);
-        $domain = $tenant?->domains?->first()?->domain;
-
-        if ($domain) {
-            return Inertia::location("http://{$domain}:8000/dashboard");
-        }
+        // If tenancy is initialized, redirect to the tenant's dashboard
+        // Otherwise, use the standard redirection
+        return redirect()->intended(route('dashboard'));
     }
-
-    return Inertia::location('/dashboard');
-}
 
     public function destroy(Request $request): RedirectResponse
     {

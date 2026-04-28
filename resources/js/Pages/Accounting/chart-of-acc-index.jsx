@@ -1,93 +1,310 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Link } from '@inertiajs/react';
+import { useForm, Head, Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import SlideOver from '@/Components/SlideOver';
+import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
 
-export default function ChartOfAcc({ chartOfAccounts }) {
+export default function ChartOfAccIndex({ chartOfAccounts = [] }) {
+    const subtypeOptions = {
+        asset: [
+            { value: 'cash-and-cash-equivalents', label: 'Cash and cash equivalents' },
+            { value: 'accounts-receivable', label: 'Accounts receivable (A/R)' },
+            { value: 'current-assets', label: 'Current assets' },
+            { value: 'fixed-assets', label: 'Fixed assets' },
+            { value: 'non-current-assets', label: 'Non-current assets' },
+        ],
+        liability: [
+            { value: 'credit-card', label: 'Credit card' },
+            { value: 'accounts-payable', label: 'Accounts payable (A/P)' },
+            { value: 'current-liabilities', label: 'Current liabilities' },
+            { value: 'non-current-liabilities', label: 'Non-current liabilities' },
+        ],
+        equity: [{ value: 'owners-equity', label: "Owner's equity" }],
+        income: [
+            { value: 'income', label: 'Income' },
+            { value: 'other-income', label: 'Other income' },
+        ],
+        expense: [{ value: 'expense', label: 'Expense' }],
+    };
+
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterType, setFilterType] = useState('all');
+
+    const { data, setData, post, patch, processing, errors, reset, clearErrors } = useForm({
+        account_code: '',
+        name: '',
+        account_type: 'asset',
+        sub_type: 'cash-and-cash-equivalents',
+        opening_balance: 0,
+        opening_balance_date: new Date().toISOString().split('T')[0],
+        description: '',
+        is_active: true,
+    });
+
+    const handleOpenCreate = () => {
+        setIsEdit(false);
+        setSelectedId(null);
+        reset();
+        clearErrors();
+        setIsPanelOpen(true);
+    };
+
+    const handleOpenEdit = (account) => {
+        setIsEdit(true);
+        setSelectedId(account.id);
+        clearErrors();
+        setData({
+            account_code: account.account_code || '',
+            name: account.name || '',
+            account_type: account.account_type || 'asset',
+            sub_type: account.sub_type || '',
+            opening_balance: account.opening_balance || 0,
+            opening_balance_date: account.opening_balance_date || new Date().toISOString().split('T')[0],
+            description: account.description || '',
+            is_active: !!account.is_active,
+        });
+        setIsPanelOpen(true);
+    };
+
+    const handleTypeChange = (value) => {
+        setData(prev => ({
+            ...prev,
+            account_type: value,
+            sub_type: subtypeOptions[value][0].value
+        }));
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+        const options = {
+            onSuccess: () => {
+                setIsPanelOpen(false);
+                reset();
+            },
+        };
+
+        if (isEdit) {
+            patch(route('chart-of-account.update', selectedId), options);
+        } else {
+            post(route('chart-of-account.store'), options);
+        }
+    };
+
+    const filteredAccounts = chartOfAccounts.filter(acc => {
+        const matchesSearch = (acc.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (acc.account_code?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+        const matchesType = filterType === 'all' || acc.account_type === filterType;
+        return matchesSearch && matchesType;
+    });
+
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">Chart of Accounts</h2>
-                </div>
+                <h2 className="font-bold text-lg text-slate-800 tracking-tight">Chart of Accounts</h2>
             }
         >
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-medium">Chart of Accounts</h3>
-                                <Link
-                                    href={route('chart-of-account.create')}
-                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Create Account
-                                </Link>
-                            </div>
-                            <p className="text-gray-600">Manage your accounting chart structure here.</p>
+            <Head title="Chart of Accounts" />
 
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sub-Type</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {chartOfAccounts.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
-                                                    No chart of accounts found. Create one to get started.
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            chartOfAccounts.map((account) => (
-                                                <tr key={account.id}>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{account.account_code}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{account.account_name}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 capitalize">{account.account_type}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{account.account_sub_type}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">{account.description || '-'}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm">
-                                                        {account.is_active ? (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-                                                        ) : (
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactive</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{new Date(account.created_at).toLocaleDateString()}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
-                                                        <Link
-                                                            href={route('chart-of-account.edit', account.id)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
-                                                            Edit
-                                                        </Link>
-                                                        <span className="mx-1 text-gray-300">|</span>
-                                                        <Link
-                                                            href={route('chart-of-account.destroy', account.id)}
-                                                            method="delete"
-                                                            as="button"
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Delete
-                                                        </Link>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
+            <div className="p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Filter by name or number"
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-64 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                />
                             </div>
+
+                            <select
+                                value={filterType}
+                                onChange={e => setFilterType(e.target.value)}
+                                className="px-3 py-1.5 border border-slate-300 rounded-md text-[11px] font-bold text-slate-600 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                            >
+                                <option value="all">All Types</option>
+                                <option value="asset">Assets</option>
+                                <option value="liability">Liabilities</option>
+                                <option value="equity">Equity</option>
+                                <option value="income">Income</option>
+                                <option value="expense">Expenses</option>
+                            </select>
                         </div>
+
+                        <CommonButton
+                            variant="primary"
+                            onClick={handleOpenCreate}
+                        >
+                            New account
+                        </CommonButton>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Name / Code</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Type</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Detail Type</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Balance</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredAccounts.map((account) => (
+                                    <tr key={account.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-bold text-slate-800">{account.name}</span>
+                                                <span className="text-[10px] text-slate-400">{account.account_code}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2.5 text-[11px] text-slate-600 capitalize">{account.account_type}</td>
+                                        <td className="px-4 py-2.5 text-[11px] text-slate-600 capitalize">{account.sub_type?.replace(/-/g, ' ') || 'Main Account'}</td>
+                                        <td className="px-4 py-2.5 text-[11px] font-bold text-slate-800 text-right">
+                                            LKR {parseFloat(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <CommonButton 
+                                                    variant="ghost" 
+                                                    size="xs"
+                                                    onClick={() => handleOpenEdit(account)}
+                                                >
+                                                    Edit
+                                                </CommonButton>
+                                                <div className="h-3 w-px bg-slate-200" />
+                                                <Link href={route('chart-of-account.history', account.id)}>
+                                                    <CommonButton variant="ghost" size="xs">History</CommonButton>
+                                                </Link>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredAccounts.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
+                                            No accounts found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+
+            <SlideOver
+                isOpen={isPanelOpen}
+                onClose={() => setIsPanelOpen(false)}
+                title={isEdit ? "Edit Account" : "New Account"}
+            >
+                <form onSubmit={submit} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <CommonInput
+                            label="Account Code"
+                            value={data.account_code}
+                            onChange={e => setData('account_code', e.target.value)}
+                            error={errors.account_code}
+                            required
+                        />
+                        <CommonInput
+                            label="Account Name"
+                            value={data.name}
+                            onChange={e => setData('name', e.target.value)}
+                            error={errors.name}
+                            required
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Account Type</label>
+                            <select
+                                value={data.account_type}
+                                onChange={e => handleTypeChange(e.target.value)}
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            >
+                                <option value="asset">Asset</option>
+                                <option value="liability">Liability</option>
+                                <option value="equity">Equity</option>
+                                <option value="income">Income</option>
+                                <option value="expense">Expense</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detail Type</label>
+                            <select
+                                value={data.sub_type}
+                                onChange={e => setData('sub_type', e.target.value)}
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            >
+                                {subtypeOptions[data.account_type].map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {!isEdit && (
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                            <CommonInput
+                                type="number"
+                                label="Opening Balance"
+                                value={data.opening_balance}
+                                onChange={e => setData('opening_balance', e.target.value)}
+                                error={errors.opening_balance}
+                            />
+                            <CommonInput
+                                type="date"
+                                label="As of Date"
+                                value={data.opening_balance_date}
+                                onChange={e => setData('opening_balance_date', e.target.value)}
+                                error={errors.opening_balance_date}
+                            />
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
+                            <textarea
+                                value={data.description}
+                                onChange={e => setData('description', e.target.value)}
+                                rows="3"
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={data.is_active}
+                                onChange={e => setData('is_active', e.target.checked)}
+                                className="rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Active Account</span>
+                        </div>
+                    </div>
+
+                    <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
+                        <CommonButton variant="ghost" onClick={() => setIsPanelOpen(false)}>Cancel</CommonButton>
+                        <CommonButton type="submit" variant="primary" processing={processing}>
+                            {isEdit ? "Update Account" : "Save Account"}
+                        </CommonButton>
+                    </div>
+                </form>
+            </SlideOver>
         </AuthenticatedLayout>
     );
 }

@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chart_of_accs', function (Blueprint $table) {
-            $table->id();
-            $table->string('account_code')->unique();
-            $table->string('account_name');
-            $table->enum('account_type', ['asset', 'liability', 'equity', 'income', 'expense']);
+        Schema::create('item_categories', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('name');
             $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->foreignUuid('parent_id')->nullable()->constrained('item_categories')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('chart_of_accs');
+        Schema::dropIfExists('item_categories');
     }
 };

@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Http\Controllers\Inventory;
+
+use App\Http\Controllers\Controller;
+use App\Models\ItemCategory;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class ItemCategoryController extends Controller
+{
+    public function index()
+    {
+        $categories = ItemCategory::with('parent')->get();
+        return Inertia::render('Inventory/CategoryList', [
+            'categories' => $categories
+        ]);
+    }
+
+    public function create()
+    {
+        $parents = ItemCategory::all();
+        return Inertia::render('Inventory/CategoryForm', [
+            'parents' => $parents
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:item_categories,id',
+        ]);
+
+        ItemCategory::create($validated);
+
+        return redirect()->route('item-categories.index')->with('success', 'Category created successfully');
+    }
+
+    public function edit(ItemCategory $itemCategory)
+    {
+        $parents = ItemCategory::where('id', '!=', $itemCategory->id)->get();
+        return Inertia::render('Inventory/CategoryForm', [
+            'category' => $itemCategory,
+            'parents' => $parents
+        ]);
+    }
+
+    public function update(Request $request, ItemCategory $itemCategory)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:item_categories,id',
+        ]);
+
+        $itemCategory->update($validated);
+
+        return redirect()->route('item-categories.index')->with('success', 'Category updated successfully');
+    }
+
+    public function destroy(ItemCategory $itemCategory)
+    {
+        $itemCategory->delete();
+        return redirect()->route('item-categories.index')->with('success', 'Category deleted successfully');
+    }
+}

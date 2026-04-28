@@ -1,72 +1,146 @@
 <?php
 
 namespace App\Http\Controllers\Accounting;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\JournalEntry;
+use App\Models\ChartOfAcc;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class JournalEntryController extends Controller
 {
+    public function index()
+    {
+        $entries = JournalEntry::with(['creator', 'lines.account'])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return Inertia::render('Transaction/JournalEntryList', [
+            'entries' => $entries
+        ]);
+    }
+
+    public function create()
+    {
+        $accounts = ChartOfAcc::orderBy('account_code')->get();
+        
+        // Get the last numeric reference and increment it
+        $lastRef = JournalEntry::where('transaction_type', 'journal_entry')
+            ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
+            ->value('reference');
+            
+        $nextJournalNo = is_numeric($lastRef) ? (int)$lastRef + 1 : 1;
+
+        return Inertia::render('Transaction/JournalEntryForm', [
+            'accounts' => $accounts,
+            'nextJournalNo' => (string)$nextJournalNo
+        ]);
+    }
+
     public function store(Request $request)
     {
-        // ✅ Validation
         $request->validate([
             'date' => 'required|date',
             'lines' => 'required|array|min:2',
-            'lines.*.account_id' => 'required|exists:accounts,id',
+            'lines.*.account_id' => 'required|exists:chart_of_accs,id',
+            'lines.*.debit' => 'nullable|numeric',
+            'lines.*.credit' => 'nullable|numeric',
         ]);
 
         return DB::transaction(function () use ($request) {
-
             $totalDebit = 0;
             $totalCredit = 0;
 
-            // ✅ Create main entry
             $entry = JournalEntry::create([
                 'date' => $request->date,
-                'reference_no' => $request->reference_no,
+                'reference' => $request->reference_no,
                 'description' => $request->description,
-                'created_by' => auth()->id(),
+                'transaction_type' => 'journal_entry',
+                'status' => 'posted',
+                'created_by' => Auth::id(),
             ]);
 
-            // ✅ Insert lines
             foreach ($request->lines as $line) {
+                $debit = (float)($line['debit'] ?? 0);
+                $credit = (float)($line['credit'] ?? 0);
 
-                $debit = $line['debit'] ?? 0;
-                $credit = $line['credit'] ?? 0;
-
-                // ❌ Prevent both empty
-                if ($debit == 0 && $credit == 0) {
-                    throw new \Exception("Each line must have debit or credit");
-                }
+                if ($debit == 0 && $credit == 0) continue;
 
                 $entry->lines()->create([
-                    'account_id' => $line['account_id'],
+                    'chart_of_acc_id' => $line['account_id'],
                     'debit' => $debit,
                     'credit' => $credit,
-                    'description' => $line['description'] ?? null,
+                    'memo' => $line['description'] ?? null,
                 ]);
 
                 $totalDebit += $debit;
                 $totalCredit += $credit;
             }
 
-            // ❌ Critical accounting rule
-            if ($totalDebit != $totalCredit) {
-                throw new \Exception("Debit and Credit must match");
+            if (number_format($totalDebit, 2) != number_format($totalCredit, 2)) {
+                throw new \Exception("Debit ({$totalDebit}) and Credit ({$totalCredit}) must match");
             }
 
-            // ✅ Update totals
-            $entry->update([
-                'total_debit' => $totalDebit,
-                'total_credit' => $totalCredit,
-            ]);
+            $entry->update(['total_amount' => $totalDebit]);
 
             return response()->json([
                 'message' => 'Journal Entry Created',
-                'data' => $entry->load('lines')
+                'id' => $entry->id
             ]);
+        });
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $accounts = ChartOfAcc::orderBy('account_code')->get();
+        
+        return Inertia::render('Transaction/JournalEntryForm', [
+            'journalEntry' => $journalEntry,
+            'accounts' => $accounts
+        ]);
+    }
+
+    public function update(Request $request, JournalEntry $journalEntry)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|exists:chart_of_accs,id',
+        ]);
+
+        return DB::transaction(function () use ($request, $journalEntry) {
+            $journalEntry->update([
+                'date' => $request->date,
+                'reference' => $request->reference_no,
+                'description' => $request->description,
+            ]);
+
+            $journalEntry->lines()->delete();
+
+            $totalDebit = 0;
+            foreach ($request->lines as $line) {
+                $debit = (float)($line['debit'] ?? 0);
+                $credit = (float)($line['credit'] ?? 0);
+
+                if ($debit == 0 && $credit == 0) continue;
+
+                $journalEntry->lines()->create([
+                    'chart_of_acc_id' => $line['account_id'],
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'memo' => $line['description'] ?? null,
+                ]);
+
+                $totalDebit += $debit;
+            }
+
+            $journalEntry->update(['total_amount' => $totalDebit]);
+
+            return response()->json(['message' => 'Journal Entry Updated']);
         });
     }
 }

@@ -1,0 +1,291 @@
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { useForm, Head } from '@inertiajs/react';
+import { useState } from 'react';
+import SlideOver from '@/Components/SlideOver';
+import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
+import AddressForm from '@/Components/AddressForm';
+
+export default function SupplierIndex({ suppliers = [] }) {
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const { data, setData, post, patch, delete: destroy, processing, errors, reset, clearErrors } = useForm({
+        display_name: '',
+        first_name: '',
+        last_name: '',
+        company_name: '',
+        email: '',
+        phone_number: '',
+        billing_address: {
+            address_line_1: '',
+            address_line_2: '',
+            city: '',
+            province: '',
+            postal_code: '',
+            country: '',
+        },
+        shipping_address: {
+            address_line_1: '',
+            address_line_2: '',
+            city: '',
+            province: '',
+            postal_code: '',
+            country: '',
+        }
+    });
+
+    const handleOpenCreate = () => {
+        setIsEdit(false);
+        setSelectedId(null);
+        reset();
+        clearErrors();
+        setIsCreateOpen(true);
+    };
+
+    const handleEdit = (supplier) => {
+        setIsEdit(true);
+        setSelectedId(supplier.id);
+        
+        // Find billing and shipping addresses from the supplier object
+        const billing = supplier.addresses?.find(a => a.type === 'billing') || {};
+        const shipping = supplier.addresses?.find(a => a.type === 'shipping') || {};
+
+        setData({
+            display_name: supplier.display_name || '',
+            first_name: supplier.first_name || '',
+            last_name: supplier.last_name || '',
+            company_name: supplier.company_name || '',
+            email: supplier.email || '',
+            phone_number: supplier.phone_number || '',
+            billing_address: {
+                address_line_1: billing.address_line_1 || '',
+                address_line_2: billing.address_line_2 || '',
+                city: billing.city || '',
+                province: billing.province || '',
+                postal_code: billing.postal_code || '',
+                country: billing.country || '',
+            },
+            shipping_address: {
+                address_line_1: shipping.address_line_1 || '',
+                address_line_2: shipping.address_line_2 || '',
+                city: shipping.city || '',
+                province: shipping.province || '',
+                postal_code: shipping.postal_code || '',
+                country: shipping.country || '',
+            }
+        });
+        setIsCreateOpen(true);
+    };
+
+    const handleDelete = (id) => {
+        if (confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) {
+            destroy(route('suppliers.destroy', id));
+        }
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+        if (isEdit) {
+            patch(route('suppliers.update', selectedId), {
+                onSuccess: () => {
+                    setIsCreateOpen(false);
+                    reset();
+                },
+            });
+        } else {
+            post(route('suppliers.store'), {
+                onSuccess: () => {
+                    setIsCreateOpen(false);
+                    reset();
+                },
+            });
+        }
+    };
+
+    const filteredSuppliers = suppliers.filter(s => 
+        s.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        s.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <AuthenticatedLayout
+            header={
+                <h2 className="font-bold text-lg text-slate-800 tracking-tight">Suppliers</h2>
+            }
+        >
+            <Head title="Suppliers" />
+
+            <div className="p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between gap-4">
+                        <div className="relative flex-1 max-w-sm">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                            <input 
+                                type="text" 
+                                placeholder="Find a supplier" 
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-full focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                            />
+                        </div>
+
+                        <CommonButton 
+                            variant="primary" 
+                            onClick={handleOpenCreate}
+                        >
+                            New supplier
+                        </CommonButton>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Supplier / Company</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Contact Details</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Balance</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredSuppliers.map((supplier) => (
+                                    <tr key={supplier.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-bold text-slate-800">{supplier.display_name}</span>
+                                                <span className="text-[10px] text-slate-400">{supplier.company_name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-col text-[10px] text-slate-600">
+                                                <span>{supplier.email}</span>
+                                                <span>{supplier.phone_number}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-[11px] font-bold text-slate-800 text-right">LKR 0.00</td>
+                                        <td className="px-4 py-3 text-center">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <CommonButton 
+                                                    variant="ghost" 
+                                                    size="xs" 
+                                                    onClick={() => handleEdit(supplier)}
+                                                >
+                                                    Edit
+                                                </CommonButton>
+                                                <div className="h-3 w-px bg-slate-200" />
+                                                <CommonButton 
+                                                    variant="ghost" 
+                                                    size="xs" 
+                                                    className="text-red-500 hover:text-red-600"
+                                                    onClick={() => handleDelete(supplier.id)}
+                                                >
+                                                    Delete
+                                                </CommonButton>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredSuppliers.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
+                                            No suppliers found. Click "New supplier" to get started.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <SlideOver 
+                isOpen={isCreateOpen} 
+                onClose={() => setIsCreateOpen(false)}
+                title={isEdit ? "Edit Supplier" : "New Supplier"}
+            >
+                <form onSubmit={submit} className="space-y-8">
+                    <div className="space-y-6">
+                        <section>
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Primary Info</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <CommonInput 
+                                    label="First Name" 
+                                    value={data.first_name} 
+                                    onChange={e => setData('first_name', e.target.value)} 
+                                />
+                                <CommonInput 
+                                    label="Last Name" 
+                                    value={data.last_name} 
+                                    onChange={e => setData('last_name', e.target.value)} 
+                                />
+                            </div>
+                            <div className="mt-4">
+                                <CommonInput 
+                                    label="Display Name (REQUIRED)" 
+                                    value={data.display_name} 
+                                    onChange={e => setData('display_name', e.target.value)} 
+                                    required 
+                                    error={errors.display_name}
+                                />
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Business Details</h3>
+                            <CommonInput 
+                                label="Company Name" 
+                                value={data.company_name} 
+                                onChange={e => setData('company_name', e.target.value)} 
+                            />
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <CommonInput 
+                                    label="Email Address" 
+                                    type="email"
+                                    value={data.email} 
+                                    onChange={e => setData('email', e.target.value)} 
+                                />
+                                <CommonInput 
+                                    label="Phone Number" 
+                                    value={data.phone_number} 
+                                    onChange={e => setData('phone_number', e.target.value)} 
+                                />
+                            </div>
+                        </section>
+
+                        <section>
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Billing Address</h3>
+                            <AddressForm 
+                                data={data.billing_address} 
+                                setData={(key, val) => setData('billing_address', { ...data.billing_address, [key]: val })} 
+                                errors={errors}
+                            />
+                        </section>
+                        
+                        <section className="bg-slate-50/50 -mx-6 px-6 py-6 border-y border-slate-100">
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-200 pb-2">Shipping Address</h3>
+                            <AddressForm 
+                                data={data.shipping_address} 
+                                setData={(key, val) => setData('shipping_address', { ...data.shipping_address, [key]: val })} 
+                                errors={errors}
+                            />
+                        </section>
+                    </div>
+
+                    <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
+                        <CommonButton variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</CommonButton>
+                        <CommonButton variant="primary" type="submit" processing={processing}>
+                            {isEdit ? "Update Supplier" : "Save Supplier"}
+                        </CommonButton>
+                    </div>
+                </form>
+            </SlideOver>
+        </AuthenticatedLayout>
+    );
+}

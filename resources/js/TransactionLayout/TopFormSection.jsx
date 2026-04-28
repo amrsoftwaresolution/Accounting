@@ -1,58 +1,67 @@
+import SearchableSelect from "@/Components/SearchableSelect";
+
 export default function TopFormSection({ form, setForm }) {
     return (
         <div className="grid grid-cols-3 gap-x-8 gap-y-4 border-b pb-4">
 
             <div>
-                <label className="text-xs text-gray-500">Payee</label>
-                <select
-                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent"
+                <SearchableSelect 
+                    label="Payee"
+                    placeholder="Who did you pay?"
                     value={form.payee}
-                    onChange={(e) => setForm({ ...form, payee: e.target.value })}
-                >
-                    <option>Who did you pay?</option>
-                </select>
+                    onChange={(val) => setForm({ ...form, payee: val })}
+                    options={[
+                        { label: "Internal Supplier", value: "1" },
+                        { label: "External Supplier", value: "2" }
+                    ]}
+                />
             </div>
 
             <div>
-                <label className="text-xs text-gray-500">Payment account</label>
-                <select
-                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent"
+                <SearchableSelect 
+                    label="Payment account"
                     value={form.account}
-                    onChange={(e) => setForm({ ...form, account: e.target.value })}
-                >
-                    <option>Cash</option>
-                </select>
+                    onChange={(val) => setForm({ ...form, account: val })}
+                    options={[
+                        { label: "Cash", value: "Cash" },
+                        { label: "Bank Account", value: "Bank" },
+                        { label: "Petty Cash", value: "Petty Cash" }
+                    ]}
+                />
             </div>
 
-            <div className="flex items-end text-sm text-gray-500">
+            <div className="flex items-end text-sm text-gray-500 pb-1">
                 Balance LKR 666,500.00
             </div>
 
             <div>
-                <label className="text-xs text-gray-500">Payment date</label>
+                <label className="text-xs text-gray-500 block mb-1">Payment date</label>
                 <input
                     type="date"
-                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent"
+                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent outline-none"
                     value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                 />
             </div>
 
             <div>
-                <label className="text-xs text-gray-500">Payment method</label>
-                <select
-                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent"
+                <SearchableSelect 
+                    label="Payment method"
                     value={form.method}
-                    onChange={(e) => setForm({ ...form, method: e.target.value })}
-                >
-                    <option>Select method</option>
-                </select>
+                    onChange={(val) => setForm({ ...form, method: val })}
+                    options={[
+                        { label: "Cash", value: "Cash" },
+                        { label: "Check", value: "Check" },
+                        { label: "Credit Card", value: "Credit Card" },
+                        { label: "Direct Debit", value: "Direct Debit" }
+                    ]}
+                />
             </div>
 
             <div>
-                <label className="text-xs text-gray-500">Ref no.</label>
+                <label className="text-xs text-gray-500 block mb-1">Ref no.</label>
                 <input
-                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent"
+                    className="w-full border-b border-gray-300 text-sm py-1 bg-transparent outline-none"
                     value={form.ref}
                     onChange={(e) => setForm({ ...form, ref: e.target.value })}
                 />

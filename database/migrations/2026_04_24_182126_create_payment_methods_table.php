@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('chart_of_accs', function (Blueprint $table) {
-            $table->string('account_sub_type')->nullable()->after('account_type');
+        Schema::create('payment_methods', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('chart_of_accs', function (Blueprint $table) {
-            $table->dropColumn('account_sub_type');
-        });
+        Schema::dropIfExists('payment_methods');
     }
 };

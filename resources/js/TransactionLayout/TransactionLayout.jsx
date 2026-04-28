@@ -1,50 +1,83 @@
 import TransactionHeader from "./TransactionHeader";
 import { router } from '@inertiajs/react';
+import SplitSaveButton from "@/Components/SplitSaveButton";
+
 export default function TransactionLayout({
     title,
     amount,
     children,
-    onSave,          // ✅ ADD
-    onSaveAndNew     // ✅ ADD (optional)
+    onSave,
+    onSaveAndClose,
+    onSaveAndNew,
+    onAddLine,
+    onClearRows,
+    processing = false,
+    dirty = false
 }) {
-    return (
-        <div className="flex flex-col h-screen bg-white">
+    const handleClose = () => {
+        if (dirty) {
+            if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+                window.history.back();
+            }
+        } else {
+            window.history.back();
+        }
+    };
 
+    return (
+        <div className="flex flex-col h-screen bg-slate-50">
             {/* HEADER */}
             <TransactionHeader title={title} amount={amount} />
 
             {/* CONTENT */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-                {children}
+            <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+                <div className="max-w-7xl mx-auto">
+                    {children}
+                </div>
             </div>
 
-            {/* FOOTER - All 5 buttons visible */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-300 px-6 py-4 flex items-center justify-between shadow-md">
+            {/* FOOTER - DARK THEME */}
+            <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 px-8 py-1 flex items-center justify-between shadow-2xl z-50">
+                {/* Left - Actions */}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleClose}
+                        className="px-4 py-2 border border-primary-600 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-100 hover:bg-primary-600 transition-all"
+                    >
+                        Cancel
+                    </button>
 
-                {/* Left - Cancel */}
-                <button
-    onClick={() => router.visit('/journal-entries')} // or wherever
-    className="border border-green-600 text-green-600 bg-white px-6 py-2 rounded text-sm font-medium hover:bg-green-50"
->
-    Cancel
-</button>
+                    <div className="h-4 w-[1px] bg-slate-700 mx-2"></div>
 
-                {/* Right - Save & Save and new */}
-                <div className="flex gap-4">
-    <button
-        onClick={onSave}   // 🔥 CONNECTED
-        className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded text-sm font-medium"
-    >
-        Save
-    </button>
+                    {onAddLine && (
+                        <button
+                            type="button"
+                            onClick={onAddLine}
+                            className="px-4 py-2 border border-primary-600 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-100 hover:bg-primary-600 transition-all"
+                        >
+                            Add lines
+                        </button>
+                    )}
+                    {onClearRows && (
+                        <button
+                            type="button"
+                            onClick={onClearRows}
+                            className="px-4 py-2 border border-primary-600 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-100 hover:bg-primary-600 transition-all"
+                        >
+                            Clear all lines
+                        </button>
+                    )}
+                </div>
 
-    <button
-        onClick={onSaveAndNew} // optional
-        className="bg-green-600 text-white hover:bg-green-700 px-5 py-2 rounded text-sm font-medium"
-    >
-        Save and new
-    </button>
-</div>
+                {/* Right - Unified Save Button */}
+                <div className="flex items-center gap-4">
+                    <SplitSaveButton
+                        onSave={onSave}
+                        onSaveAndClose={onSaveAndClose}
+                        onSaveAndNew={onSaveAndNew}
+                        processing={processing}
+                    />
+                </div>
             </div>
         </div>
     );

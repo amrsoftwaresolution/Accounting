@@ -3,27 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class JournalEntry extends Model
 {
+    use HasUuids;
+
     protected $fillable = [
         'date',
-        'reference_type',
-        'reference_id',
-        'reference_no',
+        'reference',
         'description',
-        'total_debit',
-        'total_credit',
-        'created_by'
+        'transaction_type',
+        'transactionable_id',
+        'transactionable_type',
+        'total_amount',
+        'status',
+        'created_by',
     ];
+
+    public function transactionable()
+    {
+        return $this->morphTo();
+    }
 
     public function lines()
     {
         return $this->hasMany(JournalEntryLine::class);
     }
 
-
-    public function user()
+    public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
     }

@@ -11,10 +11,12 @@ use App\Models\Tenant;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory;
+    use HasFactory, Notifiable, \Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-    use Notifiable;
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -31,7 +33,6 @@ class User extends Authenticatable
     'is_active',
     'hire_date',
     'manager_id',
-    'tenant_id',
 ];
 
     /**
@@ -73,9 +74,5 @@ class User extends Authenticatable
 public function employees()
 {
     return $this->hasMany(User::class, 'manager_id');
-}
-public function tenant()
-{
-    return $this->belongsTo(Tenant::class);
 }
 }

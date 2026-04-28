@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('journal_entries', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->date('date');
+            $table->string('reference')->nullable();
+            $table->text('description')->nullable();
+            $table->string('transaction_type')->nullable(); // e.g., 'invoice', 'expense', 'bill'
+            $table->nullableUuidMorphs('transactionable'); // Link to the specific transaction record
+            $table->decimal('total_amount', 15, 2)->default(0);
+            $table->string('status')->default('draft');
+            $table->foreignUuid('created_by')->constrained('users');
+            $table->timestamps();
+        });
+
+        Schema::create('journal_entry_lines', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('journal_entry_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('chart_of_acc_id')->constrained();
+            $table->decimal('debit', 15, 2)->default(0);
+            $table->decimal('credit', 15, 2)->default(0);
+            $table->text('memo')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('journal_entry_lines');
+        Schema::dropIfExists('journal_entries');
+    }
+};
