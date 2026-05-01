@@ -18,6 +18,10 @@ use App\Http\Controllers\Accounting\ChartOfAccController;
 use App\Http\Controllers\Team\TeamController;
 use App\Http\Controllers\Accounting\JournalEntryController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Settings\CompanySettingsController;
+use App\Http\Controllers\Settings\LogoUploadController;
+use App\Http\Controllers\Settings\SalesSettingController;
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -39,7 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('chart-of-account', ChartOfAccController::class);
     Route::resource('team', TeamController::class);
     Route::resource('journal-entries', JournalEntryController::class);
-    
+
     // Contacts
     Route::resource('customers', \App\Http\Controllers\Contacts\CustomerController::class);
     Route::resource('suppliers', \App\Http\Controllers\Contacts\SupplierController::class);
@@ -55,4 +59,11 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+Route::get('/Settings/Index', [CompanySettingsController::class, 'index'])->name('settings.index');
+Route::post('/settings/company', [CompanySettingsController::class, 'update'])->name('company.update');
+Route::post('/settings/legal', [CompanySettingsController::class, 'updateLegal'])->name('legal.update');
+Route::post('/settings/currency', [CompanySettingsController::class, 'updateCurrency'])->name('currency.update');
+Route::get('/settings/sales', [SalesSettingController::class, 'index'])->name('sales.settings.index');
+Route::post('/settings/sales', [SalesSettingController::class, 'update'])->name('sales.settings.update');
+Route::post('/settings/logo-upload', [LogoUploadController::class, 'upload'])->name('logo.upload');
 require __DIR__.'/auth.php';

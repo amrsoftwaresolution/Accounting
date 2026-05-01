@@ -57,3 +57,36 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+
+
+TABLE: sales_settings
+
+Sales Form Content
+preferred_invoice_terms      -> Preferred invoice terms
+preferred_delivery_method    -> Preferred delivery method
+shipping_enabled             -> Shipping
+custom_txn_numbers           -> Custom transaction numbers
+service_date_enabled         -> Service date
+discount_enabled             -> Discount
+deposit_enabled              -> Deposit
+tags_enabled                 -> Tags
+
+Products & Services
+show_product_service_column  -> Show Product/Service column on sales forms
+show_sku                     -> Show SKU column
+track_qty_price              -> Track quantity and price/rate
+
+Progress Invoicing
+allow_partial_invoices       -> Create multiple partial invoices from a single estimate
+
+Reminders
+auto_invoice_reminders       -> Automatic invoice reminders
+
+Online Delivery
+email_delivery_enabled       -> Enable email delivery for sales forms
+
+Statements
+show_ageing_table            -> Show ageing table at bottom of statement
+

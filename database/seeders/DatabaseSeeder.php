@@ -20,14 +20,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Admin User
-        $admin = User::create([
-            'name' => 'Growdigitec',
-            'email' => 'growdigitec@gmail.com',
-            'password' => Hash::make('Grow2025@'),
-            'role' => 'admin',
-            'phone' => '+94702899880',
-            'is_active' => true,
-        ]);
+        $admin = User::updateOrCreate(
+    ['email' => 'growdigitec@gmail.com'], // unique check
+    [
+        'name' => 'Growdigitec',
+        'password' => Hash::make('password'),
+        'role' => 'admin',
+        'phone' => '+94702899880',
+        'is_active' => 1,
+    ]
+);
 
         // 2. Create Chart of Accounts
         $accounts = [
@@ -135,5 +137,12 @@ class DatabaseSeeder extends Seeder
         $accountModels['1010']->update(['balance' => 48800]);
         $accountModels['3000']->update(['balance' => -50000]);
         $accountModels['5100']->update(['balance' => 1200]);
+
+
+                    $this->call([
+                SalesSettingSeeder::class,
+                CompanySettingSeeder::class,
+            ]);
+
     }
 }

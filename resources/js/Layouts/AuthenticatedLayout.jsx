@@ -19,6 +19,7 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
         { name: 'Finance Overview', href: route('chart-of-account.index'), icon: 'finance' },
+        { name: 'Settings', href: route('settings.index'), icon: 'users', adminOnly: true },
     ];
 
     const teamLinks = [
@@ -40,11 +41,11 @@ export default function AuthenticatedLayout({ header, children }) {
             {sidebarOpen && (
                 <div className="fixed inset-0 z-40 lg:hidden px-4 py-6 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)}>
                     <div className="fixed inset-y-0 left-0 w-64 bg-slate-900 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <SidebarContent 
-                            navigation={navigation} 
+                        <SidebarContent
+                            navigation={navigation}
                             teamLinks={teamLinks}
                             transactions={transactions}
-                            user={user} 
+                            user={user}
                             onQuickMenuOpen={() => {
                                 setSidebarOpen(false);
                                 setIsQuickMenuOpen(true);
@@ -58,11 +59,11 @@ export default function AuthenticatedLayout({ header, children }) {
             {isSidebarVisible && (
                 <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64">
                     <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl">
-                        <SidebarContent 
-                            navigation={navigation} 
+                        <SidebarContent
+                            navigation={navigation}
                             teamLinks={teamLinks}
                             transactions={transactions}
-                            user={user} 
+                            user={user}
                             onQuickMenuOpen={() => setIsQuickMenuOpen(true)}
                         />
                     </div>
@@ -79,8 +80,8 @@ export default function AuthenticatedLayout({ header, children }) {
                         >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
-                        
-                        <button 
+
+                        <button
                             onClick={() => setIsSidebarVisible(!isSidebarVisible)}
                             className="hidden lg:flex p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
                         >
@@ -133,9 +134,9 @@ export default function AuthenticatedLayout({ header, children }) {
                 </main>
             </div>
 
-            <QuickActionMenu 
-                isOpen={isQuickMenuOpen} 
-                onClose={() => setIsQuickMenuOpen(false)} 
+            <QuickActionMenu
+                isOpen={isQuickMenuOpen}
+                onClose={() => setIsQuickMenuOpen(false)}
             />
         </div>
     );
@@ -160,7 +161,7 @@ function SidebarContent({ navigation, teamLinks, transactions, user, onQuickMenu
 
             {/* Quick Action Button (QuickBooks Style) */}
             <div className="px-6 py-2">
-                <button 
+                <button
                     onClick={onQuickMenuOpen}
                     className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#00713D] text-white font-bold text-[11px] rounded-lg hover:bg-[#005a30] transition-all shadow-sm group uppercase tracking-wider"
                 >
