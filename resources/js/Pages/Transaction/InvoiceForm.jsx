@@ -1,45 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useForm } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
-import BottomSection from "@/TransactionLayout/BottomSection";
 import SearchableSelect from "@/Components/SearchableSelect";
+import CommonInput from "@/Components/CommonInput";
 import TermModal from "@/Components/TermModal";
 
-export default function InvoiceForm({ customers = [], accounts = [], nextInvoiceNo = "" }) {
-    const customerOptions = customers.map(c => ({ value: c.id, label: c.name }));
-    const accountOptions = accounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }));
+export default function InvoiceForm({ auth, customers = [], items: products = [], nextInvoiceNo = "", invoice = null }) {
+    const company = auth.company;
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const customerOptions = customers.map(c => ({ value: c.id, label: c.display_name || c.name }));
+    const productOptions = products.map(p => ({ value: p.id, label: p.name, rate: p.sale_price }));
 
     // 1. Define Invoice Specific Columns
     const INVOICE_COLUMNS = [
-        { key: "serviceDate", label: "Service Date", type: "date", placeholder: "" },
-        { 
-            key: "product", 
-            label: "Product/Service", 
+        { key: "serviceDate", label: "Service Date", type: "date", width: "150px" },
+        {
+            key: "product",
+            label: "Product/Service",
             placeholder: "Select product",
-            options: [
-                { label: "Product A", value: "A" },
-                { label: "Service B", value: "B" },
-                { label: "Consulting", value: "C" }
-            ]
+            options: productOptions,
+            type: "select",
+            width: "280px"
         },
         { key: "description", label: "Description", placeholder: "Enter description" },
-        { key: "qty", label: "Qty", type: "number", className: "w-20" },
-        { key: "rate", label: "Rate", type: "number", className: "text-right" },
-        { key: "amount", label: "Amount", type: "number", className: "text-right", inputClass: "font-semibold" },
+        { key: "qty", label: "Qty", type: "number", width: "80px", className: "text-right" },
+        { key: "rate", label: "Rate", type: "currency", width: "120px", className: "text-right", inputClass: "text-right" },
+        { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
     ];
 
-    // 2. Initial State
-    const [form, setForm] = useState({
-        customer: "",
-        email: "",
-        billingAddress: "",
-        terms: "Net 30",
-        invoiceDate: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        invoiceNo: nextInvoiceNo || "0001",
-        memo: "",
-        statementMemo: "",
-    });
+    const [currentAction, setCurrentAction] = useState('save');
 
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
     const [termOptions, setTermOptions] = useState([
@@ -48,195 +38,226 @@ export default function InvoiceForm({ customers = [], accounts = [], nextInvoice
         { label: "Due on receipt", value: "Due on receipt" }
     ]);
 
-    const [items, setItems] = useState([
-        { serviceDate: "", product: "", description: "", qty: "", rate: "", amount: "" },
-        { serviceDate: "", product: "", description: "", qty: "", rate: "", amount: "" },
-    ]);
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
+        customer: invoice?.customer || "",
+        email: invoice?.email || "",
+        billingAddress: invoice?.billingAddress || "",
+        terms: invoice?.terms || "Net 30",
+        invoiceDate: invoice?.invoiceDate || new Date().toISOString().split('T')[0],
+        dueDate: invoice?.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
+        memo: invoice?.memo || "",
+        items: invoice?.items || [
+            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+        ],
+        action: 'save'
+    });
 
-    // 3. Calculation Logic
-    const totalAmount = items.reduce(
-        (sum, item) => sum + (parseFloat(item.amount) || 0),
+    useEffect(() => {
+        transform((data) => ({
+            ...data,
+            action: currentAction,
+        }));
+    }, [currentAction]);
+
+    const totalAmount = data.items.reduce(
+        (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
         0
     ).toFixed(2);
 
     const handleItemChange = (index, field, value) => {
-        const updated = [...items];
+        const updated = [...data.items];
         updated[index][field] = value;
+
+        if (field === "product") {
+            const product = products.find(p => p.id === value);
+            if (product) {
+                updated[index].rate = product.sale_price;
+                const q = parseFloat(updated[index].qty) || 0;
+                updated[index].amount = (q * product.sale_price).toFixed(2);
+            }
+        }
 
         if (field === "qty" || field === "rate") {
             const q = parseFloat(updated[index].qty) || 0;
             const r = parseFloat(updated[index].rate) || 0;
             updated[index].amount = (q * r).toFixed(2);
         }
-        setItems(updated);
-        setIsDirty(true);
+        setData("items", updated);
     };
 
     const handleAddTerm = (newTerm) => {
         const option = { label: newTerm.name, value: newTerm.name };
         setTermOptions([...termOptions, option]);
-        setForm({ ...form, terms: newTerm.name });
-        setIsDirty(true);
+        setData("terms", newTerm.name);
     };
 
-    const [isDirty, setIsDirty] = useState(false);
+    const handleSave = (action = 'save') => {
+        setCurrentAction(action);
+        const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
+        const method = invoice?.id ? patch : post;
 
-    const handleSave = (type = 'save') => {
-        // Mock save logic
-        console.log(`Saving with type: ${type}`, form, items);
-        setIsDirty(false);
-        if (type === 'close') window.history.back();
-        if (type === 'new') window.location.reload();
+        method(url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (action === 'new') {
+                    reset();
+                    clearErrors();
+                }
+            }
+        });
     };
 
     return (
-        <TransactionLayout 
-            title={`Invoice no.${form.invoiceNo}`} 
+        <TransactionLayout
+            title={invoice?.id ? `Edit Invoice no.${data.invoiceNo}` : `Invoice no.${data.invoiceNo}`}
             amount={totalAmount}
-            dirty={isDirty}
+            processing={processing}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
-                setItems([...items, { product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00", tax: "" }]);
-                setIsDirty(true);
+                setData("items", [...data.items, { product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
             onClearRows={() => {
-                setItems([{ product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00", tax: "" }]);
-                setIsDirty(true);
+                setData("items", [{ product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
         >
-
-            {/* TOP SECTION: Redesigned for Premium Look */}
-            <div className="grid grid-cols-12 gap-10 py-8 border-b border-slate-200">
-                
-                {/* Left Column: Customer & Address */}
-                <div className="col-span-4 space-y-6">
-                    <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-4">
-                        <SearchableSelect 
-                            label="Customer"
-                            placeholder="Select a customer"
-                            value={form.customer}
-                            onChange={(val) => {
-                                setForm({...form, customer: val});
-                                setIsDirty(true);
-                            }}
-                            options={customerOptions}
-                            initialLimit={10}
-                        />
-                        <div>
-                            <label className="text-xs text-slate-500 block mb-1 font-bold">Billing address</label>
-                            <textarea
-                                className="w-full border border-slate-200 p-3 text-sm h-24 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all bg-slate-50/30"
-                                value={form.billingAddress}
-                                placeholder="Enter billing address..."
-                                onChange={(e) => {
-                                    setForm({...form, billingAddress: e.target.value});
-                                    setIsDirty(true);
+            <div className="py-6 px-1 space-y-8">
+                {/* ROW 1: Customer & Email & Balance */}
+                <div className="flex items-start justify-between gap-8">
+                    <div className="flex items-start gap-6 flex-1">
+                        <div className="w-[320px]">
+                            <SearchableSelect
+                                label="Customer"
+                                placeholder="Select a customer"
+                                value={data.customer}
+                                onChange={(val) => {
+                                    setData('customer', val);
+                                    // Auto-fill address/email if needed (mock for now or from props)
+                                    const customer = customers.find(c => c.id === val);
+                                    if (customer) {
+                                        setData(d => ({
+                                            ...d,
+                                            customer: val,
+                                            email: customer.email || "",
+                                            billingAddress: customer.billing_address || ""
+                                        }));
+                                    }
                                 }}
+                                options={customerOptions}
+                                size="sm"
+                                error={errors.customer}
+                            />
+                        </div>
+                        <div className="w-[320px]">
+                            <CommonInput
+                                label="Customer email"
+                                placeholder="Separate emails with a comma"
+                                value={data.email}
+                                onChange={(e) => setData("email", e.target.value)}
+                                size="sm"
+                                error={errors.email}
                             />
                         </div>
                     </div>
+
+                    {/* Balance Display */}
+                    <div className="text-right flex flex-col items-end">
+                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Balance Due</p>
+                        <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
+                            <span className="text-slate-400 text-[10px] font-medium mr-1">{currencyPrefix}</span>
+                            {parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </p>
+                    </div>
                 </div>
 
-                {/* Right Column: Financial Details */}
-                <div className="col-span-8 flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                        <div className="grid grid-cols-4 gap-4 flex-1">
-                            <div>
-                                <SearchableSelect 
-                                    label="Terms"
-                                    value={form.terms}
-                                    onChange={(val) => {
-                                        setForm({...form, terms: val});
-                                        setIsDirty(true);
-                                    }}
-                                    onAddNew={() => setIsTermModalOpen(true)}
-                                    options={termOptions}
-                                    initialLimit={5}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Invoice date</label>
-                                <input 
-                                    type="date" 
-                                    className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent transition-all" 
-                                    value={form.invoiceDate} 
-                                    onChange={(e) => setForm({...form, invoiceDate: e.target.value})}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Due date</label>
-                                <input 
-                                    type="date" 
-                                    className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent transition-all" 
-                                    value={form.dueDate} 
-                                    onChange={(e) => setForm({...form, dueDate: e.target.value})}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Invoice no.</label>
-                                <input 
-                                    className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent transition-all font-mono" 
-                                    value={form.invoiceNo} 
-                                    onChange={(e) => setForm({...form, invoiceNo: e.target.value})}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Balance Summary Box */}
-                        <div className="ml-10 text-right bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[240px] transform hover:scale-105 transition-transform">
-                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Balance Due</p>
-                            <p className="text-3xl font-black tracking-tighter">
-                                <span className="text-slate-400 text-sm font-medium mr-1">LKR</span>
-                                {totalAmount}
-                            </p>
-                        </div>
+                {/* ROW 2: Address, Terms, Dates, No */}
+                <div className="flex items-end gap-6">
+                    <div className="w-[240px]">
+                        <CommonInput
+                            type="textarea"
+                            label="Billing address"
+                            placeholder=""
+                            value={data.billingAddress}
+                            onChange={(e) => setData("billingAddress", e.target.value)}
+                            className="h-[74px]"
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[180px]">
+                        <SearchableSelect
+                            label="Terms"
+                            value={data.terms}
+                            onChange={(val) => setData('terms', val)}
+                            onAddNew={() => setIsTermModalOpen(true)}
+                            options={termOptions}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[160px]">
+                        <CommonInput
+                            type="date"
+                            label="Invoice date"
+                            value={data.invoiceDate}
+                            onChange={(e) => setData('invoiceDate', e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[160px]">
+                        <CommonInput
+                            type="date"
+                            label="Due date"
+                            value={data.dueDate}
+                            onChange={(e) => setData('dueDate', e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="flex-1"></div>
+                    <div className="w-[160px]">
+                        <CommonInput
+                            label="Invoice no."
+                            value={data.invoiceNo}
+                            onChange={(e) => setData('invoiceNo', e.target.value)}
+                            size="sm"
+                            inputClass="font-mono text-right"
+                        />
                     </div>
                 </div>
             </div>
 
             <LineItemsTable
                 columns={INVOICE_COLUMNS}
-                items={items}
+                items={data.items}
                 handleItemChange={handleItemChange}
-                addRow={() => setItems([...items, { product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00", tax: "" }])}
-                removeRow={(index) => setItems(items.filter((_, i) => i !== index))}
-                clearRows={() => setItems([{ product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00", tax: "" }])}
+                addRow={() => setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                removeRow={(index) => setData("items", data.items.filter((_, i) => i !== index))}
+                clearRows={() => setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
                 totals={{ "Total": totalAmount }}
+                currencyPrefix={currencyPrefix}
                 hideActions={true}
             />
 
             <div className="grid grid-cols-2 gap-10 mt-8">
-                <div className="space-y-6">
-                    <div>
-                        <label className="text-xs font-bold text-slate-600 block mb-2">Message on invoice</label>
-                        <textarea
-                            placeholder="This will show up on the invoice."
-                            className="w-full border border-slate-200 rounded-lg p-3 text-sm h-24 outline-none focus:border-[#00713D] transition-all"
-                            value={form.memo}
-                            onChange={(e) => setForm({...form, memo: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-600 block mb-2">Message on statement</label>
-                        <textarea
-                            placeholder="If you send statements to customers, this will show up as the description for this invoice."
-                            className="w-full border border-slate-200 rounded-lg p-3 text-sm h-24 outline-none focus:border-[#00713D] transition-all"
-                            value={form.statementMemo}
-                            onChange={(e) => setForm({...form, statementMemo: e.target.value})}
-                        />
-                    </div>
+                <div className="w-[400px]">
+                    <CommonInput
+                        type="textarea"
+                        label="Message on invoice"
+                        placeholder="This will show up on the invoice."
+                        value={data.memo}
+                        onChange={(e) => setData('memo', e.target.value)}
+                        size="sm"
+                        className="h-24"
+                    />
                 </div>
                 <div className="pt-4 flex flex-col items-end">
-                    {/* Totals already handled inside LineItemsTable based on my previous edit, 
-                        but I'll move them here for better control if needed.
-                    */}
+                    {/* Totals already handled inside LineItemsTable */}
                 </div>
             </div>
 
-            <TermModal 
-                isOpen={isTermModalOpen} 
+            <TermModal
+                isOpen={isTermModalOpen}
                 onClose={() => setIsTermModalOpen(false)}
                 onSave={handleAddTerm}
             />

@@ -14,8 +14,15 @@ return new class extends Migration
         Schema::create('journal_entries', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->date('date');
+            $table->date('due_date')->nullable();
             $table->string('reference')->nullable();
             $table->text('description')->nullable();
+            
+            // Payee & Payment Method
+            $table->unsignedBigInteger('payee_id')->nullable();
+            $table->string('payee_type')->nullable();
+            $table->unsignedBigInteger('payment_method_id')->nullable();
+
             $table->string('transaction_type')->nullable(); // e.g., 'invoice', 'expense', 'bill'
             $table->nullableUuidMorphs('transactionable'); // Link to the specific transaction record
             $table->decimal('total_amount', 15, 2)->default(0);
@@ -28,9 +35,15 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('journal_entry_id')->constrained()->onDelete('cascade');
             $table->foreignUuid('chart_of_acc_id')->constrained();
+            
+            // Per-line Payee
+            $table->unsignedBigInteger('payee_id')->nullable();
+            $table->string('payee_type')->nullable();
+
             $table->decimal('debit', 15, 2)->default(0);
             $table->decimal('credit', 15, 2)->default(0);
             $table->text('memo')->nullable();
+            $table->date('service_date')->nullable();
             $table->timestamps();
         });
     }

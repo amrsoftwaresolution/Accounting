@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
 use App\Models\ChartOfAcc;
 use App\Models\Customer;
 use Inertia\Inertia;
@@ -17,22 +18,179 @@ class InvoiceController extends Controller
     {
         $customers = Customer::orderBy('display_name')->get();
         $accounts = ChartOfAcc::orderBy('account_code')->get();
+        $items = \App\Models\Item::orderBy('name')->get();
         
-        // Get the last numeric reference for 'invoice' and increment it
         $lastRef = JournalEntry::where('transaction_type', 'invoice')
+            ->whereNotNull('reference')
             ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
-            ->value('reference');
+            ->first();
             
-        $nextInvoiceNo = is_numeric($lastRef) ? (int)$lastRef + 1 : 1003;
-        // The user specifically mentioned 1003 if found db column+1, else 0001? 
-        // Wait: "Invoice no.1003 need from db if not 0001 if found db column+1"
-        // I'll use 1003 as a starting point if they want, but usually it's 1. 
-        // I'll stick to 1003 as they requested it specifically.
+        $nextInvoiceNo = ($lastRef && is_numeric($lastRef->reference)) ? (int)$lastRef->reference + 1 : 1003;
 
         return Inertia::render('Transaction/InvoiceForm', [
             'customers' => $customers,
             'accounts' => $accounts,
+            'items' => $items,
             'nextInvoiceNo' => (string)str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT)
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'customer' => 'required',
+            'invoiceNo' => 'required',
+            'invoiceDate' => 'required|date',
+            'dueDate' => 'required|date',
+            'items' => 'required|array|min:1',
+            'items.*.product' => 'required',
+            'items.*.amount' => 'required',
+        ]);
+
+        $journalEntry = DB::transaction(function() use ($request) {
+            $totalAmount = collect($request->items)->sum(function($item) {
+                return (float) str_replace(',', '', $item['amount']);
+            });
+
+            // 1. Create Journal Entry
+            $journalEntry = JournalEntry::create([
+                'date' => $request->invoiceDate,
+                'due_date' => $request->dueDate,
+                'reference' => $request->invoiceNo,
+                'description' => $request->memo,
+                'transaction_type' => 'invoice',
+                'payee_id' => $request->customer,
+                'payee_type' => Customer::class,
+                'total_amount' => $totalAmount,
+                'status' => 'posted',
+                'created_by' => Auth::id(),
+            ]);
+
+            // 2. Create Journal Entry Lines (Credits for Income)
+            foreach ($request->items as $lineItem) {
+                $itemModel = \App\Models\Item::find($lineItem['product']);
+                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $incomeAccount,
+                    'debit' => 0,
+                    'credit' => (float) str_replace(',', '', $lineItem['amount']),
+                    'memo' => $lineItem['description'] ?? $request->memo,
+                    'service_date' => $lineItem['serviceDate'] ?? null,
+                ]);
+            }
+
+            // 3. Create Journal Entry Line (Debit for Accounts Receivable)
+            $arAccount = ChartOfAcc::where('sub_type', 'accounts-receivable')->first();
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'chart_of_acc_id' => $arAccount->id,
+                'debit' => $totalAmount,
+                'credit' => 0,
+                'memo' => $request->memo,
+            ]);
+
+            return $journalEntry;
+        });
+
+        $action = $request->input('action', 'save');
+        if ($action === 'close') {
+            return redirect()->route('dashboard')->with('success', 'Invoice saved successfully.');
+        } elseif ($action === 'new') {
+            return redirect()->route('invoice')->with('success', 'Invoice saved successfully.');
+        }
+
+        return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'Invoice saved successfully.');
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        
+        $invoiceData = [
+            'id' => $journalEntry->id,
+            'customer' => $journalEntry->payee_id,
+            'invoiceNo' => $journalEntry->reference,
+            'invoiceDate' => $journalEntry->date,
+            'dueDate' => $journalEntry->due_date,
+            'memo' => $journalEntry->description,
+            'items' => $journalEntry->lines->where('credit', '>', 0)->map(function($line) {
+                // Try to find the item that uses this income account
+                $item = \App\Models\Item::where('income_account_id', $line->chart_of_acc_id)->first();
+                return [
+                    'product' => $item?->id,
+                    'description' => $line->memo,
+                    'serviceDate' => $line->service_date,
+                    'amount' => $line->credit,
+                    'qty' => 1,
+                    'rate' => $line->credit,
+                ];
+            })->values()->toArray(),
+        ];
+
+        return Inertia::render('Transaction/InvoiceForm', [
+            'customers' => Customer::orderBy('display_name')->get(),
+            'accounts' => ChartOfAcc::orderBy('account_code')->get(),
+            'items' => \App\Models\Item::orderBy('name')->get(),
+            'invoice' => $invoiceData,
+        ]);
+    }
+
+    public function update(Request $request, JournalEntry $journalEntry)
+    {
+        $validated = $request->validate([
+            'customer' => 'required',
+            'invoiceNo' => 'required',
+            'invoiceDate' => 'required|date',
+            'items' => 'required|array|min:1',
+        ]);
+
+        DB::transaction(function() use ($request, $journalEntry) {
+            $totalAmount = collect($request->items)->sum(function($item) {
+                return (float) str_replace(',', '', $item['amount']);
+            });
+
+            $journalEntry->update([
+                'date' => $request->invoiceDate,
+                'due_date' => $request->dueDate,
+                'reference' => $request->invoiceNo,
+                'description' => $request->memo,
+                'payee_id' => $request->customer,
+                'total_amount' => $totalAmount,
+            ]);
+
+            $journalEntry->lines()->delete();
+
+            foreach ($request->items as $lineItem) {
+                $itemModel = \App\Models\Item::find($lineItem['product']);
+                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $incomeAccount,
+                    'debit' => 0,
+                    'credit' => (float) str_replace(',', '', $lineItem['amount']),
+                    'memo' => $lineItem['description'] ?? $request->memo,
+                    'service_date' => $lineItem['serviceDate'] ?? null,
+                ]);
+            }
+
+            $arAccount = ChartOfAcc::where('sub_type', 'accounts-receivable')->first();
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'chart_of_acc_id' => $arAccount->id,
+                'debit' => $totalAmount,
+                'credit' => 0,
+                'memo' => $request->memo,
+            ]);
+        });
+
+        $action = $request->input('action', 'save');
+        if ($action === 'close') {
+            return redirect()->route('dashboard')->with('success', 'Invoice updated successfully.');
+        }
+
+        return redirect()->back()->with('success', 'Invoice updated successfully.');
     }
 }

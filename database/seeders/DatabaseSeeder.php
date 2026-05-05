@@ -15,23 +15,55 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+use App\Models\Company;
+
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Create Admin User
-        $admin = User::updateOrCreate(
-    ['email' => 'growdigitec@gmail.com'], // unique check
-    [
-        'name' => 'Growdigitec',
-        'password' => Hash::make('password'),
-        'role' => 'admin',
-        'phone' => '+94702899880',
-        'is_active' => 1,
-    ]
-);
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('companies')->truncate();
+        DB::table('company_user')->truncate();
+        DB::table('chart_of_accs')->truncate();
+        DB::table('item_categories')->truncate();
+        DB::table('items')->truncate();
+        DB::table('customers')->truncate();
+        DB::table('suppliers')->truncate();
+        DB::table('journal_entries')->truncate();
+        DB::table('journal_entry_lines')->truncate();
+        DB::table('users')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 2. Create Chart of Accounts
+        // 1. Create Default Company
+        $company = Company::updateOrCreate(
+            ['id' => 1],
+            [
+                'company_name' => 'Fingrow Solutions Ltd',
+                'company_email' => 'hello@fingrow.example.com',
+                'phone' => '+94 11 234 5678',
+                'address' => '123 Business Park, Colombo 03, Sri Lanka',
+                'website' => 'https://fingrow.example.com',
+                'industry' => 'Financial Services',
+                'home_currency' => 'LKR',
+            ]
+        );
+
+        // 2. Create Admin User
+        $admin = User::updateOrCreate(
+            ['email' => 'growdigitec@gmail.com'],
+            [
+                'name' => 'Growdigitec',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'phone' => '+94702899880',
+                'is_active' => 1,
+            ]
+        );
+
+        // Link user to company
+        $admin->companies()->syncWithoutDetaching([$company->id => ['role' => 'admin']]);
+
+        // 3. Create Chart of Accounts
         $accounts = [
             ['code' => '1000', 'name' => 'Cash on Hand', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
             ['code' => '1010', 'name' => 'Main Bank Account', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
@@ -46,103 +78,70 @@ class DatabaseSeeder extends Seeder
             ['code' => '5000', 'name' => 'Cost of Goods Sold', 'type' => 'expense', 'sub' => 'expense'],
             ['code' => '5100', 'name' => 'Rent Expense', 'type' => 'expense', 'sub' => 'expense'],
             ['code' => '5200', 'name' => 'Utilities Expense', 'type' => 'expense', 'sub' => 'expense'],
+            ['code' => '5300', 'name' => 'Office Expense', 'type' => 'expense', 'sub' => 'expense'],
         ];
 
         $accountModels = [];
         foreach ($accounts as $acc) {
-            $accountModels[$acc['code']] = ChartOfAcc::create([
-                'account_code' => $acc['code'],
-                'name' => $acc['name'],
-                'account_type' => $acc['type'],
-                'sub_type' => $acc['sub'],
-                'balance' => 0,
-                'is_active' => true,
-            ]);
+            $accountModels[$acc['code']] = ChartOfAcc::updateOrCreate(
+                ['company_id' => $company->id, 'account_code' => $acc['code']],
+                [
+                    'name' => $acc['name'],
+                    'account_type' => $acc['type'],
+                    'sub_type' => $acc['sub'],
+                    'balance' => 0,
+                ]
+            );
         }
 
-        // 3. Create Categories & Items
-        $cat1 = ItemCategory::create(['name' => 'Electronics', 'description' => 'Gadgets and gear']);
-        $cat2 = ItemCategory::create(['name' => 'Services', 'description' => 'Professional services']);
+        // 4. Create Categories & Items
+        $cat1 = ItemCategory::updateOrCreate(['company_id' => $company->id, 'name' => 'Electronics']);
+        $cat2 = ItemCategory::updateOrCreate(['company_id' => $company->id, 'name' => 'Services']);
 
-        Item::create([
-            'name' => 'MacBook Pro M3',
-            'sku' => 'MBP-M3-001',
-            'type' => 'product',
-            'item_category_id' => $cat1->id,
-            'sale_price' => 2500,
-            'purchase_price' => 2000,
-            'income_account_id' => $accountModels['4000']->id,
-            'expense_account_id' => $accountModels['5000']->id,
-            'inventory_account_id' => $accountModels['1200']->id,
-            'track_inventory' => true,
-            'quantity_on_hand' => 10,
-        ]);
+        Item::updateOrCreate(
+            ['company_id' => $company->id, 'sku' => 'MBP-M3-001'],
+            [
+                'name' => 'MacBook Pro M3',
+                'type' => 'product',
+                'item_category_id' => $cat1->id,
+                'sale_price' => 2500,
+                'purchase_price' => 2000,
+                'income_account_id' => $accountModels['4000']->id,
+            ]
+        );
 
-        Item::create([
-            'name' => 'Consulting Session',
-            'sku' => 'SRV-CONS',
-            'type' => 'service',
-            'item_category_id' => $cat2->id,
-            'sale_price' => 150,
-            'income_account_id' => $accountModels['4100']->id,
-        ]);
+        // 5. Create Contacts
+        Customer::updateOrCreate(
+            ['company_id' => $company->id, 'email' => 'john@example.com'],
+            ['display_name' => 'John Doe']
+        );
 
-        // 4. Create Contacts
-        Customer::create([
-            'display_name' => 'John Doe',
-            'email' => 'john@example.com',
-            'phone_number' => '+94771234567',
-        ]);
+        Supplier::updateOrCreate(
+            ['company_id' => $company->id, 'company_name' => 'Global Tech Inc.'],
+            ['display_name' => 'Global Tech Solutions']
+        );
 
-        Supplier::create([
-            'display_name' => 'Global Tech Solutions',
-            'email' => 'sales@globaltech.com',
-            'company_name' => 'Global Tech Inc.',
-        ]);
+        // 6. Create some Journal Entries
+        $je1 = JournalEntry::updateOrCreate(
+            ['company_id' => $company->id, 'reference' => 'OB-001'],
+            [
+                'date' => now()->subDays(10)->format('Y-m-d'),
+                'description' => 'Opening balance',
+                'transaction_type' => 'journal_entry',
+                'total_amount' => 50000,
+                'status' => 'posted',
+                'created_by' => $admin->id,
+            ]
+        );
 
-        // 5. Create some Journal Entries (History)
-        // Opening balance for Bank
-        $je1 = JournalEntry::create([
-            'date' => now()->subDays(10)->format('Y-m-d'),
-            'reference' => 'OB-001',
-            'description' => 'Opening balance for Main Bank',
-            'transaction_type' => 'opening_balance',
-            'total_amount' => 50000,
-            'status' => 'posted',
-            'created_by' => $admin->id,
-        ]);
-
+        $je1->lines()->delete();
         $je1->lines()->createMany([
-            ['chart_of_acc_id' => $accountModels['1010']->id, 'debit' => 50000, 'credit' => 0, 'memo' => 'Opening balance'],
-            ['chart_of_acc_id' => $accountModels['3000']->id, 'debit' => 0, 'credit' => 50000, 'memo' => 'Opening balance offset'],
+            ['chart_of_acc_id' => $accountModels['1010']->id, 'debit' => 50000, 'credit' => 0],
+            ['chart_of_acc_id' => $accountModels['3000']->id, 'debit' => 0, 'credit' => 50000],
         ]);
 
-        // Rent payment
-        $je2 = JournalEntry::create([
-            'date' => now()->subDays(2)->format('Y-m-d'),
-            'reference' => 'JE-2024-001',
-            'description' => 'Monthly Rent Payment',
-            'transaction_type' => 'journal_entry',
-            'total_amount' => 1200,
-            'status' => 'posted',
-            'created_by' => $admin->id,
+        $this->call([
+            PaymentMethodSeeder::class,
         ]);
-
-        $je2->lines()->createMany([
-            ['chart_of_acc_id' => $accountModels['5100']->id, 'debit' => 1200, 'credit' => 0, 'memo' => 'April Rent'],
-            ['chart_of_acc_id' => $accountModels['1010']->id, 'debit' => 0, 'credit' => 1200, 'memo' => 'Paid via Bank'],
-        ]);
-
-        // Update balances for display (optional as the ledger calculates it, but the index uses 'balance' field)
-        $accountModels['1010']->update(['balance' => 48800]);
-        $accountModels['3000']->update(['balance' => -50000]);
-        $accountModels['5100']->update(['balance' => 1200]);
-
-
-                    $this->call([
-                SalesSettingSeeder::class,
-                CompanySettingSeeder::class,
-            ]);
-
     }
 }

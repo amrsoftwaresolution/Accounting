@@ -1,7 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 
-export default function Dashboard() {
+export default function Dashboard({ auth }) {
+    const homeCurrency = auth.company?.home_currency_prefix || '';
+    const userName = auth.user?.name || 'User';
+
     return (
         <AuthenticatedLayout
             header={
@@ -18,7 +21,7 @@ export default function Dashboard() {
                 {/* Welcome Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Good Morning, Admin!</h1>
+                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Good Morning, {userName}!</h1>
                         <p className="text-slate-500 mt-0.5 text-xs font-semibold">Overview of your business today.</p>
                     </div>
 
@@ -26,10 +29,10 @@ export default function Dashboard() {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard title="Revenue" value="$128.4k" change="+12%" isPositive={true} icon="revenue" />
-                    <StatCard title="Team" value="24" change="+2" isPositive={true} icon="team" />
-                    <StatCard title="Expenses" value="$12.3k" change="-4%" isPositive={false} icon="expenses" />
-                    <StatCard title="Tasks" value="18" change="High" isNeutral={true} icon="tasks" />
+                    <StatCard title="Revenue" value={`${homeCurrency} 0.00`} change="+0%" isPositive={true} icon="revenue" />
+                    <StatCard title="Team" value="1" change="+0" isPositive={true} icon="team" />
+                    <StatCard title="Expenses" value={`${homeCurrency} 0.00`} change="-0%" isPositive={false} icon="expenses" />
+                    <StatCard title="Tasks" value="0" change="None" isNeutral={true} icon="tasks" />
                 </div>
 
                 {/* Main Content Grid */}
@@ -51,10 +54,8 @@ export default function Dashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                    <TransactionRow name="Adobe Systems" category="Software" status="Done" date="Oct 24" amount="-$240.0" negative />
-                                    <TransactionRow name="Global Corp" category="Monthly" status="Pending" date="Oct 23" amount="+$4.5k" />
-                                    <TransactionRow name="Amazon AWS" category="Infra" status="Done" date="Oct 22" amount="-$1.1k" negative />
-                                    <TransactionRow name="Stripe Payout" category="Revenue" status="Done" date="Oct 21" amount="+$12k" />
+                                    <TransactionRow name="Initial Setup" category="Setup" status="Done" date="Today" amount={`-${homeCurrency} 0.00`} negative />
+                                    <TransactionRow name="Welcome Credit" category="Promo" status="Done" date="Today" amount={`+${homeCurrency} 0.00`} />
                                 </tbody>
                             </table>
                         </div>

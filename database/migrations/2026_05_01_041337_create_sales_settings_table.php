@@ -32,6 +32,16 @@ return new class extends Migration
             // Progress Invoicing
             $table->boolean('progress_invoicing_enabled')->default(true);
 
+            // Messages
+            $table->boolean('messages_use_greeting')->default(false);
+            $table->string('messages_greeting_prefix', 50)->nullable();
+            $table->string('messages_greeting_token', 50)->nullable();
+            $table->string('messages_sales_form', 50)->nullable();
+            $table->boolean('messages_use_standard_message')->default(false);
+            $table->string('messages_email_subject', 255)->nullable();
+            $table->text('messages_email_body')->nullable();
+            $table->boolean('messages_copy_to_email')->default(false);
+
             // Reminders
             $table->boolean('reminders_enabled')->default(false);
 

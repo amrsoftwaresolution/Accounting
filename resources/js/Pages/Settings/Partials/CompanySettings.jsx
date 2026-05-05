@@ -36,13 +36,28 @@ export default function CompanySettings({ settings }) {
         });
     };
 
-    // --- NEW: Logic for Currency Info ---
     const [isEditingCurrency, setIsEditingCurrency] = useState(false);
     const currencyForm = useForm({
-        home_currency: settings?.home_currency || 'Sri Lankan Rupee',
+        home_currency: settings?.home_currency || 'LKR',
+        home_currency_prefix: settings?.home_currency_prefix || 'Rs.',
         multicurrency: settings?.multicurrency || false,
     });
 
+    const handleCurrencyChange = (e) => {
+        const value = e.target.value;
+        const prefixes = {
+            'LKR': 'Rs.',
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'AUD': 'A$',
+        };
+        currencyForm.setData({
+            ...currencyForm.data,
+            home_currency: value,
+            home_currency_prefix: prefixes[value] || value
+        });
+    };
     const handleCurrencySubmit = (e) => {
         e.preventDefault();
         currencyForm.post(route('currency.update'), {
@@ -258,7 +273,7 @@ export default function CompanySettings({ settings }) {
                         <div className="space-y-4">
                             <div className="grid grid-cols-12 border-b pb-4">
                                 <div className="col-span-4 text-gray-500 text-sm font-bold">Home Currency</div>
-                                <div className="col-span-8 text-sm">{currencyForm.data.home_currency}</div>
+                                <div className="col-span-8 text-sm">{currencyForm.data.home_currency} ({currencyForm.data.home_currency_prefix})</div>
                             </div>
                             <div className="grid grid-cols-12 pb-4">
                                 <div className="col-span-4 text-gray-500 text-sm font-bold">Multicurrency</div>
@@ -273,14 +288,21 @@ export default function CompanySettings({ settings }) {
                     <form onSubmit={handleCurrencySubmit} className="p-8">
                         <h2 className="text-lg font-bold text-gray-800 mb-6">Edit Currency info</h2>
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Home Currency</label>
-                                <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={currencyForm.data.home_currency} onChange={e => currencyForm.setData('home_currency', e.target.value)}>
-                                    <option value="Sri Lankan Rupee">Sri Lankan Rupee (Rs.)</option>
-                                    <option value="United States Dollar">United States Dollar ($)</option>
-                                    <option value="Euro">Euro (€)</option>
-                                    <option value="British Pound">British Pound (£)</option>
-                                </select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase">Home Currency</label>
+                                    <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={currencyForm.data.home_currency} onChange={handleCurrencyChange}>
+                                        <option value="LKR">Sri Lankan Rupee (LKR)</option>
+                                        <option value="USD">United States Dollar (USD)</option>
+                                        <option value="EUR">Euro (EUR)</option>
+                                        <option value="GBP">British Pound (GBP)</option>
+                                        <option value="AUD">Australian Dollar (AUD)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase">Currency Prefix</label>
+                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={currencyForm.data.home_currency_prefix} onChange={e => currencyForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. Rs." />
+                                </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <input

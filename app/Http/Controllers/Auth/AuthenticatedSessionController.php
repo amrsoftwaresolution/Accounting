@@ -18,10 +18,6 @@ class AuthenticatedSessionController extends Controller
 
     public function create(): Response|RedirectResponse
     {
-        if (User::count() === 0) {
-            return redirect()->route('register');
-        }
-
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),

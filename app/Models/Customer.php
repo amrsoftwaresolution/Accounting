@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\HasCompany;
+
 class Customer extends Model
 {
-    use HasUuids;
+    use HasUuids, HasCompany;
 
     protected $fillable = [
+        'company_id',
         'display_name',
         'first_name',
         'last_name',

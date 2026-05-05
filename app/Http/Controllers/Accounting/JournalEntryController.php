@@ -6,7 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
 use App\Models\ChartOfAcc;
+use App\Models\Supplier;
+use App\Models\Customer;
+use App\Models\Employee;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
@@ -29,10 +33,11 @@ class JournalEntryController extends Controller
         
         // Get the last numeric reference and increment it
         $lastRef = JournalEntry::where('transaction_type', 'journal_entry')
+            ->whereNotNull('reference')
             ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
-            ->value('reference');
+            ->first();
             
-        $nextJournalNo = is_numeric($lastRef) ? (int)$lastRef + 1 : 1;
+        $nextJournalNo = ($lastRef && is_numeric($lastRef->reference)) ? (int)$lastRef->reference + 1 : 1;
 
         return Inertia::render('Transaction/JournalEntryForm', [
             'accounts' => $accounts,
@@ -69,8 +74,18 @@ class JournalEntryController extends Controller
 
                 if ($debit == 0 && $credit == 0) continue;
 
+                $payeeId = $line['payee_id'] ?? null;
+                $payeeType = null;
+                if ($payeeId) {
+                    if (Supplier::find($payeeId)) $payeeType = Supplier::class;
+                    elseif (Customer::find($payeeId)) $payeeType = Customer::class;
+                    elseif (Employee::find($payeeId)) $payeeType = Employee::class;
+                }
+
                 $entry->lines()->create([
                     'chart_of_acc_id' => $line['account_id'],
+                    'payee_id' => $payeeId,
+                    'payee_type' => $payeeType,
                     'debit' => $debit,
                     'credit' => $credit,
                     'memo' => $line['description'] ?? null,
@@ -128,8 +143,18 @@ class JournalEntryController extends Controller
 
                 if ($debit == 0 && $credit == 0) continue;
 
+                $payeeId = $line['payee_id'] ?? null;
+                $payeeType = null;
+                if ($payeeId) {
+                    if (Supplier::find($payeeId)) $payeeType = Supplier::class;
+                    elseif (Customer::find($payeeId)) $payeeType = Customer::class;
+                    elseif (Employee::find($payeeId)) $payeeType = Employee::class;
+                }
+
                 $journalEntry->lines()->create([
                     'chart_of_acc_id' => $line['account_id'],
+                    'payee_id' => $payeeId,
+                    'payee_type' => $payeeType,
                     'debit' => $debit,
                     'credit' => $credit,
                     'memo' => $line['description'] ?? null,

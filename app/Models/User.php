@@ -66,13 +66,27 @@ class User extends Authenticatable
         ];
     }
 
-   public function manager()
-{
-    return $this->belongsTo(User::class, 'manager_id');
-}
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
 
-public function employees()
-{
-    return $this->hasMany(User::class, 'manager_id');
-}
+    public function employees()
+    {
+        return $this->hasMany(User::class, 'manager_id');
+    }
+
+    public function companies()
+    {
+        return $this->belongsToMany(Company::class)->withPivot('role')->withTimestamps();
+    }
+
+    public function currentCompany()
+    {
+        $companyId = session('active_company_id');
+        if (!$companyId) {
+            return null;
+        }
+        return Company::find($companyId);
+    }
 }

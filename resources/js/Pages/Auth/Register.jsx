@@ -127,6 +127,18 @@ export default function Register() {
                         Create Account
                     </PrimaryButton>
                 </div>
+
+                <div className="text-center pt-4 border-t border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        Already have an account?{' '}
+                        <Link
+                            href={route('login')}
+                            className="text-[#00713D] hover:text-[#005a30] transition-colors"
+                        >
+                            Log In
+                        </Link>
+                    </p>
+                </div>
             </form>
         </GuestLayout>
     );

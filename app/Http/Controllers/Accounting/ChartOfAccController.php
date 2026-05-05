@@ -34,16 +34,22 @@ class ChartOfAccController extends Controller
             'opening_balance_date' => 'nullable|date',
             'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
+            'currency' => 'nullable|string|max:3',
         ]);
+
+        $company = \App\Models\Company::findOrFail(session('active_company_id'));
+        $selectedCurrency = $request->input('currency');
+        $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $account = ChartOfAcc::create([
             'account_code' => $request->input('account_code'),
             'name' => $request->input('name'),
             'account_type' => $request->input('account_type'),
             'sub_type' => $request->input('sub_type'),
-            'balance' => $request->input('opening_balance', 0), // Initial balance, will be adjusted by Journal Entry if we want strict JE tracking
+            'balance' => 0,
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
+            'currency' => $currencyToSave,
         ]);
 
         // If opening balance > 0, create a Journal Entry
@@ -114,7 +120,12 @@ class ChartOfAccController extends Controller
             'sub_type' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
+            'currency' => 'nullable|string|max:3',
         ]);
+
+        $company = \App\Models\Company::findOrFail(session('active_company_id'));
+        $selectedCurrency = $request->input('currency');
+        $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $chartOfAccount->update([
             'account_code' => $request->input('account_code'),
@@ -123,6 +134,7 @@ class ChartOfAccController extends Controller
             'sub_type' => $request->input('sub_type'),
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
+            'currency' => $currencyToSave,
         ]);
 
         return redirect()->route('chart-of-account.index')->with('success', 'Chart of account updated successfully.');

@@ -1,11 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
-import MemoInput from "@/Components/MemoInput";
+import CommonInput from "@/Components/CommonInput";
+import { Head } from "@inertiajs/react";
 
-export default function ReceivePaymentForm({ accounts = [], customers = [], paymentMethods = [] }) {
+export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] }) {
+    const [customerOptions, setCustomerOptions] = useState([]);
+    
+    const fetchCustomers = (search = "") => {
+        axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
+            setCustomerOptions(res.data);
+        });
+    };
+
+    useEffect(() => {
+        fetchCustomers();
+    }, []);
+
     const accountOptions = accounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }));
-    const customerOptions = customers.map(c => ({ value: c.id, label: c.display_name || c.name }));
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
 
     const [form, setForm] = useState({
@@ -24,101 +37,98 @@ export default function ReceivePaymentForm({ accounts = [], customers = [], paym
             title="Receive Payment"
             amount={parseFloat(form.amountReceived || 0).toFixed(2)}
         >
-            {/* TOP SECTION: Redesigned for Premium Look */}
-            <div className="grid grid-cols-12 gap-10 py-8 border-b border-slate-200">
-                
-                {/* Left Column: Customer Selection */}
-                <div className="col-span-4">
-                    <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-6">
-                        <SearchableSelect
-                            label="Customer"
-                            options={customerOptions}
-                            value={form.customer}
-                            onChange={(val) => setForm({ ...form, customer: val })}
-                            placeholder="Choose a customer"
-                            initialLimit={10}
+            <Head title="Receive Payment" />
+
+            <div className="py-6 space-y-8">
+                {/* ROW 1: Customer & Summaries */}
+                <div className="flex items-start justify-between gap-8">
+                    <div className="flex items-start gap-6 flex-1">
+                        <div className="w-[380px]">
+                            <SearchableSelect
+                                label="Customer"
+                                options={customerOptions}
+                                value={form.customer}
+                                onChange={(val) => setForm({ ...form, customer: val })}
+                                placeholder="Choose a customer"
+                                size="sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Amount Summary */}
+                    <div className="text-right flex flex-col items-end">
+                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Amount Received</p>
+                        <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
+                            <span className="text-slate-400 text-[10px] font-medium mr-1">LKR</span>
+                            {parseFloat(form.amountReceived || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </p>
+                    </div>
+                </div>
+
+                {/* ROW 2: Payment Details */}
+                <div className="flex items-end gap-6">
+                    <div className="w-[180px]">
+                        <CommonInput
+                            type="date"
+                            label="Payment Date"
+                            value={form.paymentDate}
+                            onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
+                            size="sm"
                         />
-                        <button className="w-full border border-primary text-primary py-2 rounded-lg text-sm font-bold hover:bg-primary/5 transition-colors">
-                            Find by invoice no.
-                        </button>
+                    </div>
+                    <div className="w-[180px]">
+                        <SearchableSelect
+                            label="Payment method"
+                            options={methodOptions}
+                            value={form.paymentMethod}
+                            onChange={(val) => setForm({ ...form, paymentMethod: val })}
+                            placeholder="Choose method"
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[180px]">
+                        <CommonInput
+                            label="Reference no."
+                            value={form.referenceNo}
+                            onChange={(e) => setForm({ ...form, referenceNo: e.target.value })}
+                            size="sm"
+                            inputClass="font-mono"
+                        />
+                    </div>
+                    <div className="w-[220px]">
+                        <SearchableSelect
+                            label="Deposit To"
+                            options={accountOptions}
+                            value={form.depositTo}
+                            onChange={(val) => setForm({ ...form, depositTo: val })}
+                            placeholder="Select Account"
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[180px]">
+                        <CommonInput
+                            type="number"
+                            label="Amount Received"
+                            placeholder="0.00"
+                            value={form.amountReceived}
+                            onChange={(e) => setForm({ ...form, amountReceived: e.target.value })}
+                            size="sm"
+                        />
                     </div>
                 </div>
 
-                {/* Right Column: Payment Details & Summary */}
-                <div className="col-span-8 flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-6 flex-1">
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Payment Date</label>
-                                <input
-                                    type="date"
-                                    className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent transition-all"
-                                    value={form.paymentDate}
-                                    onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Payment method</label>
-                                <SearchableSelect
-                                    options={methodOptions}
-                                    value={form.paymentMethod}
-                                    onChange={(val) => setForm({ ...form, paymentMethod: val })}
-                                    placeholder="Choose method"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Reference no.</label>
-                                <input
-                                    type="text"
-                                    className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-[#00713D] bg-transparent transition-all font-mono"
-                                    value={form.referenceNo}
-                                    onChange={(e) => setForm({ ...form, referenceNo: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Deposit To</label>
-                                <SearchableSelect
-                                    options={accountOptions}
-                                    value={form.depositTo}
-                                    onChange={(val) => setForm({ ...form, depositTo: val })}
-                                    placeholder="Select Account"
-                                    initialLimit={10}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Amount Received Summary Box */}
-                        <div className="ml-10 flex flex-col items-end gap-2">
-                            <div className="text-right bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[240px] transform hover:scale-105 transition-transform">
-                                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Amount Received</p>
-                                <p className="text-3xl font-black tracking-tighter">
-                                    <span className="text-slate-400 text-sm font-medium mr-1">LKR</span>
-                                    {parseFloat(form.amountReceived || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </p>
-                            </div>
-                            
-                            <div className="text-right px-2">
-                                <label className="text-[10px] text-slate-500 font-bold uppercase block">Amount to apply</label>
-                                <input
-                                    type="number"
-                                    placeholder="0.00"
-                                    className="text-xl font-bold text-slate-800 text-right outline-none bg-transparent w-32 border-b border-dashed border-slate-300 focus:border-primary"
-                                    value={form.amountReceived}
-                                    onChange={(e) => setForm({ ...form, amountReceived: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                {/* ROW 3: Memo */}
+                <div className="w-[500px] mt-8 pt-4 border-t border-slate-100">
+                    <CommonInput
+                        type="textarea"
+                        label="Memo"
+                        placeholder="Add a memo..."
+                        value={form.memo}
+                        onChange={(e) => setForm({ ...form, memo: e.target.value })}
+                        size="sm"
+                        className="h-24"
+                    />
                 </div>
-            </div>
-
-            {/* Reusing BottomSection */}
-            <div className="mt-8 max-w-md">
-                <MemoInput
-                    value={form.memo}
-                    onChange={(val) => setForm({ ...form, memo: val })}
-                    placeholder="Add a memo..."
-                />
             </div>
 
         </TransactionLayout>

@@ -12,6 +12,13 @@ html {
     scroll-behavior: smooth;
 }
 
+body {
+    font-family: 'Figtree', sans-serif;
+    font-size: 9px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 /* Custom Thin Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;

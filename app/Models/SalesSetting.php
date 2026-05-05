@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasCompany;
 
 class SalesSetting extends Model
 {
+    use HasCompany;
+
     protected $fillable = [
+        'company_id',
         'preferred_invoice_terms',
         'preferred_delivery_method',
         'shipping_enabled',

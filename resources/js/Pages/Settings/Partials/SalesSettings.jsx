@@ -31,30 +31,31 @@ const Row = ({ label, value, isBoldValue = true }) => (
     </div>
 );
 
-export default function SalesSettings() {
-    const { settings } = usePage().props;
+export default function SalesSettings({ settings: propSettings }) {
+    const { settings: pageSettings } = usePage().props;
+    const settings = propSettings || pageSettings;
 
     // Initialize Inertia Form
     const { data, setData, post, processing } = useForm({
-        preferred_invoice_terms: settings.preferred_invoice_terms || 'Net 30',
-        preferred_delivery_method: settings.preferred_delivery_method || 'None',
-        shipping_enabled: !!settings.shipping_enabled,
-        custom_transaction_numbers_enabled: !!settings.custom_transaction_numbers_enabled,
-        service_date_enabled: !!settings.service_date_enabled,
-        discount_enabled: !!settings.discount_enabled,
-        deposit_enabled: !!settings.deposit_enabled,
-        tags_enabled: !!settings.tags_enabled,
-        show_product_service_column: !!settings.show_product_service_column,
-        show_sku_column: !!settings.show_sku_column,
-        track_quantity_price_rate: !!settings.track_quantity_price_rate,
-        progress_invoicing_enabled: !!settings.progress_invoicing_enabled,
-        reminders_enabled: !!settings.reminders_enabled,
-        online_delivery_enabled: !!settings.online_delivery_enabled,
-        online_delivery_email_format: settings.online_delivery_email_format || 'Show short summary in email',
-        online_delivery_pdf_attached: !!settings.online_delivery_pdf_attached,
-        online_delivery_additional_option: settings.online_delivery_additional_option || 'Online invoice',
-        statements_show_ageing_table: !!settings.statements_show_ageing_table,
-        statements_line_detail: settings.statements_line_detail || 'List each transaction as a single line',
+        preferred_invoice_terms: settings?.preferred_invoice_terms || 'Net 30',
+        preferred_delivery_method: settings?.preferred_delivery_method || 'None',
+        shipping_enabled: !!settings?.shipping_enabled,
+        custom_transaction_numbers_enabled: !!settings?.custom_transaction_numbers_enabled,
+        service_date_enabled: !!settings?.service_date_enabled,
+        discount_enabled: !!settings?.discount_enabled,
+        deposit_enabled: !!settings?.deposit_enabled,
+        tags_enabled: !!settings?.tags_enabled,
+        show_product_service_column: !!settings?.show_product_service_column,
+        show_sku_column: !!settings?.show_sku_column,
+        track_quantity_price_rate: !!settings?.track_quantity_price_rate,
+        progress_invoicing_enabled: !!settings?.progress_invoicing_enabled,
+        reminders_enabled: !!settings?.reminders_enabled,
+        online_delivery_enabled: !!settings?.online_delivery_enabled,
+        online_delivery_email_format: settings?.online_delivery_email_format || 'Show short summary in email',
+        online_delivery_pdf_attached: !!settings?.online_delivery_pdf_attached,
+        online_delivery_additional_option: settings?.online_delivery_additional_option || 'Online invoice',
+        statements_show_ageing_table: !!settings?.statements_show_ageing_table,
+        statements_line_detail: settings?.statements_line_detail || 'List each transaction as a single line',
     });
 
     const [editingSection, setEditingSection] = useState(null);

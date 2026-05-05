@@ -29,29 +29,26 @@ export default function LandingLayout({ children }) {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            {auth.user ? (
+                            {auth.user && (
                                 <Link
                                     href={route('dashboard')}
-                                    className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                                    className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 mr-2"
                                 >
                                     Dashboard
                                 </Link>
-                            ) : (
-                                <>
-                                    <Link
-                                    href={route('login')}
-                                    className="text-sm font-bold text-slate-700 hover:text-[#00713D] transition-colors"
-                                >
-                                    Log in
-                                </Link>
-                                <Link
-                                    href={route('register')}
-                                    className="px-5 py-2.5 bg-[#00713D] text-white text-sm font-bold rounded-xl hover:bg-[#005a30] transition-all hover:-translate-y-0.5 shadow-lg shadow-[#00713D]/20"
-                                >
-                                    Get Started
-                                </Link>
-                                </>
                             )}
+                            <Link
+                                href={route('login')}
+                                className="text-sm font-bold text-slate-700 hover:text-[#00713D] transition-colors"
+                            >
+                                Log in
+                            </Link>
+                            <Link
+                                href={route('register')}
+                                className="px-5 py-2.5 bg-[#00713D] text-white text-sm font-bold rounded-xl hover:bg-[#005a30] transition-all hover:-translate-y-0.5 shadow-lg shadow-[#00713D]/20"
+                            >
+                                Get Started
+                            </Link>
                         </div>
                     </div>
                 </div>

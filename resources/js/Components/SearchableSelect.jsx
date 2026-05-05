@@ -9,28 +9,43 @@ export default function SearchableSelect({
     className = "",
     label = "",
     onAddNew = null,
-    initialLimit = null
+    onSearch = null, // Callback for API-based searching
+    initialLimit = null,
+    variant = "boxed", // "boxed", "table", "underlined"
+    error = null,
+    required = false,
+    size = "md" 
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+    const [activeIndex, setActiveIndex] = useState(-1);
     const containerRef = useRef(null);
+    const dropdownRef = useRef(null);
+    const inputRef = useRef(null);
 
-    const filteredOptions = options.filter(opt => 
+    const filteredOptions = onSearch ? options : options.filter(opt => 
         (opt.label || "").toLowerCase().includes(search.toLowerCase())
     );
 
-    const displayOptions = (search === "" && initialLimit) 
+    const displayOptions = (search === "" && initialLimit && !onSearch) 
         ? filteredOptions.slice(0, initialLimit) 
         : filteredOptions;
 
-    const dropdownRef = useRef(null);
-
     useEffect(() => {
         if (isOpen) {
-            setSearch(""); // Ensure search is clear when opening
+            setSearch("");
+            setActiveIndex(-1);
+            // Focus the search input when dropdown opens
+            setTimeout(() => inputRef.current?.focus(), 50);
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        if (onSearch && isOpen) {
+            onSearch(search);
+        }
+    }, [search, onSearch, isOpen]);
 
     useEffect(() => {
         const updatePosition = () => {
@@ -56,7 +71,6 @@ export default function SearchableSelect({
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            // Check if click is outside BOTH the container and the portal dropdown
             const isOutsideContainer = containerRef.current && !containerRef.current.contains(event.target);
             const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(event.target);
             
@@ -68,67 +82,125 @@ export default function SearchableSelect({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Use loose equality for value comparison to handle potential string/number mismatches
+    const handleKeyDown = (e) => {
+        if (!isOpen) {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                setIsOpen(true);
+            }
+            return;
+        }
+
+        if (e.key === 'Escape') {
+            setIsOpen(false);
+            containerRef.current?.focus();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev < displayOptions.length - 1 ? prev + 1 : prev));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+            e.preventDefault();
+            const selected = displayOptions[activeIndex];
+            onChange(selected.value);
+            setIsOpen(false);
+            containerRef.current?.focus();
+        }
+    };
+
     const selectedOption = options.find(opt => String(opt.value) === String(value));
 
-    const isBoxed = className.includes('border');
-    const baseClasses = isBoxed 
-        ? className 
-        : `w-full border-b border-gray-300 py-1 ${className}`;
+    const sizeClasses = {
+        sm: "h-[30px] text-2xs rounded",
+        md: "h-[40px] text-sm rounded-md",
+        lg: "h-[50px] text-base rounded-lg"
+    };
+
+    const getBaseClasses = () => {
+        if (variant === "table") {
+            return `w-full h-8 bg-transparent border-none focus-within:bg-green-50/30 transition-all rounded-none ring-0 text-sm`;
+        }
+        if (variant === "boxed") {
+            return `w-full border border-slate-300 bg-white text-slate-900 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20 ${sizeClasses[size]} ${error ? 'border-red-300' : ''}`;
+        }
+        return `w-full border-b border-slate-300 py-1 text-sm bg-transparent outline-none transition-all ${error ? 'border-red-300' : ''}`;
+    };
 
     return (
-        <div className="relative w-full" ref={containerRef}>
-            {label && <label className="text-xs text-gray-500 block mb-1">{label}</label>}
+        <div 
+            className={`relative w-full outline-none ${variant === 'table' ? 'h-full' : ''}`} 
+            ref={containerRef}
+            tabIndex={variant === 'table' ? -1 : 0}
+            onKeyDown={handleKeyDown}
+        >
+            {label && (
+                <label className={`font-bold text-slate-600 ml-0.5 block ${size === 'sm' ? 'text-2xs mb-0' : 'text-sm mb-0.5'}`}>
+                    {label} {required && <span className="text-red-500">*</span>}
+                </label>
+            )}
+            
             <div 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`${baseClasses} text-sm bg-transparent outline-none cursor-pointer flex justify-between items-center group transition-all`}
+                className={`${getBaseClasses()} ${className} cursor-pointer flex items-center group overflow-hidden focus-within:ring-2 focus-within:ring-green-500/20`}
             >
-                <span className={`truncate ${selectedOption ? "text-slate-800" : "text-gray-400 italic"}`}>
-                    {selectedOption ? selectedOption.label : placeholder}
-                </span>
-                <svg className={`h-4 w-4 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                <div className="flex-1 px-2 truncate">
+                    <span className={`${selectedOption ? "text-slate-800" : "text-slate-400"}`}>
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </span>
+                </div>
+                <div className={`h-full w-6 flex items-center justify-center transition-colors ${variant === 'table' ? '' : 'border-l border-slate-300 bg-slate-50 group-hover:bg-slate-100'}`}>
+                    <svg className={`h-3 w-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
             </div>
+
+            {error && (
+                <p className="text-[8px] font-bold text-red-500 items-center flex gap-1 ml-1 mt-1">
+                    {error}
+                </p>
+            )}
 
             {isOpen && dropdownPos.width > 0 && createPortal(
                 <div 
                     ref={dropdownRef}
                     style={{ 
-                        position: 'fixed', // Use fixed for portal to body
+                        position: 'fixed',
                         top: dropdownPos.top - window.scrollY, 
                         left: dropdownPos.left - window.scrollX, 
                         width: dropdownPos.width,
                         zIndex: 9999 
                     }}
-                    className="mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                    className="mt-1 bg-white border border-slate-300 rounded shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200"
                 >
-                    <div className="p-2 border-b border-slate-100 bg-slate-50">
+                    <div className="p-1.5 border-b border-slate-100 bg-slate-50">
                         <input
                             type="text"
-                            autoFocus
+                            ref={inputRef}
                             placeholder="Search..."
-                            className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                            className="w-full px-2 py-1 text-[9px] border border-slate-300 rounded focus:ring-1 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             onClick={(e) => e.stopPropagation()}
                         />
                     </div>
-                    <div className="max-h-60 overflow-y-auto">
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
                         {onAddNew && (
                             <div 
                                 onClick={() => {
                                     onAddNew();
                                     setIsOpen(false);
                                 }}
-                                className="px-4 py-2 text-sm text-primary font-bold border-b border-slate-100 hover:bg-primary/5 cursor-pointer flex items-center gap-2"
+                                className="px-3 py-1.5 text-[9px] text-blue-600 font-bold border-b border-slate-100 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
                             >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                                 Add New
                             </div>
                         )}
                         {displayOptions.length > 0 ? (
-                            displayOptions.map((opt) => (
+                            displayOptions.map((opt, idx) => (
                                 <div
                                     key={opt.value}
                                     onClick={() => {
@@ -136,20 +208,27 @@ export default function SearchableSelect({
                                         setIsOpen(false);
                                         setSearch("");
                                     }}
-                                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-primary/5 transition-colors flex justify-between items-center ${
-                                        opt.value === value ? 'bg-primary/10 text-primary font-bold' : 'text-slate-700'
+                                    className={`px-3 py-1.5 text-[9px] cursor-pointer transition-colors flex justify-between items-center ${
+                                        idx === activeIndex ? 'bg-slate-100' : ''
+                                    } ${
+                                        String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
                                     }`}
                                 >
                                     <span>{opt.label}</span>
+                                    {opt.type && (
+                                        <span className="text-[8px] text-slate-400 italic font-medium ml-4">
+                                            {opt.type}
+                                        </span>
+                                    )}
                                     {opt.balance !== undefined && (
-                                        <span className="text-[10px] text-slate-400 font-mono">
+                                        <span className="text-[8px] text-slate-400 font-mono">
                                             LKR {parseFloat(opt.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
                                     )}
                                 </div>
                             ))
                         ) : (
-                            <div className="px-4 py-3 text-xs text-slate-400 text-center italic">
+                            <div className="px-3 py-3 text-[8px] text-slate-400 text-center italic">
                                 No results found
                             </div>
                         )}

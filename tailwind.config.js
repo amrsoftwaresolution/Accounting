@@ -15,6 +15,19 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            fontSize: {
+                '3xs': '7px',
+                '2xs': '8px',
+                'xs': '8.5px',
+                'sm': '9px',
+                'base': '10px',
+                'lg': '11px',
+                'xl': '12px',
+                '2xl': '14px',
+                '3xl': '16px',
+                '4xl': '20px',
+                '5xl': '24px',
+            },
             colors: {
                 primary: {
                     DEFAULT: '#00713D',

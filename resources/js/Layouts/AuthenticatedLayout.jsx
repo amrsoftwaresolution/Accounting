@@ -1,7 +1,7 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
-import { usePage, Link } from '@inertiajs/react';
+import { usePage, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import QuickActionMenu from '@/Components/QuickActionMenu';
 
@@ -19,7 +19,7 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
         { name: 'Finance Overview', href: route('chart-of-account.index'), icon: 'finance' },
-        { name: 'Settings', href: route('settings.index'), icon: 'users', adminOnly: true },
+        { name: 'Settings', href: route('settings.index'), icon: 'users' },
     ];
 
     const teamLinks = [
@@ -35,6 +35,11 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Payments', href: "/payment" },
     ];
 
+    const reports = [
+        { name: 'Profit and Loss', href: route('reports.profit-loss') },
+        { name: 'Balance Sheet', href: route('reports.balance-sheet') },
+    ];
+
     return (
         <div className="min-h-screen bg-[#f8fafc]">
             {/* Mobile Sidebar Overlay */}
@@ -45,6 +50,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             navigation={navigation}
                             teamLinks={teamLinks}
                             transactions={transactions}
+                            reports={reports}
                             user={user}
                             onQuickMenuOpen={() => {
                                 setSidebarOpen(false);
@@ -63,6 +69,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             navigation={navigation}
                             teamLinks={teamLinks}
                             transactions={transactions}
+                            reports={reports}
                             user={user}
                             onQuickMenuOpen={() => setIsQuickMenuOpen(true)}
                         />
@@ -98,6 +105,52 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {/* Company Switcher */}
+                        {usePage().props.auth.company && (
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-all group">
+                                        <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
+                                            {usePage().props.auth.company.company_name[0]}
+                                        </div>
+                                        <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">
+                                            {usePage().props.auth.company.company_name}
+                                        </span>
+                                        <svg className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </Dropdown.Trigger>
+
+                                <Dropdown.Content align="right" width="60" contentClasses="py-1 bg-white ring-1 ring-black ring-opacity-5 rounded-xl shadow-xl overflow-hidden mt-2">
+                                    <div className="px-4 py-2 border-b border-slate-50">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Switch Company</p>
+                                    </div>
+                                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
+                                        {usePage().props.auth.companies.map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => router.post(route('companies.switch', c.id))}
+                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 ${usePage().props.auth.company.id === c.id ? 'bg-primary/5 text-primary' : 'text-slate-600'}`}
+                                            >
+                                                <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${usePage().props.auth.company.id === c.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                    {c.company_name[0]}
+                                                </div>
+                                                <span className="font-medium flex-1 truncate">{c.company_name}</span>
+                                                {usePage().props.auth.company.id === c.id && (
+                                                    <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <Dropdown.Link href={route('companies.index')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors border-t border-slate-50">
+                                        Manage Companies
+                                    </Dropdown.Link>
+                                </Dropdown.Content>
+                            </Dropdown>
+                        )}
                         {/* Notifications (Mock) */}
                         <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
                             <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-blue-500 border-2 border-white" />
@@ -142,7 +195,7 @@ export default function AuthenticatedLayout({ header, children }) {
     );
 }
 
-function SidebarContent({ navigation, teamLinks, transactions, user, onQuickMenuOpen }) {
+function SidebarContent({ navigation, teamLinks, transactions, reports, user, onQuickMenuOpen }) {
     const [openMenu, setOpenMenu] = useState('transactions');
 
     return (
@@ -181,13 +234,12 @@ function SidebarContent({ navigation, teamLinks, transactions, user, onQuickMenu
                         {navigation.map((item) => (
                             (!item.adminOnly || user.role === 'admin') && (
                                 <Link
-                                    key={item.href}
+                                    key={`${item.name}-${item.href}`}
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${
-                                        route().current(item.href.split('/').pop()) || (item.name === 'Dashboard' && route().current('dashboard'))
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${route().current(item.href.split('/').pop()) || (item.name === 'Dashboard' && route().current('dashboard'))
                                             ? 'bg-[#00713D] text-white shadow-md shadow-[#00713D]/20'
                                             : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                    }`}
+                                        }`}
                                 >
                                     <span className={`transition-colors ${route().current() === item.href ? 'text-white' : 'group-hover:text-white'}`}>
                                         <SidebarIcon name={item.icon} />
@@ -205,9 +257,8 @@ function SidebarContent({ navigation, teamLinks, transactions, user, onQuickMenu
                         <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[.2em]">Team</h3>
                         <button
                             onClick={() => setOpenMenu(openMenu === 'team' ? null : 'team')}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
-                                openMenu === 'team' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                            }`}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'team' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
                             <div className="flex items-center gap-3">
                                 <SidebarIcon name="team" />
@@ -240,9 +291,8 @@ function SidebarContent({ navigation, teamLinks, transactions, user, onQuickMenu
                     <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[.2em]">Finance</h3>
                     <button
                         onClick={() => setOpenMenu(openMenu === 'transactions' ? null : 'transactions')}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
-                            openMenu === 'transactions' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                        }`}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'transactions' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                            }`}
                     >
                         <div className="flex items-center gap-3">
                             <SidebarIcon name="transactions" />
@@ -254,6 +304,37 @@ function SidebarContent({ navigation, teamLinks, transactions, user, onQuickMenu
                     {openMenu === 'transactions' && (
                         <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-800/50">
                             {transactions.map((child) => (
+                                <Link
+                                    key={child.href}
+                                    href={child.href}
+                                    className="block px-6 py-1.5 text-[11px] font-bold text-slate-500 hover:text-white transition-colors relative group"
+                                >
+                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-[1px] bg-slate-800 transition-all group-hover:w-2 group-hover:bg-blue-500" />
+                                    {child.name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Reports Group */}
+                <div>
+                    <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">Insights</h3>
+                    <button
+                        onClick={() => setOpenMenu(openMenu === 'reports' ? null : 'reports')}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'reports' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <SidebarIcon name="finance" />
+                            <span className="text-xs font-bold text-left">Reports</span>
+                        </div>
+                        <svg className={`h-3 w-3 transition-transform duration-300 ${openMenu === 'reports' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+
+                    {openMenu === 'reports' && (
+                        <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-800/50">
+                            {reports.map((child) => (
                                 <Link
                                     key={child.href}
                                     href={child.href}

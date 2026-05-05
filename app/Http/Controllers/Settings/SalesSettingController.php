@@ -11,8 +11,9 @@ class SalesSettingController extends Controller
 {
     public function index(Request $request)
     {
-        // Always ensure we have at least one record
-        $settings = SalesSetting::firstOrCreate([]);
+        // Always ensure we have at least one record for the current company
+        $companyId = session('active_company_id');
+        $settings = SalesSetting::firstOrCreate(['company_id' => $companyId]);
 
         return Inertia::render('Settings/SalesSettings', [
             'settings' => $settings,
@@ -27,7 +28,6 @@ class SalesSettingController extends Controller
             'online_delivery_email_format' => 'nullable|string|max:50',
             'online_delivery_additional_option' => 'nullable|string|max:50',
             'statements_line_detail' => 'nullable|string|max:50',
-
         ]);
 
         $booleanFields = [
@@ -51,7 +51,8 @@ class SalesSettingController extends Controller
             $validated[$field] = $request->boolean($field);
         }
 
-        $settings = SalesSetting::first();
+        $companyId = session('active_company_id');
+        $settings = SalesSetting::firstOrCreate(['company_id' => $companyId]);
         $settings->update($validated);
 
         return back()->with('message', 'Sales settings updated successfully.');

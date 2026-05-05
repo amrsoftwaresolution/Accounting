@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
-import MemoInput from "@/Components/MemoInput";
+import CommonInput from "@/Components/CommonInput";
 import { Head } from "@inertiajs/react";
 
 export default function TransferForm({ accounts = [] }) {
@@ -66,76 +66,88 @@ export default function TransferForm({ accounts = [] }) {
         >
             <Head title="Transfer Funds" />
 
-            <div className="grid grid-cols-2 gap-x-20 gap-y-8 py-8 border-b">
-                {/* Left Column */}
-                <div className="space-y-8">
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Transfer Funds From</label>
-                        <SearchableSelect
-                            options={accountOptions}
-                            value={form.transferFrom}
-                            onChange={(val) => setForm({ ...form, transferFrom: val })}
-                            placeholder="Select Source Account"
-                        />
-                        {selectedFrom && (
-                            <div className="mt-2 flex items-center justify-between">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Current Balance</span>
-                                <span className="text-xs font-bold text-slate-700">LKR {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Transfer Funds To</label>
-                        <SearchableSelect
-                            options={accountOptions}
-                            value={form.transferTo}
-                            onChange={(val) => setForm({ ...form, transferTo: val })}
-                            placeholder="Select Destination Account"
-                        />
-                        {selectedTo && (
-                            <div className="mt-2 flex items-center justify-between">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Current Balance</span>
-                                <span className="text-xs font-bold text-slate-700">LKR {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="pt-4 bg-slate-50 -mx-4 px-4 py-6 rounded-2xl border border-slate-100">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Transfer Amount</label>
-                        <div className="flex items-baseline gap-3">
-                            <span className="text-2xl font-black text-slate-300">LKR</span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                className="w-full bg-transparent border-none p-0 text-4xl font-black text-slate-900 outline-none focus:ring-0 placeholder:text-slate-200"
-                                value={form.transferAmount}
-                                onChange={(e) => setForm({ ...form, transferAmount: e.target.value })}
+            <div className="py-6 px-1 space-y-8">
+                {/* ROW 1: From & To & Balance Display */}
+                <div className="flex items-start justify-between gap-8">
+                    <div className="flex items-start gap-6 flex-1">
+                        <div className="w-[380px]">
+                            <SearchableSelect 
+                                label="Transfer Funds From"
+                                options={accountOptions}
+                                value={form.transferFrom}
+                                onChange={(val) => setForm({ ...form, transferFrom: val })}
+                                placeholder="Select Source Account"
+                                size="sm"
                             />
+                            {selectedFrom && (
+                                <div className="mt-1 flex items-baseline gap-2">
+                                    <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Balance</span>
+                                    <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            )}
                         </div>
+                        <div className="w-[380px]">
+                            <SearchableSelect 
+                                label="Transfer Funds To"
+                                options={accountOptions}
+                                value={form.transferTo}
+                                onChange={(val) => setForm({ ...form, transferTo: val })}
+                                placeholder="Select Destination Account"
+                                size="sm"
+                            />
+                            {selectedTo && (
+                                <div className="mt-1 flex items-baseline gap-2">
+                                    <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Balance</span>
+                                    <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Amount Display */}
+                    <div className="text-right flex flex-col items-end">
+                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Transfer Amount</p>
+                        <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
+                            <span className="text-slate-400 text-[10px] font-medium mr-1">LKR</span>
+                            {parseFloat(form.transferAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </p>
                     </div>
                 </div>
 
-                {/* Right Column */}
-                <div className="space-y-8">
-                    <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Date</label>
-                        <input
+                {/* ROW 2: Date, Amount Input */}
+                <div className="flex items-end gap-6">
+                    <div className="w-[180px]">
+                        <CommonInput 
                             type="date"
-                            className="w-full border-b border-slate-200 py-2 text-sm bg-transparent outline-none focus:border-blue-500 transition-colors"
+                            label="Date"
                             value={form.date}
                             onChange={(e) => setForm({ ...form, date: e.target.value })}
+                            size="sm"
                         />
                     </div>
+                    <div className="w-[180px]">
+                        <CommonInput 
+                            type="number"
+                            label="Transfer Amount"
+                            placeholder="0.00"
+                            value={form.transferAmount}
+                            onChange={(e) => setForm({ ...form, transferAmount: e.target.value })}
+                            size="sm"
+                        />
+                    </div>
+                </div>
 
-                    <div className="pt-10">
-                        <MemoInput
-                            value={form.memo}
-                            onChange={(val) => setForm({ ...form, memo: val })}
-                            placeholder="Why are you transferring these funds?"
-                        />
-                    </div>
+                {/* ROW 3: Memo */}
+                <div className="w-[500px] mt-8 pt-4 border-t border-slate-100">
+                    <CommonInput 
+                        type="textarea"
+                        label="Memo"
+                        placeholder="Why are you transferring these funds?"
+                        value={form.memo}
+                        onChange={(e) => setForm({ ...form, memo: e.target.value })}
+                        size="sm"
+                        className="h-24"
+                    />
                 </div>
             </div>
         </TransactionLayout>

@@ -2,10 +2,24 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
-import MemoInput from "@/Components/MemoInput";
+import CommonInput from "@/Components/CommonInput";
+import SearchableSelect from "@/Components/SearchableSelect";
 import { Head } from "@inertiajs/react";
 
 export default function JournalEntryForm({ journalEntry = null, accounts = [], nextJournalNo = "" }) {
+    const [payeeOptions, setPayeeOptions] = useState([]);
+    
+    // Fetch payees from API
+    const fetchPayees = (search = "") => {
+        axios.get(route('api.payees', { search })).then(res => {
+            setPayeeOptions(res.data);
+        });
+    };
+
+    useEffect(() => {
+        fetchPayees();
+    }, []);
+
     // 1. Prepare account options for LineItemsTable
     const accountOptions = accounts.map(acc => ({
         value: acc.id,
@@ -13,17 +27,25 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
     }));
 
     const JOURNAL_COLUMNS = [
-        { 
-            key: "account_id", 
-            label: "Account", 
-            type: "select", 
+        {
+            key: "account_id",
+            label: "Account",
+            type: "select",
             options: accountOptions,
             placeholder: "Select account",
-            className: "w-[30%]"
+            className: "w-[25%]"
         },
-        { key: "debit", label: "Debits", type: "number", className: "text-right w-[12%]", inputClass: "text-right" },
-        { key: "credit", label: "Credits", type: "number", className: "text-right w-[12%]", inputClass: "text-right" },
-        { key: "description", label: "Description", placeholder: "Enter description", className: "w-[36%]" },
+        { key: "debit", label: "Debits", type: "currency", className: "text-right w-[10%]", inputClass: "text-right" },
+        { key: "credit", label: "Credits", type: "currency", className: "text-right w-[10%]", inputClass: "text-right" },
+        { key: "description", label: "Description", placeholder: "Enter description", className: "w-[30%]" },
+        { 
+            key: "payee_id", 
+            label: "Name", 
+            type: "select", 
+            options: payeeOptions,
+            placeholder: "Select name",
+            className: "w-[25%]" 
+        },
     ];
 
     // 2. Initial state logic for Create vs Edit
@@ -34,8 +56,8 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
     });
 
     const [items, setItems] = useState([
-        { account_id: "", debit: "", credit: "", description: "" },
-        { account_id: "", debit: "", credit: "", description: "" },
+        { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
+        { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
     ]);
 
     useEffect(() => {
@@ -44,7 +66,8 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                 account_id: line.chart_of_acc_id,
                 debit: line.debit || "",
                 credit: line.credit || "",
-                description: line.memo || ""
+                description: line.memo || "",
+                payee_id: line.payee_id || ""
             })));
         }
     }, [journalEntry]);
@@ -109,43 +132,43 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
-                setItems([...items, { account_id: "", debit: "", credit: "", description: "" }]);
+                setItems([...items, { account_id: "", debit: "", credit: "", description: "", payee_id: "" }]);
                 setIsDirty(true);
             }}
             onClearRows={() => {
                 setItems([
-                    { account_id: "", debit: "", credit: "", description: "" },
-                    { account_id: "", debit: "", credit: "", description: "" },
+                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
+                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
                 ]);
                 setIsDirty(true);
             }}
         >
             <Head title={journalEntry ? "Edit Journal Entry" : "New Journal Entry"} />
 
-            <div className="grid grid-cols-3 gap-8 py-4 border-b">
-                <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Journal date</label>
-                    <input
+            <div className="flex items-end gap-6 py-6 border-b border-slate-100">
+                <div className="w-[180px]">
+                    <CommonInput 
                         type="date"
-                        className="w-full border-b border-slate-200 py-1 text-sm focus:border-blue-500 transition-colors"
+                        label="Journal date"
                         value={form.date}
                         onChange={(e) => {
                             setForm({ ...form, date: e.target.value });
                             setIsDirty(true);
                         }}
+                        size="sm"
                     />
                 </div>
 
-                <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Journal no.</label>
-                    <input
-                        type="text"
-                        className="w-full border-b border-slate-200 py-1 text-sm focus:border-blue-500 transition-colors"
+                <div className="w-[180px]">
+                    <CommonInput 
+                        label="Journal no."
                         value={form.journalNo}
                         onChange={(e) => {
                             setForm({ ...form, journalNo: e.target.value });
                             setIsDirty(true);
                         }}
+                        size="sm"
+                        inputClass="font-mono"
                     />
                 </div>
             </div>
@@ -155,7 +178,7 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                 items={items}
                 handleItemChange={handleItemChange}
                 addRow={() =>
-                    setItems([...items, { account_id: "", debit: "", credit: "", description: "" }])
+                    setItems([...items, { account_id: "", debit: "", credit: "", description: "", payee_id: "" }])
                 }
                 removeRow={(index) =>
                     setItems(items.filter((_, i) => i !== index))
@@ -173,21 +196,26 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                     Debits: totals.debit.toFixed(2),
                     Credits: totals.credit.toFixed(2),
                 }}
+                currencyPrefix={currencyPrefix}
                 clearRows={() => setItems([
-                    { account_id: "", debit: "", credit: "", description: "" },
-                    { account_id: "", debit: "", credit: "", description: "" },
+                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
+                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
                 ])}
                 hideActions={true}
             />
 
-            <div className="mt-8 max-w-md">
-                <MemoInput
+            <div className="mt-8 w-[500px]">
+                <CommonInput 
+                    type="textarea"
+                    label="Memo"
                     value={form.memo}
-                    onChange={(val) => {
-                        setForm({ ...form, memo: val });
+                    onChange={(e) => {
+                        setForm({ ...form, memo: e.target.value });
                         setIsDirty(true);
                     }}
                     placeholder="Add a memo for this journal entry..."
+                    size="sm"
+                    className="h-24"
                 />
             </div>
         </TransactionLayout>

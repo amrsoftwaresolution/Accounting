@@ -11,11 +11,12 @@ use Inertia\Inertia;
 class CompanySettingsController extends Controller
 {
     /**
-     * Helper to get the single settings record or create one if it doesn't exist.
+     * Helper to get the active company.
      */
     private function getSettings()
     {
-        return CompanySetting::first() ?? CompanySetting::create(['company_name' => 'My Company']);
+        $companyId = session('active_company_id');
+        return \App\Models\Company::findOrFail($companyId);
     }
 
     public function index()
@@ -69,6 +70,7 @@ class CompanySettingsController extends Controller
     {
         $validated = $request->validate([
             'home_currency' => 'required|string',
+            'home_currency_prefix' => 'nullable|string|max:10',
             'multicurrency' => 'required|boolean',
         ]);
 

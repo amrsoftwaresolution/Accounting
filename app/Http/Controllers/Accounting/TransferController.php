@@ -60,16 +60,6 @@ class TransferController extends Controller
                 'memo' => 'Transfer to destination',
             ]);
 
-            // Update the actual balance columns in chart_of_accs
-            // For Assets: Balance = Debit - Credit
-            DB::table('chart_of_accs')
-                ->where('id', $request->transfer_from)
-                ->decrement('balance', $request->amount);
-
-            DB::table('chart_of_accs')
-                ->where('id', $request->transfer_to)
-                ->increment('balance', $request->amount);
-
             return response()->json(['message' => 'Transfer successful', 'id' => $entry->id]);
         });
     }

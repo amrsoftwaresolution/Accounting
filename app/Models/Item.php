@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\HasCompany;
 
 class Item extends Model
 {
-    use HasUuids;
+    use HasUuids, HasCompany;
 
     protected $fillable = [
+        'company_id',
         'type',
         'name',
         'sku',
