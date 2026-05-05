@@ -156,15 +156,6 @@ export default function TimeSettings({ settings }) {
                     )}
                 </div>
             </TimeSection>
-
-            {/* Bottom Links from Image */}
-            <div className="mt-12 flex justify-center space-x-4 text-xs text-blue-600">
-                <a href="#" className="hover:underline">Privacy</a>
-                <span className="text-gray-300">|</span>
-                <a href="#" className="hover:underline">Security</a>
-                <span className="text-gray-300">|</span>
-                <a href="#" className="hover:underline">Terms of Service</a>
-            </div>
         </div>
     );
 }

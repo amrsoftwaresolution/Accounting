@@ -50,7 +50,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Create Admin User
         $admin = User::updateOrCreate(
-            ['email' => 'growdigitec@gmail.com'],
+            ['email' => 'growdigitec@gmail.com'], // unique check
             [
                 'name' => 'Growdigitec',
                 'password' => Hash::make('password'),
@@ -140,8 +140,32 @@ class DatabaseSeeder extends Seeder
             ['chart_of_acc_id' => $accountModels['3000']->id, 'debit' => 0, 'credit' => 50000],
         ]);
 
-        $this->call([
-            PaymentMethodSeeder::class,
+        // Rent payment
+        $je2 = JournalEntry::create([
+            'date' => now()->subDays(2)->format('Y-m-d'),
+            'reference' => 'JE-2024-001',
+            'description' => 'Monthly Rent Payment',
+            'transaction_type' => 'journal_entry',
+            'total_amount' => 1200,
+            'status' => 'posted',
+            'created_by' => $admin->id,
         ]);
+
+        $je2->lines()->createMany([
+            ['chart_of_acc_id' => $accountModels['5100']->id, 'debit' => 1200, 'credit' => 0, 'memo' => 'April Rent'],
+            ['chart_of_acc_id' => $accountModels['1010']->id, 'debit' => 0, 'credit' => 1200, 'memo' => 'Paid via Bank'],
+        ]);
+
+        // Update balances for display (optional as the ledger calculates it, but the index uses 'balance' field)
+        $accountModels['1010']->update(['balance' => 48800]);
+        $accountModels['3000']->update(['balance' => -50000]);
+        $accountModels['5100']->update(['balance' => 1200]);
+
+
+        $this->call([
+            SalesSettingSeeder::class,
+            CompanySettingSeeder::class,
+        ]);
+
     }
 }

@@ -15,15 +15,29 @@ class CompanySettingsController extends Controller
      */
     private function getSettings()
     {
-        $companyId = session('active_company_id');
-        return \App\Models\Company::findOrFail($companyId);
+        return CompanySetting::first() ?? CompanySetting::create(['company_name' => 'My Company']);
     }
 
     public function index()
     {
+        $settings = $this->getSettings();
+
         return Inertia::render('Settings/Index', [
-            'settings' => $this->getSettings(),
-            'tab' => request('tab', 'company')
+            'settings' => array_merge($settings->toArray(), [
+                'settings_metadata' => [
+                    'time' => [
+                        'work_week_start' => $settings->work_week_start,
+                        'show_service_field' => $settings->show_service_field,
+                        'allow_billable_time' => $settings->allow_billable_time,
+                        'show_billing_rate' => $settings->show_billing_rate,
+                    ],
+                    'expenses' => [
+                        'show_tags' => $settings->show_tags,
+                        'bill_payment_terms' => $settings->bill_payment_terms,
+                    ],
+                ],
+            ]),
+            'tab' => request('tab', 'company'),
         ]);
     }
 
@@ -33,12 +47,12 @@ class CompanySettingsController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'company_name'  => 'required|string|max:255',
+            'company_name' => 'required|string|max:255',
             'company_email' => 'nullable|email',
-            'phone'         => 'nullable|string',
-            'address'       => 'nullable|string',
-            'website'       => 'nullable|string',
-            'industry'      => 'nullable|string',
+            'phone' => 'nullable|string',
+            'address' => 'nullable|string',
+            'website' => 'nullable|string',
+            'industry' => 'nullable|string',
         ]);
 
         $this->getSettings()->update($validated);
@@ -52,8 +66,8 @@ class CompanySettingsController extends Controller
     public function updateLegal(Request $request)
     {
         $validated = $request->validate([
-            'legal_name'    => 'nullable|string|max:255',
-            'tax_id'        => 'nullable|string|max:100', // Matches your React data.tax_id
+            'legal_name' => 'nullable|string|max:255',
+            'tax_id' => 'nullable|string|max:100', // Matches your React data.tax_id
             'business_type' => 'nullable|string',
             'legal_address' => 'nullable|string',
         ]);
@@ -77,6 +91,38 @@ class CompanySettingsController extends Controller
         $this->getSettings()->update($validated);
 
         return back()->with('message', 'Currency settings updated successfully.');
+    }
+
+    /**
+     * Update Time Settings
+     */
+    public function updateTime(Request $request)
+    {
+        $validated = $request->validate([
+            'work_week_start' => 'required|string|max:20',
+            'show_service_field' => 'required|boolean',
+            'allow_billable_time' => 'required|boolean',
+            'show_billing_rate' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+
+        return back()->with('message', 'Time settings updated successfully.');
+    }
+
+    /**
+     * Update Expense Settings
+     */
+    public function updateExpense(Request $request)
+    {
+        $validated = $request->validate([
+            'show_tags' => 'required|boolean',
+            'bill_payment_terms' => 'required|string|max:50',
+        ]);
+
+        $this->getSettings()->update($validated);
+
+        return back()->with('message', 'Expense settings updated successfully.');
     }
 
     /**
