@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
     ['email' => 'growdigitec@gmail.com'], // unique check
     [
         'name' => 'Growdigitec',
-        'password' => Hash::make('password'),
+        'password' => Hash::make('Grow2025@'),
         'role' => 'admin',
         'phone' => '+94702899880',
         'is_active' => 1,
@@ -142,6 +142,7 @@ class DatabaseSeeder extends Seeder
                     $this->call([
                 SalesSettingSeeder::class,
                 CompanySettingSeeder::class,
+                AdvancedSettingsSeeder::class,
             ]);
 
     }

@@ -30,7 +30,8 @@ export default function QuickActionMenu({ isOpen, onClose }) {
             links: [
                 { name: "Invoice", href: "/invoice" },
                 { name: "Receive payment", href: "/payment" },
-                { name: "Sales receipt", href: "#" },
+                { name: "Sales receipt", href: "/receipt" },
+                { name: "Credit Note", href: "/credit-note" },
                 { name: "Add customer", href: route('customers.create'), isSolid: true },
             ]
         },
@@ -41,6 +42,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                 { name: "Bill", href: "/bill" },
                 { name: "Pay bills", href: "#" },
                 { name: "Purchase order", href: "#" },
+                { name: "Supplier Credit", href: "/SupplierCredit" },
                 { name: "Add supplier", href: route('suppliers.create'), isSolid: true },
             ]
         },

@@ -33,6 +33,12 @@ class CompanySettingSeeder extends Seeder
                 // Currency Info
                 'home_currency'  => 'Sri Lankan Rupee',
                 'multicurrency'  => false,
+                'work_week_start' => 'Monday',
+                'show_service_field' => true,
+                'allow_billable_time' => true,
+                'show_billing_rate' => false,
+                'show_tags' => true,
+                'bill_payment_terms' => 'Net 30',
             ]
         );
     }

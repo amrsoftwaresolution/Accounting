@@ -21,6 +21,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Settings\CompanySettingsController;
 use App\Http\Controllers\Settings\LogoUploadController;
 use App\Http\Controllers\Settings\SalesSettingController;
+use App\Http\Controllers\Settings\AdvancedSettingsController;
+
 
 
 Route::middleware('auth')->group(function () {
@@ -38,6 +40,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'create'])->name('invoice');
     Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill');
     Route::get('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'create'])->name('payment');
+    Route::get('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
+    Route::post('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
+    Route::get('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
+    Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
+    Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'index'])->name('SupplierCredit');
+    Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('SupplierCredit.store');
 
     Route::get('chart-of-account/{chartOfAccount}/history', [\App\Http\Controllers\Accounting\ChartOfAccController::class, 'history'])->name('chart-of-account.history');
     Route::resource('chart-of-account', ChartOfAccController::class);
@@ -57,13 +65,21 @@ Route::middleware('auth')->group(function () {
     Route::middleware('admin')->group(function () {
         Route::resource('users', UserController::class);
     });
+
+    Route::get('/Settings/Index', [CompanySettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/company', [CompanySettingsController::class, 'update'])->name('company.update');
+    Route::post('/settings/legal', [CompanySettingsController::class, 'updateLegal'])->name('legal.update');
+    Route::post('/settings/currency', [CompanySettingsController::class, 'updateCurrency'])->name('currency.update');
+    Route::get('/settings/sales', [SalesSettingController::class, 'index'])->name('sales.settings.index');
+    Route::post('/settings/sales', [SalesSettingController::class, 'update'])->name('sales.settings.update');
+    Route::post('/settings/logo-upload', [LogoUploadController::class, 'upload'])->name('logo.upload');
+    Route::post('/settings/time', [CompanySettingsController::class, 'updateTime'])->name('time.settings.update');
+    Route::post('/settings/expense', [CompanySettingsController::class, 'updateExpense'])->name('expense.settings.update');
+    Route::get('/settings/advanced', [AdvancedSettingsController::class, 'index'])->name('advanced.settings.index');
+    Route::post('/settings/advanced', [AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
+
+
 });
 
-Route::get('/Settings/Index', [CompanySettingsController::class, 'index'])->name('settings.index');
-Route::post('/settings/company', [CompanySettingsController::class, 'update'])->name('company.update');
-Route::post('/settings/legal', [CompanySettingsController::class, 'updateLegal'])->name('legal.update');
-Route::post('/settings/currency', [CompanySettingsController::class, 'updateCurrency'])->name('currency.update');
-Route::get('/settings/sales', [SalesSettingController::class, 'index'])->name('sales.settings.index');
-Route::post('/settings/sales', [SalesSettingController::class, 'update'])->name('sales.settings.update');
-Route::post('/settings/logo-upload', [LogoUploadController::class, 'upload'])->name('logo.upload');
+
 require __DIR__.'/auth.php';
