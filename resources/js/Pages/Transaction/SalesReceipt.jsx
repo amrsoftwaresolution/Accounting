@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Head, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
@@ -9,6 +10,8 @@ export default function SalesReceipt({
     paymentMethods = [],
     depositAccounts = []
 }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
     // 1. Setup Options
     const customerOptions = customers.map(c => ({
         value: c.id,
@@ -154,7 +157,7 @@ export default function SalesReceipt({
                         <div className="text-right bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[240px]">
                             <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Total Amount</p>
                             <p className="text-3xl font-black tracking-tighter">
-                                <span className="text-slate-400 text-sm font-medium mr-1">LKR</span>
+                                <span className="text-slate-400 text-sm font-medium mr-1">{currencyPrefix}</span>
                                 {total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </p>
                         </div>
@@ -205,6 +208,7 @@ export default function SalesReceipt({
                 removeRow={(index) => setItems(items.filter((_, i) => i !== index))}
                 clearRows={() => setItems([{ service_date: "", product_id: "", description: "", qty: 1, rate: 0, amount: 0 }])}
                 totals={{ "Amount": subtotal.toFixed(2) }}
+                currencyPrefix={currencyPrefix}
             />
 
             {/* BOTTOM SECTION */}
@@ -231,11 +235,11 @@ export default function SalesReceipt({
                 <div className="flex flex-col justify-end items-end space-y-3">
                     <div className="flex justify-between w-64 text-sm">
                         <span className="text-slate-500">Subtotal</span>
-                        <span className="font-bold">LKR {subtotal.toFixed(2)}</span>
+                        <span className="font-bold">{currencyPrefix} {subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between w-64 text-lg border-t pt-3">
                         <span className="font-black">Total</span>
-                        <span className="font-black">LKR {total.toFixed(2)}</span>
+                        <span className="font-black">{currencyPrefix} {total.toFixed(2)}</span>
                     </div>
                 </div>
             </div>

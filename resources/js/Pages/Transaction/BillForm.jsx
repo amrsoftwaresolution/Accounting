@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { Head, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import TermModal from "@/Components/TermModal";
 
 export default function BillForm({ suppliers = [], accounts = [], nextBillNo = "" }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
     const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.display_name || s.name }));
     const accountOptions = accounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }));
 
@@ -174,7 +177,7 @@ export default function BillForm({ suppliers = [], accounts = [], nextBillNo = "
                         <div className="ml-10 text-right bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[240px] transform hover:scale-105 transition-transform">
                             <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Total Amount</p>
                             <p className="text-3xl font-black tracking-tighter">
-                                <span className="text-slate-400 text-sm font-medium mr-1">LKR</span>
+                                <span className="text-slate-400 text-sm font-medium mr-1">{currencyPrefix}</span>
                                 {totalAmount}
                             </p>
                         </div>
@@ -190,6 +193,7 @@ export default function BillForm({ suppliers = [], accounts = [], nextBillNo = "
                 removeRow={(index) => setItems(items.filter((_, i) => i !== index))}
                 clearRows={() => setItems([{ account_id: "", description: "", amount: "" }])}
                 totals={{ "Total": totalAmount }}
+                currencyPrefix={currencyPrefix}
                 hideActions={true}
             />
 

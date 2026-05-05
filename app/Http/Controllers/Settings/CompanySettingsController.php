@@ -13,30 +13,47 @@ class CompanySettingsController extends Controller
     /**
      * Helper to get the active company.
      */
+    private function getActiveCompany()
+    {
+        $companyId = session('active_company_id');
+        return \App\Models\Company::find($companyId);
+    }
+
     private function getSettings()
     {
-        return CompanySetting::first() ?? CompanySetting::create(['company_name' => 'My Company']);
+        $company = $this->getActiveCompany();
+        if (!$company) {
+            // Fallback or handle error
+            return null;
+        }
+        return CompanySetting::firstOrCreate(['company_id' => $company->id]);
     }
 
     public function index()
     {
+        $company = $this->getActiveCompany();
+        if (!$company) return redirect()->route('dashboard');
+
         $settings = $this->getSettings();
 
-        return Inertia::render('Settings/Index', [
-            'settings' => array_merge($settings->toArray(), [
-                'settings_metadata' => [
-                    'time' => [
-                        'work_week_start' => $settings->work_week_start,
-                        'show_service_field' => $settings->show_service_field,
-                        'allow_billable_time' => $settings->allow_billable_time,
-                        'show_billing_rate' => $settings->show_billing_rate,
-                    ],
-                    'expenses' => [
-                        'show_tags' => $settings->show_tags,
-                        'bill_payment_terms' => $settings->bill_payment_terms,
-                    ],
+        // Merge company info and specific settings
+        $mergedData = array_merge($company->toArray(), $settings->toArray(), [
+            'settings_metadata' => [
+                'time' => [
+                    'work_week_start' => $settings->work_week_start,
+                    'show_service_field' => $settings->show_service_field,
+                    'allow_billable_time' => $settings->allow_billable_time,
+                    'show_billing_rate' => $settings->show_billing_rate,
                 ],
-            ]),
+                'expenses' => [
+                    'show_tags' => $settings->show_tags,
+                    'bill_payment_terms' => $settings->bill_payment_terms,
+                ],
+            ],
+        ]);
+
+        return Inertia::render('Settings/Index', [
+            'settings' => $mergedData,
             'tab' => request('tab', 'company'),
         ]);
     }
@@ -55,7 +72,7 @@ class CompanySettingsController extends Controller
             'industry' => 'nullable|string',
         ]);
 
-        $this->getSettings()->update($validated);
+        $this->getActiveCompany()->update($validated);
 
         return back()->with('message', 'Company information updated successfully.');
     }
@@ -67,12 +84,12 @@ class CompanySettingsController extends Controller
     {
         $validated = $request->validate([
             'legal_name' => 'nullable|string|max:255',
-            'tax_id' => 'nullable|string|max:100', // Matches your React data.tax_id
+            'tax_id' => 'nullable|string|max:100',
             'business_type' => 'nullable|string',
             'legal_address' => 'nullable|string',
         ]);
 
-        $this->getSettings()->update($validated);
+        $this->getActiveCompany()->update($validated);
 
         return back()->with('message', 'Legal information updated successfully.');
     }
@@ -88,7 +105,7 @@ class CompanySettingsController extends Controller
             'multicurrency' => 'required|boolean',
         ]);
 
-        $this->getSettings()->update($validated);
+        $this->getActiveCompany()->update($validated);
 
         return back()->with('message', 'Currency settings updated successfully.');
     }
@@ -137,13 +154,14 @@ class CompanySettingsController extends Controller
         $settings = $this->getSettings();
 
         if ($request->hasFile('logo')) {
-            // Delete old logo if it exists to save space
-            if ($settings->logo_path) {
-                Storage::disk('public')->delete($settings->logo_path);
+            $company = $this->getActiveCompany();
+            // Delete old logo if it exists
+            if ($company->logo_path) {
+                Storage::disk('public')->delete($company->logo_path);
             }
 
             $path = $request->file('logo')->store('logos', 'public');
-            $settings->update(['logo_path' => $path]);
+            $company->update(['logo_path' => $path]);
         }
 
         return back()->with('message', 'Logo uploaded successfully.');

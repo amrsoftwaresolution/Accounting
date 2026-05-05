@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('business_type')->nullable();
             $table->text('legal_address')->nullable();
             $table->string('home_currency')->default('LKR');
+            $table->string('home_currency_prefix')->default('Rs.');
             $table->boolean('multicurrency')->default(false);
             
             $table->timestamps();

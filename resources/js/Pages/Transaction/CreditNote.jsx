@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 
 export default function CreditNoteForm({ customers = [] }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
     // 1. Setup Options
     const customerOptions = customers.map(c => ({
         value: c.id,
@@ -118,7 +121,7 @@ export default function CreditNoteForm({ customers = [] }) {
                         <div className="text-right bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[260px]">
                             <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Amount to Credit</p>
                             <p className="text-4xl font-black tracking-tighter">
-                                <span className="text-slate-400 text-sm font-medium mr-1">LKR</span>
+                                <span className="text-slate-400 text-sm font-medium mr-1">{currencyPrefix}</span>
                                 {totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </p>
                         </div>
@@ -143,6 +146,7 @@ export default function CreditNoteForm({ customers = [] }) {
                 removeRow={(index) => setItems(items.filter((_, i) => i !== index))}
                 clearRows={() => setItems([{ service_date: "", description: "", amount: "" }])}
                 totals={{ "Amount": subtotal.toFixed(2) }}
+                currencyPrefix={currencyPrefix}
             />
 
             {/* BOTTOM SECTION */}
@@ -171,7 +175,7 @@ export default function CreditNoteForm({ customers = [] }) {
                 <div className="flex flex-col items-end space-y-4 pt-4">
                     <div className="flex justify-between w-72 text-sm text-slate-600">
                         <span>Subtotal</span>
-                        <span className="font-semibold">LKR {subtotal.toFixed(2)}</span>
+                        <span className="font-semibold">{currencyPrefix} {subtotal.toFixed(2)}</span>
                     </div>
 
                     <div className="flex items-center justify-between w-72 gap-4">
@@ -194,12 +198,12 @@ export default function CreditNoteForm({ customers = [] }) {
 
                     <div className="flex justify-between w-72 text-sm font-bold border-t border-slate-200 pt-4">
                         <span>Total</span>
-                        <span>LKR {totalCredit.toFixed(2)}</span>
+                        <span>{currencyPrefix} {totalCredit.toFixed(2)}</span>
                     </div>
 
                     <div className="flex justify-between w-72 text-lg font-black text-slate-900">
                         <span>Total Credit</span>
-                        <span>LKR {totalCredit.toFixed(2)}</span>
+                        <span>{currencyPrefix} {totalCredit.toFixed(2)}</span>
                     </div>
                 </div>
             </div>

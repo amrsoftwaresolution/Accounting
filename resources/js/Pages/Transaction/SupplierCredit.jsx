@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useForm } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 
 export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
     // 1. Map Options
     const supplierOptions = suppliers.map(s => ({
         value: s.id,
@@ -129,8 +131,8 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
                         <div className="flex justify-end">
                             <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[280px] text-right transform transition-all hover:scale-[1.02]">
                                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Credit Amount</p>
-                                <p className="text-4xl font-black tracking-tighter">
-                                    <span className="text-slate-400 text-sm font-medium mr-2">LKR</span>
+                                <p className="text-3xl font-black tracking-tighter">
+                                    <span className="text-slate-400 text-sm font-medium mr-2">{currencyPrefix}</span>
                                     {parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </p>
                             </div>
@@ -167,7 +169,8 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
                     addRow={() => setItems([...items, { category: "", description: "", amount: "" }])}
                     removeRow={(index) => setItems(items.filter((_, i) => i !== index))}
                     clearRows={() => setItems([{ category: "", description: "", amount: "" }])}
-                    totals={{ "Amount (LKR)": totalAmount }}
+                    totals={{ "Total": totalAmount }}
+                    currencyPrefix={currencyPrefix}
                     hideActions={true}
                 />
 

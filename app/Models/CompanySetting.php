@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CompanySetting extends Model
 {
     protected $fillable = [
-        'company_name', 'company_email', 'phone', 'address', 'website', 'industry', 'logo_path',
-        'legal_name', 'tax_id', 'business_type', 'legal_address',
-        'home_currency', 'multicurrency',
+        'company_id',
         'work_week_start', 'show_service_field', 'allow_billable_time', 'show_billing_rate',
         'show_tags', 'bill_payment_terms',
     ];

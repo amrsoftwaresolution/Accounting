@@ -4,9 +4,11 @@ import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import CommonInput from "@/Components/CommonInput";
 import SearchableSelect from "@/Components/SearchableSelect";
-import { Head } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 
 export default function JournalEntryForm({ journalEntry = null, accounts = [], nextJournalNo = "" }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
     const [payeeOptions, setPayeeOptions] = useState([]);
     
     // Fetch payees from API
