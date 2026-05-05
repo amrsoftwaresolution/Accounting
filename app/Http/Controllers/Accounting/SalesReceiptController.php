@@ -3,66 +3,118 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
-use App\Models\Item;
-use App\Models\PaymentMethod;
-use App\Models\ChartOfAcc;
-use App\Models\SalesReceipt;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
+use App\Models\SalesReceipt;
+use App\Models\SalesReceiptItem;
+use App\Models\Customer;
+use App\Models\ChartOfAcc;
+use App\Models\PaymentMethod;
+use App\Models\Item;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class SalesReceiptController extends Controller
 {
     public function create()
     {
-        return Inertia::render('Transaction/SalesReceipt', [
+        return Inertia::render('Transaction/SalesReceiptForm', [
             'customers' => Customer::orderBy('display_name')->get(),
-            'products' => Item::orderBy('name')->get(),
-            'paymentMethods' => PaymentMethod::where('is_active', true)->orderBy('name')->get(),
-            'depositAccounts' => ChartOfAcc::orderBy('account_code')->get(),
+            'accounts' => ChartOfAcc::orderBy('account_code')->get(),
+            'paymentMethods' => PaymentMethod::orderBy('name')->get(),
+            'items' => Item::orderBy('name')->get(),
+            'nextReceiptNo' => $this->getNextReceiptNo()
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_id' => 'nullable|uuid',
-            'email' => 'nullable|email',
-            'billing_address' => 'nullable|string',
-            'date' => 'required|date',
-            'payment_method' => 'nullable|uuid',
-            'reference_no' => 'nullable|string|max:100',
-            'deposit_to' => 'nullable|integer',
-            'receipt_no' => 'required|string|max:50',
-            'message_on_receipt' => 'nullable|string',
-            'message_on_statement' => 'nullable|string',
+            'customer' => 'required',
+            'receiptDate' => 'required|date',
+            'receiptNo' => 'required',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'nullable|integer',
-            'items.*.description' => 'nullable|string',
-            'items.*.qty' => 'required|numeric|min:0',
-            'items.*.rate' => 'required|numeric|min:0',
-            'items.*.amount' => 'required|numeric|min:0',
+            'depositTo' => 'required',
         ]);
 
-        $totalAmount = collect($validated['items'])->sum(fn ($item) => (float) $item['amount']);
+        DB::transaction(function() use ($request) {
+            $totalAmount = collect($request->items)->sum(function($item) {
+                return (float) str_replace(',', '', $item['amount']);
+            });
 
-        SalesReceipt::create([
-            'id' => (string) Str::uuid(),
-            'customer_id' => $validated['customer_id'],
-            'email' => $validated['email'],
-            'billing_address' => $validated['billing_address'],
-            'date' => $validated['date'],
-            'payment_method' => $validated['payment_method'],
-            'reference_no' => $validated['reference_no'],
-            'deposit_to' => $validated['deposit_to'],
-            'receipt_no' => $validated['receipt_no'],
-            'message_on_receipt' => $validated['message_on_receipt'],
-            'message_on_statement' => $validated['message_on_statement'],
-            'items' => $validated['items'],
-            'total_amount' => $totalAmount,
-        ]);
+            // 1. Save Document (Business Details)
+            $receipt = SalesReceipt::create([
+                'company_id' => session('active_company_id'),
+                'customer_id' => $request->customer,
+                'email' => $request->email,
+                'receipt_date' => $request->receiptDate,
+                'payment_method_id' => $request->paymentMethod,
+                'deposit_to_account_id' => $request->depositTo,
+                'total_amount' => $totalAmount,
+                'memo' => $request->memo,
+                'statement_message' => $request->statementMessage,
+                'status' => 'posted',
+            ]);
 
-        return back()->with('message', 'Sales receipt saved successfully.');
+            foreach ($request->items as $itemData) {
+                SalesReceiptItem::create([
+                    'sales_receipt_id' => $receipt->id,
+                    'item_id' => $itemData['product'],
+                    'description' => $itemData['description'],
+                    'quantity' => $itemData['qty'] ?? 1,
+                    'rate' => $itemData['rate'] ?? 0,
+                    'amount' => (float) str_replace(',', '', $itemData['amount']),
+                    'service_date' => $itemData['serviceDate'] ?? null,
+                ]);
+            }
+
+            // 2. Save Financial Truth (Journal Entry)
+            $journalEntry = JournalEntry::create([
+                'date' => $request->receiptDate,
+                'reference' => $request->receiptNo,
+                'description' => $request->memo,
+                'transaction_type' => 'sales_receipt',
+                'payee_id' => $request->customer,
+                'payee_type' => Customer::class,
+                'total_amount' => $totalAmount,
+                'status' => 'posted',
+                'created_by' => Auth::id(),
+                'transactionable_id' => $receipt->id,
+                'transactionable_type' => SalesReceipt::class,
+            ]);
+
+            // Debit Cash/Bank (Deposit To)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'chart_of_acc_id' => $request->depositTo,
+                'debit' => $totalAmount,
+                'credit' => 0,
+                'memo' => $request->memo,
+            ]);
+
+            // Credit Income accounts
+            foreach ($request->items as $itemData) {
+                $itemModel = Item::find($itemData['product']);
+                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $incomeAccount,
+                    'debit' => 0,
+                    'credit' => (float) str_replace(',', '', $itemData['amount']),
+                    'memo' => $itemData['description'] ?? $request->memo,
+                ]);
+            }
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Sales Receipt saved successfully.');
+    }
+
+    private function getNextReceiptNo()
+    {
+        $last = SalesReceipt::where('company_id', session('active_company_id'))->latest()->first();
+        return $last ? (int)$last->receiptNo + 1 : 1001;
     }
 }

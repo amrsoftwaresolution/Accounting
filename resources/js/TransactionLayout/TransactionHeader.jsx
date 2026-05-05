@@ -21,7 +21,7 @@ export default function TransactionHeader({ title, amount }) {
                     </h1>
                 </div>
 
-                {amount !== undefined && (
+                {amount !== null && amount !== undefined && (
                     <div className="flex flex-col">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Amount</span>
                         <div className="flex items-baseline gap-1">

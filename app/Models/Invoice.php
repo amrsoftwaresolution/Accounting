@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class Invoice extends Model
+{
+    use HasUuids;
+
+    protected $fillable = [
+        'company_id', 'customer_id', 'email', 'billing_address', 'shipping_address',
+        'terms', 'invoice_date', 'due_date', 'invoice_no', 'total_amount',
+        'memo', 'statement_message', 'status'
+    ];
+
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+}

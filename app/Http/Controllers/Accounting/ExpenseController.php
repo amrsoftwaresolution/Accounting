@@ -36,9 +36,11 @@ class ExpenseController extends Controller
             'ref' => 'nullable|string',
             'memo' => 'nullable|string',
             'items' => 'required|array|min:1',
+            'paymentAccount' => 'required',
+            'paymentDate' => 'required|date',
+            'items' => 'required|array|min:1',
             'items.*.category' => 'required',
             'items.*.amount' => 'required',
-            'items.*.description' => 'nullable|string',
         ]);
 
         $journalEntry = DB::transaction(function() use ($request) {
@@ -46,42 +48,59 @@ class ExpenseController extends Controller
                 return (float) str_replace(',', '', $item['amount']);
             });
 
-            // Resolve payee type
-            $payeeId = $request->payee;
-            $payeeType = null;
-            if (Supplier::find($payeeId)) $payeeType = Supplier::class;
-            elseif (Customer::find($payeeId)) $payeeType = Customer::class;
-            elseif (Employee::find($payeeId)) $payeeType = Employee::class;
-
-            // 1. Create Journal Entry
-            $journalEntry = JournalEntry::create([
-                'date' => $request->date,
-                'reference' => $request->ref,
-                'description' => $request->memo,
-                'transaction_type' => 'expense',
-                'payee_id' => $payeeId,
-                'payee_type' => $payeeType,
-                'payment_method_id' => $request->method,
+            // 1. Create Business Document (Expense)
+            $expense = \App\Models\Expense::create([
+                'company_id' => session('active_company_id'),
+                'payee_id' => $request->payee,
+                'payee_type' => $request->payeeType, // Handled in frontend
+                'payment_account_id' => $request->paymentAccount,
+                'payment_date' => $request->paymentDate,
+                'payment_method_id' => $request->paymentMethod,
+                'reference_no' => $request->referenceNo,
                 'total_amount' => $totalAmount,
+                'memo' => $request->memo,
                 'status' => 'posted',
-                'created_by' => Auth::id(),
             ]);
 
-            // 2. Create Journal Entry Lines (Debits for Expenses)
-            foreach ($request->items as $item) {
-                JournalEntryLine::create([
-                    'journal_entry_id' => $journalEntry->id,
-                    'chart_of_acc_id' => $item['category'],
-                    'debit' => (float) str_replace(',', '', $item['amount']),
-                    'credit' => 0,
-                    'memo' => $item['description'] ?? $request->memo,
+            foreach ($request->items as $lineItem) {
+                \App\Models\ExpenseItem::create([
+                    'expense_id' => $expense->id,
+                    'chart_of_acc_id' => $lineItem['category'],
+                    'description' => $lineItem['description'] ?? '',
+                    'amount' => (float) str_replace(',', '', $lineItem['amount']),
                 ]);
             }
 
-            // 3. Create Journal Entry Line (Credit for Payment Account)
+            // 2. Create Financial Truth (Journal Entry)
+            $journalEntry = JournalEntry::create([
+                'date' => $request->paymentDate,
+                'reference' => $request->referenceNo,
+                'description' => $request->memo,
+                'transaction_type' => 'expense',
+                'payee_id' => $request->payee,
+                'payee_type' => $request->payeeType == 'customer' ? Customer::class : (\App\Models\Supplier::class),
+                'total_amount' => $totalAmount,
+                'status' => 'posted',
+                'created_by' => Auth::id(),
+                'transactionable_id' => $expense->id,
+                'transactionable_type' => \App\Models\Expense::class,
+            ]);
+
+            // Expense Debits
+            foreach ($request->items as $lineItem) {
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $lineItem['category'],
+                    'debit' => (float) str_replace(',', '', $lineItem['amount']),
+                    'credit' => 0,
+                    'memo' => $lineItem['description'] ?? $request->memo,
+                ]);
+            }
+
+            // Payment Account Credit
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
-                'chart_of_acc_id' => $request->account,
+                'chart_of_acc_id' => $request->paymentAccount,
                 'debit' => 0,
                 'credit' => $totalAmount,
                 'memo' => $request->memo,
@@ -90,8 +109,6 @@ class ExpenseController extends Controller
             return $journalEntry;
         });
 
-        session(['last_update_date' => $request->date]);
-
         $action = $request->input('action', 'save');
         if ($action === 'close') {
             return redirect()->route('dashboard')->with('success', 'Expense saved successfully.');
@@ -99,39 +116,40 @@ class ExpenseController extends Controller
             return redirect()->route('expense')->with('success', 'Expense saved successfully.');
         }
 
-        return redirect()->route('expense.edit', $journalEntry->id)->with('success', 'Expense saved successfully.');
+        return redirect()->back()->with('success', 'Expense saved successfully.');
     }
 
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        
-        // Transform journal entry into form data structure
+        $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
+
         $expenseData = [
             'id' => $journalEntry->id,
-            'date' => $journalEntry->date,
-            'ref' => $journalEntry->reference,
-            'memo' => $journalEntry->description,
             'payee' => $journalEntry->payee_id,
-            'method' => $journalEntry->payment_method_id,
-            // Payment account is the one with credit > 0
-            'account' => $journalEntry->lines->where('credit', '>', 0)->first()?->chart_of_acc_id,
-            // Items are those with debit > 0
+            'payeeType' => $expense?->payee_type ?? ($journalEntry->payee_type == Customer::class ? 'customer' : 'supplier'),
+            'paymentAccount' => $expense?->payment_account_id ?? $journalEntry->lines->where('credit', '>', 0)->first()?->chart_of_acc_id,
+            'paymentDate' => $journalEntry->date,
+            'paymentMethod' => $expense?->payment_method_id ?? '',
+            'referenceNo' => $journalEntry->reference,
+            'memo' => $journalEntry->description,
             'items' => $journalEntry->lines->where('debit', '>', 0)->map(function($line) {
                 return [
                     'category' => $line->chart_of_acc_id,
                     'description' => $line->memo,
                     'amount' => $line->debit,
-                    'customer' => null, 
                 ];
             })->values()->toArray(),
         ];
 
         return Inertia::render('Transaction/ExpenseForm', [
+            'payees' => array_merge(
+                Customer::orderBy('display_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->display_name, 'type' => 'customer'])->toArray(),
+                Supplier::orderBy('name')->get()->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'type' => 'supplier'])->toArray()
+            ),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
-            'paymentMethods' => PaymentMethod::where('is_active', true)->orderBy('name')->get(),
             'expense' => $expenseData,
-            'lastPaymentDate' => session('last_update_date')
+            'paymentMethods' => \App\Models\PaymentMethod::all(),
         ]);
     }
 
@@ -155,41 +173,56 @@ class ExpenseController extends Controller
                 return (float) str_replace(',', '', $item['amount']);
             });
 
-            // Resolve payee type
-            $payeeId = $request->payee;
-            $payeeType = null;
-            if (Supplier::find($payeeId)) $payeeType = Supplier::class;
-            elseif (Customer::find($payeeId)) $payeeType = Customer::class;
-            elseif (Employee::find($payeeId)) $payeeType = Employee::class;
+            // 1. Update Business Document
+            $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
+            if ($expense) {
+                $expense->update([
+                    'payee_id' => $request->payee,
+                    'payee_type' => $request->payeeType,
+                    'payment_account_id' => $request->paymentAccount,
+                    'payment_date' => $request->paymentDate,
+                    'payment_method_id' => $request->paymentMethod,
+                    'reference_no' => $request->referenceNo,
+                    'total_amount' => $totalAmount,
+                    'memo' => $request->memo,
+                ]);
 
-            // 1. Update Journal Entry
+                $expense->items()->delete();
+                foreach ($request->items as $lineItem) {
+                    \App\Models\ExpenseItem::create([
+                        'expense_id' => $expense->id,
+                        'chart_of_acc_id' => $lineItem['category'],
+                        'description' => $lineItem['description'] ?? '',
+                        'amount' => (float) str_replace(',', '', $lineItem['amount']),
+                    ]);
+                }
+            }
+
+            // 2. Update Financial Truth
             $journalEntry->update([
-                'date' => $request->date,
-                'reference' => $request->ref,
+                'date' => $request->paymentDate,
+                'reference' => $request->referenceNo,
                 'description' => $request->memo,
-                'payee_id' => $payeeId,
-                'payee_type' => $payeeType,
-                'payment_method_id' => $request->method,
+                'payee_id' => $request->payee,
+                'payee_type' => $request->payeeType == 'customer' ? Customer::class : (\App\Models\Supplier::class),
                 'total_amount' => $totalAmount,
             ]);
 
-            // 2. Delete old lines
             $journalEntry->lines()->delete();
 
-            // 3. Create new lines
-            foreach ($request->items as $item) {
+            foreach ($request->items as $lineItem) {
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
-                    'chart_of_acc_id' => $item['category'],
-                    'debit' => (float) str_replace(',', '', $item['amount']),
+                    'chart_of_acc_id' => $lineItem['category'],
+                    'debit' => (float) str_replace(',', '', $lineItem['amount']),
                     'credit' => 0,
-                    'memo' => $item['description'] ?? $request->memo,
+                    'memo' => $lineItem['description'] ?? $request->memo,
                 ]);
             }
 
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
-                'chart_of_acc_id' => $request->account,
+                'chart_of_acc_id' => $request->paymentAccount,
                 'debit' => 0,
                 'credit' => $totalAmount,
                 'memo' => $request->memo,

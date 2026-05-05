@@ -25,42 +25,59 @@ class TransferController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
+            'fromAccount' => 'required',
+            'toAccount' => 'required',
+            'amount' => 'required',
             'date' => 'required|date',
-            'transfer_from' => 'required|exists:chart_of_accs,id',
-            'transfer_to' => 'required|exists:chart_of_accs,id|different:transfer_from',
-            'amount' => 'required|numeric|min:0.01',
-            'memo' => 'nullable|string',
         ]);
 
-        return DB::transaction(function () use ($request) {
-            $entry = JournalEntry::create([
+        DB::transaction(function() use ($request) {
+            $amount = (float) str_replace(',', '', $request->amount);
+
+            // 1. Create Business Document (Transfer)
+            $transfer = \App\Models\Transfer::create([
+                'company_id' => session('active_company_id'),
+                'from_account_id' => $request->fromAccount,
+                'to_account_id' => $request->toAccount,
+                'amount' => $amount,
                 'date' => $request->date,
-                'reference' => 'TRF-' . time(),
-                'description' => $request->memo ?: 'Funds Transfer',
+                'memo' => $request->memo,
+                'reference_no' => $request->referenceNo,
+            ]);
+
+            // 2. Create Financial Truth (Journal Entry)
+            $journalEntry = JournalEntry::create([
+                'date' => $request->date,
+                'reference' => $request->referenceNo,
+                'description' => $request->memo,
                 'transaction_type' => 'transfer',
-                'total_amount' => $request->amount,
+                'total_amount' => $amount,
                 'status' => 'posted',
                 'created_by' => Auth::id(),
+                'transactionable_id' => $transfer->id,
+                'transactionable_type' => \App\Models\Transfer::class,
             ]);
 
-            // Credit the source (decrease asset)
-            $entry->lines()->create([
-                'chart_of_acc_id' => $request->transfer_from,
+            // From Account (Credit)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'chart_of_acc_id' => $request->fromAccount,
                 'debit' => 0,
-                'credit' => $request->amount,
-                'memo' => 'Transfer from source',
+                'credit' => $amount,
+                'memo' => $request->memo,
             ]);
 
-            // Debit the destination (increase asset)
-            $entry->lines()->create([
-                'chart_of_acc_id' => $request->transfer_to,
-                'debit' => $request->amount,
+            // To Account (Debit)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'chart_of_acc_id' => $request->toAccount,
+                'debit' => $amount,
                 'credit' => 0,
-                'memo' => 'Transfer to destination',
+                'memo' => $request->memo,
             ]);
-
-            return response()->json(['message' => 'Transfer successful', 'id' => $entry->id]);
         });
+
+        return redirect()->back()->with('success', 'Transfer saved successfully.');
     }
 }

@@ -32,7 +32,10 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Journal Entries', href: "/journal" },
         { name: 'Transfers', href: "/transfer" },
         { name: 'Invoices', href: "/invoice" },
+        { name: 'Sales Receipts', href: "/receipt" },
         { name: 'Payments', href: "/payment" },
+        { name: 'Credit Notes', href: "/credit-note" },
+        { name: 'Supplier Credit', href: "/SupplierCredit" },
     ];
 
     const reports = [
