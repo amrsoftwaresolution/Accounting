@@ -19,9 +19,23 @@ class ExpenseController extends Controller
 {
     public function create()
     {
+        $companyId = session('active_company_id');
+
+        $paymentMethods = PaymentMethod::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->where(function ($query) use ($companyId) {
+                $query->whereNull('company_id');
+
+                if ($companyId) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Transaction/ExpenseForm', [
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
-            'paymentMethods' => PaymentMethod::where('is_active', true)->orderBy('name')->get(),
+            'paymentMethods' => $paymentMethods,
             'lastPaymentDate' => session('last_update_date')
         ]);
     }
@@ -36,14 +50,19 @@ class ExpenseController extends Controller
             'ref' => 'nullable|string',
             'memo' => 'nullable|string',
             'items' => 'required|array|min:1',
-            'paymentAccount' => 'required',
-            'paymentDate' => 'required|date',
-            'items' => 'required|array|min:1',
+            'paymentAccount' => 'required_without:account',
+            'paymentDate' => 'required_without:date|date',
+            'paymentMethod' => 'required_without:method',
             'items.*.category' => 'required',
             'items.*.amount' => 'required',
         ]);
 
-        $journalEntry = DB::transaction(function() use ($request) {
+        $paymentAccount = $request->input('account', $request->input('paymentAccount'));
+        $paymentDate = $request->input('date', $request->input('paymentDate'));
+        $paymentMethod = $request->input('method', $request->input('paymentMethod'));
+        $referenceNo = $request->input('ref', $request->input('referenceNo'));
+
+        $journalEntry = DB::transaction(function() use ($request, $paymentAccount, $paymentDate, $paymentMethod, $referenceNo) {
             $totalAmount = collect($request->items)->sum(function($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
@@ -52,11 +71,11 @@ class ExpenseController extends Controller
             $expense = \App\Models\Expense::create([
                 'company_id' => session('active_company_id'),
                 'payee_id' => $request->payee,
-                'payee_type' => $request->payeeType, // Handled in frontend
-                'payment_account_id' => $request->paymentAccount,
-                'payment_date' => $request->paymentDate,
-                'payment_method_id' => $request->paymentMethod,
-                'reference_no' => $request->referenceNo,
+                'payee_type' => $request->payeeType,
+                'payment_account_id' => $paymentAccount,
+                'payment_date' => $paymentDate,
+                'payment_method_id' => $paymentMethod,
+                'reference_no' => $referenceNo,
                 'total_amount' => $totalAmount,
                 'memo' => $request->memo,
                 'status' => 'posted',
@@ -73,8 +92,8 @@ class ExpenseController extends Controller
 
             // 2. Create Financial Truth (Journal Entry)
             $journalEntry = JournalEntry::create([
-                'date' => $request->paymentDate,
-                'reference' => $request->referenceNo,
+                'date' => $paymentDate,
+                'reference' => $referenceNo,
                 'description' => $request->memo,
                 'transaction_type' => 'expense',
                 'payee_id' => $request->payee,
@@ -100,7 +119,7 @@ class ExpenseController extends Controller
             // Payment Account Credit
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
-                'chart_of_acc_id' => $request->paymentAccount,
+                'chart_of_acc_id' => $paymentAccount,
                 'debit' => 0,
                 'credit' => $totalAmount,
                 'memo' => $request->memo,
@@ -142,6 +161,20 @@ class ExpenseController extends Controller
             })->values()->toArray(),
         ];
 
+        $companyId = session('active_company_id');
+
+        $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->where(function ($query) use ($companyId) {
+                $query->whereNull('company_id');
+
+                if ($companyId) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Transaction/ExpenseForm', [
             'payees' => array_merge(
                 Customer::orderBy('display_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->display_name, 'type' => 'customer'])->toArray(),
@@ -149,7 +182,7 @@ class ExpenseController extends Controller
             ),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'expense' => $expenseData,
-            'paymentMethods' => \App\Models\PaymentMethod::all(),
+            'paymentMethods' => $paymentMethods,
         ]);
     }
 
@@ -168,7 +201,12 @@ class ExpenseController extends Controller
             'items.*.description' => 'nullable|string',
         ]);
 
-        DB::transaction(function() use ($request, $journalEntry) {
+        $paymentAccount = $request->input('account', $request->input('paymentAccount'));
+        $paymentDate = $request->input('date', $request->input('paymentDate'));
+        $paymentMethod = $request->input('method', $request->input('paymentMethod'));
+        $referenceNo = $request->input('ref', $request->input('referenceNo'));
+
+        DB::transaction(function() use ($request, $journalEntry, $paymentAccount, $paymentDate, $paymentMethod, $referenceNo) {
             $totalAmount = collect($request->items)->sum(function($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
@@ -179,10 +217,10 @@ class ExpenseController extends Controller
                 $expense->update([
                     'payee_id' => $request->payee,
                     'payee_type' => $request->payeeType,
-                    'payment_account_id' => $request->paymentAccount,
-                    'payment_date' => $request->paymentDate,
-                    'payment_method_id' => $request->paymentMethod,
-                    'reference_no' => $request->referenceNo,
+                    'payment_account_id' => $paymentAccount,
+                    'payment_date' => $paymentDate,
+                    'payment_method_id' => $paymentMethod,
+                    'reference_no' => $referenceNo,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                 ]);
@@ -200,8 +238,8 @@ class ExpenseController extends Controller
 
             // 2. Update Financial Truth
             $journalEntry->update([
-                'date' => $request->paymentDate,
-                'reference' => $request->referenceNo,
+                'date' => $paymentDate,
+                'reference' => $referenceNo,
                 'description' => $request->memo,
                 'payee_id' => $request->payee,
                 'payee_type' => $request->payeeType == 'customer' ? Customer::class : (\App\Models\Supplier::class),
@@ -222,7 +260,7 @@ class ExpenseController extends Controller
 
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
-                'chart_of_acc_id' => $request->paymentAccount,
+                'chart_of_acc_id' => $paymentAccount,
                 'debit' => 0,
                 'credit' => $totalAmount,
                 'memo' => $request->memo,

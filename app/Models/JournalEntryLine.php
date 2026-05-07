@@ -8,13 +8,15 @@ class JournalEntryLine extends Model
 {
     use HasUuids;
 
-    protected $fillable = [
-        'journal_entry_id',
-        'chart_of_acc_id',
-        'debit',
-        'credit',
-        'memo',
-    ];
+   protected $fillable = [
+    'journal_entry_id',
+    'chart_of_acc_id',
+    'payee_id',   // ADD THIS
+    'payee_type', // ADD THIS
+    'debit',
+    'credit',
+    'memo',
+];
 
     public function journalEntry()
     {

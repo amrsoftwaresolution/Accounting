@@ -24,6 +24,7 @@ use App\Http\Controllers\Settings\SalesSettingController;
 use App\Http\Controllers\Settings\AdvancedSettingsController;
 
 
+
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\Accounting\ReportController;
 
@@ -60,12 +61,19 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\HandleCompanyContext
     Route::patch('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'update'])->name('invoice.update');
     Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill');
     Route::get('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'create'])->name('payment');
+    Route::post('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'store'])->name('payment.store');
     Route::get('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
     Route::post('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
     Route::get('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
     Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
     Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'index'])->name('SupplierCredit');
     Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('SupplierCredit.store');
+Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill.create');
+Route::post('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'store'])->name('bills.store');
+// Find these lines in web.php and update the names:
+Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'index'])->name('SupplierCredit.index');
+Route::get('/SupplierCredit/create', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('SupplierCredit.create');
+Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('SupplierCredit.store');
 
     Route::get('chart-of-account/{chartOfAccount}/history', [\App\Http\Controllers\Accounting\ChartOfAccController::class, 'history'])->name('chart-of-account.history');
     Route::resource('chart-of-account', ChartOfAccController::class);

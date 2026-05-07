@@ -20,10 +20,24 @@ class SalesReceiptController extends Controller
 {
     public function create()
     {
+        $companyId = session('active_company_id');
+
+        $paymentMethods = PaymentMethod::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->where(function ($query) use ($companyId) {
+                $query->whereNull('company_id');
+
+                if ($companyId) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Transaction/SalesReceiptForm', [
             'customers' => Customer::orderBy('display_name')->get(),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
-            'paymentMethods' => PaymentMethod::orderBy('name')->get(),
+            'paymentMethods' => $paymentMethods,
             'items' => Item::orderBy('name')->get(),
             'nextReceiptNo' => $this->getNextReceiptNo()
         ]);
@@ -31,90 +45,129 @@ class SalesReceiptController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'customer' => 'required',
-            'receiptDate' => 'required|date',
-            'receiptNo' => 'required',
-            'items' => 'required|array|min:1',
-            'depositTo' => 'required',
-        ]);
+       // Change ONLY this block inside the store method:
+$validated = $request->validate([
+    'customer' => 'required|uuid',
+    'receiptDate' => 'required|date',
+    'receiptNo' => 'required', // REMOVED '|string' to allow numbers
+    'paymentMethod' => 'nullable|uuid',
+    'depositTo' => 'required|uuid',
+    'items' => 'required|array|min:1',
+    'items.*.product' => 'required|uuid',
+    'items.*.qty' => 'required|numeric',
+    'items.*.rate' => 'required|numeric',
+    'items.*.amount' => 'required',
+    'action' => 'nullable|string',
+]);
+        try {
+            DB::transaction(function() use ($request) {
+                // Filter out empty items
+                $items = collect($request->items)->filter(function($item) {
+                    return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                })->values()->all();
 
-        DB::transaction(function() use ($request) {
-            $totalAmount = collect($request->items)->sum(function($item) {
-                return (float) str_replace(',', '', $item['amount']);
-            });
+                if (empty($items)) {
+                    throw new \Exception('At least one item with product and amount is required.');
+                }
 
-            // 1. Save Document (Business Details)
-            $receipt = SalesReceipt::create([
-                'company_id' => session('active_company_id'),
-                'customer_id' => $request->customer,
-                'email' => $request->email,
-                'receipt_date' => $request->receiptDate,
-                'payment_method_id' => $request->paymentMethod,
-                'deposit_to_account_id' => $request->depositTo,
-                'total_amount' => $totalAmount,
-                'memo' => $request->memo,
-                'statement_message' => $request->statementMessage,
-                'status' => 'posted',
-            ]);
+                $totalAmount = collect($items)->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
+                });
 
-            foreach ($request->items as $itemData) {
-                SalesReceiptItem::create([
-                    'sales_receipt_id' => $receipt->id,
-                    'item_id' => $itemData['product'],
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['qty'] ?? 1,
-                    'rate' => $itemData['rate'] ?? 0,
-                    'amount' => (float) str_replace(',', '', $itemData['amount']),
-                    'service_date' => $itemData['serviceDate'] ?? null,
+                // 1. Save Document (Business Details)
+                $receipt = SalesReceipt::create([
+                    'company_id' => session('active_company_id'),
+                    'customer_id' => $request->customer,
+                    'email' => $request->email,
+                    'receipt_date' => $request->receiptDate,
+                    'payment_method_id' => $request->paymentMethod,
+                    'deposit_to_account_id' => $request->depositTo,
+                    'total_amount' => $totalAmount,
+                    'memo' => $request->memo,
+                    'statement_message' => $request->statementMessage,
+                    'status' => 'posted',
                 ]);
-            }
 
-            // 2. Save Financial Truth (Journal Entry)
-            $journalEntry = JournalEntry::create([
-                'date' => $request->receiptDate,
-                'reference' => $request->receiptNo,
-                'description' => $request->memo,
-                'transaction_type' => 'sales_receipt',
-                'payee_id' => $request->customer,
-                'payee_type' => Customer::class,
-                'total_amount' => $totalAmount,
-                'status' => 'posted',
-                'created_by' => Auth::id(),
-                'transactionable_id' => $receipt->id,
-                'transactionable_type' => SalesReceipt::class,
-            ]);
+                foreach ($items as $itemData) {
+                    SalesReceiptItem::create([
+                        'sales_receipt_id' => $receipt->id,
+                        'item_id' => $itemData['product'],
+                        'description' => $itemData['description'] ?? '',
+                        'quantity' => (float)($itemData['qty'] ?? 1),
+                        'rate' => (float)($itemData['rate'] ?? 0),
+                        'amount' => (float) str_replace(',', '', $itemData['amount']),
+                        'service_date' => $itemData['serviceDate'] ?? null,
+                    ]);
+                }
 
-            // Debit Cash/Bank (Deposit To)
-            JournalEntryLine::create([
-                'journal_entry_id' => $journalEntry->id,
-                'chart_of_acc_id' => $request->depositTo,
-                'debit' => $totalAmount,
-                'credit' => 0,
-                'memo' => $request->memo,
-            ]);
+                // 2. Save Financial Truth (Journal Entry)
+                $journalEntry = JournalEntry::create([
+                    'date' => $request->receiptDate,
+                    'reference' => $request->receiptNo,
+                    'description' => $request->memo,
+                    'transaction_type' => 'sales_receipt',
+                    'payee_id' => $request->customer,
+                    'payee_type' => Customer::class,
+                    'total_amount' => $totalAmount,
+                    'status' => 'posted',
+                    'created_by' => Auth::id(),
+                    'transactionable_id' => $receipt->id,
+                    'transactionable_type' => SalesReceipt::class,
+                ]);
 
-            // Credit Income accounts
-            foreach ($request->items as $itemData) {
-                $itemModel = Item::find($itemData['product']);
-                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
-
+                // Debit Cash/Bank (Deposit To)
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
-                    'chart_of_acc_id' => $incomeAccount,
-                    'debit' => 0,
-                    'credit' => (float) str_replace(',', '', $itemData['amount']),
-                    'memo' => $itemData['description'] ?? $request->memo,
+                    'chart_of_acc_id' => $request->depositTo,
+                    'debit' => $totalAmount,
+                    'credit' => 0,
+                    'memo' => $request->memo,
                 ]);
-            }
-        });
 
-        return redirect()->route('dashboard')->with('success', 'Sales Receipt saved successfully.');
+                // Credit Income accounts
+                foreach ($items as $itemData) {
+                    $itemModel = Item::find($itemData['product']);
+                    $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+
+                    if (!$incomeAccount) {
+                        throw new \Exception('Income account not found for product: ' . $itemData['product']);
+                    }
+
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $incomeAccount,
+                        'debit' => 0,
+                        'credit' => (float) str_replace(',', '', $itemData['amount']),
+                        'memo' => $itemData['description'] ?? $request->memo,
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            \Log::error('Sales Receipt save error: ' . $e->getMessage(), [
+                'data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+
+        $action = $request->input('action', 'save');
+        if ($action === 'close') {
+            return redirect()->route('chart-of-account.index')->with('success', 'Sales Receipt saved successfully.');
+        }
+
+        if ($action === 'new') {
+            return redirect()->route('receipt')->with('success', 'Sales Receipt saved successfully.');
+        }
+
+        return redirect()->back()->with('success', 'Sales Receipt saved successfully.');
+
     }
 
-    private function getNextReceiptNo()
-    {
-        $last = SalesReceipt::where('company_id', session('active_company_id'))->latest()->first();
-        return $last ? (int)$last->receiptNo + 1 : 1001;
-    }
+   private function getNextReceiptNo()
+{
+    // Use the actual DB column name (usually receipt_no)
+    $last = SalesReceipt::where('company_id', session('active_company_id'))->latest()->first();
+    // If the column is receipt_no, use $last->receipt_no
+    return $last ? (int)$last->receipt_no + 1 : 1001;
+}
 }

@@ -17,7 +17,7 @@ class Item extends Model
         'sku',
         'image',
         'description',
-        'price',
+        'sale_price',
         'item_category_id',
         'income_account_id',
     ];

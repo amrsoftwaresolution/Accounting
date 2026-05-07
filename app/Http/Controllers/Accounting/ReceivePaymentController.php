@@ -17,9 +17,23 @@ class ReceivePaymentController extends Controller
 {
     public function create()
     {
+        $companyId = session('active_company_id');
+
+        $paymentMethods = PaymentMethod::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->where(function ($query) use ($companyId) {
+                $query->whereNull('company_id');
+
+                if ($companyId) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Transaction/ReceivePaymentForm', [
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
-            'paymentMethods' => PaymentMethod::where('is_active', true)->orderBy('name')->get()
+            'paymentMethods' => $paymentMethods
         ]);
     }
 
@@ -94,6 +108,15 @@ class ReceivePaymentController extends Controller
                 'memo' => $request->memo,
             ]);
         });
+
+        $action = $request->input('action', 'save');
+        if ($action === 'close') {
+            return redirect()->route('dashboard')->with('success', 'Payment received successfully.');
+        }
+
+        if ($action === 'new') {
+            return redirect()->route('payment')->with('success', 'Payment received successfully.');
+        }
 
         return redirect()->back()->with('success', 'Payment received successfully.');
     }

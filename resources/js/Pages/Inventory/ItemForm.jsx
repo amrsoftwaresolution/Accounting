@@ -10,7 +10,7 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
         sku: item?.sku || '',
         image: item?.image || '',
         description: item?.description || '',
-        price: item?.price || 0,
+        sale_price: item?.sale_price || 0,
         item_category_id: item?.item_category_id || '',
         income_account_id: item?.income_account_id || '',
     });
@@ -43,7 +43,7 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
                         {/* Basic Info */}
                         <div className="space-y-6">
                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest border-b pb-2">Basic Information</h3>
-                            
+
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Item Type</label>
                                 <div className="grid grid-cols-2 gap-3">
@@ -53,8 +53,8 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
                                             type="button"
                                             onClick={() => setData('type', type.id)}
                                             className={`px-4 py-3 rounded-xl border text-xs font-bold transition-all ${
-                                                data.type === type.id 
-                                                ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' 
+                                                data.type === type.id
+                                                ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
                                                 : 'bg-white border-slate-200 text-slate-600 hover:border-blue-200'
                                             }`}
                                         >
@@ -105,22 +105,24 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
                         {/* Financial Info */}
                         <div className="space-y-6">
                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest border-b pb-2">Sales & Financial</h3>
-                            
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Price / Rate</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={data.price}
-                                        onChange={e => setData('price', e.target.value)}
-                                        className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                                {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
+
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Price / Rate</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    // CHANGE THIS: from data.price to data.sale_price
+                                    value={data.sale_price}
+                                    onChange={e => setData('sale_price', e.target.value)}
+                                    className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
+                                    placeholder="0.00"
+                                />
                             </div>
+                            {/* CHANGE THIS: from errors.price to errors.sale_price */}
+                            {errors.sale_price && <p className="mt-1 text-xs text-red-600">{errors.sale_price}</p>}
+                        </div>
 
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Income Account</label>
