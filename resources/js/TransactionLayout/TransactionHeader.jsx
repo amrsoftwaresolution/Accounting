@@ -20,18 +20,6 @@ export default function TransactionHeader({ title, amount }) {
                         {title}
                     </h1>
                 </div>
-
-                {amount !== null && amount !== undefined && (
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Amount</span>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-[11px] font-bold text-slate-400">{currencyPrefix}</span>
-                            <span className="text-xl font-black tracking-tight text-slate-900 leading-none">
-                                {parseFloat(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* RIGHT SIDE */}

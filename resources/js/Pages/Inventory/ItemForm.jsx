@@ -1,16 +1,19 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import SearchableSelect from '@/Components/SearchableSelect';
 import { useState } from 'react';
 
 export default function ItemForm({ item, categories, incomeAccounts }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || '$';
+
     const { data, setData, post, put, processing, errors } = useForm({
         type: item?.type || 'service',
         name: item?.name || '',
         sku: item?.sku || '',
         image: item?.image || '',
         description: item?.description || '',
-        price: item?.price || 0,
+        sale_price: item?.sale_price || 0,
         item_category_id: item?.item_category_id || '',
         income_account_id: item?.income_account_id || '',
     });
@@ -109,17 +112,17 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Price / Rate</label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currencyPrefix}</span>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        value={data.price}
-                                        onChange={e => setData('price', e.target.value)}
-                                        className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
+                                        value={data.sale_price}
+                                        onChange={e => setData('sale_price', e.target.value)}
+                                        className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                                         placeholder="0.00"
                                     />
                                 </div>
-                                {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
+                                {errors.sale_price && <p className="mt-1 text-xs text-red-600">{errors.sale_price}</p>}
                             </div>
 
                             <div>

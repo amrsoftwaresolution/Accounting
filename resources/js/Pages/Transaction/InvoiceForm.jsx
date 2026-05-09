@@ -58,6 +58,13 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
         transform((data) => ({
             ...data,
             action: currentAction,
+            items: data.items
+                .filter(item => item.product)
+                .map(item => ({
+                    ...item,
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
         }));
     }, [currentAction]);
 
@@ -66,6 +73,9 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
         0
     ).toFixed(2);
 
+    const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
+    const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
     const handleItemChange = (index, field, value) => {
         const updated = [...data.items];
         updated[index][field] = value;
@@ -73,16 +83,17 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
         if (field === "product") {
             const product = products.find(p => p.id === value);
             if (product) {
-                updated[index].rate = product.sale_price;
+                const rateValue = parseFloat(product.sale_price) || 0;
+                updated[index].rate = formatCurrencyValue(rateValue);
                 const q = parseFloat(updated[index].qty) || 0;
-                updated[index].amount = (q * product.sale_price).toFixed(2);
+                updated[index].amount = formatCurrencyValue(q * rateValue);
             }
         }
 
         if (field === "qty" || field === "rate") {
             const q = parseFloat(updated[index].qty) || 0;
-            const r = parseFloat(updated[index].rate) || 0;
-            updated[index].amount = (q * r).toFixed(2);
+            const r = parseCurrency(updated[index].rate);
+            updated[index].amount = formatCurrencyValue(q * r);
         }
         setData("items", updated);
     };

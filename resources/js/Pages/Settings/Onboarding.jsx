@@ -24,7 +24,7 @@ export default function Onboarding({ company, salesSettings }) {
                         <div className="p-2 bg-[#00713D] rounded-lg shadow-lg shadow-emerald-100">
                             <ApplicationLogo className="h-6 w-auto filter brightness-0 invert" />
                         </div>
-                        <span className="text-lg font-black tracking-tight text-slate-800 uppercase">Fingrow</span>
+                        <span className="text-lg font-black tracking-tight text-slate-800 uppercase">JobAlign Book</span>
                     </div>
                     <div className="flex items-center gap-6">
                         <nav className="flex items-center gap-2">

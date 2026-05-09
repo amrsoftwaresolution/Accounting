@@ -1,9 +1,9 @@
-export default function ApplicationLogo({ className = '', ...props }) {
+export default function ApplicationLogo({ className = '', type = 'icon', ...props }) {
     return (
         <img
             {...props}
-            src="/images/icon.png"
-            alt="Logo"
+            src={type === 'logo' ? "/images/logo.png" : "/images/icon.png"}
+            alt="JobAlign Book"
             className={`${className} object-contain`}
         />
     );

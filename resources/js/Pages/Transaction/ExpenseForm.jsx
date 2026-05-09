@@ -74,13 +74,20 @@ export default function ExpenseForm({
         action: 'save' // default action
     });
 
-    const totalAmount = data.items.reduce((sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0), 0).toFixed(2);
+    const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
+    const totalAmount = data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0).toFixed(2);
     const selectedAccountBalance = accounts.find(a => String(a.id) === String(data.account))?.balance || "0.00";
 
     useEffect(() => {
         transform((data) => ({
             ...data,
             action: currentAction,
+            items: data.items
+                .filter(item => item.category)
+                .map(item => ({
+                    ...item,
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
         }));
     }, [currentAction]);
 

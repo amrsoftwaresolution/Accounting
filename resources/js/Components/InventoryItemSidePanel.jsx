@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, router, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 import SlideOver from './SlideOver';
 import CommonInput from './CommonInput';
@@ -7,7 +7,6 @@ import SearchableSelect from './SearchableSelect';
 import ItemCategorySidePanel from './ItemCategorySidePanel';
 import { useState } from 'react';
 import axios from 'axios';
-import { router } from '@inertiajs/react';
 
 export default function InventoryItemSidePanel({ 
     isOpen, 
@@ -17,6 +16,8 @@ export default function InventoryItemSidePanel({
     incomeAccounts = [],
     onSuccess = null 
 }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || '$';
     const isEdit = !!item;
     const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
     const [localCategories, setLocalCategories] = useState(categories);
@@ -27,7 +28,7 @@ export default function InventoryItemSidePanel({
         sku: '',
         image: '',
         description: '',
-        price: 0,
+        sale_price: 0,
         item_category_id: '',
         income_account_id: '',
     });
@@ -49,7 +50,7 @@ export default function InventoryItemSidePanel({
                     sku: item.sku || '',
                     image: item.image || '',
                     description: item.description || '',
-                    price: item.price || 0,
+                    sale_price: item.sale_price || 0,
                     item_category_id: item.item_category_id || '',
                     income_account_id: item.income_account_id || '',
                 });
@@ -155,16 +156,16 @@ export default function InventoryItemSidePanel({
                     <div>
                         <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Sales Price / Rate</label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
                             <input
                                 type="number"
                                 step="0.01"
-                                value={data.price}
-                                onChange={e => setData('price', e.target.value)}
-                                className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
+                                value={data.sale_price}
+                                onChange={e => setData('sale_price', e.target.value)}
+                                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                             />
                         </div>
-                        {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
+                        {errors.sale_price && <p className="mt-1 text-xs text-red-600">{errors.sale_price}</p>}
                     </div>
 
                     <div>

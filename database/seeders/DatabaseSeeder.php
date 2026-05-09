@@ -38,11 +38,11 @@ class DatabaseSeeder extends Seeder
         $company = Company::updateOrCreate(
             ['id' => 1],
             [
-                'company_name' => 'Fingrow Solutions Ltd',
-                'company_email' => 'hello@fingrow.example.com',
+                'company_name' => 'JobAlign Book Solutions Ltd',
+                'company_email' => 'hello@jobalign.example.com',
                 'phone' => '+94 11 234 5678',
                 'address' => '123 Business Park, Colombo 03, Sri Lanka',
-                'website' => 'https://fingrow.example.com',
+                'website' => 'https://jobalign.example.com',
                 'industry' => 'Financial Services',
                 'home_currency' => 'LKR',
             ]

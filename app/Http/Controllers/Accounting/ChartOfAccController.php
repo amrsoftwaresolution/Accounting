@@ -42,6 +42,7 @@ class ChartOfAccController extends Controller
         $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $account = ChartOfAcc::create([
+            'company_id' => $company->id,
             'account_code' => $request->input('account_code'),
             'name' => $request->input('name'),
             'account_type' => $request->input('account_type'),
@@ -53,10 +54,16 @@ class ChartOfAccController extends Controller
         ]);
 
         // If opening balance > 0, create a Journal Entry
+        // Only allow opening balance for Asset, Liability, and Equity
         $openingBalance = (float) $request->input('opening_balance', 0);
-        if ($openingBalance != 0) {
+        $canHaveOpeningBalance = in_array($account->account_type, ['asset', 'liability', 'equity']);
+
+        if ($openingBalance != 0 && $canHaveOpeningBalance) {
             $equityAccount = ChartOfAcc::firstOrCreate(
-                ['name' => 'Opening Balance Equity'],
+                [
+                    'company_id' => $company->id,
+                    'name' => 'Opening Balance Equity'
+                ],
                 [
                     'account_code' => '3000', // Typical equity code
                     'account_type' => 'equity',
@@ -66,6 +73,7 @@ class ChartOfAccController extends Controller
             );
 
             $journalEntry = \App\Models\JournalEntry::create([
+                'company_id' => $company->id,
                 'date' => $request->input('opening_balance_date', now()),
                 'reference' => 'OPENING_BAL',
                 'description' => 'Opening balance for ' . $account->name,

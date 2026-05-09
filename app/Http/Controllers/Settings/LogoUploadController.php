@@ -15,19 +15,24 @@ class LogoUploadController extends Controller
             'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $settings = CompanySetting::first() ?? new CompanySetting();
+        $companyId = session('active_company_id');
+        if (!$companyId) {
+            return back()->withErrors(['logo' => 'No active company found.']);
+        }
+
+        $company = \App\Models\Company::findOrFail($companyId);
 
         if ($request->hasFile('logo')) {
             // Delete old logo if it exists
-            if ($settings->logo_path) {
-                Storage::disk('public')->delete($settings->logo_path);
+            if ($company->logo_path) {
+                Storage::disk('public')->delete($company->logo_path);
             }
 
             // Store new logo in 'logos' folder within public disk
             $path = $request->file('logo')->store('logos', 'public');
 
-            $settings->logo_path = $path;
-            $settings->save();
+            $company->logo_path = $path;
+            $company->save();
         }
 
         return back()->with('message', 'Logo updated successfully!');

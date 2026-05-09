@@ -65,7 +65,7 @@ export default function PhoneInput({ value, onChange, error, className = '' }) {
                         className="flex items-center gap-2 px-4 py-3.5 border-r border-slate-100 hover:bg-slate-50 transition-colors rounded-l-xl min-w-[100px]"
                     >
                         <span className="text-xl leading-none">{selectedCountry.flag}</span>
-                        <span className="text-sm font-medium text-slate-700">{selectedCountry.code}</span>
+                        <span className="text-base font-medium text-slate-700">{selectedCountry.code}</span>
                         <svg className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -102,7 +102,7 @@ export default function PhoneInput({ value, onChange, error, className = '' }) {
                     value={phoneNumber}
                     onChange={handlePhoneChange}
                     placeholder={`Enter number (e.g. ${selectedCountry.name === 'Sri Lanka' ? '771234567' : '000000000'})`}
-                    className="flex-1 px-4 py-3.5 border-none bg-transparent focus:ring-0 text-slate-800 placeholder:text-slate-300 text-sm"
+                    className="flex-1 px-4 py-3.5 border-none bg-transparent focus:ring-0 text-slate-800 placeholder:text-slate-300 text-base"
                 />
 
                 {/* Validation Indicator */}

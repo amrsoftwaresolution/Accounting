@@ -281,7 +281,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
                         </div>
                     )}
 
-                    {!isEdit && (
+                    {!isEdit && ['asset', 'liability', 'equity'].includes(data.account_type) && (
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                             <CommonInput
                                 type="number"

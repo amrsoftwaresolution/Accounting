@@ -1,7 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { useForm } from '@inertiajs/react';
+import { useForm, Head, Link } from '@inertiajs/react';
+import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function Edit({ user, managers }) {
+    const managerOptions = managers.map(m => ({ value: m.id, label: m.name }));
 
     const { data, setData, patch, processing, errors } = useForm({
         name: user.name ?? '',
@@ -14,128 +18,110 @@ export default function Edit({ user, managers }) {
 
     function submit(e) {
         e.preventDefault();
-
         patch(route('team.update', user.id));
     }
 
     return (
-        <AuthenticatedLayout
-            header={
-                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                    Edit Employee
-                </h2>
-            }
-        >
-            <div className="py-12">
-                <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white p-6 shadow sm:rounded-lg">
-
-                        <form onSubmit={submit} className="space-y-6">
-
-                            {/* Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-                                />
-                                {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+        <AuthenticatedLayout>
+            <Head title={`Edit ${user.name}`} />
+            
+            <div className="py-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-2xl mx-auto">
+                    <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+                        <div className="px-10 pt-10 pb-6 border-b border-slate-100 bg-slate-50/30 text-center">
+                            <div className="w-16 h-16 bg-[#00713D]/10 rounded-3xl flex items-center justify-center text-[#00713D] mx-auto mb-4 font-black text-2xl">
+                                {user.name.charAt(0)}
                             </div>
+                            <h1 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Edit Team Member</h1>
+                            <p className="text-sm text-slate-500 font-medium mt-1">Update profile details and access permissions for {user.name}.</p>
+                        </div>
 
-                            {/* Email */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-                                />
-                                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-                            </div>
+                        <form onSubmit={submit} className="p-10 space-y-8">
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                <div className="col-span-2">
+                                    <CommonInput
+                                        label="Full Name"
+                                        placeholder="John Doe"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        error={errors.name}
+                                    />
+                                </div>
 
-                            {/* Role */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Role
-                                </label>
-                                <select
-                                    value={data.role}
-                                    onChange={(e) => setData('role', e.target.value)}
-                                    className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-                                >
-                                    <option value="admin">Admin</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="staff">Staff</option>
-                                </select>
-                                {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
-                            </div>
+                                <div className="col-span-2">
+                                    <CommonInput
+                                        type="email"
+                                        label="Email Address"
+                                        placeholder="john@example.com"
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        error={errors.email}
+                                    />
+                                </div>
 
-                            {/* Hire Date */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Hire Date
-                                </label>
-                                <input
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1">System Role</label>
+                                    <select
+                                        value={data.role}
+                                        onChange={(e) => setData('role', e.target.value)}
+                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-[#00713D]/20 focus:border-[#00713D] transition-all outline-none appearance-none"
+                                    >
+                                        <option value="admin">Administrator</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="staff">Staff Member</option>
+                                    </select>
+                                    {errors.role && <p className="text-red-500 text-[10px] mt-1 font-bold italic ml-1">{errors.role}</p>}
+                                </div>
+
+                                <CommonInput
                                     type="date"
+                                    label="Hire Date"
                                     value={data.hire_date}
                                     onChange={(e) => setData('hire_date', e.target.value)}
-                                    className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
+                                    error={errors.hire_date}
                                 />
-                                {errors.hire_date && <p className="text-red-500 text-sm">{errors.hire_date}</p>}
+
+                                <div className="col-span-2">
+                                    <SearchableSelect
+                                        label="Reports To (Manager)"
+                                        placeholder="Select a manager"
+                                        value={data.manager_id}
+                                        onChange={(val) => setData('manager_id', val)}
+                                        options={managerOptions}
+                                        error={errors.manager_id}
+                                    />
+                                </div>
                             </div>
 
-                            {/* Manager */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Manager
-                                </label>
-                                <select
-                                    value={data.manager_id || ''}
-                                    onChange={(e) => setData('manager_id', e.target.value)}
-                                    className="mt-1 w-full border-gray-300 rounded-md shadow-sm"
-                                >
-                                    <option value="">No Manager</option>
-
-                                    {managers.map((m) => (
-                                        <option key={m.id} value={m.id}>
-                                            {m.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.manager_id && <p className="text-red-500 text-sm">{errors.manager_id}</p>}
-                            </div>
-
-                            {/* Active */}
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-3 py-4 px-6 bg-slate-50 rounded-2xl border border-slate-100">
                                 <input
                                     type="checkbox"
+                                    id="is_active"
                                     checked={data.is_active}
                                     onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                                    className="h-5 w-5 text-[#00713D] border-slate-300 rounded-lg focus:ring-[#00713D]/20 transition-all cursor-pointer"
                                 />
-                                <label className="text-sm text-gray-700">Active</label>
+                                <label htmlFor="is_active" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
+                                    Account Access Enabled
+                                </label>
                             </div>
 
-                            {/* Submit */}
-                            <div>
-                                <button
+                            <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                                <Link href={route('team.index')}>
+                                    <button type="button" className="text-sm font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
+                                        Back to Team
+                                    </button>
+                                </Link>
+                                <CommonButton
                                     type="submit"
+                                    variant="primary"
+                                    className="px-10"
                                     disabled={processing}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
                                 >
-                                    {processing ? 'Updating...' : 'Update Employee'}
-                                </button>
+                                    {processing ? 'Updating...' : 'Save Changes'}
+                                </CommonButton>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>

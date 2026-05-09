@@ -9,6 +9,7 @@ return new class extends Migration {
     {
         Schema::create('advanced_settings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             // Accounting settings
             $table->string('acct_method', 50)->default('Accrual');
             $table->string('fin_year_start', 20)->default('January');

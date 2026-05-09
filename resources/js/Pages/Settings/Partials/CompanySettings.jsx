@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 
 export default function CompanySettings({ settings }) {
     // 1. Logic for Company Info Text (Edit Mode)
@@ -66,11 +66,8 @@ export default function CompanySettings({ settings }) {
     };
     // ------------------------------------
 
-    // 3. Logic for Logo Upload
+    const [isUploading, setIsUploading] = useState(false);
     const fileInput = useRef();
-    const logoForm = useForm({
-        logo: null,
-    });
 
     const selectFile = () => {
         fileInput.current.click();
@@ -79,10 +76,13 @@ export default function CompanySettings({ settings }) {
     const handleLogoUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-            logoForm.setData('logo', file);
-            logoForm.post(route('logo.upload'), {
+            setIsUploading(true);
+            router.post(route('logo.upload'), {
+                logo: file,
+            }, {
                 forceFormData: true,
                 preserveScroll: true,
+                onFinish: () => setIsUploading(false),
             });
         }
     };
@@ -111,15 +111,21 @@ export default function CompanySettings({ settings }) {
                             <span className="material-icons text-gray-400 text-4xl">store</span>
                         )}
 
-                        <div className={`absolute inset-0 bg-black flex items-center justify-center transition-all ${logoForm.processing ? 'bg-opacity-40' : 'bg-opacity-0 group-hover:bg-opacity-10'}`}>
-                            {logoForm.processing ? (
+                        <div className={`absolute inset-0 bg-black flex items-center justify-center transition-all ${isUploading ? 'bg-opacity-40' : 'bg-opacity-0 group-hover:bg-opacity-10'}`}>
+                            {isUploading ? (
                                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
                                 <span className="material-icons text-white opacity-0 group-hover:opacity-100">add_a_photo</span>
                             )}
                         </div>
                     </div>
-                    <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md border border-gray-200">
+                    <div 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            selectFile();
+                        }}
+                        className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md border border-gray-200"
+                    >
                         <span className="material-icons text-sm text-gray-600">edit</span>
                     </div>
                 </div>

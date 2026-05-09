@@ -43,7 +43,7 @@ class ItemController extends Controller
             'sku' => 'nullable|string|max:255',
             'image' => 'nullable|string',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'sale_price' => 'required|numeric|min:0',
             'item_category_id' => 'nullable|exists:item_categories,id',
             'income_account_id' => 'nullable|exists:chart_of_accs,id',
         ]);
@@ -73,7 +73,7 @@ class ItemController extends Controller
             'sku' => 'nullable|string|max:255',
             'image' => 'nullable|string',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'sale_price' => 'required|numeric|min:0',
             'item_category_id' => 'nullable|exists:item_categories,id',
             'income_account_id' => 'nullable|exists:chart_of_accs,id',
         ]);

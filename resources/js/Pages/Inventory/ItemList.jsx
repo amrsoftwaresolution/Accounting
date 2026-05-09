@@ -1,10 +1,12 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import CommonButton from '@/Components/CommonButton';
 import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
 
 export default function ItemList({ items: initialItems, categories, incomeAccounts }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || '$';
     const { delete: destroy } = useForm();
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -118,8 +120,8 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                                     <th onClick={() => requestSort('category.name')} className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-slate-600 transition-colors">
                                         <div className="flex items-center">Category <SortIcon columnKey="category.name" /></div>
                                     </th>
-                                    <th onClick={() => requestSort('price')} className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-slate-600 transition-colors text-right">
-                                        <div className="flex items-center justify-end">Sales Price <SortIcon columnKey="price" /></div>
+                                    <th onClick={() => requestSort('sale_price')} className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-slate-600 transition-colors text-right">
+                                        <div className="flex items-center justify-end">Sales Price <SortIcon columnKey="sale_price" /></div>
                                     </th>
                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Income Account</th>
                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -159,7 +161,7 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                                         <td className="px-6 py-4 text-xs font-mono text-slate-500">{item.sku || '-'}</td>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-600">{item.category?.name || '-'}</td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm font-bold text-slate-900">${parseFloat(item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                            <div className="text-sm font-bold text-slate-900">{currencyPrefix}{parseFloat(item.sale_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-xs font-bold text-slate-600 truncate max-w-[150px]">

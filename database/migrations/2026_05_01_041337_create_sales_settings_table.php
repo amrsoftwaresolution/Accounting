@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('sales_settings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('company_id')->constrained()->onDelete('cascade');
 
             // Sales Form Content
             $table->string('preferred_invoice_terms', 50)->default('Net 30');
