@@ -29,8 +29,6 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
     ];
 
-    const [currentAction, setCurrentAction] = useState('save');
-
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: receipt?.customer || "",
         email: receipt?.email || "",
@@ -48,6 +46,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         action: 'save'
     });
 
+<<<<<<< HEAD
     useEffect(() => {
         transform((data) => ({
             ...data,
@@ -62,6 +61,8 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         }));
     }, [currentAction]);
 
+=======
+>>>>>>> 197c623823eee17b3a962769297caf3fd8be415c
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
         0
@@ -92,18 +93,30 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         setData("items", updated);
     };
 
-    const handleSave = (action = 'save') => {
-        setCurrentAction(action);
-        const url = receipt?.id ? route('receipt.update', receipt.id) : route('receipt.store');
-        const method = receipt?.id ? patch : post;
+    const handleSave = (actionType = 'save') => {
+        // 1. CLEAN DATA: Filter out any rows that don't have a product selected
+        // This prevents "The items.1.product field is required" errors
+        transform((data) => ({
+            ...data,
+            action: actionType,
+            items: data.items.filter(item => item.product && item.product !== "")
+        }));
 
-        method(url, {
+        const url = receipt?.id ? route('receipt.update', receipt.id) : route('receipt.store');
+        const submitMethod = receipt?.id ? patch : post;
+
+        // 2. SUBMIT
+        submitMethod(url, {
             preserveScroll: true,
+            preserveState: actionType === 'save',
             onSuccess: () => {
-                if (action === 'new') {
+                if (actionType === 'new') {
                     reset();
                     clearErrors();
                 }
+            },
+            onError: (err) => {
+                console.error("Form submission failed:", err);
             }
         });
     };
@@ -117,14 +130,20 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
-                setData("items", [...data.items, { product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
             onClearRows={() => {
-                setData("items", [{ product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
         >
             <div className="py-6 px-1 space-y-8">
-                {/* ROW 1: Customer & Email & Balance */}
+                {/* GLOBAL ERROR ALERT */}
+                {Object.keys(errors).length > 0 && (
+                    <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+                        Please fix the errors highlighted below before saving.
+                    </div>
+                )}
+
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
                         <div className="w-[320px]">
@@ -162,7 +181,6 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                         </div>
                     </div>
 
-                    {/* Balance Display */}
                     <div className="text-right flex flex-col items-end">
                         <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Total Amount</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
@@ -172,17 +190,16 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                     </div>
                 </div>
 
-                {/* ROW 2: Address, Payment Method, Deposit To, Dates, No */}
                 <div className="flex items-end gap-6 flex-wrap">
                     <div className="w-[240px]">
                         <CommonInput
                             type="textarea"
                             label="Billing address"
-                            placeholder=""
                             value={data.billingAddress}
                             onChange={(e) => setData("billingAddress", e.target.value)}
                             className="h-[74px]"
                             size="sm"
+                            error={errors.billingAddress}
                         />
                     </div>
                     <div className="w-[180px]">
@@ -192,6 +209,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             value={data.receiptDate}
                             onChange={(e) => setData('receiptDate', e.target.value)}
                             size="sm"
+                            error={errors.receiptDate}
                         />
                     </div>
                     <div className="w-[180px]">
@@ -201,6 +219,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             onChange={(val) => setData('paymentMethod', val)}
                             options={paymentMethodOptions}
                             size="sm"
+                            error={errors.paymentMethod}
                         />
                     </div>
                     <div className="w-[240px]">
@@ -221,6 +240,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             onChange={(e) => setData('receiptNo', e.target.value)}
                             size="sm"
                             inputClass="font-mono text-right"
+                            error={errors.receiptNo}
                         />
                     </div>
                 </div>
@@ -236,6 +256,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                 totals={{ "Total": totalAmount }}
                 currencyPrefix={currencyPrefix}
                 hideActions={true}
+                errors={errors}
             />
 
             <div className="grid grid-cols-2 gap-10 mt-8">
@@ -249,6 +270,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             onChange={(e) => setData('memo', e.target.value)}
                             size="sm"
                             className="h-20"
+                            error={errors.memo}
                         />
                     </div>
                     <div className="w-[400px]">
@@ -260,6 +282,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             onChange={(e) => setData('statementMessage', e.target.value)}
                             size="sm"
                             className="h-20"
+                            error={errors.statementMessage}
                         />
                     </div>
                 </div>

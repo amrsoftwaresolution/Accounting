@@ -163,8 +163,8 @@ class DatabaseSeeder extends Seeder
 
 
         $this->call([
-            SalesSettingSeeder::class,
-            CompanySettingSeeder::class,
+            PaymentMethodSeeder::class,
+            AdvancedSettingsSeeder::class,
         ]);
 
     }
