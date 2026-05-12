@@ -11,13 +11,11 @@ export default function LandingLayout({ children }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-20 items-center">
                         <div className="flex items-center gap-2">
-                            <Link href="/" className="flex items-center gap-2.5 group">
-                                <div className="p-1.5 rounded-xl bg-blue-600 shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform duration-300">
-                                    <ApplicationLogo className="h-8 w-auto filter brightness-0 invert" />
-                                </div>
+                            <Link href="/" className="flex items-center gap-3 group">
+                                <ApplicationLogo className="h-10 w-auto group-hover:scale-105 transition-transform duration-300" />
                                 <div className="flex flex-col">
-                                    <span className="text-slate-900 text-xl font-black tracking-tight leading-none">JobAlign Book</span>
-                                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">JobAlign Book</span>
+                                    <span className="text-slate-900 text-xl font-black tracking-tight leading-none">{usePage().props.appName}</span>
+                                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">{usePage().props.appName}</span>
                                 </div>
                             </Link>
                         </div>
@@ -64,11 +62,9 @@ export default function LandingLayout({ children }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-slate-800 pb-16">
                         <div className="col-span-1 md:col-span-1">
-                            <Link href="/" className="flex items-center gap-2.5 mb-6">
-                                <div className="p-1.5 rounded-lg bg-blue-600">
-                                    <ApplicationLogo className="h-6 w-auto filter brightness-0 invert" />
-                                </div>
-                                <span className="text-white text-xl font-black tracking-tight leading-none">JobAlign Book</span>
+                            <Link href="/" className="flex items-center gap-3 mb-6">
+                                <ApplicationLogo className="h-8 w-auto" />
+                                <span className="text-white text-xl font-black tracking-tight leading-none">{usePage().props.appName}</span>
                             </Link>
                             <p className="text-sm leading-relaxed">
                                 Empowering businesses with smart financial management and operational growth tools. Built for modern enterprises.
@@ -112,7 +108,7 @@ export default function LandingLayout({ children }) {
                     </div>
 
                     <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-bold uppercase tracking-widest">
-                        <p>© {new Date().getFullYear()} JobAlign Book. All rights reserved.</p>
+                        <p>© {new Date().getFullYear()} {usePage().props.appName}. All rights reserved.</p>
                         <div className="flex gap-8">
                             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
                             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>

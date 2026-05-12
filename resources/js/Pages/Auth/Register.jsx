@@ -4,7 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import PhoneInput from '@/Components/PhoneInput';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -29,7 +29,7 @@ export default function Register() {
 
             <div className="mb-6 text-center">
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Create Account</h1>
-                <p className="text-slate-500 mt-1.5 text-sm">Join JobAlign Book today.</p>
+                <p className="text-slate-500 mt-1.5 text-sm">Join {usePage().props.appName} today.</p>
             </div>
 
             <form onSubmit={submit} className="space-y-4">

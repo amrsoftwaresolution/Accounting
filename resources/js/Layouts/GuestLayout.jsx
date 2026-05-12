@@ -1,5 +1,5 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 export default function GuestLayout({ children }) {
     return (
@@ -19,7 +19,7 @@ export default function GuestLayout({ children }) {
                         <ApplicationLogo className="h-24 w-auto drop-shadow-2xl" />
                     </div>
                     <h2 className="text-4xl font-bold text-white tracking-tight mb-4">
-                        JobAlign Book
+                        {usePage().props.appName}
                     </h2>
                     <p className="text-slate-400 text-lg max-w-sm mx-auto leading-relaxed">
                         The complete ecosystem for modern business management and financial growth.
@@ -49,7 +49,7 @@ export default function GuestLayout({ children }) {
                     
                     <div className="mt-8 text-center">
                         <p className="text-slate-400 text-xs tracking-wide">
-                            © {new Date().getFullYear()} JobAlign Book. All rights reserved.
+                            © {new Date().getFullYear()} {usePage().props.appName}. All rights reserved.
                         </p>
                     </div>
                 </div>

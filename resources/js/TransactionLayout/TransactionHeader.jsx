@@ -1,4 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
+import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function TransactionHeader({ title, amount }) {
     const { auth } = usePage().props;
@@ -10,12 +11,9 @@ export default function TransactionHeader({ title, amount }) {
 
             {/* LEFT SIDE */}
             <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-slate-100 rounded-lg text-slate-500">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
+                <div className="flex items-center gap-3">
+                    <ApplicationLogo className="h-7 w-auto" />
+                    <div className="h-6 w-px bg-slate-200 mx-1" />
                     <h1 className="text-lg font-semibold text-gray-800">
                         {title}
                     </h1>

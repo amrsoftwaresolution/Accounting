@@ -4,7 +4,7 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
 
 
@@ -28,7 +28,7 @@ export default function Login({ status, canResetPassword }) {
 
             <div className="mb-6 text-center">
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Sign In</h1>
-                <p className="text-slate-500 mt-1.5 text-sm">Welcome back to JobAlign Book.</p>
+                <p className="text-slate-500 mt-1.5 text-sm">Welcome back to {usePage().props.appName}.</p>
             </div>
 
             {status && (

@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
                 'company' => $request->user() ? $request->user()->currentCompany() : null,
                 'companies' => $request->user() ? $request->user()->companies : [],
             ],
+            'appName' => config('app.name'),
         ];
     }
 }

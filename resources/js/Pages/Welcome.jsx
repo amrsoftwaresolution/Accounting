@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import LandingLayout from '@/Layouts/LandingLayout';
 
 export default function Welcome({ auth, laravelVersion, phpVersion }) {
@@ -24,7 +24,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     </h1>
 
                     <p className="max-w-2xl mx-auto text-lg lg:text-xl text-slate-600 leading-relaxed mb-12 animate-fade-in-up transition-delay-200">
-                        JobAlign Book simplifies your complex business operations. From high-speed accounting to seamless inventory management, everything you need is in one place.
+                        {usePage().props.appName} simplifies your complex business operations. From high-speed accounting to seamless inventory management, everything you need is in one place.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up transition-delay-300">
@@ -140,7 +140,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
                     <h2 className="text-4xl lg:text-6xl font-black mb-8 leading-tight">Ready to take your business to the next level?</h2>
-                    <p className="text-xl text-green-100 mb-12">Join thousands of businesses that trust JobAlign Book for their daily operations.</p>
+                    <p className="text-xl text-green-100 mb-12">Join thousands of businesses that trust {usePage().props.appName} for their daily operations.</p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <Link
                             href={route('register')}

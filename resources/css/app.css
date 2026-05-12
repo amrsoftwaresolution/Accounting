@@ -10,11 +10,11 @@
 
 html {
     scroll-behavior: smooth;
+    font-size: 19px;
 }
 
 body {
     font-family: 'Figtree', sans-serif;
-    font-size: 9px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

@@ -210,7 +210,7 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
                         <ApplicationLogo className="h-6 w-auto filter invert brightness-200" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-white text-sm font-bold tracking-tight">JobAlign Book</span>
+                        <span className="text-white text-sm font-bold tracking-tight">{usePage().props.appName}</span>
                     </div>
                 </Link>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import CompanySettings from './Partials/CompanySettings';
 import SalesSettings from './Partials/SalesSettings';
 import ApplicationLogo from '@/Components/ApplicationLogo';
@@ -21,10 +21,8 @@ export default function Onboarding({ company, salesSettings }) {
             <header className="bg-white border-b border-slate-200 py-4 px-6 fixed top-0 w-full z-10">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#00713D] rounded-lg shadow-lg shadow-emerald-100">
-                            <ApplicationLogo className="h-6 w-auto filter brightness-0 invert" />
-                        </div>
-                        <span className="text-lg font-black tracking-tight text-slate-800 uppercase">JobAlign Book</span>
+                        <ApplicationLogo className="h-8 w-auto" />
+                        <span className="text-lg font-black tracking-tight text-slate-800 uppercase">{usePage().props.appName}</span>
                     </div>
                     <div className="flex items-center gap-6">
                         <nav className="flex items-center gap-2">
