@@ -40,20 +40,10 @@ export default function BillForm({ suppliers = [], accounts = [], nextBillNo = "
         { account_id: "", description: "", amount: "" },
     ]);
 
-<<<<<<< HEAD
-    const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
-
-    // 3. Calculation Logic
-    const totalAmount = items.reduce(
-        (sum, item) => sum + parseCurrency(item.amount),
-        0
-    ).toFixed(2);
-=======
     const [isDirty, setIsDirty] = useState(false);
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
 
     const totalAmount = items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0).toFixed(2);
->>>>>>> 197c623823eee17b3a962769297caf3fd8be415c
 
     const handleItemChange = (index, field, value) => {
         const updated = [...items];

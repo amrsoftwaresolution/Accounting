@@ -46,23 +46,6 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         action: 'save'
     });
 
-<<<<<<< HEAD
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: currentAction,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [currentAction]);
-
-=======
->>>>>>> 197c623823eee17b3a962769297caf3fd8be415c
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
         0

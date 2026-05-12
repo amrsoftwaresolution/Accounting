@@ -24,7 +24,7 @@ jobs:
           tools: 'composer'
 
     - name: Copy .env file
-      run: php -r "file_exists('.env') || copy('.env.proddemo', '.env');"
+      run: php -r "file_exists('.env') || copy('.env.prod', '.env');"
 
     # - name: Install Dependencies
     #   run: composer install --prefer-dist --optimize-autoloader
