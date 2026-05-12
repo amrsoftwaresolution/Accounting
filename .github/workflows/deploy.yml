@@ -77,6 +77,6 @@ jobs:
         password: ${{ secrets.FTP_APP_PASSWORD }}
         server-dir: /
         exclude: |
-          **/resources/**
+          **/resources/js/**
           **/node_modules/**
           **/.git/**

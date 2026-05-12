@@ -5,10 +5,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/test-view', function () {
-    return view('app');
-});
-
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -49,7 +45,7 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\HandleCompanyContext
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ERP Routes
-    Route::get('/dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
+    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
 
     Route::get('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'create'])->name('expense');
     Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
@@ -72,12 +68,12 @@ Route::middleware(['auth', 'verified', \App\Http\Middleware\HandleCompanyContext
     Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
     Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'index'])->name('SupplierCredit');
     Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('SupplierCredit.store');
-Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill.create');
-Route::post('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'store'])->name('bills.store');
-// Find these lines in web.php and update the names:
-Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'index'])->name('SupplierCredit.index');
-Route::get('/SupplierCredit/create', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('SupplierCredit.create');
-Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('SupplierCredit.store');
+    Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill.create');
+    Route::post('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'store'])->name('bills.store');
+    // Find these lines in web.php and update the names:
+    Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'index'])->name('SupplierCredit.index');
+    Route::get('/SupplierCredit/create', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('SupplierCredit.create');
+    Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('SupplierCredit.store');
 
     Route::get('chart-of-account/{chartOfAccount}/history', [\App\Http\Controllers\Accounting\ChartOfAccController::class, 'history'])->name('chart-of-account.history');
     Route::resource('chart-of-account', ChartOfAccController::class);
@@ -114,4 +110,4 @@ Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditC
 });
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
