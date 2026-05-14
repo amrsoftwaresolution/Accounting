@@ -25,6 +25,7 @@ class Company extends Model
         'home_currency',
         'home_currency_prefix',
         'multicurrency',
+        'is_onboarded',
     ];
     
     protected $appends = ['logo_url', 'slug'];

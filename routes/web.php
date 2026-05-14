@@ -80,6 +80,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/update', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
     
+    // Onboarding
+    Route::get('/onboarding', [\App\Http\Controllers\Settings\OnboardingController::class, 'index'])->name('onboarding');
+    Route::post('/onboarding/complete', [\App\Http\Controllers\Settings\OnboardingController::class, 'complete'])->name('onboarding.complete');
+    
     // Users
     Route::resource('users', \App\Http\Controllers\UserController::class);
 
