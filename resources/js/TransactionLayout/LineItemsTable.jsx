@@ -57,12 +57,12 @@ export default function LineItemsTable({
                     <thead>
                         <tr className="bg-slate-50 border-b border-slate-200">
                             <th className="w-8 px-1 py-1.5 border-r border-slate-200"></th>
-                            <th className="w-8 px-1 py-1.5 border-r border-slate-200 text-center text-2xs font-black text-slate-500 uppercase tracking-tight">#</th>
+                            <th className="w-8 px-1 py-1.5 border-r border-slate-200 text-center text-xs font-black text-slate-500 uppercase tracking-tight">#</th>
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
                                     style={{ width: col.width }}
-                                    className={`px-2 py-1.5 text-2xs font-black text-slate-500 uppercase tracking-widest border-r border-slate-200 last:border-r-0 ${col.className || ''}`}
+                                    className={`px-2 py-1.5 text-xs font-black text-slate-500 uppercase tracking-widest border-r border-slate-200 last:border-r-0 ${col.className || ''}`}
                                 >
                                     {col.label}
                                 </th>
@@ -92,7 +92,7 @@ export default function LineItemsTable({
                                 </td>
 
                                 {/* Row Number */}
-                                <td className="px-1 py-0.5 align-middle w-8 border-r border-slate-100 text-center text-2xs text-slate-400 font-bold">
+                                <td className="px-1 py-0.5 align-middle w-8 border-r border-slate-100 text-center text-xs text-slate-400 font-bold">
                                     {index + 1}
                                 </td>
 
@@ -109,6 +109,8 @@ export default function LineItemsTable({
                                                     initialLimit={10}
                                                     variant="table"
                                                     size="sm"
+                                                    onAddNew={col.onAddNew}
+                                                    hideChevron={col.hideChevron}
                                                 />
                                             ) : (
                                                 <CommonInput
@@ -169,9 +171,9 @@ export default function LineItemsTable({
                     <div className="flex items-center gap-8 pr-4">
                         {Object.entries(totals).map(([label, value]) => (
                             <div key={label} className="flex items-center gap-3">
-                                <span className="text-2xs font-black text-slate-500 uppercase tracking-widest">{label}</span>
+                                <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{label}</span>
                                 <span className="text-sm font-black text-slate-900 flex items-center gap-1">
-                                    <span className="text-2xs font-bold text-slate-400">{currencyPrefix}</span>
+                                    <span className="text-xs font-bold text-slate-400">{currencyPrefix}</span>
                                     {parseFloat(String(value).replace(/,/g, '') || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                 </span>
                             </div>

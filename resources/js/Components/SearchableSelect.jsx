@@ -14,7 +14,8 @@ export default function SearchableSelect({
     variant = "boxed", // "boxed", "table", "underlined"
     error = null,
     required = false,
-    size = "md" 
+    size = "md",
+    hideChevron = false
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -48,6 +49,12 @@ export default function SearchableSelect({
     }, [search, onSearch, isOpen]);
 
     useEffect(() => {
+        const closeOnScroll = () => {
+            if (isOpen) {
+                setIsOpen(false);
+            }
+        };
+
         const updatePosition = () => {
             if (isOpen && containerRef.current) {
                 const rect = containerRef.current.getBoundingClientRect();
@@ -60,11 +67,11 @@ export default function SearchableSelect({
         };
 
         updatePosition();
-        window.addEventListener('scroll', updatePosition);
+        window.addEventListener('scroll', closeOnScroll, true);
         window.addEventListener('resize', updatePosition);
         
         return () => {
-            window.removeEventListener('scroll', updatePosition);
+            window.removeEventListener('scroll', closeOnScroll, true);
             window.removeEventListener('resize', updatePosition);
         };
     }, [isOpen]);
@@ -112,17 +119,17 @@ export default function SearchableSelect({
     const selectedOption = options.find(opt => String(opt.value) === String(value));
 
     const sizeClasses = {
-        sm: "h-[30px] text-2xs rounded",
-        md: "h-[40px] text-sm rounded-md",
-        lg: "h-[50px] text-base rounded-lg"
+        sm: "h-[30px] text-xs rounded",
+        md: "h-[30px] text-xs rounded", // Changed md to match sm as per request for consistency
+        lg: "h-[30px] text-xs rounded"  // Changed lg to match sm as per request for consistency
     };
 
     const getBaseClasses = () => {
         if (variant === "table") {
-            return `w-full h-8 bg-transparent border-none focus-within:bg-green-50/30 transition-all rounded-none ring-0 text-sm`;
+            return `w-full h-8 bg-transparent border-none focus-within:bg-green-50/30 transition-all rounded-none ring-0 text-xs flex items-center`;
         }
         if (variant === "boxed") {
-            return `w-full border border-slate-300 bg-white text-slate-900 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20 ${sizeClasses[size]} ${error ? 'border-red-300' : ''}`;
+            return `w-full border border-slate-300 bg-white text-slate-900 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20 h-[30px] text-xs rounded cursor-pointer flex items-center group overflow-hidden ${error ? 'border-red-300' : ''}`;
         }
         return `w-full border-b border-slate-300 py-1 text-sm bg-transparent outline-none transition-all ${error ? 'border-red-300' : ''}`;
     };
@@ -135,29 +142,31 @@ export default function SearchableSelect({
             onKeyDown={handleKeyDown}
         >
             {label && (
-                <label className={`font-bold text-slate-600 ml-0.5 block ${size === 'sm' ? 'text-2xs mb-0' : 'text-sm mb-0.5'}`}>
+                <label className="font-bold text-slate-600 ml-0.5 block text-xs mb-1">
                     {label} {required && <span className="text-red-500">*</span>}
                 </label>
             )}
             
             <div 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`${getBaseClasses()} ${className} cursor-pointer flex items-center group overflow-hidden focus-within:ring-2 focus-within:ring-green-500/20`}
+                className={`${getBaseClasses()} ${className}`}
             >
-                <div className="flex-1 px-2 truncate">
+                <div className="flex-1 px-2 truncate flex items-center h-full">
                     <span className={`${selectedOption ? "text-slate-800" : "text-slate-400"}`}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </span>
                 </div>
-                <div className={`h-full w-6 flex items-center justify-center transition-colors ${variant === 'table' ? '' : 'border-l border-slate-300 bg-slate-50 group-hover:bg-slate-100'}`}>
-                    <svg className={`h-3 w-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </div>
+                {!hideChevron && (
+                    <div className={`h-full w-6 flex items-center justify-center transition-colors ${variant === 'table' ? '' : 'border-l border-slate-300 bg-slate-50 group-hover:bg-slate-100'}`}>
+                        <svg className={`h-3 w-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                )}
             </div>
 
             {error && (
-                <p className="text-[8px] font-bold text-red-500 items-center flex gap-1 ml-1 mt-1">
+                <p className="text-xs font-bold text-red-500 items-center flex gap-1 ml-1 mt-1">
                     {error}
                 </p>
             )}
@@ -179,7 +188,7 @@ export default function SearchableSelect({
                             type="text"
                             ref={inputRef}
                             placeholder="Search..."
-                            className="w-full px-2 py-1 text-[9px] border border-slate-300 rounded focus:ring-1 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+                            className="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all h-7"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={handleKeyDown}
@@ -193,7 +202,7 @@ export default function SearchableSelect({
                                     onAddNew();
                                     setIsOpen(false);
                                 }}
-                                className="px-3 py-1.5 text-[9px] text-blue-600 font-bold border-b border-slate-100 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+                                className="px-3 py-1.5 text-xs text-blue-600 font-bold border-b border-slate-100 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
                             >
                                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                                 Add New
@@ -208,7 +217,7 @@ export default function SearchableSelect({
                                         setIsOpen(false);
                                         setSearch("");
                                     }}
-                                    className={`px-3 py-1.5 text-[9px] cursor-pointer transition-colors flex justify-between items-center ${
+                                    className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex justify-between items-center ${
                                         idx === activeIndex ? 'bg-slate-100' : ''
                                     } ${
                                         String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
@@ -216,19 +225,19 @@ export default function SearchableSelect({
                                 >
                                     <span>{opt.label}</span>
                                     {opt.type && (
-                                        <span className="text-[8px] text-slate-400 italic font-medium ml-4">
+                                        <span className="text-2xs text-slate-400 italic font-medium ml-4">
                                             {opt.type}
                                         </span>
                                     )}
                                     {opt.balance !== undefined && (
-                                        <span className="text-[8px] text-slate-400 font-mono">
+                                        <span className="text-2xs text-slate-400 font-mono">
                                             LKR {parseFloat(opt.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
                                     )}
                                 </div>
                             ))
                         ) : (
-                            <div className="px-3 py-3 text-[8px] text-slate-400 text-center italic">
+                            <div className="px-3 py-3 text-xs text-slate-400 text-center italic">
                                 No results found
                             </div>
                         )}

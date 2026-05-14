@@ -35,10 +35,9 @@ class LookupController extends Controller
         }
 
         if (!$requestedType || $requestedType === 'Employee') {
-            $employees = Employee::join('users', 'employees.user_id', '=', 'users.id')
-                ->select('employees.id', 'users.name as label')
+            $employees = Employee::select('id', 'name as label')
                 ->selectRaw("'Employee' as type")
-                ->when($search, fn($q) => $q->where('users.name', 'like', "%{$search}%"));
+                ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"));
             $query = $query ? $query->union($employees) : $employees;
         }
 
@@ -53,5 +52,69 @@ class LookupController extends Controller
             });
 
         return response()->json($payees);
+    }
+
+    /**
+     * Endpoint to fetch accounts from Chart of Accounts
+     */
+    public function accounts(Request $request)
+    {
+        $search = $request->query('search');
+        $type = $request->query('type'); // optional: filter by account_type
+
+        $accounts = \App\Models\ChartOfAcc::select('id', 'name', 'account_code', 'balance')
+            ->when($search, function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('account_code', 'like', "%{$search}%");
+            })
+            ->when($type, fn($q) => $q->where('account_type', $type))
+            ->orderBy('account_code')
+            ->get()
+            ->map(function($acc) {
+                return [
+                    'value' => $acc->id,
+                    'label' => "{$acc->account_code} - {$acc->name}",
+                    'balance' => $acc->balance
+                ];
+            });
+
+        return response()->json($accounts);
+    }
+
+    /**
+     * Endpoint to fetch items (Products/Services)
+     */
+    public function items(Request $request)
+    {
+        $search = $request->query('search');
+
+        $items = \App\Models\Item::select('id', 'name', 'sale_price')
+            ->when($search, function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'value' => $item->id,
+                    'label' => $item->name,
+                    'rate' => $item->sale_price
+                ];
+            });
+
+        return response()->json($items);
+    }
+
+    /**
+     * Endpoint to fetch item categories
+     */
+    public function categories(Request $request)
+    {
+        $categories = \App\Models\ItemCategory::select('id', 'name')
+            ->orderBy('name')
+            ->get();
+            
+        return response()->json($categories);
     }
 }

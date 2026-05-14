@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react";
-import { useForm } from "@inertiajs/react";
+import { useForm, Head, router } from "@inertiajs/react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
-import { Head } from "@inertiajs/react";
+import QuickAddPayee from "@/Components/QuickAddPayee";
+import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
+import QuickAddAccount from "@/Components/QuickAddAccount";
 
-export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] }) {
+export default function ReceivePaymentForm({ paymentMethods = [] }) {
     const [customerOptions, setCustomerOptions] = useState([]);
+    const [accountOptions, setAccountOptions] = useState([]);
+    
+    // Modal States
+    const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
+    const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const fetchCustomers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
@@ -15,21 +23,27 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
         });
     };
 
+    const fetchAccounts = (search = "") => {
+        axios.get(route('api.accounts', { search })).then(res => {
+            setAccountOptions(res.data);
+        });
+    };
+
     useEffect(() => {
         fetchCustomers();
+        fetchAccounts();
     }, []);
 
-    const accountOptions = accounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }));
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
     const [currentAction, setCurrentAction] = useState('save');
 
     const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
         customer: "",
         email: "",
-        paymentDate: "2026-04-06",
+        paymentDate: new Date().toISOString().split('T')[0],
         paymentMethod: "",
         referenceNo: "",
-        depositTo: "Cash Rasly",
+        depositTo: "",
         amountReceived: "0.00",
         memo: "",
         action: 'save',
@@ -38,9 +52,10 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
     useEffect(() => {
         transform((data) => ({
             ...data,
+            amountReceived: String(data.amountReceived).replace(/,/g, ''),
             action: currentAction,
         }));
-    }, [currentAction]);
+    }, [currentAction, data.amountReceived]);
 
     const submit = (action = 'save') => {
         setCurrentAction(action);
@@ -78,6 +93,8 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
                                 label="Customer"
                                 options={customerOptions}
                                 value={data.customer}
+                                onSearch={fetchCustomers}
+                                onAddNew={() => setIsPayeeModalOpen(true)}
                                 onChange={(val) => setData("customer", val)}
                                 placeholder="Choose a customer"
                                 size="sm"
@@ -115,6 +132,7 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
                             value={data.paymentMethod}
                             onChange={(val) => setData("paymentMethod", val)}
                             options={methodOptions}
+                            onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
                             error={errors.paymentMethod}
                         />
@@ -133,6 +151,8 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
                         <SearchableSelect
                             label="Deposit To"
                             options={accountOptions}
+                            onSearch={fetchAccounts}
+                            onAddNew={() => setIsAccountModalOpen(true)}
                             value={data.depositTo}
                             onChange={(val) => setData("depositTo", val)}
                             placeholder="Select Account"
@@ -142,12 +162,25 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
                     </div>
                     <div className="w-[180px]">
                         <CommonInput
-                            type="number"
+                            type="text"
                             label="Amount Received"
                             placeholder="0.00"
                             value={data.amountReceived}
-                            onChange={(e) => setData("amountReceived", e.target.value)}
+                            onChange={(e) => {
+                                // Allow only numbers and decimal point
+                                const val = e.target.value.replace(/[^0-9.]/g, '');
+                                setData("amountReceived", val);
+                            }}
+                            onBlur={(e) => {
+                                const val = parseFloat(e.target.value || 0);
+                                setData("amountReceived", val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                            }}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData("amountReceived", val);
+                            }}
                             size="sm"
+                            inputClass="text-right font-semibold"
                             error={errors.amountReceived}
                         />
                     </div>
@@ -167,6 +200,37 @@ export default function ReceivePaymentForm({ accounts = [], paymentMethods = [] 
                     />
                 </div>
             </div>
+
+            <QuickAddPayee
+                isOpen={isPayeeModalOpen}
+                onClose={() => setIsPayeeModalOpen(false)}
+                onSuccess={(newPayee) => {
+                    if (newPayee) {
+                        fetchCustomers();
+                        setData("customer", newPayee.value);
+                    }
+                }}
+                initialType="customer"
+            />
+
+            <QuickAddAccount
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
+                onSuccess={(newAccount) => {
+                    fetchAccounts();
+                    if (newAccount) {
+                        setData("depositTo", newAccount.value);
+                    }
+                }}
+            />
+
+            <QuickAddPaymentMethod
+                isOpen={isMethodModalOpen}
+                onClose={() => setIsMethodModalOpen(false)}
+                onSuccess={(newMethod) => {
+                    router.reload({ only: ['paymentMethods'] });
+                }}
+            />
 
         </TransactionLayout>
     );

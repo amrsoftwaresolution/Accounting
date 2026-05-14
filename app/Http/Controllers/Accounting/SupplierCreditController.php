@@ -33,8 +33,6 @@ class SupplierCreditController extends Controller
     public function create()
     {
         return Inertia::render('Transaction/SupplierCreditForm', [
-            'suppliers' => Supplier::orderBy('display_name')->get(),
-            'items' => Item::orderBy('name')->get(),
             'nextCreditNo' => (string)$this->getNextNo()
         ]);
     }

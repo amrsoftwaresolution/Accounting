@@ -1,173 +1,292 @@
-import { useState } from "react";
-import { Head, usePage, router } from "@inertiajs/react";
+import { useState, useEffect } from "react";
+import { useForm, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
+import CommonInput from "@/Components/CommonInput";
+import QuickAddAccount from "@/Components/QuickAddAccount";
+import QuickAddPayee from "@/Components/QuickAddPayee";
 import TermModal from "@/Components/TermModal";
+import axios from "axios";
 
-export default function BillForm({ suppliers = [], accounts = [], nextBillNo = "" }) {
-    const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
-
-    const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.display_name || s.name }));
-    const accountOptions = accounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }));
-
-    const BILL_COLUMNS = [
-        {
-            key: "account_id",
-            label: "Category",
-            type: "select",
-            options: accountOptions,
-            placeholder: "Select account",
-            className: "w-[40%]"
-        },
-        { key: "description", label: "Description", placeholder: "Enter description", className: "w-[40%]" },
-        { key: "amount", label: "Amount", type: "number", className: "text-right w-[20%]", inputClass: "text-right font-semibold" },
-    ];
-
-    const [form, setForm] = useState({
-        supplier: "",
-        mailingAddress: "",
-        terms: "Net 30",
-        billDate: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        billNo: nextBillNo || "1001",
-        memo: "",
-    });
-
-    const [items, setItems] = useState([
-        { account_id: "", description: "", amount: "" },
-        { account_id: "", description: "", amount: "" },
-    ]);
-
-    const [isDirty, setIsDirty] = useState(false);
+export default function BillForm({ 
+    auth, 
+    terms = [],
+    bill = null,
+    lastBillDate = null,
+    lastSaveAction = 'save',
+    nextBillNo = ""
+}) {
+    const { props } = usePage();
+    const company = auth.company;
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    
+    // Modal States
+    const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
+    const [accountModalType, setAccountModalType] = useState('expense');
 
-    const totalAmount = items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0).toFixed(2);
-
-    const handleItemChange = (index, field, value) => {
-        const updated = [...items];
-        updated[index][field] = value;
-        setItems(updated);
-        setIsDirty(true);
+    const [payeeOptions, setPayeeOptions] = useState([]);
+    const [accountOptions, setAccountOptions] = useState([]);
+    
+    const fetchPayees = async (search = '') => {
+        try {
+            const response = await axios.get(route('api.payees', { search }));
+            setPayeeOptions(response.data);
+        } catch (error) {
+            console.error("Failed to fetch payees:", error);
+        }
     };
 
-    const handleSave = (type = 'save') => {
-        if (!form.supplier) return alert("Please select a supplier");
+    const fetchAccounts = async (search = '') => {
+        try {
+            const response = await axios.get(route('api.accounts', { search }));
+            setAccountOptions(response.data);
+        } catch (error) {
+            console.error("Failed to fetch accounts:", error);
+        }
+    };
 
-        const payload = {
-            ...form,
-            items: items
-                .filter(item => item.account_id && item.amount)
+    useEffect(() => {
+        fetchPayees();
+        fetchAccounts();
+    }, []);
+
+    const [termOptions, setTermOptions] = useState(terms.map(t => ({ value: t.name, label: t.name })));
+
+    const [currentAction, setCurrentAction] = useState(lastSaveAction);
+
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
+        supplier: bill?.supplier || bill?.payee_id || "",
+        mailingAddress: bill?.mailingAddress || "",
+        terms: bill?.terms || "Net 30",
+        billDate: bill?.billDate || lastBillDate || new Date().toISOString().split('T')[0],
+        dueDate: bill?.dueDate || "",
+        billNo: bill?.billNo || "",
+        memo: bill?.memo || "",
+        items: bill?.items || [
+            { category: "", description: "", amount: "0.00" },
+            { category: "", description: "", amount: "0.00" },
+        ],
+        action: 'save'
+    });
+
+    useEffect(() => {
+        transform((data) => ({
+            ...data,
+            action: currentAction,
+            items: data.items
+                .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
                 .map(item => ({
-                    category: item.account_id,
-                    description: item.description,
-                    amount: item.amount
+                    ...item,
+                    amount: String(item.amount).replace(/,/g, '')
                 }))
-        };
+        }));
+    }, [currentAction, transform]);
 
-        router.post(route('bills.store'), payload, {
+    const totalAmount = data.items.reduce(
+        (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
+        0
+    ).toFixed(2);
+
+    const handleItemChange = (index, field, value) => {
+        const updated = [...data.items];
+        updated[index][field] = value;
+        setData("items", updated);
+    };
+
+    const handleSave = (action = 'save') => {
+        setCurrentAction(action);
+        const url = bill?.id ? route('bill.update', bill.id) : route('bill.store');
+        const method = bill?.id ? patch : post;
+
+        method(url, {
+            preserveScroll: true,
             onSuccess: () => {
-                alert("Bill Saved Successfully ✅");
-                setIsDirty(false);
-                if (type === 'close') window.history.back();
-                if (type === 'new') window.location.reload();
-            },
-            onError: (errors) => {
-                console.error("Server Errors:", errors);
-                alert("Error: " + Object.values(errors).flat().join(", "));
+                if (action === 'new') {
+                    reset();
+                    clearErrors();
+                }
             }
         });
     };
 
+    const BILL_COLUMNS = [
+        { 
+            key: "category", 
+            label: "Category", 
+            options: accountOptions,
+            onSearch: fetchAccounts,
+            type: "select",
+            width: "280px",
+            onAddNew: () => {
+                setAccountModalType('expense');
+                setIsAccountModalOpen(true);
+            }
+        },
+        { key: "description", label: "Description" },
+        { 
+            key: "amount", 
+            label: "Amount", 
+            type: "currency", 
+            className: "text-right", 
+            inputClass: "text-right",
+            width: "120px"
+        },
+    ];
+
     return (
         <TransactionLayout
-            title={`Bill no.${form.billNo}`}
+            title={bill?.id ? `Edit Bill no.${data.billNo}` : "New Bill"}
             amount={totalAmount}
-            dirty={isDirty}
+            processing={processing}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
-            onAddLine={() => setItems([...items, { account_id: "", description: "", amount: "" }])}
-            onClearRows={() => setItems([{ account_id: "", description: "", amount: "" }])}
+            onAddLine={() => {
+                setData("items", [...data.items, { category: "", description: "", amount: "0.00" }]);
+            }}
+            onClearRows={() => {
+                setData("items", [{ category: "", description: "", amount: "0.00" }]);
+            }}
+            lastAction={lastSaveAction}
         >
-            <Head title="Create Bill" />
-
-            <div className="grid grid-cols-12 gap-10 py-8 border-b border-slate-200">
-                <div className="col-span-4 space-y-6">
-                    <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-4">
-                        <SearchableSelect
-                            label="Supplier"
-                            placeholder="Select a supplier"
-                            value={form.supplier}
-                            onChange={(val) => { setForm({...form, supplier: val}); setIsDirty(true); }}
-                            options={supplierOptions}
-                        />
-                        <div>
-                            <label className="text-xs text-slate-500 block mb-1 font-bold">Mailing address</label>
-                            <textarea
-                                className="w-full border border-slate-200 p-3 text-sm h-24 rounded-lg outline-none focus:border-primary bg-slate-50/30"
-                                value={form.mailingAddress}
-                                onChange={(e) => { setForm({...form, mailingAddress: e.target.value}); setIsDirty(true); }}
+            <div className="py-6 px-1 space-y-8">
+                {/* ROW 1: Supplier & Address */}
+                <div className="flex items-start justify-between gap-8">
+                    <div className="flex items-start gap-6 flex-1">
+                        <div className="w-[380px]">
+                            <SearchableSelect
+                                label="Supplier"
+                                placeholder="Who are you paying?"
+                                value={data.supplier}
+                                onChange={(val) => {
+                                    setData('supplier', val);
+                                    const payee = payeeOptions.find(p => p.value === val);
+                                    if (payee && payee.billing_address) {
+                                        setData("mailingAddress", payee.billing_address);
+                                    }
+                                }}
+                                options={payeeOptions}
+                                onSearch={fetchPayees}
+                                size="sm"
+                                error={errors.supplier}
+                                onAddNew={() => setIsPayeeModalOpen(true)}
+                            />
+                        </div>
+                        <div className="w-[380px]">
+                            <CommonInput
+                                type="textarea"
+                                label="Mailing address"
+                                value={data.mailingAddress}
+                                onChange={(e) => setData("mailingAddress", e.target.value)}
+                                className="h-[74px]"
+                                size="sm"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="col-span-8 flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                        <div className="grid grid-cols-4 gap-4 flex-1">
-                            <div>
-                                <SearchableSelect
-                                    label="Terms"
-                                    value={form.terms}
-                                    options={[{label: 'Net 30', value: 'Net 30'}]}
-                                    onChange={(val) => setForm({...form, terms: val})}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Bill date</label>
-                                <input type="date" className="w-full border-b border-slate-300 py-1.5 text-sm" value={form.billDate} onChange={(e) => setForm({...form, billDate: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Due date</label>
-                                <input type="date" className="w-full border-b border-slate-300 py-1.5 text-sm" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Bill no.</label>
-                                <input className="w-full border-b border-slate-300 py-1.5 text-sm font-mono" value={form.billNo} onChange={(e) => setForm({...form, billNo: e.target.value})} />
-                            </div>
-                        </div>
-
-                        <div className="ml-10 text-right bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[240px]">
-                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Total Amount</p>
-                            <p className="text-3xl font-black">
-                                <span className="text-slate-400 text-sm font-medium mr-1">{currencyPrefix}</span>
-                                {totalAmount}
-                            </p>
-                        </div>
+                {/* ROW 2: Terms, Dates, No */}
+                <div className="flex items-end gap-6">
+                    <div className="w-[180px]">
+                        <SearchableSelect
+                            label="Terms"
+                            value={data.terms}
+                            onChange={(val) => setData('terms', val)}
+                            onAddNew={() => setIsTermModalOpen(true)}
+                            options={termOptions}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[160px]">
+                        <CommonInput
+                            type="date"
+                            label="Bill date"
+                            value={data.billDate}
+                            onChange={(e) => setData('billDate', e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[160px]">
+                        <CommonInput
+                            type="date"
+                            label="Due date"
+                            value={data.dueDate}
+                            onChange={(e) => setData('dueDate', e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="flex-1"></div>
+                    <div className="w-[160px]">
+                        <CommonInput
+                            label="Bill no."
+                            value={data.billNo}
+                            onChange={(e) => setData('billNo', e.target.value)}
+                            size="sm"
+                        />
                     </div>
                 </div>
             </div>
 
             <LineItemsTable
                 columns={BILL_COLUMNS}
-                items={items}
+                items={data.items}
                 handleItemChange={handleItemChange}
-                addRow={() => setItems([...items, { account_id: "", description: "", amount: "" }])}
-                removeRow={(index) => setItems(items.filter((_, i) => i !== index))}
+                addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
+                removeRow={(index) => setData("items", data.items.filter((_, i) => i !== index))}
+                clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
                 totals={{ "Total": totalAmount }}
                 currencyPrefix={currencyPrefix}
+                hideActions={true}
             />
 
-            <div className="mt-8">
-                <label className="text-xs font-bold text-slate-600 block mb-2">Memo</label>
-                <textarea
-                    className="w-1/2 border border-slate-200 rounded-lg p-3 text-sm h-24 outline-none"
-                    value={form.memo}
-                    onChange={(e) => setForm({...form, memo: e.target.value})}
-                />
+            <div className="grid grid-cols-2 gap-10 mt-8">
+                <div className="w-[400px]">
+                    <CommonInput
+                        type="textarea"
+                        label="Memo"
+                        placeholder="Add a memo..."
+                        value={data.memo}
+                        onChange={(e) => setData('memo', e.target.value)}
+                        size="sm"
+                        className="h-24"
+                    />
+                </div>
             </div>
+
+            <TermModal
+                isOpen={isTermModalOpen}
+                onClose={() => setIsTermModalOpen(false)}
+                onSave={(newTerm) => {
+                    setTermOptions([...termOptions, { value: newTerm.name, label: newTerm.name }]);
+                    setData("terms", newTerm.name);
+                }}
+            />
+
+            <QuickAddPayee 
+                isOpen={isPayeeModalOpen} 
+                onClose={() => setIsPayeeModalOpen(false)}
+                onSuccess={(newPayee) => {
+                    if (newPayee) {
+                        fetchPayees();
+                        setData("supplier", newPayee.value);
+                    }
+                }}
+                initialType="supplier"
+            />
+
+            <QuickAddAccount 
+                isOpen={isAccountModalOpen} 
+                onClose={() => setIsAccountModalOpen(false)} 
+                type={accountModalType}
+                onSuccess={(newAcc) => {
+                    if (newAcc) {
+                        // Handled by Inertia reload/redirect
+                    }
+                }}
+            />
         </TransactionLayout>
     );
 }

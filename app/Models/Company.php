@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Models;
-
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,6 +26,18 @@ class Company extends Model
         'home_currency_prefix',
         'multicurrency',
     ];
+    
+    protected $appends = ['logo_url', 'slug'];
+
+    public function getLogoUrlAttribute()
+    {
+        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+    }
+
+    public function getSlugAttribute()
+    {
+        return Str::slug($this->company_name);
+    }
 
     public function users()
     {

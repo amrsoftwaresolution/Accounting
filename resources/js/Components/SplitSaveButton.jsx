@@ -1,13 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, processing }) {
+export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, processing, lastAction = 'save' }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [currentAction, setCurrentAction] = useState(lastAction);
     const dropdownRef = useRef(null);
 
-    const actions = [
-        { label: 'Save and Close', onClick: onSaveAndClose },
-        { label: 'Save and New', onClick: onSaveAndNew },
+    // Sync with prop if it changes
+    useEffect(() => {
+        if (lastAction) setCurrentAction(lastAction);
+    }, [lastAction]);
+
+    const allActions = [
+        { id: 'save', label: 'Save', onClick: onSave },
+        { id: 'close', label: 'Save and Close', onClick: onSaveAndClose },
+        { id: 'new', label: 'Save and New', onClick: onSaveAndNew },
     ];
+
+    const mainAction = allActions.find(a => a.id === currentAction) || allActions[0];
+    const otherActions = allActions.filter(a => a.id !== currentAction);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -19,13 +29,19 @@ export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const handleActionClick = (action) => {
+        setCurrentAction(action.id);
+        action.onClick();
+        setIsOpen(false);
+    };
+
     return (
         <div className="relative inline-flex shadow-xl" ref={dropdownRef}>
             <button
                 type="button"
                 disabled={processing}
-                onClick={onSave}
-                className="inline-flex items-center px-6 py-2 bg-emerald-600 border border-transparent rounded-l-lg text-[10px] font-black text-white uppercase tracking-widest hover:bg-emerald-500 focus:outline-none transition-all disabled:opacity-50 h-9"
+                onClick={() => mainAction.onClick()}
+                className="inline-flex items-center px-6 py-2 bg-emerald-600 border border-transparent rounded-l-lg text-[10px] font-black text-white uppercase tracking-widest hover:bg-emerald-500 focus:outline-none transition-all disabled:opacity-50 h-9 min-w-[120px] justify-center"
             >
                 {processing ? (
                     <span className="flex items-center gap-2">
@@ -35,7 +51,7 @@ export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, 
                         </svg>
                         Saving
                     </span>
-                ) : 'Save'}
+                ) : mainAction.label}
             </button>
             <div className="relative block">
                 <button
@@ -52,13 +68,10 @@ export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, 
                 {isOpen && (
                     <div className="origin-bottom-right absolute right-0 bottom-full mb-3 w-48 rounded-xl shadow-[0_-10px_40px_rgba(0,0,0,0.3)] bg-slate-800 border border-slate-700 divide-y divide-slate-700 focus:outline-none z-50 animate-in slide-in-from-bottom-2 duration-200 overflow-hidden">
                         <div className="py-1">
-                            {actions.map((action, idx) => (
+                            {otherActions.map((action, idx) => (
                                 <button
                                     key={idx}
-                                    onClick={() => {
-                                        action.onClick();
-                                        setIsOpen(false);
-                                    }}
+                                    onClick={() => handleActionClick(action)}
                                     className="w-full text-left px-4 py-3 text-[9px] font-black text-slate-300 uppercase tracking-widest hover:bg-slate-700 hover:text-white transition-all flex items-center justify-between group"
                                 >
                                     {action.label}

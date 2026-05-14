@@ -160,7 +160,7 @@ class CompanySettingsController extends Controller
                 Storage::disk('public')->delete($company->logo_path);
             }
 
-            $path = $request->file('logo')->store('logos', 'public');
+            $path = $request->file('logo')->store('companies/' . $company->slug, 'public');
             $company->update(['logo_path' => $path]);
         }
 

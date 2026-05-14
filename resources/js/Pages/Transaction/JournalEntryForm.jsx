@@ -4,29 +4,33 @@ import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import CommonInput from "@/Components/CommonInput";
 import SearchableSelect from "@/Components/SearchableSelect";
+import QuickAddPayee from "@/Components/QuickAddPayee";
+import QuickAddAccount from "@/Components/QuickAddAccount";
 import { Head, usePage } from "@inertiajs/react";
 
-export default function JournalEntryForm({ journalEntry = null, accounts = [], nextJournalNo = "" }) {
+export default function JournalEntryForm({ journalEntry = null, nextJournalNo = "" }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
-    const [payeeOptions, setPayeeOptions] = useState([]);
     
-    // Fetch payees from API
+    const [payeeOptions, setPayeeOptions] = useState([]);
+    const [accountOptions, setAccountOptions] = useState([]);
+
+    // Modal States
+    const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+
     const fetchPayees = (search = "") => {
-        axios.get(route('api.payees', { search })).then(res => {
-            setPayeeOptions(res.data);
-        });
+        axios.get(route('api.payees', { search })).then(res => setPayeeOptions(res.data));
+    };
+
+    const fetchAccounts = (search = "") => {
+        axios.get(route('api.accounts', { search })).then(res => setAccountOptions(res.data));
     };
 
     useEffect(() => {
         fetchPayees();
+        fetchAccounts();
     }, []);
-
-    // 1. Prepare account options for LineItemsTable
-    const accountOptions = accounts.map(acc => ({
-        value: acc.id,
-        label: `${acc.account_code} - ${acc.name}`
-    }));
 
     const JOURNAL_COLUMNS = [
         {
@@ -34,6 +38,8 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
             label: "Account",
             type: "select",
             options: accountOptions,
+            onSearch: fetchAccounts,
+            onAddNew: () => setIsAccountModalOpen(true),
             placeholder: "Select account",
             className: "w-[25%]"
         },
@@ -45,12 +51,13 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
             label: "Name", 
             type: "select", 
             options: payeeOptions,
+            onSearch: fetchPayees,
+            onAddNew: () => setIsPayeeModalOpen(true),
             placeholder: "Select name",
             className: "w-[25%]" 
         },
     ];
 
-    // 2. Initial state logic for Create vs Edit
     const [form, setForm] = useState({
         date: journalEntry?.date || new Date().toISOString().split('T')[0],
         journalNo: journalEntry?.reference || nextJournalNo || "",
@@ -66,8 +73,8 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
         if (journalEntry && journalEntry.lines) {
             setItems(journalEntry.lines.map(line => ({
                 account_id: line.chart_of_acc_id,
-                debit: line.debit || "",
-                credit: line.credit || "",
+                debit: line.debit ? line.debit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : "",
+                credit: line.credit ? line.credit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : "",
                 description: line.memo || "",
                 payee_id: line.payee_id || ""
             })));
@@ -76,11 +83,13 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
 
     const [isDirty, setIsDirty] = useState(false);
 
-    // 3. Totals
+    // Helper to strip commas and parse
+    const parseCurrency = (val) => parseFloat(String(val || 0).replace(/,/g, '')) || 0;
+
     const totals = items.reduce(
         (acc, item) => {
-            acc.debit += parseFloat(item.debit) || 0;
-            acc.credit += parseFloat(item.credit) || 0;
+            acc.debit += parseCurrency(item.debit);
+            acc.credit += parseCurrency(item.credit);
             return acc;
         },
         { debit: 0, credit: 0 }
@@ -90,8 +99,9 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
         const updated = [...items];
         updated[index][field] = value;
 
-        if (field === "debit" && parseFloat(value) > 0) updated[index].credit = "";
-        if (field === "credit" && parseFloat(value) > 0) updated[index].debit = "";
+        const numVal = parseCurrency(value);
+        if (field === "debit" && numVal > 0) updated[index].credit = "";
+        if (field === "credit" && numVal > 0) updated[index].debit = "";
 
         setItems(updated);
         setIsDirty(true);
@@ -103,7 +113,13 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                 date: form.date,
                 reference_no: form.journalNo,
                 description: form.memo,
-                lines: items.filter(i => i.account_id && (i.debit || i.credit))
+                lines: items
+                    .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
+                    .map(i => ({
+                        ...i,
+                        debit: parseCurrency(i.debit),
+                        credit: parseCurrency(i.credit)
+                    }))
             };
 
             if (journalEntry) {
@@ -112,12 +128,9 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                 await axios.post("/journal-entries", payload);
             }
 
-            alert("Saved Successfully ✅");
             setIsDirty(false);
-
             if (type === 'close') window.history.back();
-            if (type === 'new') window.location.reload();
-            if (type === 'save' && !journalEntry) window.location.reload(); // Reset for new if was create
+            else window.location.reload();
 
         } catch (error) {
             console.error(error.response?.data || error);
@@ -185,18 +198,9 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                 removeRow={(index) =>
                     setItems(items.filter((_, i) => i !== index))
                 }
-                moveRow={(index, direction) => {
-                    const newItems = [...items];
-                    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-                    if (targetIndex >= 0 && targetIndex < items.length) {
-                        [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
-                        setItems(newItems);
-                        setIsDirty(true);
-                    }
-                }}
                 totals={{
-                    Debits: totals.debit.toFixed(2),
-                    Credits: totals.credit.toFixed(2),
+                    Debits: totals.debit.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+                    Credits: totals.credit.toLocaleString('en-US', { minimumFractionDigits: 2 }),
                 }}
                 currencyPrefix={currencyPrefix}
                 clearRows={() => setItems([
@@ -220,6 +224,18 @@ export default function JournalEntryForm({ journalEntry = null, accounts = [], n
                     className="h-24"
                 />
             </div>
+
+            <QuickAddPayee
+                isOpen={isPayeeModalOpen}
+                onClose={() => setIsPayeeModalOpen(false)}
+                onSuccess={(newPayee) => fetchPayees()}
+            />
+
+            <QuickAddAccount
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
+                onSuccess={(newAcc) => fetchAccounts()}
+            />
         </TransactionLayout>
     );
 }

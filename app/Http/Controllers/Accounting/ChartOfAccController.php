@@ -116,7 +116,13 @@ class ChartOfAccController extends Controller
             ]);
         }
 
-        return redirect()->route('chart-of-account.index')->with('success', 'Chart of account created successfully.');
+        return redirect()->back()->with([
+            'success' => 'Chart of account created successfully.',
+            'new_account' => [
+                'value' => $account->id,
+                'label' => "{$account->account_code} - {$account->name}"
+            ]
+        ]);
     }
 
     public function update(Request $request, ChartOfAcc $chartOfAccount)

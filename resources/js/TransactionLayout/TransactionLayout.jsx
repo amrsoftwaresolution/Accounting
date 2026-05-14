@@ -12,7 +12,8 @@ export default function TransactionLayout({
     onAddLine,
     onClearRows,
     processing = false,
-    dirty = false
+    dirty = false,
+    lastAction = 'save'
 }) {
     const handleClose = () => {
         if (dirty) {
@@ -76,6 +77,7 @@ export default function TransactionLayout({
                         onSaveAndClose={onSaveAndClose}
                         onSaveAndNew={onSaveAndNew}
                         processing={processing}
+                        lastAction={lastAction}
                     />
                 </div>
             </div>

@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
         $company = Company::updateOrCreate(
             ['id' => 1],
             [
-                'company_name' => 'JobAlign Book Solutions Ltd',
+                'company_name' => 'JobAlign Books Solutions Ltd',
                 'company_email' => 'hello@jobalign.example.com',
                 'phone' => '+94 11 234 5678',
                 'address' => '123 Business Park, Colombo 03, Sri Lanka',

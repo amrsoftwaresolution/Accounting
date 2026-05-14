@@ -1,48 +1,85 @@
+import { useState, useEffect } from "react";
 import { useForm, Head } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
+import QuickAddAccount from "@/Components/QuickAddAccount";
+import axios from "axios";
 
-export default function TransferForm({ accounts = [] }) {
-    // FIX: Using Inertia useForm for better error handling and consistency
-    const { data, setData, post, processing, errors, reset } = useForm({
+export default function TransferForm({ lastTransferDate = null, lastSaveAction = 'save' }) {
+    const [accountOptions, setAccountOptions] = useState([]);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [accountModalType, setAccountModalType] = useState('asset');
+    
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         transfer_from: "",
         transfer_to: "",
         amount: "",
-        date: new Date().toISOString().split('T')[0],
+        date: lastTransferDate || new Date().toISOString().split('T')[0],
         memo: "",
+        action: lastSaveAction
     });
 
-    const accountOptions = accounts.map(acc => ({
-        value: acc.id,
-        label: `${acc.account_code} - ${acc.name}`,
-        balance: acc.balance
-    }));
+    const fetchAccounts = (search = "") => {
+        axios.get(route('api.accounts', { search })).then(res => {
+            setAccountOptions(res.data);
+        });
+    };
+
+    useEffect(() => {
+        fetchAccounts();
+    }, []);
 
     const selectedFrom = accountOptions.find(opt => opt.value === data.transfer_from);
     const selectedTo = accountOptions.find(opt => opt.value === data.transfer_to);
 
+    const formatCurrency = (val) => {
+        const num = parseFloat(String(val).replace(/,/g, "")) || 0;
+        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const handleAmountChange = (e) => {
+        let val = e.target.value.replace(/[^0-9.]/g, '');
+        // Allow only one decimal point
+        const parts = val.split('.');
+        if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+        setData('amount', val);
+    };
+
+    const handleAmountBlur = () => {
+        if (data.amount) {
+            setData('amount', formatCurrency(data.amount));
+        }
+    };
+
+    const [currentAction, setCurrentAction] = useState(lastSaveAction);
+
+    useEffect(() => {
+        transform((data) => ({
+            ...data,
+            action: currentAction,
+            amount: String(data.amount).replace(/,/g, '')
+        }));
+    }, [data.amount, currentAction, transform]);
+
     const handleSave = (type = 'save') => {
+        setCurrentAction(type);
         post(route('transfer.store'), {
             onSuccess: () => {
-                alert("Transfer Successful ✅");
-                if (type === 'close') window.history.back();
                 if (type === 'new') reset();
             },
-            onError: () => {
-                alert("Please check the form for errors.");
-            }
         });
     };
 
     return (
         <TransactionLayout
             title="Transfer Funds"
-            amount={parseFloat(data.amount || 0).toFixed(2)}
+            amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             processing={processing}
+            lastAction={lastSaveAction}
         >
             <Head title="Transfer Funds" />
 
@@ -54,11 +91,16 @@ export default function TransferForm({ accounts = [] }) {
                             <SearchableSelect
                                 label="Transfer Funds From"
                                 options={accountOptions}
+                                onSearch={fetchAccounts}
                                 value={data.transfer_from}
                                 onChange={(val) => setData('transfer_from', val)}
                                 placeholder="Select Source Account"
                                 size="sm"
                                 error={errors.transfer_from}
+                                onAddNew={() => {
+                                    setAccountModalType('asset');
+                                    setIsAccountModalOpen(true);
+                                }}
                             />
                             {selectedFrom && (
                                 <div className="mt-1 flex items-baseline gap-2">
@@ -73,11 +115,16 @@ export default function TransferForm({ accounts = [] }) {
                             <SearchableSelect
                                 label="Transfer Funds To"
                                 options={accountOptions}
+                                onSearch={fetchAccounts}
                                 value={data.transfer_to}
                                 onChange={(val) => setData('transfer_to', val)}
                                 placeholder="Select Destination Account"
                                 size="sm"
                                 error={errors.transfer_to}
+                                onAddNew={() => {
+                                    setAccountModalType('asset');
+                                    setIsAccountModalOpen(true);
+                                }}
                             />
                             {selectedTo && (
                                 <div className="mt-1 flex items-baseline gap-2">
@@ -92,7 +139,7 @@ export default function TransferForm({ accounts = [] }) {
                         <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Transfer Amount</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
                             <span className="text-slate-400 text-[10px] font-medium mr-1">LKR</span>
-                            {parseFloat(data.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {parseFloat(String(data.amount || 0).replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                     </div>
                 </div>
@@ -110,13 +157,14 @@ export default function TransferForm({ accounts = [] }) {
                     </div>
                     <div className="w-[180px]">
                         <CommonInput
-                            type="number"
                             label="Transfer Amount"
                             placeholder="0.00"
                             value={data.amount}
-                            onChange={(e) => setData('amount', e.target.value)}
+                            onChange={handleAmountChange}
+                            onBlur={handleAmountBlur}
                             size="sm"
                             error={errors.amount}
+                            inputClass="text-right font-bold"
                         />
                     </div>
                 </div>
@@ -134,6 +182,18 @@ export default function TransferForm({ accounts = [] }) {
                     />
                 </div>
             </div>
+
+            <QuickAddAccount 
+                isOpen={isAccountModalOpen} 
+                onClose={() => setIsAccountModalOpen(false)} 
+                type={accountModalType}
+                onSuccess={(newAcc) => {
+                    if (newAcc) {
+                        fetchAccounts();
+                        setData(accountModalType === 'asset' ? 'transfer_from' : 'transfer_to', newAcc.value);
+                    }
+                }}
+            />
         </TransactionLayout>
     );
 }

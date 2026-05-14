@@ -1,16 +1,50 @@
-import { useState, useEffect } from "react";
-import { useForm } from "@inertiajs/react";
+import { useState, useEffect, useRef } from "react";
+import { useForm, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import TermModal from "@/Components/TermModal";
+import QuickAddPayee from "@/Components/QuickAddPayee";
+import QuickAddItem from "@/Components/QuickAddItem";
+import axios from "axios";
 
-export default function InvoiceForm({ auth, customers = [], items: products = [], nextInvoiceNo = "", invoice = null }) {
+export default function InvoiceForm({
+    auth,
+    nextInvoiceNo = "",
+    invoice = null,
+    lastInvoiceDate = null,
+    lastDueDate = null,
+    lastSaveAction = 'save'
+}) {
+    const { props } = usePage();
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
-    const customerOptions = customers.map(c => ({ value: c.id, label: c.display_name || c.name }));
-    const productOptions = products.map(p => ({ value: p.id, label: p.name, rate: p.sale_price }));
+
+    const [customerOptions, setCustomerOptions] = useState([]);
+    const [productOptions, setProductOptions] = useState([]);
+
+    // Modal States
+    const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
+    const [isTermModalOpen, setIsTermModalOpen] = useState(false);
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+
+    const fetchPayees = (search = "") => {
+        axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
+            setCustomerOptions(res.data);
+        });
+    };
+
+    const fetchItems = (search = "") => {
+        axios.get(route('api.items', { search })).then(res => {
+            setProductOptions(res.data);
+        });
+    };
+
+    useEffect(() => {
+        fetchPayees();
+        fetchItems();
+    }, []);
 
     // 1. Define Invoice Specific Columns
     const INVOICE_COLUMNS = [
@@ -20,8 +54,11 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
+            onSearch: fetchItems,
+            onAddNew: () => setIsItemModalOpen(true),
             type: "select",
-            width: "280px"
+            width: "280px",
+            hideChevron: true
         },
         { key: "description", label: "Description", placeholder: "Enter description" },
         { key: "qty", label: "Qty", type: "number", width: "80px", className: "text-right" },
@@ -29,9 +66,8 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
         { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
     ];
 
-    const [currentAction, setCurrentAction] = useState('save');
+    const actionRef = useRef(lastSaveAction);
 
-    const [isTermModalOpen, setIsTermModalOpen] = useState(false);
     const [termOptions, setTermOptions] = useState([
         { label: "Net 30", value: "Net 30" },
         { label: "Net 15", value: "Net 15" },
@@ -43,21 +79,21 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
         email: invoice?.email || "",
         billingAddress: invoice?.billingAddress || "",
         terms: invoice?.terms || "Net 30",
-        invoiceDate: invoice?.invoiceDate || new Date().toISOString().split('T')[0],
-        dueDate: invoice?.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        invoiceDate: invoice?.invoiceDate || lastInvoiceDate || new Date().toISOString().split('T')[0],
+        dueDate: invoice?.dueDate || lastDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
         memo: invoice?.memo || "",
         items: invoice?.items || [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
-        action: 'save'
+        action: lastSaveAction
     });
 
     useEffect(() => {
         transform((data) => ({
             ...data,
-            action: currentAction,
+            action: actionRef.current,
             items: data.items
                 .filter(item => item.product)
                 .map(item => ({
@@ -66,7 +102,7 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
                     amount: String(item.amount).replace(/,/g, '')
                 }))
         }));
-    }, [currentAction]);
+    }, [transform]);
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -81,9 +117,9 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
         updated[index][field] = value;
 
         if (field === "product") {
-            const product = products.find(p => p.id === value);
+            const product = productOptions.find(p => p.value === value);
             if (product) {
-                const rateValue = parseFloat(product.sale_price) || 0;
+                const rateValue = parseFloat(product.rate) || 0;
                 updated[index].rate = formatCurrencyValue(rateValue);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * rateValue);
@@ -105,7 +141,7 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
     };
 
     const handleSave = (action = 'save') => {
-        setCurrentAction(action);
+        actionRef.current = action;
         const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
         const method = invoice?.id ? patch : post;
 
@@ -129,11 +165,12 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
-                setData("items", [...data.items, { product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
             onClearRows={() => {
-                setData("items", [{ product: "", service_date: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
+            lastAction={lastSaveAction}
         >
             <div className="py-6 px-1 space-y-8">
                 {/* ROW 1: Customer & Email & Balance */}
@@ -146,20 +183,17 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
                                 value={data.customer}
                                 onChange={(val) => {
                                     setData('customer', val);
-                                    // Auto-fill address/email if needed (mock for now or from props)
-                                    const customer = customers.find(c => c.id === val);
+                                    const customer = customerOptions.find(c => c.value === val);
                                     if (customer) {
-                                        setData(d => ({
-                                            ...d,
-                                            customer: val,
-                                            email: customer.email || "",
-                                            billingAddress: customer.billing_address || ""
-                                        }));
+                                        // We might need to fetch full customer details if needed
+                                        // But for now let's assume we have what we need or just use the val
                                     }
                                 }}
                                 options={customerOptions}
+                                onSearch={fetchPayees}
                                 size="sm"
                                 error={errors.customer}
+                                onAddNew={() => setIsPayeeModalOpen(true)}
                             />
                         </div>
                         <div className="w-[320px]">
@@ -193,8 +227,9 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
                             placeholder=""
                             value={data.billingAddress}
                             onChange={(e) => setData("billingAddress", e.target.value)}
-                            className="h-[74px]"
+                            rows={1}
                             size="sm"
+                            inputClass="min-h-[30px] h-auto"
                         />
                     </div>
                     <div className="w-[180px]">
@@ -263,7 +298,6 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
                     />
                 </div>
                 <div className="pt-4 flex flex-col items-end">
-                    {/* Totals already handled inside LineItemsTable */}
                 </div>
             </div>
 
@@ -273,6 +307,26 @@ export default function InvoiceForm({ auth, customers = [], items: products = []
                 onSave={handleAddTerm}
             />
 
+            <QuickAddPayee
+                isOpen={isPayeeModalOpen}
+                onClose={() => setIsPayeeModalOpen(false)}
+                onSuccess={(newPayee) => {
+                    if (newPayee) {
+                        fetchPayees();
+                        setData("customer", newPayee.value);
+                    }
+                }}
+                initialType="customer"
+            />
+
+            <QuickAddItem
+                isOpen={isItemModalOpen}
+                onClose={() => setIsItemModalOpen(false)}
+                onSuccess={() => {
+                    fetchItems();
+                    setIsItemModalOpen(false);
+                }}
+            />
         </TransactionLayout>
     );
 }

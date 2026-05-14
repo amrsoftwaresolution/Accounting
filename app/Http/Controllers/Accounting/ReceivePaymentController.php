@@ -32,7 +32,6 @@ class ReceivePaymentController extends Controller
             ->get();
 
         return Inertia::render('Transaction/ReceivePaymentForm', [
-            'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'paymentMethods' => $paymentMethods
         ]);
     }

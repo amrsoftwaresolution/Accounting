@@ -34,25 +34,25 @@ class ExpenseController extends Controller
             ->get();
 
         return Inertia::render('Transaction/ExpenseForm', [
-            'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'paymentMethods' => $paymentMethods,
-            'lastPaymentDate' => session('last_update_date')
+            'lastPaymentDate' => session('last_payment_date'),
+            'lastSaveAction' => session('last_save_action', 'save')
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'payee' => 'required',
+            'payee' => 'nullable',
             'account' => 'required',
             'date' => 'required|date',
-            'method' => 'required',
+            'method' => 'nullable',
             'ref' => 'nullable|string',
             'memo' => 'nullable|string',
             'items' => 'required|array|min:1',
             'paymentAccount' => 'required_without:account',
             'paymentDate' => 'required_without:date|date',
-            'paymentMethod' => 'required_without:method',
+            'paymentMethod' => 'nullable',
             'items.*.category' => 'required',
             'items.*.amount' => 'required',
         ]);
@@ -129,6 +129,10 @@ class ExpenseController extends Controller
         });
 
         $action = $request->input('action', 'save');
+        
+        // Save to session
+        session(['last_payment_date' => $paymentDate, 'last_save_action' => $action]);
+
         if ($action === 'close') {
             return redirect()->route('dashboard')->with('success', 'Expense saved successfully.');
         } elseif ($action === 'new') {
@@ -189,10 +193,10 @@ class ExpenseController extends Controller
     public function update(Request $request, JournalEntry $journalEntry)
     {
         $validated = $request->validate([
-            'payee' => 'required',
+            'payee' => 'nullable',
             'account' => 'required',
             'date' => 'required|date',
-            'method' => 'required',
+            'method' => 'nullable',
             'ref' => 'nullable|string',
             'memo' => 'nullable|string',
             'items' => 'required|array|min:1',

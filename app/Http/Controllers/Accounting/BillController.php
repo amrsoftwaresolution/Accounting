@@ -20,10 +20,6 @@ class BillController extends Controller
     {
         $companyId = session('active_company_id');
 
-        // Fetch suppliers and accounts for the active company
-        $suppliers = Supplier::where('company_id', $companyId)->orderBy('display_name')->get();
-        $accounts = ChartOfAcc::where('company_id', $companyId)->orderBy('account_code')->get();
-
         // Generate next Bill Number
         $lastRef = JournalEntry::where('company_id', $companyId)
             ->where('transaction_type', 'bill')
@@ -33,9 +29,10 @@ class BillController extends Controller
         $nextBillNo = is_numeric($lastRef) ? (int)$lastRef + 1 : 1001;
 
         return Inertia::render('Transaction/BillForm', [
-            'suppliers' => $suppliers,
-            'accounts' => $accounts,
-            'nextBillNo' => (string)str_pad($nextBillNo, 4, '0', STR_PAD_LEFT)
+            'nextBillNo' => (string)str_pad($nextBillNo, 4, '0', STR_PAD_LEFT),
+            'lastBillDate' => session('last_bill_date'),
+            'lastDueDate' => session('last_due_date_bill'),
+            'lastSaveAction' => session('last_save_action_bill', 'save'),
         ]);
     }
 
@@ -125,7 +122,22 @@ class BillController extends Controller
                 ]);
             });
 
-            return redirect()->route('bill.create')->with('success', 'Bill saved successfully.');
+            $action = $request->input('action', 'save');
+
+            // Save to session
+            session([
+                'last_bill_date' => $request->billDate, 
+                'last_due_date_bill' => $request->dueDate, 
+                'last_save_action_bill' => $action
+            ]);
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Bill saved successfully.');
+            } elseif ($action === 'new') {
+                return redirect()->route('bill.create')->with('success', 'Bill saved successfully.');
+            }
+
+            return redirect()->back()->with('success', 'Bill saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

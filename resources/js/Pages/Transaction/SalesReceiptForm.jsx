@@ -1,17 +1,47 @@
 import { useState, useEffect } from "react";
-import { useForm } from "@inertiajs/react";
+import { useForm, Head, router } from "@inertiajs/react";
+import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
+import QuickAddPayee from "@/Components/QuickAddPayee";
+import QuickAddAccount from "@/Components/QuickAddAccount";
+import QuickAddItem from "@/Components/QuickAddItem";
+import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 
-export default function SalesReceiptForm({ auth, customers = [], items: products = [], accounts = [], paymentMethods = [], nextReceiptNo = "", receipt = null }) {
+export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceiptNo = "", receipt = null }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
-    const customerOptions = customers.map(c => ({ value: c.id, label: c.display_name || c.name }));
-    const productOptions = products.map(p => ({ value: p.id, label: p.name, rate: p.sale_price }));
-    const accountOptions = accounts.map(a => ({ value: a.id, label: `${a.account_code} - ${a.name}` }));
+    
+    const [customerOptions, setCustomerOptions] = useState([]);
+    const [productOptions, setProductOptions] = useState([]);
+    const [accountOptions, setAccountOptions] = useState([]);
     const paymentMethodOptions = paymentMethods.map(pm => ({ value: pm.id, label: pm.name }));
+
+    // Modal States
+    const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
+
+    const fetchCustomers = (search = "") => {
+        axios.get(route('api.payees', { search, type: 'Customer' })).then(res => setCustomerOptions(res.data));
+    };
+
+    const fetchAccounts = (search = "") => {
+        axios.get(route('api.accounts', { search })).then(res => setAccountOptions(res.data));
+    };
+
+    const fetchProducts = (search = "") => {
+        axios.get(route('api.items', { search })).then(res => setProductOptions(res.data));
+    };
+
+    useEffect(() => {
+        fetchCustomers();
+        fetchAccounts();
+        fetchProducts();
+    }, []);
 
     const COLUMNS = [
         { key: "serviceDate", label: "Service Date", type: "date", width: "150px" },
@@ -20,6 +50,8 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
+            onSearch: fetchProducts,
+            onAddNew: () => setIsItemModalOpen(true),
             type: "select",
             width: "280px"
         },
@@ -59,9 +91,9 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         updated[index][field] = value;
 
         if (field === "product") {
-            const product = products.find(p => p.id === value);
+            const product = productOptions.find(p => p.value === value);
             if (product) {
-                const rateValue = parseFloat(product.sale_price) || 0;
+                const rateValue = parseFloat(product.rate || 0);
                 updated[index].rate = formatCurrencyValue(rateValue);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * rateValue);
@@ -77,8 +109,6 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
     };
 
     const handleSave = (actionType = 'save') => {
-        // 1. CLEAN DATA: Filter out any rows that don't have a product selected
-        // This prevents "The items.1.product field is required" errors
         transform((data) => ({
             ...data,
             action: actionType,
@@ -88,7 +118,6 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
         const url = receipt?.id ? route('receipt.update', receipt.id) : route('receipt.store');
         const submitMethod = receipt?.id ? patch : post;
 
-        // 2. SUBMIT
         submitMethod(url, {
             preserveScroll: true,
             preserveState: actionType === 'save',
@@ -97,9 +126,6 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                     reset();
                     clearErrors();
                 }
-            },
-            onError: (err) => {
-                console.error("Form submission failed:", err);
             }
         });
     };
@@ -119,14 +145,8 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                 setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
         >
+            <Head title="Sales Receipt" />
             <div className="py-6 px-1 space-y-8">
-                {/* GLOBAL ERROR ALERT */}
-                {Object.keys(errors).length > 0 && (
-                    <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
-                        Please fix the errors highlighted below before saving.
-                    </div>
-                )}
-
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
                         <div className="w-[320px]">
@@ -134,18 +154,16 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                                 label="Customer"
                                 placeholder="Select a customer"
                                 value={data.customer}
+                                onSearch={fetchCustomers}
+                                onAddNew={() => setIsPayeeModalOpen(true)}
                                 onChange={(val) => {
-                                    const customer = customers.find(c => c.id === val);
-                                    if (customer) {
-                                        setData(d => ({
-                                            ...d,
-                                            customer: val,
-                                            email: customer.email || "",
-                                            billingAddress: customer.billing_address || ""
-                                        }));
-                                    } else {
-                                        setData('customer', val);
-                                    }
+                                    const customer = customerOptions.find(c => c.value === val);
+                                    setData(d => ({
+                                        ...d,
+                                        customer: val,
+                                        email: customer?.email || d.email,
+                                        billingAddress: customer?.billing_address || d.billingAddress
+                                    }));
                                 }}
                                 options={customerOptions}
                                 size="sm"
@@ -201,6 +219,7 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             value={data.paymentMethod}
                             onChange={(val) => setData('paymentMethod', val)}
                             options={paymentMethodOptions}
+                            onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
                             error={errors.paymentMethod}
                         />
@@ -210,6 +229,8 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                             label="Deposit to"
                             placeholder="Select account"
                             value={data.depositTo}
+                            onSearch={fetchAccounts}
+                            onAddNew={() => setIsAccountModalOpen(true)}
                             onChange={(val) => setData('depositTo', val)}
                             options={accountOptions}
                             size="sm"
@@ -270,6 +291,38 @@ export default function SalesReceiptForm({ auth, customers = [], items: products
                     </div>
                 </div>
             </div>
+
+            <QuickAddPayee
+                isOpen={isPayeeModalOpen}
+                onClose={() => setIsPayeeModalOpen(false)}
+                onSuccess={(newPayee) => {
+                    fetchCustomers();
+                    if (newPayee) setData("customer", newPayee.value);
+                }}
+                initialType="customer"
+            />
+
+            <QuickAddAccount
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
+                onSuccess={(newAccount) => {
+                    fetchAccounts();
+                    if (newAccount) setData("depositTo", newAccount.value);
+                }}
+            />
+
+            <QuickAddItem
+                isOpen={isItemModalOpen}
+                onClose={() => setIsItemModalOpen(false)}
+                onSuccess={() => fetchProducts()}
+            />
+
+            <QuickAddPaymentMethod
+                isOpen={isMethodModalOpen}
+                onClose={() => setIsMethodModalOpen(false)}
+                onSuccess={() => router.reload({ only: ['paymentMethods'] })}
+            />
+
         </TransactionLayout>
     );
 }

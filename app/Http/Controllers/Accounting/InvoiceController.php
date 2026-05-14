@@ -16,22 +16,18 @@ class InvoiceController extends Controller
 {
     public function create()
     {
-        $customers = Customer::orderBy('display_name')->get();
-        $accounts = ChartOfAcc::orderBy('account_code')->get();
-        $items = \App\Models\Item::orderBy('name')->get();
-        
         $lastRef = JournalEntry::where('transaction_type', 'invoice')
             ->whereNotNull('reference')
             ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
             ->first();
-            
-        $nextInvoiceNo = ($lastRef && is_numeric($lastRef->reference)) ? (int)$lastRef->reference + 1 : 1003;
+
+        $nextInvoiceNo = ($lastRef && is_numeric($lastRef->reference)) ? (int) $lastRef->reference + 1 : 1001;
 
         return Inertia::render('Transaction/InvoiceForm', [
-            'customers' => $customers,
-            'accounts' => $accounts,
-            'items' => $items,
-            'nextInvoiceNo' => (string)str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT)
+            'nextInvoiceNo' => (string) str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT),
+            'lastInvoiceDate' => session('last_invoice_date'),
+            'lastDueDate' => session('last_due_date'),
+            'lastSaveAction' => session('last_save_action_invoice', 'save'),
         ]);
     }
 
@@ -47,8 +43,8 @@ class InvoiceController extends Controller
             'items.*.amount' => 'required',
         ]);
 
-        $journalEntry = DB::transaction(function() use ($request) {
-            $totalAmount = collect($request->items)->sum(function($item) {
+        $journalEntry = DB::transaction(function () use ($request) {
+            $totalAmount = collect($request->items)->sum(function ($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
 
@@ -125,6 +121,14 @@ class InvoiceController extends Controller
         });
 
         $action = $request->input('action', 'save');
+
+        // Save to session
+        session([
+            'last_invoice_date' => $request->invoiceDate,
+            'last_due_date' => $request->dueDate,
+            'last_save_action_invoice' => $action
+        ]);
+
         if ($action === 'close') {
             return redirect()->route('dashboard')->with('success', 'Invoice saved successfully.');
         } elseif ($action === 'new') {
@@ -138,7 +142,7 @@ class InvoiceController extends Controller
     {
         $journalEntry->load('lines');
         $invoice = \App\Models\Invoice::find($journalEntry->transactionable_id);
-        
+
         $invoiceData = [
             'id' => $journalEntry->id,
             'customer' => $journalEntry->payee_id,
@@ -150,7 +154,7 @@ class InvoiceController extends Controller
             'dueDate' => $journalEntry->due_date,
             'memo' => $journalEntry->description,
             'statementMessage' => $invoice?->statement_message ?? '',
-            'items' => $journalEntry->lines->where('credit', '>', 0)->map(function($line) {
+            'items' => $journalEntry->lines->where('credit', '>', 0)->map(function ($line) {
                 $item = \App\Models\Item::where('income_account_id', $line->chart_of_acc_id)->first();
                 return [
                     'product' => $item?->id,
@@ -180,8 +184,8 @@ class InvoiceController extends Controller
             'items' => 'required|array|min:1',
         ]);
 
-        DB::transaction(function() use ($request, $journalEntry) {
-            $totalAmount = collect($request->items)->sum(function($item) {
+        DB::transaction(function () use ($request, $journalEntry) {
+            $totalAmount = collect($request->items)->sum(function ($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
 

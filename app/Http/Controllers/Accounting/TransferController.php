@@ -16,12 +16,9 @@ class TransferController extends Controller
 {
     public function create()
     {
-        $accounts = ChartOfAcc::where('sub_type', 'cash-and-cash-equivalents')
-            ->orderBy('account_code')
-            ->get();
-
         return Inertia::render('Transaction/TransferForm', [
-            'accounts' => $accounts
+            'lastTransferDate' => session('last_transfer_date'),
+            'lastSaveAction' => session('last_save_action_transfer', 'save'),
         ]);
     }
 
@@ -82,6 +79,13 @@ class TransferController extends Controller
                     'memo'             => $request->memo,
                 ]);
             });
+
+            $action = $request->input('action', 'save');
+            session(['last_transfer_date' => $request->date, 'last_save_action_transfer' => $action]);
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Transfer saved successfully.');
+            }
 
             return redirect()->back()->with('success', 'Transfer saved successfully.');
 

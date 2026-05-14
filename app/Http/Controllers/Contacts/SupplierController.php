@@ -47,7 +47,14 @@ class SupplierController extends Controller
             $supplier->addresses()->create(array_merge($request->shipping_address, ['type' => 'shipping']));
         }
 
-        return redirect()->back()->with('success', 'Supplier created successfully.');
+        return redirect()->back()->with([
+            'success' => 'Supplier created successfully.',
+            'new_supplier' => [
+                'value' => $supplier->id,
+                'label' => $supplier->display_name,
+                'type' => 'Supplier'
+            ]
+        ]);
     }
 
     public function update(Request $request, Supplier $supplier)

@@ -20,8 +20,6 @@ class CreditNoteController extends Controller
     public function create()
     {
         return Inertia::render('Transaction/CreditNoteForm', [
-            'customers' => Customer::orderBy('display_name')->get(),
-            'items' => Item::orderBy('name')->get(),
             'nextCreditNoteNo' => $this->getNextNo()
         ]);
     }

@@ -48,7 +48,7 @@ export default function AuthenticatedLayout({ header, children }) {
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
                 <div className="fixed inset-0 z-40 lg:hidden px-4 py-6 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)}>
-                    <div className="fixed inset-y-0 left-0 w-64 bg-slate-900 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="fixed inset-y-0 left-0 w-56 bg-slate-900 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <SidebarContent
                             navigation={navigation}
                             teamLinks={teamLinks}
@@ -66,7 +66,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
             {/* Desktop Sidebar */}
             {isSidebarVisible && (
-                <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64">
+                <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-56">
                     <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl">
                         <SidebarContent
                             navigation={navigation}
@@ -80,7 +80,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             )}
 
-            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible ? 'lg:pl-64' : ''}`}>
+            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible ? 'lg:pl-56' : ''}`}>
                 {/* Header / Top Bar */}
                 <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6">
                     <div className="flex items-center gap-3">
@@ -113,9 +113,13 @@ export default function AuthenticatedLayout({ header, children }) {
                             <Dropdown>
                                 <Dropdown.Trigger>
                                     <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-all group">
-                                        <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                                            {usePage().props.auth.company.company_name[0]}
-                                        </div>
+                                        {usePage().props.auth.company.logo_url ? (
+                                            <img src={usePage().props.auth.company.logo_url} className="w-5 h-5 rounded object-contain" />
+                                        ) : (
+                                            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
+                                                {usePage().props.auth.company.company_name[0]}
+                                            </div>
+                                        )}
                                         <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">
                                             {usePage().props.auth.company.company_name}
                                         </span>
@@ -136,9 +140,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 onClick={() => router.post(route('companies.switch', c.id))}
                                                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 ${usePage().props.auth.company.id === c.id ? 'bg-primary/5 text-primary' : 'text-slate-600'}`}
                                             >
-                                                <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${usePage().props.auth.company.id === c.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                                    {c.company_name[0]}
-                                                </div>
+                                                {c.logo_url ? (
+                                                    <img src={c.logo_url} className="w-6 h-6 rounded object-contain" />
+                                                ) : (
+                                                    <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${usePage().props.auth.company.id === c.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                        {c.company_name[0]}
+                                                    </div>
+                                                )}
                                                 <span className="font-medium flex-1 truncate">{c.company_name}</span>
                                                 {usePage().props.auth.company.id === c.id && (
                                                     <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,8 +214,12 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
             {/* Sidebar Branding */}
             <div className="px-6 pt-6 pb-4 border-b border-slate-800/50">
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors">
-                        <ApplicationLogo className="h-6 w-auto filter invert brightness-200" />
+                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors flex items-center justify-center overflow-hidden w-10 h-10">
+                        {usePage().props.auth.company?.logo_url ? (
+                            <img src={usePage().props.auth.company.logo_url} className="w-full h-full object-contain" />
+                        ) : (
+                            <ApplicationLogo className="h-6 w-auto filter invert brightness-200" />
+                        )}
                     </div>
                     <div className="flex flex-col">
                         <span className="text-white text-sm font-bold tracking-tight">{usePage().props.appName}</span>
@@ -232,7 +244,7 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
             <div className="flex-1 overflow-y-auto px-3 py-6 space-y-6 scrollbar-hide custom-scrollbar">
                 {/* Main Links */}
                 <div>
-                    <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[.2em]">Menu</h3>
+                    <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Menu</h3>
                     <div className="space-y-0.5">
                         {navigation.map((item) => (
                             (!item.adminOnly || user.role === 'admin') && (
@@ -257,7 +269,7 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
                 {/* Team Group */}
                 {teamLinks.length > 0 && (
                     <div>
-                        <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[.2em]">Team</h3>
+                        <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Team</h3>
                         <button
                             onClick={() => setOpenMenu(openMenu === 'team' ? null : 'team')}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'team' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -291,7 +303,7 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
 
                 {/* Dropdown Group (Transactions) */}
                 <div>
-                    <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[.2em]">Finance</h3>
+                    <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Finance</h3>
                     <button
                         onClick={() => setOpenMenu(openMenu === 'transactions' ? null : 'transactions')}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'transactions' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -322,7 +334,7 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
 
                 {/* Reports Group */}
                 <div>
-                    <h3 className="px-3 mb-3 text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em]">Insights</h3>
+                    <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[0.2em]">Insights</h3>
                     <button
                         onClick={() => setOpenMenu(openMenu === 'reports' ? null : 'reports')}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'reports' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'

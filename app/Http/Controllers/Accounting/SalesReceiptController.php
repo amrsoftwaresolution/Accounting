@@ -35,10 +35,7 @@ class SalesReceiptController extends Controller
             ->get();
 
         return Inertia::render('Transaction/SalesReceiptForm', [
-            'customers' => Customer::orderBy('display_name')->get(),
-            'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'paymentMethods' => $paymentMethods,
-            'items' => Item::orderBy('name')->get(),
             'nextReceiptNo' => $this->getNextReceiptNo()
         ]);
     }

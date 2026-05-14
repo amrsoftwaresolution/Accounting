@@ -28,8 +28,8 @@ export default function Select({ companies }) {
                                     className="group relative bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-primary hover:shadow-xl hover:shadow-primary/5 transition-all text-left flex items-start gap-4"
                                 >
                                     <div className="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                                        {company.logo_path ? (
-                                            <img src={company.logo_path} alt="" className="w-8 h-8 object-contain" />
+                                        {company.logo_url ? (
+                                            <img src={company.logo_url} alt="" className="w-8 h-8 object-contain" />
                                         ) : (
                                             <span className="text-xl font-bold text-slate-400 group-hover:text-primary transition-colors">
                                                 {company.company_name.charAt(0)}

@@ -47,7 +47,14 @@ class CustomerController extends Controller
             $customer->addresses()->create(array_merge($request->shipping_address, ['type' => 'shipping']));
         }
 
-        return redirect()->back()->with('success', 'Customer created successfully.');
+        return redirect()->back()->with([
+            'success' => 'Customer created successfully.',
+            'new_customer' => [
+                'value' => $customer->id,
+                'label' => $customer->display_name,
+                'type' => 'Customer'
+            ]
+        ]);
     }
 
     public function update(Request $request, Customer $customer)

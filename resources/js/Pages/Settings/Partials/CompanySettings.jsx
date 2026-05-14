@@ -101,10 +101,10 @@ export default function CompanySettings({ settings }) {
 
                 <div onClick={selectFile} className="relative group cursor-pointer">
                     <div className="w-24 h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden hover:border-green-600 transition-colors">
-                        {settings?.logo_path ? (
+                        {settings?.logo_url ? (
                             <img
-                                src={`/storage/${settings.logo_path}`}
-                                className="w-full h-full object-cover"
+                                src={settings.logo_url}
+                                className="w-full h-full object-contain"
                                 alt="Company Logo"
                             />
                         ) : (

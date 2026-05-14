@@ -40,7 +40,6 @@ class JournalEntryController extends Controller
         $nextJournalNo = ($lastRef && is_numeric($lastRef->reference)) ? (int)$lastRef->reference + 1 : 1;
 
         return Inertia::render('Transaction/JournalEntryForm', [
-            'accounts' => $accounts,
             'nextJournalNo' => (string)$nextJournalNo
         ]);
     }
@@ -118,8 +117,7 @@ class JournalEntryController extends Controller
         $accounts = ChartOfAcc::orderBy('account_code')->get();
 
         return Inertia::render('Transaction/JournalEntryForm', [
-            'journalEntry' => $journalEntry,
-            'accounts' => $accounts
+            'journalEntry' => $journalEntry
         ]);
     }
 
