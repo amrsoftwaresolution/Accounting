@@ -19,10 +19,7 @@ class HandleCompanyContext
     {
         if (Auth::check()) {
             if (!session()->has('active_company_id')) {
-                // If the user has only one company, set it automatically
-                if (Auth::user()->companies->count() === 1) {
-                    session(['active_company_id' => Auth::user()->companies->first()->id]);
-                } else if (!$request->routeIs('companies.*') && !$request->routeIs('logout')) {
+                if (!$request->routeIs('companies.*') && !$request->routeIs('logout')) {
                     return redirect()->route('companies.index');
                 }
             }
