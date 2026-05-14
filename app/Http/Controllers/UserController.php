@@ -60,4 +60,19 @@ class UserController extends Controller
 
         return redirect()->route('users.index')->with('success', 'User created successfully');
     }
+
+    /**
+     * Delete a user
+     */
+    public function destroy(User $user)
+    {
+        // Prevent users from deleting themselves
+        if (auth()->id() === $user->id) {
+            return back()->with('error', 'You cannot delete your own account.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('users.index')->with('success', 'User deleted successfully');
+    }
 }
