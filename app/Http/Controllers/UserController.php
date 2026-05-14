@@ -43,7 +43,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -51,6 +51,12 @@ class UserController extends Controller
             'phone' => $request->phone,
             'is_active' => true,
         ]);
+
+        // Link to active company
+        $activeCompanyId = session('active_company_id');
+        if ($activeCompanyId) {
+            $user->companies()->attach($activeCompanyId, ['role' => $request->role]);
+        }
 
         return redirect()->route('users.index')->with('success', 'User created successfully');
     }
