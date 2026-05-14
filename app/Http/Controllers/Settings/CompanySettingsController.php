@@ -151,16 +151,21 @@ class CompanySettingsController extends Controller
             'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $settings = $this->getSettings();
+        $company = $this->getActiveCompany();
+        if (!$company) {
+            return back()->withErrors(['logo' => 'No active company session found.']);
+        }
 
         if ($request->hasFile('logo')) {
-            $company = $this->getActiveCompany();
             // Delete old logo if it exists
             if ($company->logo_path) {
                 Storage::disk('public')->delete($company->logo_path);
             }
 
+            // Generate path using slug
             $path = $request->file('logo')->store('companies/' . $company->slug, 'public');
+            
+            // Update company
             $company->update(['logo_path' => $path]);
         }
 

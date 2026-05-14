@@ -156,7 +156,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                             </button>
                                         ))}
                                     </div>
-                                    <Dropdown.Link href={route('companies.index')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors border-t border-slate-50">
+                                    <Dropdown.Link href={route('companies.index')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-[7px] font-bold uppercase tracking-wider transition-colors border-t border-slate-50">
                                         Manage Companies
                                     </Dropdown.Link>
                                 </Dropdown.Content>
@@ -213,16 +213,13 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
         <div className="flex flex-col h-full">
             {/* Sidebar Branding */}
             <div className="px-6 pt-6 pb-4 border-b border-slate-800/50">
-                <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors flex items-center justify-center overflow-hidden w-10 h-10">
-                        {usePage().props.auth.company?.logo_url ? (
-                            <img src={usePage().props.auth.company.logo_url} className="w-full h-full object-contain" />
-                        ) : (
-                            <ApplicationLogo className="h-6 w-auto filter invert brightness-200" />
-                        )}
+                <Link href="/" className="flex items-center gap-3 group">
+                    <div className="p-1.5 rounded-xl bg-white/10 border border-white/20 group-hover:bg-[#00713D] group-hover:border-[#00713D] transition-all flex items-center justify-center overflow-hidden w-9 h-9">
+                        <ApplicationLogo className="h-6 w-auto filter invert brightness-200" type="icon" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-white text-sm font-bold tracking-tight">{usePage().props.appName}</span>
+                        <span className="text-white text-sm font-black tracking-tight leading-none">JobAlign</span>
+                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5">Books</span>
                     </div>
                 </Link>
             </div>
@@ -252,8 +249,8 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
                                     key={`${item.name}-${item.href}`}
                                     href={item.href}
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${route().current(item.href.split('/').pop()) || (item.name === 'Dashboard' && route().current('dashboard'))
-                                            ? 'bg-[#00713D] text-white shadow-md shadow-[#00713D]/20'
-                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        ? 'bg-[#00713D] text-white shadow-md shadow-[#00713D]/20'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
                                     <span className={`transition-colors ${route().current() === item.href ? 'text-white' : 'group-hover:text-white'}`}>
