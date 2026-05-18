@@ -15,9 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'super.admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
         ]);
 
-        $middleware->web(append: [
+        $middleware->web(append: [  
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\HandleCompanyContext::class,

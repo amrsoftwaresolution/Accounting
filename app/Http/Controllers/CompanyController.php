@@ -18,6 +18,14 @@ class CompanyController extends Controller
         ]);
     }
 
+    public function adminIndex()
+    {
+        $companies = Company::with('package')->get();
+        return Inertia::render('Company/AdminIndex', [
+            'companies' => $companies
+        ]);
+    }
+
     public function create()
     {
         return Inertia::render('Company/Create');
@@ -56,5 +64,29 @@ class CompanyController extends Controller
         session(['active_company_id' => $company->id]);
 
         return redirect()->route('dashboard');
+    }
+
+    public function show(Company $company)
+    {
+        // Load the assigned package
+        $company->load('package');
+        
+        $packages = \App\Models\Package::where('is_active', true)->get();
+
+        return Inertia::render('Company/Show', [
+            'company' => $company,
+            'packages' => $packages
+        ]);
+    }
+
+    public function update(Request $request, Company $company)
+    {
+        $validated = $request->validate([
+            'package_id' => 'nullable|exists:packages,id',
+        ]);
+
+        $company->update($validated);
+
+        return back()->with('success', 'Company package updated successfully.');
     }
 }

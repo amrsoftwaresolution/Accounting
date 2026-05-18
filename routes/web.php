@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
 
     // Inventory Routes
     Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);
+    Route::resource('item-categories', \App\Http\Controllers\Inventory\ItemCategoryController::class);
 
     // Contacts Routes
     Route::resource('customers', \App\Http\Controllers\Contacts\CustomerController::class);
@@ -94,6 +95,16 @@ Route::middleware('auth')->group(function () {
     // Companies
     Route::resource('companies', \App\Http\Controllers\CompanyController::class);
     Route::post('/companies/{company}/switch', [\App\Http\Controllers\CompanyController::class, 'switch'])->name('companies.switch');
+
+    // Super Admin route
+    Route::middleware(['auth', 'super.admin'])->group(function () {
+
+    // Packages
+    Route::resource('packages', \App\Http\Controllers\PackageController::class);
+    //compenies
+    Route::get('/Company/AdminIndex', [\App\Http\Controllers\CompanyController::class, 'adminIndex'])->name('admin.companies.index');
+});
+
 });
 
 require __DIR__.'/auth.php';

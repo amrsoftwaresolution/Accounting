@@ -26,6 +26,7 @@ class Company extends Model
         'home_currency_prefix',
         'multicurrency',
         'is_onboarded',
+        'package_id',
     ];
     
     protected $appends = ['logo_url', 'slug'];
@@ -58,5 +59,10 @@ class Company extends Model
     public function suppliers()
     {
         return $this->hasMany(Supplier::class);
+    }
+
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
     }
 }

@@ -15,6 +15,7 @@ class AdvancedSettingsSeeder extends Seeder
         AdvancedSettings::updateOrCreate(
             ['id' => 1],
             [
+                'company_id' => 1, // Fixed: Added required relationship field
                 'acct_method' => 'Accrual',
                 'fin_year_start' => 'January',
                 'tax_year_start' => 'Same as financial year',

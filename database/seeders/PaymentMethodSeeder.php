@@ -20,7 +20,16 @@ class PaymentMethodSeeder extends Seeder
         ];
 
         foreach ($methods as $method) {
-            \App\Models\PaymentMethod::updateOrCreate(['slug' => $method['slug']], $method);
+            \App\Models\PaymentMethod::updateOrCreate(
+                [
+                    'company_id' => 1, // Fixed: Scopes the unique check to the company
+                    'slug' => $method['slug']
+                ], 
+                [
+                    'name' => $method['name'],
+                    'company_id' => 1 // Fixed: Passes the required field for creation
+                ]
+            );
         }
     }
 }

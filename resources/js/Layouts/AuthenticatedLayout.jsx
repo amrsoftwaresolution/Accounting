@@ -7,6 +7,7 @@ import QuickActionMenu from '@/Components/QuickActionMenu';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
+    const activeCompany = usePage().props.auth.company;
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -20,6 +21,10 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
         { name: 'Finance Overview', href: route('chart-of-account.index'), icon: 'finance' },
         { name: 'Settings', href: route('settings.index'), icon: 'users' },
+         ...(user.role === 'super_admin' ? [
+            { name: 'Packages', href: route('packages.index'), icon: 'inventory' },
+            { name: 'All Companies', href: route('admin.companies.index'), icon: 'company' },
+        ] : []),
     ];
 
     const teamLinks = [
@@ -394,6 +399,8 @@ function SidebarIcon({ name }) {
         case 'transactions':
             return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
         case 'supplier':
+            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
+        case 'company':
             return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
         default:
             return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;

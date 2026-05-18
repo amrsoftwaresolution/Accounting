@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('company_name');
             $table->string('company_email')->nullable();
+            $table->foreignId('package_id')->nullable()->constrained('packages')->nullOnDelete();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->string('website')->nullable();
@@ -37,6 +38,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('companies');
+       Schema::table('companies', function (Blueprint $table) {
+            $table->dropForeign(['package_id']);
+            $table->dropColumn('package_id');
+        });
     }
 };
