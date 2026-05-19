@@ -43,19 +43,17 @@ class SalesReceiptController extends Controller
     public function store(Request $request)
     {
        // Change ONLY this block inside the store method:
-$validated = $request->validate([
-    'customer' => 'required|uuid',
-    'receiptDate' => 'required|date',
-    'receiptNo' => 'required', // REMOVED '|string' to allow numbers
-    'paymentMethod' => 'nullable|uuid',
-    'depositTo' => 'required|uuid',
-    'items' => 'required|array|min:1',
-    'items.*.product' => 'required|uuid',
-    'items.*.qty' => 'required|numeric',
-    'items.*.rate' => 'required|numeric',
-    'items.*.amount' => 'required',
-    'action' => 'nullable|string',
-]);
+        $validated = $request->validate([
+            'customer' => 'required',
+            'receiptDate' => 'required|date',
+            'receiptNo' => 'required',
+            'paymentMethod' => 'nullable',
+            'depositTo' => 'required',
+            'items' => 'required|array|min:1',
+            'items.*.product' => 'required',
+            'items.*.amount' => 'required',
+            'action' => 'nullable|string',
+        ]);
         try {
             DB::transaction(function() use ($request) {
                 // Filter out empty items
@@ -74,6 +72,7 @@ $validated = $request->validate([
                 // 1. Save Document (Business Details)
                 $receipt = SalesReceipt::create([
                     'company_id' => session('active_company_id'),
+                    'receipt_no' => $request->receiptNo,
                     'customer_id' => $request->customer,
                     'email' => $request->email,
                     'receipt_date' => $request->receiptDate,
@@ -90,8 +89,8 @@ $validated = $request->validate([
                         'sales_receipt_id' => $receipt->id,
                         'item_id' => $itemData['product'],
                         'description' => $itemData['description'] ?? '',
-                        'quantity' => (float)($itemData['qty'] ?? 1),
-                        'rate' => (float)($itemData['rate'] ?? 0),
+                        'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
+                        'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                         'service_date' => $itemData['serviceDate'] ?? null,
                     ]);

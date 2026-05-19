@@ -20,9 +20,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             
             // Payee & Payment Method
-            $table->unsignedBigInteger('payee_id')->nullable();
+            $table->uuid('payee_id')->nullable();
             $table->string('payee_type')->nullable();
-            $table->unsignedBigInteger('payment_method_id')->nullable();
+            $table->uuid('payment_method_id')->nullable();
 
             $table->string('transaction_type')->nullable(); // e.g., 'invoice', 'expense', 'bill'
             $table->nullableUuidMorphs('transactionable'); // Link to the specific transaction record
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->foreignUuid('chart_of_acc_id')->constrained();
             
             // Per-line Payee
-            $table->unsignedBigInteger('payee_id')->nullable();
+            $table->uuid('payee_id')->nullable();
             $table->string('payee_type')->nullable();
 
             $table->decimal('debit', 15, 2)->default(0);

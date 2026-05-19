@@ -20,11 +20,19 @@ class ChartOfAccController extends Controller
 
         return Inertia::render('Accounting/chart-of-acc-index', [
             'chartOfAccounts' => $chartOfAccounts,
+            'lastOpeningBalanceDate' => session('last_opening_balance_date', date('Y-m-d')),
         ]);
     }
 
     public function store(Request $request)
     {
+        // Strip commas from opening_balance if present
+        if ($request->has('opening_balance')) {
+            $request->merge([
+                'opening_balance' => str_replace(',', '', $request->input('opening_balance'))
+            ]);
+        }
+
         $request->validate([
             'account_code' => 'required|string|max:255|unique:chart_of_accs,account_code',
             'name' => 'required|string|max:255',
@@ -36,6 +44,10 @@ class ChartOfAccController extends Controller
             'is_active' => 'sometimes|boolean',
             'currency' => 'nullable|string|max:3',
         ]);
+
+        if ($request->filled('opening_balance_date')) {
+            session(['last_opening_balance_date' => $request->input('opening_balance_date')]);
+        }
 
         $company = \App\Models\Company::findOrFail(session('active_company_id'));
         $selectedCurrency = $request->input('currency');
@@ -156,16 +168,19 @@ class ChartOfAccController extends Controller
 
     public function history(ChartOfAcc $chartOfAccount)
     {
-        $lines = \App\Models\JournalEntryLine::with(['journalEntry.creator'])
+        $lines = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
             ->where('chart_of_acc_id', $chartOfAccount->id)
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->orderBy('journal_entries.date', 'desc')
             ->select('journal_entry_lines.*')
             ->get();
 
+        $accounts = ChartOfAcc::orderBy('account_code')->get();
+
         return Inertia::render('Accounting/AccountHistory', [
             'account' => $chartOfAccount,
-            'lines' => $lines
+            'lines' => $lines,
+            'accounts' => $accounts,
         ]);
     }
 

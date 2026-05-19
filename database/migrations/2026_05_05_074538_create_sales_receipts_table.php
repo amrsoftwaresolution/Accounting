@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sales_receipts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            $table->string('receipt_no')->nullable();
             $table->uuid('customer_id');
             $table->string('email')->nullable();
             $table->date('receipt_date');

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\ChartOfAcc;
+use App\Models\Package;
 use App\Models\Customer;
 use App\Models\Supplier;
 use App\Models\Item;
@@ -31,90 +32,142 @@ class DatabaseSeeder extends Seeder
         DB::table('journal_entries')->truncate();
         DB::table('journal_entry_lines')->truncate();
         DB::table('users')->truncate();
+        DB::table('packages')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 1. Create Default Company
-        $adminCompany = Company::updateOrCreate(
+        // 1. Create 4 packages dummy data
+        $packages = [
+            [
+                'id' => 1,
+                'name' => 'Basic Plan',
+                'description' => 'Great for small startups and freelancers.',
+                'price' => 10.00,
+                'billing_period' => 'monthly',
+                'max_companies' => 1,
+                'max_chart_of_accounts' => 50,
+                'max_products' => 20,
+                'max_users' => 2,
+                'is_active' => true,
+            ],
+            [
+                'id' => 2,
+                'name' => 'Standard Plan',
+                'description' => 'Ideal for growing businesses needing more capacity.',
+                'price' => 29.00,
+                'billing_period' => 'monthly',
+                'max_companies' => 3,
+                'max_chart_of_accounts' => 150,
+                'max_products' => 100,
+                'max_users' => 5,
+                'is_active' => true,
+            ],
+            [
+                'id' => 3,
+                'name' => 'Professional Plan',
+                'description' => 'Advanced features and limits for established teams.',
+                'price' => 79.00,
+                'billing_period' => 'monthly',
+                'max_companies' => 10,
+                'max_chart_of_accounts' => 500,
+                'max_products' => 1000,
+                'max_users' => 15,
+                'is_active' => true,
+            ],
+            [
+                'id' => 4,
+                'name' => 'Enterprise Plan',
+                'description' => 'Unlimited scaling and priority support for large corporations.',
+                'price' => 199.00,
+                'billing_period' => 'yearly',
+                'max_companies' => 100,
+                'max_chart_of_accounts' => 5000,
+                'max_products' => 10000,
+                'max_users' => 100,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($packages as $pkg) {
+            Package::updateOrCreate(
+                ['id' => $pkg['id']],
+                $pkg
+            );
+        }
+
+        // 2. Create only one company dummy data
+        $testCompany = Company::updateOrCreate(
             ['id' => 1],
             [
-                'company_name' => 'JobAlign Books Solutions Ltd',
-                'company_email' => 'hello@jobalign.example.com',
+                'company_name' => 'Test Company',
+                'company_email' => 'hello@testcompany.example.com',
                 'phone' => '+94 11 234 5678',
-                'address' => '123 Business Park, Colombo 03, Sri Lanka',
-                'website' => 'https://jobalign.example.com',
+                'address' => '123 Business Road, Colombo, Sri Lanka',
+                'website' => 'https://testcompany.example.com',
                 'industry' => 'Financial Services',
                 'home_currency' => 'LKR',
+                'package_id' => 2, // Assign Standard Plan
             ]
         );
 
-        $userCompany = Company::updateOrCreate(
-            ['id' => 2],
+        // 3. Create Users
+        $ilhamsadath = User::updateOrCreate(
+            ['email' => 'ilhamsadath29@gmail.com'],
             [
-                'company_name' => 'GreenMart Retail Pvt Ltd',
-                'company_email' => 'support@greenmart.example.com',
-                'phone' => '+94 77 456 7890',
-                'address' => '45 Market Street, Kandy, Sri Lanka',
-                'website' => 'https://greenmart.example.com',
-                'industry' => 'Retail & Wholesale',
-                'home_currency' => 'LKR',
-            ]
-        );
-
-        $superAdminCompany = Company::updateOrCreate(
-            ['id' => 3],
-            [
-                'company_name' => 'NovaCore Technologies',
-                'company_email' => 'admin@novacore.example.com',
-                'phone' => '+94 71 987 6543',
-                'address' => '88 Tech Avenue, Colombo 05, Sri Lanka',
-                'website' => 'https://novacore.example.com',
-                'industry' => 'Software & IT Services',
-                'home_currency' => 'USD',
-            ]
-        );
-
-        // 2. Create Admin User
-        $admin = User::updateOrCreate(
-            ['email' => 'growdigitec@gmail.com'], // unique check
-            [
-                'name' => 'Growdigitec',
-                'password' => Hash::make('password'),
+                'name' => 'Ilham Sadath',
+                'password' => Hash::make('RoshanAara10'),
                 'role' => 'admin',
-                'phone' => '+94702899880',
                 'is_active' => 1,
             ]
         );
 
-        // 2. Create User
-        $user = User::updateOrCreate(
-            ['email' => 'user@growdigitec.com'], // unique check
+        $amrasacc = User::updateOrCreate(
+            ['email' => 'amrasacc@gmail.com'],
             [
-                'name' => 'User',
-                'password' => Hash::make('password'),
-                'role' => 'user',
-                'phone' => '+94702899880',
+                'name' => 'Rasly',
+                'password' => Hash::make('123manager'),
+                'role' => 'admin',
                 'is_active' => 1,
             ]
         );
 
-        // 2. Create Super Admin User
+        $staff02 = User::updateOrCreate(
+            ['email' => 'growdigitec.staff02@gmail.com'],
+            [
+                'name' => 'Jafees',
+                'password' => Hash::make('staff02@'),
+                'role' => 'user',
+                'is_active' => 1,
+            ]
+        );
+
+        $staff01 = User::updateOrCreate(
+            ['email' => 'growdigitec.staff01@gmail.com'],
+            [
+                'name' => 'Rusthi',
+                'password' => Hash::make('staff01@'),
+                'role' => 'user',
+                'is_active' => 1,
+            ]
+        );
+
+        // Create Super Admin User for system administration
         $super_admin = User::updateOrCreate(
-            ['email' => 'superadmin@growdigitec.com'], // unique check
+            ['email' => 'superadmin@growdigitec.com'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
                 'role' => 'super_admin',
-                'phone' => '+94702899880',
                 'is_active' => 1,
             ]
         );
 
-        // Link user to company (Fixed: mapped to defined company variables)
-        $user->companies()->syncWithoutDetaching([$userCompany->id => ['role' => 'user']]);
-        $super_admin->companies()->syncWithoutDetaching([$superAdminCompany->id => ['role' => 'super_admin']]);
-        $admin->companies()->syncWithoutDetaching([$adminCompany->id => ['role' => 'admin']]);
+        // Link users to company
+        $ilhamsadath->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
+        $amrasacc->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
+        $staff02->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'user']]);
+        $staff01->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'user']]);
 
-        // 3. Create Chart of Accounts
+        // 4. Create Chart of Accounts for the single company
         $accounts = [
             ['code' => '1000', 'name' => 'Cash on Hand', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
             ['code' => '1010', 'name' => 'Main Bank Account', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
@@ -132,10 +185,9 @@ class DatabaseSeeder extends Seeder
             ['code' => '5300', 'name' => 'Office Expense', 'type' => 'expense', 'sub' => 'expense'],
         ];
 
-        $accountModels = [];
         foreach ($accounts as $acc) {
-            $accountModels[$acc['code']] = ChartOfAcc::updateOrCreate(
-                ['company_id' => $adminCompany->id, 'account_code' => $acc['code']],
+            ChartOfAcc::updateOrCreate(
+                ['company_id' => $testCompany->id, 'account_code' => $acc['code']],
                 [
                     'name' => $acc['name'],
                     'account_type' => $acc['type'],
@@ -145,74 +197,7 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 4. Create Categories & Items
-        $cat1 = ItemCategory::updateOrCreate(['company_id' => $adminCompany->id, 'name' => 'Electronics']);
-        $cat2 = ItemCategory::updateOrCreate(['company_id' => $adminCompany->id, 'name' => 'Services']);
-
-        Item::updateOrCreate(
-            ['company_id' => $adminCompany->id, 'sku' => 'MBP-M3-001'],
-            [
-                'name' => 'MacBook Pro M3',
-                'type' => 'product',
-                'item_category_id' => $cat1->id,
-                'sale_price' => 2500,
-                'purchase_price' => 2000,
-                'income_account_id' => $accountModels['4000']->id,
-            ]
-        );
-
-        // 5. Create Contacts
-        Customer::updateOrCreate(
-            ['company_id' => $adminCompany->id, 'email' => 'john@example.com'],
-            ['display_name' => 'John Doe']
-        );
-
-        Supplier::updateOrCreate(
-            ['company_id' => $adminCompany->id, 'company_name' => 'Global Tech Inc.'],
-            ['display_name' => 'Global Tech Solutions']
-        );
-
-        // 6. Create some Journal Entries
-        $je1 = JournalEntry::updateOrCreate(
-            ['company_id' => $adminCompany->id, 'reference' => 'OB-001'],
-            [
-                'date' => now()->subDays(10)->format('Y-m-d'),
-                'description' => 'Opening balance',
-                'transaction_type' => 'journal_entry',
-                'total_amount' => 50000,
-                'status' => 'posted',
-                'created_by' => $admin->id,
-            ]
-        );
-
-        $je1->lines()->delete();
-        $je1->lines()->createMany([
-            ['chart_of_acc_id' => $accountModels['1010']->id, 'debit' => 50000, 'credit' => 0],
-            ['chart_of_acc_id' => $accountModels['3000']->id, 'debit' => 0, 'credit' => 50000],
-        ]);
-
-        // Rent payment
-        $je2 = JournalEntry::create([
-            'company_id' => $adminCompany->id, // added to prevent transaction mismatch
-            'date' => now()->subDays(2)->format('Y-m-d'),
-            'reference' => 'JE-2024-001',
-            'description' => 'Monthly Rent Payment',
-            'transaction_type' => 'journal_entry',
-            'total_amount' => 1200,
-            'status' => 'posted',
-            'created_by' => $admin->id,
-        ]);
-
-        $je2->lines()->createMany([
-            ['chart_of_acc_id' => $accountModels['5100']->id, 'debit' => 1200, 'credit' => 0, 'memo' => 'April Rent'],
-            ['chart_of_acc_id' => $accountModels['1010']->id, 'debit' => 0, 'credit' => 1200, 'memo' => 'Paid via Bank'],
-        ]);
-
-        // Update balances for display
-        $accountModels['1010']->update(['balance' => 48800]);
-        $accountModels['3000']->update(['balance' => -50000]);
-        $accountModels['5100']->update(['balance' => 1200]);
-
+        // Run other seeders
         $this->call([
             PaymentMethodSeeder::class,
             AdvancedSettingsSeeder::class,

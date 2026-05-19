@@ -1,6 +1,7 @@
 import TransactionHeader from "./TransactionHeader";
 import { router } from '@inertiajs/react';
 import SplitSaveButton from "@/Components/SplitSaveButton";
+import ToastNotification from "@/Components/ToastNotification";
 
 export default function TransactionLayout({
     title,
@@ -81,6 +82,7 @@ export default function TransactionLayout({
                     />
                 </div>
             </div>
+            <ToastNotification />
         </div>
     );
 }

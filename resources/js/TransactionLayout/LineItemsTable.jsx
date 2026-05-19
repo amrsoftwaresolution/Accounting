@@ -109,7 +109,7 @@ export default function LineItemsTable({
                                                     initialLimit={10}
                                                     variant="table"
                                                     size="sm"
-                                                    onAddNew={col.onAddNew}
+                                                    onAddNew={col.onAddNew ? () => col.onAddNew(index) : null}
                                                     hideChevron={col.hideChevron}
                                                 />
                                             ) : (

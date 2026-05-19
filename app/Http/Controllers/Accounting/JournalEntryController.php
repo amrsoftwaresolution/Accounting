@@ -170,4 +170,103 @@ class JournalEntryController extends Controller
             return response()->json(['message' => 'Journal Entry Updated']);
         });
     }
+
+    /**
+     * Quick update a JournalEntry from the Account History register.
+     */
+    public function quickUpdate(Request $request, JournalEntry $journalEntry)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'reference' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'chart_of_acc_id' => 'required|exists:chart_of_accs,id',
+            'offset_account_id' => 'nullable|exists:chart_of_accs,id',
+            'debit' => 'required|numeric|min:0',
+            'credit' => 'required|numeric|min:0',
+            'payee_id' => 'nullable',
+        ]);
+
+        return DB::transaction(function () use ($request, $journalEntry) {
+            $payeeId = $request->input('payee_id');
+            $payeeType = null;
+            if ($payeeId) {
+                if (Supplier::where('id', $payeeId)->exists()) $payeeType = Supplier::class;
+                elseif (Customer::where('id', $payeeId)->exists()) $payeeType = Customer::class;
+                elseif (Employee::where('id', $payeeId)->exists()) $payeeType = Employee::class;
+            }
+
+            // Update main journal entry fields
+            $journalEntry->update([
+                'date' => $request->input('date'),
+                'reference' => $request->input('reference'),
+                'description' => $request->input('description'),
+                'total_amount' => max((float)$request->input('debit'), (float)$request->input('credit')),
+            ]);
+
+            $lines = $journalEntry->lines;
+            $currentAccountId = $request->input('chart_of_acc_id');
+
+            if ($lines->count() === 2) {
+                // Simple double-entry update
+                $line1 = $lines->firstWhere('chart_of_acc_id', $currentAccountId);
+                $line2 = $lines->firstWhere('chart_of_acc_id', '!=', $currentAccountId);
+
+                if (!$line1) {
+                    $line1 = $lines->first();
+                    $line2 = $lines->last();
+                }
+
+                $debit = (float)$request->input('debit');
+                $credit = (float)$request->input('credit');
+
+                $line1->update([
+                    'chart_of_acc_id' => $currentAccountId,
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'payee_id' => $payeeId,
+                    'payee_type' => $payeeType,
+                    'memo' => $request->input('description'),
+                ]);
+
+                if ($line2) {
+                    $offsetAccountId = $request->input('offset_account_id') ?? $line2->chart_of_acc_id;
+                    $line2->update([
+                        'chart_of_acc_id' => $offsetAccountId,
+                        'debit' => $credit,
+                        'credit' => $debit,
+                        'payee_id' => $payeeId,
+                        'payee_type' => $payeeType,
+                        'memo' => $request->input('description'),
+                    ]);
+                }
+            } else {
+                // Split transaction (multiple lines)
+                $line1 = $lines->firstWhere('chart_of_acc_id', $currentAccountId);
+                if ($line1) {
+                    $line1->update([
+                        'debit' => (float)$request->input('debit'),
+                        'credit' => (float)$request->input('credit'),
+                        'payee_id' => $payeeId,
+                        'payee_type' => $payeeType,
+                        'memo' => $request->input('description'),
+                    ]);
+                }
+            }
+
+            return response()->json(['message' => 'Journal Entry Updated Successfully']);
+        });
+    }
+
+    /**
+     * Delete a JournalEntry.
+     */
+    public function destroy(JournalEntry $journalEntry)
+    {
+        return DB::transaction(function () use ($journalEntry) {
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+            return response()->json(['message' => 'Journal Entry Deleted Successfully']);
+        });
+    }
 }

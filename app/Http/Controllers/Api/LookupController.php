@@ -117,4 +117,54 @@ class LookupController extends Controller
             
         return response()->json($categories);
     }
+
+    /**
+     * Endpoint to get the next account code based on selected account type
+     */
+    public function nextCode(Request $request)
+    {
+        $type = $request->query('type', 'asset');
+
+        $defaults = [
+            'asset' => 1000,
+            'liability' => 2000,
+            'equity' => 3000,
+            'income' => 4000,
+            'expense' => 5000,
+        ];
+
+        $defaultCode = $defaults[strtolower($type)] ?? 1000;
+
+        // Fetch all account codes of this type for the active company
+        $codes = \App\Models\ChartOfAcc::where('account_type', $type)
+            ->pluck('account_code');
+
+        $numericCodes = $codes->filter(function($code) {
+            return is_numeric($code) && preg_match('/^\d+$/', $code);
+        })->map(function($code) {
+            return (int)$code;
+        });
+
+        $nextCode = $numericCodes->isEmpty() ? $defaultCode : $numericCodes->max() + 1;
+
+        return response()->json([
+            'next_code' => (string)$nextCode
+        ]);
+    }
+
+    /**
+     * Save the last opening balance date to the session.
+     */
+    public function saveOpeningBalanceDate(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date'
+        ]);
+
+        session(['last_opening_balance_date' => $request->input('date')]);
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
 }

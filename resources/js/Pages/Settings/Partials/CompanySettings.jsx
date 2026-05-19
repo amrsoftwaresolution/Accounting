@@ -88,9 +88,9 @@ export default function CompanySettings({ settings }) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Logo Section */}
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6">
                 <input
                     type="file"
                     ref={fileInput}
@@ -100,7 +100,7 @@ export default function CompanySettings({ settings }) {
                 />
 
                 <div onClick={selectFile} className="relative group cursor-pointer">
-                    <div className="w-24 h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden hover:border-green-600 transition-colors">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg border border-dashed border-gray-300 flex items-center justify-center overflow-hidden hover:border-green-600 transition-colors">
                         {settings?.logo_url ? (
                             <img
                                 src={settings.logo_url}
@@ -108,14 +108,14 @@ export default function CompanySettings({ settings }) {
                                 alt="Company Logo"
                             />
                         ) : (
-                            <span className="material-icons text-gray-400 text-4xl">store</span>
+                            <span className="material-icons text-gray-400 text-3xl">store</span>
                         )}
 
                         <div className={`absolute inset-0 bg-black flex items-center justify-center transition-all ${isUploading ? 'bg-opacity-40' : 'bg-opacity-0 group-hover:bg-opacity-10'}`}>
                             {isUploading ? (
-                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
-                                <span className="material-icons text-white opacity-0 group-hover:opacity-100">add_a_photo</span>
+                                <span className="material-icons text-white opacity-0 group-hover:opacity-100 text-lg">add_a_photo</span>
                             )}
                         </div>
                     </div>
@@ -124,9 +124,9 @@ export default function CompanySettings({ settings }) {
                             e.stopPropagation();
                             selectFile();
                         }}
-                        className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md border border-gray-200"
+                        className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md border border-gray-200"
                     >
-                        <span className="material-icons text-sm text-gray-600">edit</span>
+                        <span className="material-icons text-xs text-gray-600">edit</span>
                     </div>
                 </div>
             </div>
@@ -134,71 +134,71 @@ export default function CompanySettings({ settings }) {
             {/* Company Info Card */}
             <div className="bg-white rounded shadow-sm border border-gray-200">
                 {!isEditing ? (
-                    <div className="p-8">
-                        <div className="flex justify-between items-center mb-4">
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-3">
                             <div>
-                                <h2 className="text-lg font-bold text-gray-800">Company info</h2>
-                                <p className="text-gray-500 text-xs">This info may be used for billing purposes.</p>
+                                <h2 className="text-sm font-bold text-gray-800">Company info</h2>
+                                <p className="text-gray-400 text-[10px]">This info may be used for billing purposes.</p>
                             </div>
-                            <button onClick={() => setIsEditing(true)} className="text-blue-600 hover:underline text-sm font-semibold">Edit</button>
+                            <button onClick={() => setIsEditing(true)} className="text-blue-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Name</div>
-                                <div className="col-span-8 text-sm">{infoForm.data.company_name}</div>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Name</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.company_name}</div>
                             </div>
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Email</div>
-                                <div className="col-span-8 text-sm">{infoForm.data.company_email}</div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Email</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.company_email}</div>
                             </div>
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Phone</div>
-                                <div className="col-span-8 text-sm">{infoForm.data.phone}</div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Phone</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.phone}</div>
                             </div>
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Industry</div>
-                                <div className="col-span-8 text-sm">{infoForm.data.industry}</div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Industry</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.industry}</div>
                             </div>
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Address</div>
-                                <div className="col-span-8 text-sm">{infoForm.data.address || <span className="text-gray-300 italic">None listed</span>}</div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Address</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.address || <span className="text-gray-300 italic">None listed</span>}</div>
                             </div>
-                            <div className="grid grid-cols-12 pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Website</div>
-                                <div className="col-span-8 text-sm">{infoForm.data.website || <span className="text-gray-300 italic">None listed</span>}</div>
+                            <div className="grid grid-cols-12 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Website</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.website || <span className="text-gray-300 italic">None listed</span>}</div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleInfoSubmit} className="p-8">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6">Edit Company info</h2>
-                        <div className="space-y-4">
+                    <form onSubmit={handleInfoSubmit} className="p-6">
+                        <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Company info</h2>
+                        <div className="space-y-3">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Company Name</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={infoForm.data.company_name} onChange={e => infoForm.setData('company_name', e.target.value)} />
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Name</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.company_name} onChange={e => infoForm.setData('company_name', e.target.value)} />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase">Company Email</label>
-                                    <input type="email" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={infoForm.data.company_email} onChange={e => infoForm.setData('company_email', e.target.value)} />
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Email</label>
+                                    <input type="email" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.company_email} onChange={e => infoForm.setData('company_email', e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase">Phone</label>
-                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={infoForm.data.phone} onChange={e => infoForm.setData('phone', e.target.value)} />
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</label>
+                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.phone} onChange={e => infoForm.setData('phone', e.target.value)} />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Address</label>
-                                <textarea className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" rows="2" value={infoForm.data.address} onChange={e => infoForm.setData('address', e.target.value)}></textarea>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</label>
+                                <textarea className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" rows="2" value={infoForm.data.address} onChange={e => infoForm.setData('address', e.target.value)}></textarea>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Website</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={infoForm.data.website} onChange={e => infoForm.setData('website', e.target.value)} />
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.website} onChange={e => infoForm.setData('website', e.target.value)} />
                             </div>
                         </div>
-                        <div className="mt-8 flex justify-end gap-3 border-t pt-6">
-                            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 border rounded-full font-bold text-sm hover:bg-gray-50">Cancel</button>
-                            <button type="submit" disabled={infoForm.processing} className="px-6 py-2 bg-green-700 text-white rounded-full font-bold text-sm hover:bg-green-800 disabled:opacity-50">Save</button>
+                        <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
+                            <button type="submit" disabled={infoForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
                         </div>
                     </form>
                 )}
@@ -207,48 +207,48 @@ export default function CompanySettings({ settings }) {
             {/* Legal Info Card */}
             <div className="bg-white rounded shadow-sm border border-gray-200">
                 {!isEditingLegal ? (
-                    <div className="p-8">
-                        <div className="flex justify-between items-center mb-4">
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-3">
                             <div>
-                                <h2 className="text-lg font-bold text-gray-800">Legal info</h2>
-                                <p className="text-gray-500 text-xs">This is the info your business uses for tax purposes.</p>
+                                <h2 className="text-sm font-bold text-gray-800">Legal info</h2>
+                                <p className="text-gray-400 text-[10px]">This is the info your business uses for tax purposes.</p>
                             </div>
-                            <button onClick={() => setIsEditingLegal(true)} className="text-blue-600 hover:underline text-sm font-semibold">Edit</button>
+                            <button onClick={() => setIsEditingLegal(true)} className="text-blue-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Legal business name</div>
-                                <div className="col-span-8 text-sm">{legalForm.data.legal_name || infoForm.data.company_name}</div>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Legal business name</div>
+                                <div className="col-span-8 text-xs text-gray-800">{legalForm.data.legal_name || infoForm.data.company_name}</div>
                             </div>
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">VAT/GST/TAX ID number</div>
-                                <div className="col-span-8 text-sm">{legalForm.data.tax_id || <span className="text-gray-300 italic">None listed</span>}</div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">VAT/GST/TAX ID number</div>
+                                <div className="col-span-8 text-xs text-gray-800">{legalForm.data.tax_id || <span className="text-gray-300 italic">None listed</span>}</div>
                             </div>
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Business type</div>
-                                <div className="col-span-8 text-sm">{legalForm.data.business_type || <span className="text-gray-300 italic">None listed</span>}</div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Business type</div>
+                                <div className="col-span-8 text-xs text-gray-800">{legalForm.data.business_type || <span className="text-gray-300 italic">None listed</span>}</div>
                             </div>
-                            <div className="grid grid-cols-12 pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Legal address</div>
-                                <div className="col-span-8 text-sm">{legalForm.data.legal_address || <span className="text-gray-300 italic">None listed</span>}</div>
+                            <div className="grid grid-cols-12 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Legal address</div>
+                                <div className="col-span-8 text-xs text-gray-800">{legalForm.data.legal_address || <span className="text-gray-300 italic">None listed</span>}</div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleLegalSubmit} className="p-8">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6">Edit Legal info</h2>
-                        <div className="space-y-4">
+                    <form onSubmit={handleLegalSubmit} className="p-6">
+                        <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Legal info</h2>
+                        <div className="space-y-3">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Legal Business Name</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={legalForm.data.legal_name} onChange={e => legalForm.setData('legal_name', e.target.value)} />
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Legal Business Name</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={legalForm.data.legal_name} onChange={e => legalForm.setData('legal_name', e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">VAT/GST/TAX ID number</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={legalForm.data.tax_id} onChange={e => legalForm.setData('tax_id', e.target.value)} />
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">VAT/GST/TAX ID number</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={legalForm.data.tax_id} onChange={e => legalForm.setData('tax_id', e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Business type</label>
-                                <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={legalForm.data.business_type} onChange={e => legalForm.setData('business_type', e.target.value)}>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Business type</label>
+                                <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5 bg-white" value={legalForm.data.business_type} onChange={e => legalForm.setData('business_type', e.target.value)}>
                                     <option value="">Select type</option>
                                     <option value="Sole trader">Sole trader</option>
                                     <option value="Partnership or limited liability company">Partnership or limited liability company</option>
@@ -256,48 +256,48 @@ export default function CompanySettings({ settings }) {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase">Legal address</label>
-                                <textarea className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" rows="2" value={legalForm.data.legal_address} onChange={e => legalForm.setData('legal_address', e.target.value)}></textarea>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Legal address</label>
+                                <textarea className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" rows="2" value={legalForm.data.legal_address} onChange={e => legalForm.setData('legal_address', e.target.value)}></textarea>
                             </div>
                         </div>
-                        <div className="mt-8 flex justify-end gap-3 border-t pt-6">
-                            <button type="button" onClick={() => setIsEditingLegal(false)} className="px-4 py-2 border rounded-full font-bold text-sm hover:bg-gray-50">Cancel</button>
-                            <button type="submit" disabled={legalForm.processing} className="px-6 py-2 bg-green-700 text-white rounded-full font-bold text-sm hover:bg-green-800 disabled:opacity-50">Save</button>
+                        <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                            <button type="button" onClick={() => setIsEditingLegal(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
+                            <button type="submit" disabled={legalForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
                         </div>
                     </form>
                 )}
             </div>
 
-            {/* --- NEW: Currency Card --- */}
+            {/* Currency Card */}
             <div className="bg-white rounded shadow-sm border border-gray-200">
                 {!isEditingCurrency ? (
-                    <div className="p-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-gray-800">Currency</h2>
-                            <button onClick={() => setIsEditingCurrency(true)} className="text-blue-600 hover:underline text-sm font-semibold">Edit</button>
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-sm font-bold text-gray-800">Currency</h2>
+                            <button onClick={() => setIsEditingCurrency(true)} className="text-blue-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-12 border-b pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Home Currency</div>
-                                <div className="col-span-8 text-sm">{currencyForm.data.home_currency} ({currencyForm.data.home_currency_prefix})</div>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Home Currency</div>
+                                <div className="col-span-8 text-xs text-gray-800">{currencyForm.data.home_currency} ({currencyForm.data.home_currency_prefix})</div>
                             </div>
-                            <div className="grid grid-cols-12 pb-4">
-                                <div className="col-span-4 text-gray-500 text-sm font-bold">Multicurrency</div>
-                                <div className="col-span-8 text-sm flex items-center gap-2">
+                            <div className="grid grid-cols-12 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Multicurrency</div>
+                                <div className="col-span-8 text-xs text-gray-800 flex items-center gap-2">
                                     {currencyForm.data.multicurrency ? 'On' : 'Off'}
-                                    <button type="button" className="text-blue-600 hover:underline text-xs">Manage Currencies</button>
+                                    <button type="button" className="text-blue-600 hover:underline text-[10px]">Manage Currencies</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleCurrencySubmit} className="p-8">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6">Edit Currency info</h2>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                    <form onSubmit={handleCurrencySubmit} className="p-6">
+                        <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Currency info</h2>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase">Home Currency</label>
-                                    <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={currencyForm.data.home_currency} onChange={handleCurrencyChange}>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Home Currency</label>
+                                    <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5 bg-white" value={currencyForm.data.home_currency} onChange={handleCurrencyChange}>
                                         <option value="LKR">Sri Lankan Rupee (LKR)</option>
                                         <option value="USD">United States Dollar (USD)</option>
                                         <option value="EUR">Euro (EUR)</option>
@@ -306,25 +306,25 @@ export default function CompanySettings({ settings }) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase">Currency Prefix</label>
-                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0" value={currencyForm.data.home_currency_prefix} onChange={e => currencyForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. Rs." />
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currency Prefix</label>
+                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={currencyForm.data.home_currency_prefix} onChange={e => currencyForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. Rs." />
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5 pt-1">
                                 <input
                                     type="checkbox"
                                     id="multicurrency"
-                                    className="rounded border-gray-300 text-green-600 focus:ring-0"
+                                    className="rounded border-gray-300 text-green-600 focus:ring-0 h-3.5 w-3.5"
                                     checked={currencyForm.data.multicurrency}
                                     onChange={e => currencyForm.setData('multicurrency', e.target.checked)}
                                 />
-                                <label htmlFor="multicurrency" className="text-sm text-gray-700">Multicurrency</label>
+                                <label htmlFor="multicurrency" className="text-xs text-gray-700">Multicurrency</label>
                             </div>
-                            <p className="text-xs text-gray-400 italic">Once you turn on multicurrency, you can't turn it off.</p>
+                            <p className="text-[10px] text-gray-400 italic">Once you turn on multicurrency, you can't turn it off.</p>
                         </div>
-                        <div className="mt-8 flex justify-end gap-3 border-t pt-6">
-                            <button type="button" onClick={() => setIsEditingCurrency(false)} className="px-4 py-2 border rounded-full font-bold text-sm hover:bg-gray-50">Cancel</button>
-                            <button type="submit" disabled={currencyForm.processing} className="px-6 py-2 bg-green-700 text-white rounded-full font-bold text-sm hover:bg-green-800 disabled:opacity-50">Save</button>
+                        <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                            <button type="button" onClick={() => setIsEditingCurrency(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
+                            <button type="submit" disabled={currencyForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
                         </div>
                     </form>
                 )}

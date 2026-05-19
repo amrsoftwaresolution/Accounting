@@ -48,7 +48,14 @@ class ItemController extends Controller
             'income_account_id' => 'nullable|exists:chart_of_accs,id',
         ]);
 
-        Item::create($validated);
+        $item = Item::create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'item' => $item,
+            ]);
+        }
 
         return redirect()->route('items.index')->with('success', 'Item created successfully');
     }

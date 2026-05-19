@@ -18,16 +18,42 @@ class HandleCompanyContext
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check()) {
-            if (!session()->has('active_company_id')) {
-                if (!$request->routeIs('companies.*') && !$request->routeIs('logout')) {
-                    return redirect()->route('companies.index');
-                }
-            }
+            if (Auth::user()->role === 'super_admin') {
+                $allowedRoutes = [
+                    'admin.companies.index',
+                    'packages.index',
+                    'packages.create',
+                    'packages.store',
+                    'packages.show',
+                    'packages.edit',
+                    'packages.update',
+                    'packages.destroy',
+                    'companies.show',
+                    'companies.edit',
+                    'companies.update',
+                    'profile.edit',
+                    'profile.update',
+                    'profile.destroy',
+                    'logout',
+                ];
 
-            // Share current company with Inertia
-            if (session()->has('active_company_id')) {
-                $currentCompany = Auth::user()->currentCompany();
-                Inertia::share('auth.company', $currentCompany);
+                $currentRouteName = $request->route() ? $request->route()->getName() : null;
+
+                if (!in_array($currentRouteName, $allowedRoutes)) {
+                    return redirect()->route('admin.companies.index');
+                }
+            } else {
+                if (!session()->has('active_company_id')) {
+                    if (!$request->routeIs('companies.*') && !$request->routeIs('logout')) {
+                        return redirect()->route('companies.index');
+                    }
+                }
+
+                // Share current company with Inertia
+                if (session()->has('active_company_id')) {
+                    $currentCompany = Auth::user()->currentCompany();
+                    Inertia::share('auth.company', $currentCompany);
+                }
             }
         }
 

@@ -82,12 +82,17 @@ class User extends Authenticatable
         return $this->belongsToMany(Company::class)->withPivot('role')->withTimestamps();
     }
 
+    protected $currentCompanyCache = null;
+
     public function currentCompany()
     {
         $companyId = session('active_company_id');
         if (!$companyId) {
             return null;
         }
-        return Company::find($companyId);
+        if ($this->currentCompanyCache === null || $this->currentCompanyCache->id !== $companyId) {
+            $this->currentCompanyCache = Company::find($companyId);
+        }
+        return $this->currentCompanyCache;
     }
 }

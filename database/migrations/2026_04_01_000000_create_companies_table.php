@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('home_currency')->default('LKR');
             $table->string('home_currency_prefix')->default('Rs.');
             $table->boolean('multicurrency')->default(false);
+            $table->boolean('is_onboarded')->default(false);
             
             $table->timestamps();
         });

@@ -32,10 +32,13 @@ Route::middleware('auth')->group(function () {
     // API Lookups
     Route::get('/api/payees', [\App\Http\Controllers\Api\LookupController::class, 'payees'])->name('api.payees');
     Route::get('/api/accounts', [\App\Http\Controllers\Api\LookupController::class, 'accounts'])->name('api.accounts');
+    Route::get('/api/accounts/next-code', [\App\Http\Controllers\Api\LookupController::class, 'nextCode'])->name('api.accounts.next-code');
+    Route::post('/api/accounts/save-date', [\App\Http\Controllers\Api\LookupController::class, 'saveOpeningBalanceDate'])->name('api.accounts.save-date');
     Route::get('/api/items', [\App\Http\Controllers\Api\LookupController::class, 'items'])->name('api.items');
     Route::get('/api/categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('api.categories');
 
     Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
+    Route::post('/journal-entries/{journalEntry}/quick-update', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'quickUpdate'])->name('journal-entries.quick-update');
     Route::get('/journal', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'create'])->name('journal');
     
     Route::get('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'create'])->name('transfer');
@@ -78,7 +81,13 @@ Route::middleware('auth')->group(function () {
 
     // Settings
     Route::get('/settings', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings/update', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/company', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'update'])->name('company.update');
+    Route::post('/settings/legal', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateLegal'])->name('legal.update');
+    Route::post('/settings/currency', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateCurrency'])->name('currency.update');
+    Route::post('/settings/time', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateTime'])->name('time.settings.update');
+    Route::post('/settings/expense', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateExpense'])->name('expense.settings.update');
+    Route::post('/settings/sales', [\App\Http\Controllers\Settings\SalesSettingController::class, 'update'])->name('sales.settings.update');
+    Route::post('/settings/advanced', [\App\Http\Controllers\Settings\AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
     Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
     
     // Onboarding

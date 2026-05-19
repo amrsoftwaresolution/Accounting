@@ -12,6 +12,8 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
     
     const [categories, setCategories] = useState([]);
     const [incomeAccounts, setIncomeAccounts] = useState([]);
+    const [localErrors, setLocalErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchCategories = () => {
         axios.get(route('api.categories')).then(res => setCategories(res.data));
@@ -25,10 +27,11 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
         if (isOpen) {
             fetchCategories();
             fetchAccounts();
+            setLocalErrors({});
         }
     }, [isOpen]);
 
-    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
+    const { data, setData, reset, transform, processing, errors } = useForm({
         type: 'service',
         name: '',
         sku: '',
@@ -60,14 +63,29 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('items.store'), {
-            preserveScroll: true,
-            onSuccess: (page) => {
+        setLocalErrors({});
+        setIsSubmitting(true);
+
+        const payload = {
+            ...data,
+            sale_price: String(data.sale_price).replace(/,/g, '')
+        };
+
+        axios.post(route('items.store'), payload)
+            .then(res => {
+                setIsSubmitting(false);
                 reset();
                 onClose();
-                if (onSuccess) onSuccess();
-            },
-        });
+                if (onSuccess) onSuccess(res.data.item);
+            })
+            .catch(err => {
+                setIsSubmitting(false);
+                if (err.response && err.response.data && err.response.data.errors) {
+                    setLocalErrors(err.response.data.errors);
+                } else {
+                    console.error(err);
+                }
+            });
     };
 
     const itemTypes = [
@@ -103,12 +121,12 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                             ))}
                         </div>
                     </section>
-
+ 
                     <CommonInput
                         label="Name"
                         value={data.name}
                         onChange={e => setData('name', e.target.value)}
-                        error={errors.name}
+                        error={localErrors.name?.[0] || errors.name}
                         required
                         placeholder="e.g. Professional Consulting"
                     />
@@ -118,7 +136,7 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                             label="SKU"
                             value={data.sku}
                             onChange={e => setData('sku', e.target.value)}
-                            error={errors.sku}
+                            error={localErrors.sku?.[0] || errors.sku}
                             placeholder="Optional"
                         />
                         <div>
@@ -172,7 +190,7 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
 
                 <div className="mt-auto pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
                     <CommonButton variant="ghost" onClick={onClose} type="button">Cancel</CommonButton>
-                    <CommonButton variant="primary" type="submit" processing={processing}>
+                    <CommonButton variant="primary" type="submit" processing={isSubmitting || processing}>
                         Save Item
                     </CommonButton>
                 </div>

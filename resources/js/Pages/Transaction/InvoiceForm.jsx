@@ -28,6 +28,7 @@ export default function InvoiceForm({
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
 
     const fetchPayees = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
@@ -36,8 +37,9 @@ export default function InvoiceForm({
     };
 
     const fetchItems = (search = "") => {
-        axios.get(route('api.items', { search })).then(res => {
+        return axios.get(route('api.items', { search })).then(res => {
             setProductOptions(res.data);
+            return res.data;
         });
     };
 
@@ -55,7 +57,10 @@ export default function InvoiceForm({
             placeholder: "Select product",
             options: productOptions,
             onSearch: fetchItems,
-            onAddNew: () => setIsItemModalOpen(true),
+            onAddNew: (index) => {
+                setAddingItemRowIndex(index);
+                setIsItemModalOpen(true);
+            },
             type: "select",
             width: "280px",
             hideChevron: true
@@ -321,10 +326,24 @@ export default function InvoiceForm({
 
             <QuickAddItem
                 isOpen={isItemModalOpen}
-                onClose={() => setIsItemModalOpen(false)}
-                onSuccess={() => {
-                    fetchItems();
+                onClose={() => {
                     setIsItemModalOpen(false);
+                    setAddingItemRowIndex(null);
+                }}
+                onSuccess={(newItem) => {
+                    fetchItems().then(() => {
+                        if (addingItemRowIndex !== null && newItem) {
+                            const updated = [...data.items];
+                            updated[addingItemRowIndex].product = newItem.id;
+                            updated[addingItemRowIndex].description = newItem.description || "";
+                            const rateValue = parseFloat(newItem.sale_price || 0);
+                            updated[addingItemRowIndex].rate = formatCurrencyValue(rateValue);
+                            const q = parseFloat(updated[addingItemRowIndex].qty) || 0;
+                            updated[addingItemRowIndex].amount = formatCurrencyValue(q * rateValue);
+                            setData("items", updated);
+                        }
+                        setAddingItemRowIndex(null);
+                    });
                 }}
             />
         </TransactionLayout>

@@ -35,7 +35,7 @@ class EmployeeController extends Controller
         ]);
 
         // Create Employee record directly
-        Employee::create([
+        $employee = Employee::create([
             'name' => $request->name,
             'email' => $request->email,
             'designation' => $request->designation,

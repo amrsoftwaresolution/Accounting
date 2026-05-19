@@ -2,7 +2,8 @@ import { useForm } from '@inertiajs/react';
 import SlideOver from './SlideOver';
 import CommonInput from './CommonInput';
 import CommonButton from './CommonButton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultType = 'asset' }) {
     const subtypeOptions = {
@@ -45,6 +46,22 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
             sub_type: subtypeOptions[value][0].value
         }));
     };
+
+    useEffect(() => {
+        if (isOpen && data.account_type) {
+            axios.get(route('api.accounts.next-code'), {
+                params: { type: data.account_type }
+            })
+            .then(res => {
+                if (res.data && res.data.next_code) {
+                    setData('account_code', res.data.next_code);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to fetch next account code:", err);
+            });
+        }
+    }, [isOpen, data.account_type]);
 
     const submit = (e) => {
         e.preventDefault();

@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import SlideOver from '@/Components/SlideOver';
 import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
+import axios from 'axios';
 
-export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
+export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpeningBalanceDate }) {
     const company = auth.company;
     const multicurrencyEnabled = !!company?.multicurrency;
 
@@ -38,13 +39,15 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
 
-    const { data, setData, post, patch, processing, errors, reset, clearErrors } = useForm({
+    const initialDate = localStorage.getItem('last_opening_balance_date') || lastOpeningBalanceDate || new Date().toISOString().split('T')[0];
+
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         account_code: '',
         name: '',
         account_type: 'asset',
         sub_type: 'cash-and-cash-equivalents',
-        opening_balance: 0,
-        opening_balance_date: new Date().toISOString().split('T')[0],
+        opening_balance: '0.00',
+        opening_balance_date: initialDate,
         description: '',
         is_active: true,
         currency: company?.home_currency || 'LKR',
@@ -55,6 +58,14 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
         setSelectedId(null);
         reset();
         clearErrors();
+        
+        const freshDate = localStorage.getItem('last_opening_balance_date') || lastOpeningBalanceDate || new Date().toISOString().split('T')[0];
+        setData(prev => ({
+            ...prev,
+            opening_balance: '0.00',
+            opening_balance_date: freshDate
+        }));
+
         setIsPanelOpen(true);
     };
 
@@ -62,12 +73,18 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
         setIsEdit(true);
         setSelectedId(account.id);
         clearErrors();
+        
+        const formattedBalance = parseFloat(account.opening_balance || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
         setData({
             account_code: account.account_code || '',
             name: account.name || '',
             account_type: account.account_type || 'asset',
             sub_type: account.sub_type || '',
-            opening_balance: account.opening_balance || 0,
+            opening_balance: formattedBalance,
             opening_balance_date: account.opening_balance_date || new Date().toISOString().split('T')[0],
             description: account.description || '',
             is_active: !!account.is_active,
@@ -84,8 +101,58 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
         }));
     };
 
+    const handleBalanceChange = (e) => {
+        const rawValue = e.target.value;
+        const cleanValue = rawValue.replace(/[^\d.,-]/g, ''); // Allow digits, commas, decimals, and minus sign
+        setData('opening_balance', cleanValue);
+    };
+
+    const handleBalanceBlur = () => {
+        const numericValue = parseFloat(String(data.opening_balance || '').replace(/,/g, ''));
+        if (!isNaN(numericValue)) {
+            setData('opening_balance', numericValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }));
+        } else {
+            setData('opening_balance', '0.00');
+        }
+    };
+
+    const handleDateChange = (e) => {
+        const dateVal = e.target.value;
+        setData('opening_balance_date', dateVal);
+        
+        axios.post(route('api.accounts.save-date'), { date: dateVal })
+            .catch(err => console.error("Failed to save date to session:", err));
+            
+        localStorage.setItem('last_opening_balance_date', dateVal);
+    };
+
+    useEffect(() => {
+        if (isPanelOpen && !isEdit && data.account_type) {
+            axios.get(route('api.accounts.next-code'), {
+                params: { type: data.account_type }
+            })
+            .then(res => {
+                if (res.data && res.data.next_code) {
+                    setData('account_code', res.data.next_code);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to fetch next account code:", err);
+            });
+        }
+    }, [isPanelOpen, isEdit, data.account_type]);
+
     const submit = (e) => {
         e.preventDefault();
+        
+        transform((data) => ({
+            ...data,
+            opening_balance: String(data.opening_balance || '').replace(/,/g, '')
+        }));
+
         const options = {
             onSuccess: () => {
                 setIsPanelOpen(false);
@@ -284,17 +351,19 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
                     {!isEdit && ['asset', 'liability', 'equity'].includes(data.account_type) && (
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                             <CommonInput
-                                type="number"
+                                type="text"
                                 label="Opening Balance"
                                 value={data.opening_balance}
-                                onChange={e => setData('opening_balance', e.target.value)}
+                                onChange={handleBalanceChange}
+                                onBlur={handleBalanceBlur}
                                 error={errors.opening_balance}
+                                icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || 'LKR'}</span>}
                             />
                             <CommonInput
                                 type="date"
                                 label="As of Date"
                                 value={data.opening_balance_date}
-                                onChange={e => setData('opening_balance_date', e.target.value)}
+                                onChange={handleDateChange}
                                 error={errors.opening_balance_date}
                             />
                         </div>

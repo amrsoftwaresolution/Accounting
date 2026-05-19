@@ -37,6 +37,17 @@ class HandleInertiaRequests extends Middleware
                 'companies' => $request->user() ? $request->user()->companies : [],
             ],
             'appName' => config('app.name'),
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'warning' => $request->session()->get('warning'),
+                'info' => $request->session()->get('info'),
+                'new_customer' => $request->session()->get('new_customer'),
+                'new_supplier' => $request->session()->get('new_supplier'),
+                'new_employee' => $request->session()->get('new_employee'),
+                'new_account' => $request->session()->get('new_account'),
+                'new_method' => $request->session()->get('new_method'),
+            ],
         ];
     }
 }

@@ -24,6 +24,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
+    const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
 
     const fetchCustomers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => setCustomerOptions(res.data));
@@ -34,7 +35,10 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
     };
 
     const fetchProducts = (search = "") => {
-        axios.get(route('api.items', { search })).then(res => setProductOptions(res.data));
+        return axios.get(route('api.items', { search })).then(res => {
+            setProductOptions(res.data);
+            return res.data;
+        });
     };
 
     useEffect(() => {
@@ -51,7 +55,10 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             placeholder: "Select product",
             options: productOptions,
             onSearch: fetchProducts,
-            onAddNew: () => setIsItemModalOpen(true),
+            onAddNew: (index) => {
+                setAddingItemRowIndex(index);
+                setIsItemModalOpen(true);
+            },
             type: "select",
             width: "280px"
         },
@@ -313,8 +320,25 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
 
             <QuickAddItem
                 isOpen={isItemModalOpen}
-                onClose={() => setIsItemModalOpen(false)}
-                onSuccess={() => fetchProducts()}
+                onClose={() => {
+                    setIsItemModalOpen(false);
+                    setAddingItemRowIndex(null);
+                }}
+                onSuccess={(newItem) => {
+                    fetchProducts().then(() => {
+                        if (addingItemRowIndex !== null && newItem) {
+                            const updated = [...data.items];
+                            updated[addingItemRowIndex].product = newItem.id;
+                            updated[addingItemRowIndex].description = newItem.description || "";
+                            const rateValue = parseFloat(newItem.sale_price || 0);
+                            updated[addingItemRowIndex].rate = formatCurrencyValue(rateValue);
+                            const q = parseFloat(updated[addingItemRowIndex].qty) || 0;
+                            updated[addingItemRowIndex].amount = formatCurrencyValue(q * rateValue);
+                            setData("items", updated);
+                        }
+                        setAddingItemRowIndex(null);
+                    });
+                }}
             />
 
             <QuickAddPaymentMethod

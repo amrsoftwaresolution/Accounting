@@ -17,13 +17,17 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
 
     const fetchSuppliers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Supplier' })).then(res => setSupplierOptions(res.data));
     };
 
     const fetchProducts = (search = "") => {
-        axios.get(route('api.items', { search })).then(res => setProductOptions(res.data));
+        return axios.get(route('api.items', { search })).then(res => {
+            setProductOptions(res.data);
+            return res.data;
+        });
     };
 
     useEffect(() => {
@@ -38,7 +42,10 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
             placeholder: "Select product",
             options: productOptions,
             onSearch: fetchProducts,
-            onAddNew: () => setIsItemModalOpen(true),
+            onAddNew: (index) => {
+                setAddingItemRowIndex(index);
+                setIsItemModalOpen(true);
+            },
             type: "select",
             width: "320px"
         },
@@ -202,8 +209,25 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
 
             <QuickAddItem
                 isOpen={isItemModalOpen}
-                onClose={() => setIsItemModalOpen(false)}
-                onSuccess={() => fetchProducts()}
+                onClose={() => {
+                    setIsItemModalOpen(false);
+                    setAddingItemRowIndex(null);
+                }}
+                onSuccess={(newItem) => {
+                    fetchProducts().then(() => {
+                        if (addingItemRowIndex !== null && newItem) {
+                            const updated = [...data.items];
+                            updated[addingItemRowIndex].product = newItem.id;
+                            updated[addingItemRowIndex].description = newItem.description || "";
+                            const costPrice = parseFloat(newItem.cost_price || newItem.sale_price || 0);
+                            updated[addingItemRowIndex].rate = formatCurrencyValue(costPrice);
+                            const q = parseFloat(updated[addingItemRowIndex].qty) || 0;
+                            updated[addingItemRowIndex].amount = formatCurrencyValue(q * costPrice);
+                            setData("items", updated);
+                        }
+                        setAddingItemRowIndex(null);
+                    });
+                }}
             />
         </TransactionLayout>
     );
