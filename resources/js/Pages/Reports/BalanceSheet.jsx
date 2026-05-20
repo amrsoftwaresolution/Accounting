@@ -1,8 +1,20 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router } from '@inertiajs/react';
 
 export default function BalanceSheet({ reportData, filters, auth }) {
+    const fromDateRef = useRef(null);
+    const toDateRef = useRef(null);
+
+    const openDatePicker = (ref) => {
+        if (ref.current) {
+            try {
+                ref.current.showPicker();
+            } catch (err) {
+                ref.current.click();
+            }
+        }
+    };
     const handleFilterChange = (key, value) => {
         router.get(route('reports.balance-sheet'), { ...filters, [key]: value }, {
             preserveState: true,
@@ -28,15 +40,87 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         </span>
     );
 
+    const handleExportExcel = () => {
+        const companyName = auth.company?.company_name || 'GrowDigitec';
+        const startDate = filters.start_date;
+        const endDate = filters.end_date;
+        
+        let csvContent = "";
+        
+        // Add Title Header
+        csvContent += `"${companyName}"\n`;
+        csvContent += `"Balance Sheet"\n`;
+        csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        
+        // Headers
+        csvContent += `"Category","Account Name","Balance (${homeCurrency})"\n`;
+        
+        // Assets
+        csvContent += `"ASSETS"\n`;
+        asset.forEach(item => {
+            csvContent += `,"${item.name}",${item.balance}\n`;
+        });
+        csvContent += `,"Total Assets",${totalAsset}\n\n`;
+        
+        // Liabilities & Equity
+        csvContent += `"LIABILITIES AND EQUITY"\n`;
+        csvContent += `"Liabilities"\n`;
+        liability.forEach(item => {
+            csvContent += `,"${item.name}",${item.balance}\n`;
+        });
+        csvContent += `,"Total Liabilities",${totalLiability}\n\n`;
+        
+        csvContent += `"Equity"\n`;
+        equity.forEach(item => {
+            csvContent += `,"${item.name}",${item.balance}\n`;
+        });
+        csvContent += `,"Total Equity",${totalEquity}\n\n`;
+        
+        csvContent += `,"Total Liabilities and Equity",${totalLiabilityEquity}\n`;
+        
+        // Create download blob
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${companyName.replace(/[^a-z0-9]/gi, '_')}_Balance_Sheet_${startDate}_to_${endDate}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const filterElements = (
-        <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">As of</label>
-            <input 
-                type="date" 
-                value={filters.as_of_date}
-                onChange={(e) => handleFilterChange('as_of_date', e.target.value)}
-                className="text-xs font-bold bg-transparent border-b border-slate-200 outline-none focus:border-primary transition-colors py-1"
-            />
+        <div className="flex gap-4">
+            <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">From</label>
+                <div 
+                    onClick={() => openDatePicker(fromDateRef)}
+                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
+                >
+                    <input 
+                        ref={fromDateRef}
+                        type="date" 
+                        value={filters.start_date}
+                        onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
+                    />
+                </div>
+            </div>
+            <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">To</label>
+                <div 
+                    onClick={() => openDatePicker(toDateRef)}
+                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
+                >
+                    <input 
+                        ref={toDateRef}
+                        type="date" 
+                        value={filters.end_date}
+                        onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
+                    />
+                </div>
+            </div>
         </div>
     );
 
@@ -44,6 +128,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         <ReportLayout
             title="Balance Sheet"
             filters={filterElements}
+            onExportExcel={handleExportExcel}
         >
             <Head title="Balance Sheet" />
             
@@ -51,7 +136,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">{auth.company?.company_name}</h2>
                 <h3 className="text-lg font-bold text-slate-600 mt-1 uppercase tracking-widest">Balance Sheet</h3>
                 <p className="text-xs text-slate-400 mt-2 font-medium">
-                    As of {new Date(filters.as_of_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
             </div>
 

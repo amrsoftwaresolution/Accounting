@@ -1,8 +1,20 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router } from '@inertiajs/react';
 
 export default function ProfitAndLoss({ reportData, filters, auth }) {
+    const fromDateRef = useRef(null);
+    const toDateRef = useRef(null);
+
+    const openDatePicker = (ref) => {
+        if (ref.current) {
+            try {
+                ref.current.showPicker();
+            } catch (err) {
+                ref.current.click();
+            }
+        }
+    };
     const handleFilterChange = (key, value) => {
         router.get(route('reports.profit-loss'), { ...filters, [key]: value }, {
             preserveState: true,
@@ -26,25 +38,80 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         </span>
     );
 
+    const handleExportExcel = () => {
+        const companyName = auth.company?.company_name || 'GrowDigitec';
+        const startDate = filters.start_date;
+        const endDate = filters.end_date;
+        
+        let csvContent = "";
+        
+        // Add Title Header
+        csvContent += `"${companyName}"\n`;
+        csvContent += `"Profit and Loss"\n`;
+        csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        
+        // Headers
+        csvContent += `"Category","Account Name","Balance (${homeCurrency})"\n`;
+        
+        // Income
+        csvContent += `"INCOME"\n`;
+        income.forEach(item => {
+            csvContent += `,"${item.name}",${item.balance}\n`;
+        });
+        csvContent += `,"Total Income",${totalIncome}\n\n`;
+        
+        // Expenses
+        csvContent += `"EXPENSES"\n`;
+        expense.forEach(item => {
+            csvContent += `,"${item.name}",${item.balance}\n`;
+        });
+        csvContent += `,"Total Expenses",${totalExpense}\n\n`;
+        
+        // Net Income
+        csvContent += `,"Net Income",${netIncome}\n`;
+        
+        // Create download blob
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${companyName.replace(/[^a-z0-9]/gi, '_')}_Profit_And_Loss_${startDate}_to_${endDate}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const filterElements = (
         <div className="flex gap-4">
             <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">From</label>
-                <input 
-                    type="date" 
-                    value={filters.start_date}
-                    onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                    className="text-xs font-bold bg-transparent border-b border-slate-200 outline-none focus:border-primary transition-colors py-1"
-                />
+                <div 
+                    onClick={() => openDatePicker(fromDateRef)}
+                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
+                >
+                    <input 
+                        ref={fromDateRef}
+                        type="date" 
+                        value={filters.start_date}
+                        onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
+                    />
+                </div>
             </div>
             <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">To</label>
-                <input 
-                    type="date" 
-                    value={filters.end_date}
-                    onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                    className="text-xs font-bold bg-transparent border-b border-slate-200 outline-none focus:border-primary transition-colors py-1"
-                />
+                <div 
+                    onClick={() => openDatePicker(toDateRef)}
+                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
+                >
+                    <input 
+                        ref={toDateRef}
+                        type="date" 
+                        value={filters.end_date}
+                        onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
+                    />
+                </div>
             </div>
         </div>
     );
@@ -53,6 +120,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         <ReportLayout
             title="Profit and Loss"
             filters={filterElements}
+            onExportExcel={handleExportExcel}
         >
             <Head title="Profit and Loss" />
             

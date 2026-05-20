@@ -158,10 +158,14 @@ export default function InventoryItemSidePanel({
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
                             <input
-                                type="number"
-                                step="0.01"
+                                type="text"
                                 value={data.sale_price}
                                 onChange={e => setData('sale_price', e.target.value)}
+                                onFocus={e => e.target.select()}
+                                onBlur={e => {
+                                    const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
+                                    setData('sale_price', num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                }}
                                 className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                             />
                         </div>

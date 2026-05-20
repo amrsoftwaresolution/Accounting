@@ -55,12 +55,13 @@ class ReportController extends Controller
 
     public function balanceSheet(Request $request)
     {
-        $asOfDate = $request->query('as_of_date', now()->toDateString());
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', now()->toDateString());
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.date', '<=', $asOfDate)
+            ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'chart_of_accs.name as account_name',
                 'chart_of_accs.account_type',
@@ -87,7 +88,8 @@ class ReportController extends Controller
         return Inertia::render('Reports/BalanceSheet', [
             'reportData' => $reportData,
             'filters' => [
-                'as_of_date' => $asOfDate
+                'start_date' => $startDate,
+                'end_date' => $endDate
             ]
         ]);
     }

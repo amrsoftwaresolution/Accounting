@@ -48,17 +48,20 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
         }));
     }, [transform]);
 
-    const formatCurrency = (value) => {
-        if (!value) return "";
-        const cleanValue = String(value).replace(/[^\d.]/g, "");
-        const parts = cleanValue.split(".");
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        return parts.join(".");
+    const handlePriceChange = (e) => {
+        // Store raw value while typing (no appending to existing digits)
+        setData('sale_price', e.target.value);
     };
 
-    const handlePriceChange = (e) => {
-        const val = e.target.value;
-        setData('sale_price', formatCurrency(val));
+    const handlePriceFocus = (e) => {
+        // Select all so user's first keystroke replaces the value
+        e.target.select();
+    };
+
+    const handlePriceBlur = (e) => {
+        // Format to 2 decimal places on blur
+        const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
+        setData('sale_price', num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     };
 
     const submit = (e) => {
@@ -159,6 +162,8 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                                     type="text"
                                     value={data.sale_price}
                                     onChange={handlePriceChange}
+                                    onFocus={handlePriceFocus}
+                                    onBlur={handlePriceBlur}
                                     className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-mono outline-none shadow-sm"
                                     placeholder="0.00"
                                 />

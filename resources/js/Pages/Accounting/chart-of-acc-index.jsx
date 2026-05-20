@@ -355,6 +355,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 label="Opening Balance"
                                 value={data.opening_balance}
                                 onChange={handleBalanceChange}
+                                onFocus={e => e.target.select()}
                                 onBlur={handleBalanceBlur}
                                 error={errors.opening_balance}
                                 icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || 'LKR'}</span>}

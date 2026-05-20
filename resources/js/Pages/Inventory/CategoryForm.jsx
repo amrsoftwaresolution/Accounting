@@ -1,20 +1,38 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 import SearchableSelect from '@/Components/SearchableSelect';
+import SplitSaveButton from '@/Components/SplitSaveButton'; // 1. Import your custom button
 
 export default function CategoryForm({ category, parents }) {
-    const { data, setData, post, put, processing, errors } = useForm({
+    // FIXED: Added "reset" helper destructured from Inertia's useForm hook
+    const { data, setData, post, put, processing, errors, reset } = useForm({
         name: category?.name || '',
         parent_id: category?.parent_id || '',
     });
 
+    // 2. Main submit handler (Standard Save)
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
+
         if (category) {
             put(route('item-categories.update', category.id));
         } else {
             post(route('item-categories.store'));
         }
+    };
+
+    // 3. Handle Save and New (FIXED: Submits, then clears input fields automatically)
+    const handleSaveAndNew = () => {
+        post(route('item-categories.store'), {
+            onSuccess: () => {
+                reset(); // This clears the input fields back to empty immediately after a successful save!
+            }
+        });
+    };
+
+    // 4. Handle Save and Close
+    const handleSaveAndClose = () => {
+        post(route('item-categories.store'));
     };
 
     return (
@@ -27,7 +45,7 @@ export default function CategoryForm({ category, parents }) {
                 <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
                     <div className="space-y-6">
                         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest border-b pb-2">Category Details</h3>
-                        
+
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Category Name</label>
                             <input
@@ -60,13 +78,14 @@ export default function CategoryForm({ category, parents }) {
                         >
                             Cancel
                         </Link>
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="px-8 py-3 bg-[#00713D] text-white rounded-xl text-xs font-bold hover:bg-[#005a30] transition-all shadow-md shadow-green-900/10 disabled:opacity-50 uppercase tracking-widest"
-                        >
-                            {processing ? 'Saving...' : category ? 'Update Category' : 'Create Category'}
-                        </button>
+
+                        {/* 5. Kept your custom SplitSaveButton setup */}
+                        <SplitSaveButton
+                            onSave={handleSubmit}
+                            onSaveAndNew={handleSaveAndNew}
+                            onSaveAndClose={handleSaveAndClose}
+                            processing={processing}
+                        />
                     </div>
                 </form>
             </div>

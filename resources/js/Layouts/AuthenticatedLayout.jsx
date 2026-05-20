@@ -2,7 +2,7 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import { usePage, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import QuickActionMenu from '@/Components/QuickActionMenu';
 import ToastNotification from '@/Components/ToastNotification';
 
@@ -52,8 +52,8 @@ export default function AuthenticatedLayout({ header, children }) {
         <div className="min-h-screen bg-[#f8fafc]">
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
-                <div className="fixed inset-0 z-40 lg:hidden px-4 py-6 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)}>
-                    <div className="fixed inset-y-0 left-0 w-56 bg-slate-900 shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 z-40 lg:hidden px-4 py-6 bg-slate-900/60 backdrop-blur-sm transition-opacity print:hidden" onClick={() => setSidebarOpen(false)}>
+                    <div className="fixed inset-y-0 left-0 w-56 bg-slate-900 shadow-2xl print:hidden" onClick={e => e.stopPropagation()}>
                         <SidebarContent
                             navigation={navigation}
                             teamLinks={teamLinks}
@@ -71,8 +71,8 @@ export default function AuthenticatedLayout({ header, children }) {
 
             {/* Desktop Sidebar */}
             {isSidebarVisible && (
-                <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-56">
-                    <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl">
+                <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-56 print:hidden">
+                    <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl print:hidden">
                         <SidebarContent
                             navigation={navigation}
                             teamLinks={teamLinks}
@@ -85,9 +85,9 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             )}
 
-            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible ? 'lg:pl-56' : ''}`}>
+            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible ? 'lg:pl-56' : ''} print:pl-0`}>
                 {/* Header / Top Bar */}
-                <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6">
+                <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 print:hidden">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => isSidebarVisible ? setSidebarOpen(true) : setIsSidebarVisible(true)}
@@ -213,7 +213,57 @@ export default function AuthenticatedLayout({ header, children }) {
 }
 
 function SidebarContent({ navigation, teamLinks, transactions, reports, user, onQuickMenuOpen }) {
-    const [openMenu, setOpenMenu] = useState('transactions');
+    const scrollContainerRef = useRef(null);
+
+    const getInitialOpenMenu = () => {
+        if (typeof window === 'undefined') return 'transactions';
+        const stored = sessionStorage.getItem('sidebar_open_menu');
+        if (stored !== null) {
+            return stored === 'null' ? null : stored;
+        }
+
+        const currentUrl = window.location.href;
+        const currentPath = window.location.pathname;
+
+        const matchesPath = (href) => {
+            if (!href) return false;
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                return currentUrl.startsWith(href) || href.includes(currentPath);
+            }
+            return currentPath.startsWith(href) || href.startsWith(currentPath);
+        };
+
+        if (reports.some(r => matchesPath(r.href))) return 'reports';
+        if (transactions.some(t => matchesPath(t.href))) return 'transactions';
+        if (teamLinks.some(t => matchesPath(t.href))) return 'team';
+
+        return 'transactions';
+    };
+
+    const [openMenu, setOpenMenu] = useState(getInitialOpenMenu);
+
+    useEffect(() => {
+        sessionStorage.setItem('sidebar_open_menu', openMenu === null ? 'null' : openMenu);
+    }, [openMenu]);
+
+    useEffect(() => {
+        const savedScrollPosition = sessionStorage.getItem('sidebar_scroll_position');
+        if (savedScrollPosition && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = parseInt(savedScrollPosition, 10);
+            
+            // Just in case elements haven't fully rendered or settled yet
+            const timeoutId = setTimeout(() => {
+                if (scrollContainerRef.current) {
+                    scrollContainerRef.current.scrollTop = parseInt(savedScrollPosition, 10);
+                }
+            }, 50);
+            return () => clearTimeout(timeoutId);
+        }
+    }, []);
+
+    const handleScroll = (e) => {
+        sessionStorage.setItem('sidebar_scroll_position', e.target.scrollTop);
+    };
 
     return (
         <div className="flex flex-col h-full">
@@ -246,7 +296,11 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
             )}
 
             {/* Navigation Groups */}
-            <div className="flex-1 overflow-y-auto px-3 py-6 space-y-6 scrollbar-hide custom-scrollbar">
+            <div
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto px-3 py-6 space-y-6 scrollbar-hide custom-scrollbar"
+            >
                 {/* Main Links */}
                 <div>
                     <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Menu</h3>

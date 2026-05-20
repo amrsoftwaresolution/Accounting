@@ -36,7 +36,7 @@ export default function LineItemsTable({
 
     // Helper to format currency as user types
     const formatCurrency = (value) => {
-        if (!value) return "";
+        if (!value && value !== 0) return "";
         // Remove non-numeric characters except for decimal point
         const cleanValue = String(value).replace(/[^\d.]/g, "");
         const parts = cleanValue.split(".");
@@ -46,8 +46,21 @@ export default function LineItemsTable({
     };
 
     const handleCurrencyChange = (index, key, rawValue) => {
-        const formattedValue = formatCurrency(rawValue);
-        handleItemChange(index, key, formattedValue);
+        // Strip commas and store raw typed value (allows free typing without appending)
+        const stripped = String(rawValue).replace(/,/g, "");
+        handleItemChange(index, key, stripped);
+    };
+
+    const handleCurrencyFocus = (e) => {
+        // Select all text so the user's first keypress fully replaces the value
+        e.target.select();
+    };
+
+    const handleCurrencyBlur = (index, key, rawValue) => {
+        // On blur, format to exactly 2 decimal places
+        const num = parseFloat(String(rawValue).replace(/,/g, "")) || 0;
+        const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        handleItemChange(index, key, formatted);
     };
 
     return (
@@ -121,6 +134,11 @@ export default function LineItemsTable({
                                                     onChange={(e) => col.type === 'currency' 
                                                         ? handleCurrencyChange(index, col.key, e.target.value)
                                                         : handleItemChange(index, col.key, e.target.value)
+                                                    }
+                                                    onFocus={col.type === 'currency' ? handleCurrencyFocus : undefined}
+                                                    onBlur={col.type === 'currency' 
+                                                        ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
+                                                        : undefined
                                                     }
                                                     placeholder={col.placeholder || ""}
                                                     className={col.inputClass || ''}
