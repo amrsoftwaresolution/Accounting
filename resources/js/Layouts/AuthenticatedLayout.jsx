@@ -36,6 +36,7 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Payment', href: "/expense" },
         { name: 'Journal Entries', href: "/journal" },
         { name: 'Transfers', href: "/transfer" },
+        { name: 'Bank Deposit', href: "/deposit" },
         { name: 'credit Sale', href: "/invoice" },
         { name: 'Cash sale', href: "/receipt" },
         { name: 'Payments', href: "/payment" },

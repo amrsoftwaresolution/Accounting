@@ -49,6 +49,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
         {
             title: "Other",
             links: [
+                { name: "Bank Deposit", href: "/deposit" },
                 { name: "Transfer", href: "/transfer" },
                 { name: "Journal entry", href: "/journal" },
                 { name: "Add account", href: route('chart-of-account.create'), isSolid: true },

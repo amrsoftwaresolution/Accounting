@@ -28,7 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
     Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
     Route::patch('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'update'])->name('expense.update');
-    
+
     // API Lookups
     Route::get('/api/payees', [\App\Http\Controllers\Api\LookupController::class, 'payees'])->name('api.payees');
     Route::get('/api/accounts', [\App\Http\Controllers\Api\LookupController::class, 'accounts'])->name('api.accounts');
@@ -40,7 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
     Route::post('/journal-entries/{journalEntry}/quick-update', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'quickUpdate'])->name('journal-entries.quick-update');
     Route::get('/journal', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'create'])->name('journal');
-    
+
     Route::get('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'create'])->name('transfer');
     Route::post('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'store'])->name('transfer.store');
 
@@ -59,6 +59,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
     Route::post('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
+
+    // Bank Deposit
+    Route::get('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'create'])->name('deposit');
+    Route::post('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'store'])->name('deposit.store');
 
     Route::get('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
     Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
@@ -89,11 +93,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/sales', [\App\Http\Controllers\Settings\SalesSettingController::class, 'update'])->name('sales.settings.update');
     Route::post('/settings/advanced', [\App\Http\Controllers\Settings\AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
     Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
-    
+
     // Onboarding
     Route::get('/onboarding', [\App\Http\Controllers\Settings\OnboardingController::class, 'index'])->name('onboarding');
     Route::post('/onboarding/complete', [\App\Http\Controllers\Settings\OnboardingController::class, 'complete'])->name('onboarding.complete');
-    
+
     // Users
     Route::resource('users', \App\Http\Controllers\UserController::class);
 
