@@ -13,7 +13,7 @@ import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceiptNo = "", receipt = null }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
-    
+
     const [customerOptions, setCustomerOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
@@ -139,7 +139,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
 
     return (
         <TransactionLayout
-            title={receipt?.id ? `Edit Sales Receipt no.${data.receiptNo}` : `Sales Receipt no.${data.receiptNo}`}
+            title={receipt?.id ? `Edit Cash sale no.${data.receiptNo}` : `Cash sale no.${data.receiptNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -152,7 +152,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                 setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
         >
-            <Head title="Sales Receipt" />
+            <Head title="Cash sale" />
             <div className="py-6 px-1 space-y-8">
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
@@ -213,7 +213,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
-                            label="Sales receipt date"
+                            label="Cash sale date"
                             value={data.receiptDate}
                             onChange={(e) => setData('receiptDate', e.target.value)}
                             size="sm"
@@ -275,7 +275,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                     <div className="w-[400px]">
                         <CommonInput
                             type="textarea"
-                            label="Message displayed on sales receipt"
+                            label="Message displayed on cash sale"
                             placeholder="Enter message"
                             value={data.memo}
                             onChange={(e) => setData('memo', e.target.value)}

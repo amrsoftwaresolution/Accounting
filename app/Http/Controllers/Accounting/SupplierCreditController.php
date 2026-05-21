@@ -117,7 +117,7 @@ class SupplierCreditController extends Controller
                 }
             });
 
-            return redirect()->route('SupplierCredit.index')->with('success', 'Supplier Credit saved.');
+            return redirect()->route('SupplierCredit.index')->with('success', 'Supplier Return saved.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }

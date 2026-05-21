@@ -11,7 +11,7 @@ import QuickAddItem from "@/Components/QuickAddItem";
 export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote = null }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
-    
+
     const [customerOptions, setCustomerOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
 
@@ -134,7 +134,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
 
     return (
         <TransactionLayout
-            title={creditNote?.id ? `Edit Credit Note no.${data.creditNoteNo}` : `Credit Note no.${data.creditNoteNo}`}
+            title={creditNote?.id ? `Edit Sales Return no.${data.creditNoteNo}` : `Sales Return no.${data.creditNoteNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -147,7 +147,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                 setData("items", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
         >
-            <Head title="Credit Note" />
+            <Head title="Sales Return" />
             <div className="py-6 px-1 space-y-8">
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
@@ -184,7 +184,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     </div>
 
                     <div className="text-right flex flex-col items-end">
-                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Credit Amount</p>
+                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Return Amount</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
                             <span className="text-slate-400 text-[10px] font-medium mr-1">{currencyPrefix}</span>
                             {parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -196,7 +196,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
-                            label="Credit note date"
+                            label="Sales return date"
                             value={data.creditNoteDate}
                             onChange={(e) => setData('creditNoteDate', e.target.value)}
                             size="sm"
@@ -205,7 +205,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     </div>
                     <div className="w-[160px]">
                         <CommonInput
-                            label="Credit note no."
+                            label="Sales return no."
                             value={data.creditNoteNo}
                             onChange={(e) => setData('creditNoteNo', e.target.value)}
                             size="sm"
@@ -234,7 +234,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     <div className="w-[400px]">
                         <CommonInput
                             type="textarea"
-                            label="Message displayed on credit note"
+                            label="Message displayed on sales return"
                             placeholder="Enter message"
                             value={data.memo}
                             onChange={(e) => setData('memo', e.target.value)}

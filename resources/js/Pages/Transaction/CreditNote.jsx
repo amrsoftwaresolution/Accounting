@@ -62,7 +62,7 @@ export default function CreditNoteForm({ customers = [] }) {
 
     return (
         <TransactionLayout
-            title={`Credit Note #${form.credit_note_no}`}
+            title={`Sales Return #${form.credit_note_no}`}
             amount={totalCredit.toFixed(2)}
             onAddLine={() => setItems([...items, { service_date: "", description: "", amount: "" }])}
             onClearRows={() => setItems([{ service_date: "", description: "", amount: "" }])}
@@ -104,7 +104,7 @@ export default function CreditNoteForm({ customers = [] }) {
                             </div>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs text-slate-500 block mb-1 font-bold">Credit Note Date</label>
+                                    <label className="text-xs text-slate-500 block mb-1 font-bold">Sales Return Date</label>
                                     <input
                                         type="date"
                                         className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent"
@@ -126,7 +126,7 @@ export default function CreditNoteForm({ customers = [] }) {
                             </p>
                         </div>
                         <div className="w-full max-w-[180px]">
-                            <label className="text-xs text-slate-500 block mb-1 font-bold text-right">Credit Note no.</label>
+                            <label className="text-xs text-slate-500 block mb-1 font-bold text-right">Sales Return no.</label>
                             <input
                                 className="w-full border-b border-slate-300 py-1.5 text-sm text-right outline-none font-mono font-bold"
                                 value={form.credit_note_no}
@@ -154,7 +154,7 @@ export default function CreditNoteForm({ customers = [] }) {
                 {/* Messages */}
                 <div className="space-y-6">
                     <div>
-                        <label className="text-xs font-bold text-slate-600 block mb-2 uppercase tracking-wide">Message displayed on credit note</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-2 uppercase tracking-wide">Message displayed on sales return</label>
                         <textarea
                             className="w-full border border-slate-200 rounded-lg p-3 text-sm h-20 outline-none focus:border-primary transition-all shadow-sm"
                             value={form.message_on_note}

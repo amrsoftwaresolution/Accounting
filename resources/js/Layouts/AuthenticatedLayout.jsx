@@ -33,14 +33,14 @@ export default function AuthenticatedLayout({ header, children }) {
     ];
 
     const transactions = user.role === 'super_admin' ? [] : [
-        { name: 'Expenses', href: "/expense" },
+        { name: 'Payment', href: "/expense" },
         { name: 'Journal Entries', href: "/journal" },
         { name: 'Transfers', href: "/transfer" },
-        { name: 'Invoices', href: "/invoice" },
-        { name: 'Sales Receipts', href: "/receipt" },
+        { name: 'credit Sale', href: "/invoice" },
+        { name: 'Cash sale', href: "/receipt" },
         { name: 'Payments', href: "/payment" },
-        { name: 'Credit Notes', href: "/credit-note" },
-        { name: 'Supplier Credit', href: "/SupplierCredit" },
+        { name: 'Sales Return', href: "/credit-note" },
+        { name: 'Supplier Return', href: "/SupplierCredit" },
     ];
 
     const reports = user.role === 'super_admin' ? [] : [
@@ -250,7 +250,7 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
         const savedScrollPosition = sessionStorage.getItem('sidebar_scroll_position');
         if (savedScrollPosition && scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = parseInt(savedScrollPosition, 10);
-            
+
             // Just in case elements haven't fully rendered or settled yet
             const timeoutId = setTimeout(() => {
                 if (scrollContainerRef.current) {

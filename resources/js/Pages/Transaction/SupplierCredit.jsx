@@ -91,7 +91,7 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
     return (
         <form onSubmit={handleSubmit}>
             <TransactionLayout
-                title="Supplier Credit"
+                title="Supplier Return"
                 amount={totalAmount}
                 onAddLine={() => setItems([...items, { category: "", description: "", amount: "" }])}
                 onClearRows={() => setItems([{ category: "", description: "", amount: "" }])}
@@ -130,7 +130,7 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
                     <div className="col-span-6 flex flex-col justify-between">
                         <div className="flex justify-end">
                             <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl min-w-[280px] text-right transform transition-all hover:scale-[1.02]">
-                                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Credit Amount</p>
+                                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Return Amount</p>
                                 <p className="text-3xl font-black tracking-tighter">
                                     <span className="text-slate-400 text-sm font-medium mr-2">{currencyPrefix}</span>
                                     {parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -140,7 +140,7 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
 
                         <div className="grid grid-cols-2 gap-6 mt-auto">
                             <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Payment date</label>
+                                <label className="text-xs text-slate-500 block mb-1 font-bold">Supplier Return date</label>
                                 <input
                                     type="date"
                                     className="w-full border-b border-slate-300 py-2 text-sm outline-none focus:border-primary bg-transparent transition-all"

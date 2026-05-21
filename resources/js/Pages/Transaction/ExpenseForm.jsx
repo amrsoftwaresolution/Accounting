@@ -9,7 +9,7 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import axios from "axios";
 
-export default function ExpenseForm({ 
+export default function ExpenseForm({
     auth,
     paymentMethods = [],
     expense = null,
@@ -18,7 +18,7 @@ export default function ExpenseForm({
 }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
-    
+
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
     const [localPaymentMethods, setLocalPaymentMethods] = useState(paymentMethods);
@@ -104,9 +104,9 @@ export default function ExpenseForm({
     };
 
     const EXPENSE_COLUMNS = [
-        { 
-            key: "category", 
-            label: "Category", 
+        {
+            key: "category",
+            label: "Category",
             placeholder: "Choose a category",
             options: accountOptions,
             type: "select",
@@ -117,17 +117,17 @@ export default function ExpenseForm({
             }
         },
         { key: "description", label: "Description", placeholder: "What was this for?" },
-        { 
-            key: "amount", 
-            label: "Amount", 
-            type: "currency", 
-            className: "text-right", 
+        {
+            key: "amount",
+            label: "Amount",
+            type: "currency",
+            className: "text-right",
             inputClass: "text-right",
             width: "120px"
         },
-        { 
-            key: "customer", 
-            label: "Customer", 
+        {
+            key: "customer",
+            label: "Customer",
             placeholder: "Select customer",
             options: payeeOptions.filter(p => p.type === 'Customer'),
             type: "select",
@@ -138,7 +138,7 @@ export default function ExpenseForm({
 
     return (
         <TransactionLayout
-            title={expense?.id ? `Edit Expense no.${data.ref}` : "New Expense"}
+            title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -157,7 +157,7 @@ export default function ExpenseForm({
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
                         <div className="w-[380px]">
-                            <SearchableSelect 
+                            <SearchableSelect
                                 label="Payee"
                                 placeholder="Who did you pay?"
                                 value={data.payee}
@@ -171,7 +171,7 @@ export default function ExpenseForm({
                         </div>
                         <div className="w-[380px]">
                             <div className="mb-6">
-                                <SearchableSelect 
+                                <SearchableSelect
                                     label="Payment account"
                                     placeholder="Select account"
                                     value={data.account}
@@ -205,7 +205,7 @@ export default function ExpenseForm({
                 {/* ROW 2: Date, Method, Ref */}
                 <div className="flex items-end gap-6">
                     <div className="w-[200px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="Payment Date"
                             value={data.date}
@@ -215,7 +215,7 @@ export default function ExpenseForm({
                         />
                     </div>
                     <div className="w-[220px]">
-                        <SearchableSelect 
+                        <SearchableSelect
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.method}
@@ -227,7 +227,7 @@ export default function ExpenseForm({
                         />
                     </div>
                     <div className="w-[180px]">
-                        <CommonInput 
+                        <CommonInput
                             label="Ref no."
                             placeholder=""
                             value={data.ref}
@@ -253,7 +253,7 @@ export default function ExpenseForm({
 
             <div className="mt-8 grid grid-cols-12 gap-8">
                 <div className="col-span-4">
-                    <CommonInput 
+                    <CommonInput
                         type="textarea"
                         label="Memo"
                         placeholder="Add a memo..."
@@ -276,8 +276,8 @@ export default function ExpenseForm({
             </div>
 
             {/* Quick Add Modals */}
-            <QuickAddPayee 
-                isOpen={isPayeeModalOpen} 
+            <QuickAddPayee
+                isOpen={isPayeeModalOpen}
                 onClose={() => setIsPayeeModalOpen(false)}
                 onSuccess={(newPayee) => {
                     if (newPayee) {
@@ -298,9 +298,9 @@ export default function ExpenseForm({
                 }}
             />
 
-            <QuickAddAccount 
-                isOpen={isAccountModalOpen} 
-                onClose={() => setIsAccountModalOpen(false)} 
+            <QuickAddAccount
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
                 type={accountModalType}
                 onSuccess={(newAcc) => {
                     if (newAcc) {

@@ -101,7 +101,7 @@ class CreditNoteController extends Controller
             }
         });
 
-        return redirect()->route('dashboard')->with('success', 'Credit Note saved successfully.');
+        return redirect()->route('dashboard')->with('success', 'Sales Return saved successfully.');
     }
 
     private function getNextNo()

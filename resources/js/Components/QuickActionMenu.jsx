@@ -28,21 +28,21 @@ export default function QuickActionMenu({ isOpen, onClose }) {
         {
             title: "Customers",
             links: [
-                { name: "Invoice", href: "/invoice" },
+                { name: "credit Sale", href: "/invoice" },
                 { name: "Receive payment", href: "/payment" },
-                { name: "Sales receipt", href: "/receipt" },
-                { name: "Credit Note", href: "/credit-note" },
+                { name: "Cash sale", href: "/receipt" },
+                { name: "Sales Return", href: "/credit-note" },
                 { name: "Add customer", href: route('customers.create'), isSolid: true },
             ]
         },
         {
             title: "Suppliers",
             links: [
-                { name: "Expense", href: "/expense" },
+                { name: "Payment", href: "/expense" },
                 { name: "Bill", href: "/bill" },
                 // { name: "Pay bills", href: "#" },
                 // { name: "Purchase order", href: "#" },
-                { name: "Supplier Credit", href: "/SupplierCredit" },
+                { name: "Supplier Return", href: "/SupplierCredit" },
                 { name: "Add supplier", href: route('suppliers.create'), isSolid: true },
             ]
         },

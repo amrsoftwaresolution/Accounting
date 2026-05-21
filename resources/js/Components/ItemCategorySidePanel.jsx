@@ -5,12 +5,12 @@ import CommonInput from './CommonInput';
 import CommonButton from './CommonButton';
 import SearchableSelect from './SearchableSelect';
 
-export default function ItemCategorySidePanel({ 
-    isOpen, 
-    onClose, 
-    category = null, 
+export default function ItemCategorySidePanel({
+    isOpen,
+    onClose,
+    category = null,
     parents = [],
-    onSuccess = null 
+    onSuccess = null
 }) {
     const isEdit = !!category;
 
@@ -18,6 +18,12 @@ export default function ItemCategorySidePanel({
         name: '',
         parent_id: '',
     });
+
+    const handleClose = () => {
+        reset();
+        clearErrors();
+        onClose();
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -37,7 +43,7 @@ export default function ItemCategorySidePanel({
         e.preventDefault();
         const options = {
             onSuccess: (page) => {
-                onClose();
+                handleClose();
                 if (onSuccess) onSuccess(page);
             },
         };
@@ -50,9 +56,9 @@ export default function ItemCategorySidePanel({
     };
 
     return (
-        <SlideOver 
-            isOpen={isOpen} 
-            onClose={onClose} 
+        <SlideOver
+            isOpen={isOpen}
+            onClose={handleClose}
             title={isEdit ? "Edit Category" : "New Category"}
         >
             <form onSubmit={submit} className="space-y-6">
@@ -76,7 +82,7 @@ export default function ItemCategorySidePanel({
                 </div>
 
                 <div className="pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
-                    <CommonButton variant="ghost" onClick={onClose} type="button">Cancel</CommonButton>
+                    <CommonButton variant="ghost" onClick={handleClose} type="button">Cancel</CommonButton>
                     <CommonButton variant="primary" type="submit" processing={processing}>
                         {isEdit ? "Update Category" : "Save Category"}
                     </CommonButton>

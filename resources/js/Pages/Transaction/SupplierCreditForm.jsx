@@ -127,7 +127,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
 
     return (
         <TransactionLayout
-            title={credit?.id ? `Edit Supplier Credit` : `Supplier Credit`}
+            title={credit?.id ? `Edit Supplier Return` : `Supplier Return`}
             amount={totalAmount}
             currencyPrefix={currencyPrefix}
             processing={processing}
@@ -136,7 +136,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
             onAddLine={() => setData("items", [...data.items, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
             onClearRows={() => setData("items", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
         >
-            <Head title="Supplier Credit" />
+            <Head title="Supplier Return" />
             <div className="py-6 px-1 space-y-8">
                 <div className="flex items-start gap-8">
                     <div className="w-[320px]">
@@ -154,7 +154,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
-                            label="Payment date"
+                            label="Supplier Return date"
                             value={data.creditDate}
                             onChange={(e) => setData('creditDate', e.target.value)}
                             error={errors.creditDate}
@@ -163,7 +163,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                     </div>
                     <div className="w-[160px]">
                         <CommonInput
-                            label="Credit no."
+                            label="Supplier Return no."
                             value={data.creditNo}
                             onChange={(e) => setData('creditNo', e.target.value)}
                             error={errors.creditNo}

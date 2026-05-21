@@ -129,17 +129,17 @@ class ExpenseController extends Controller
         });
 
         $action = $request->input('action', 'save');
-        
+
         // Save to session
         session(['last_payment_date' => $paymentDate, 'last_save_action' => $action]);
 
         if ($action === 'close') {
-            return redirect()->route('dashboard')->with('success', 'Expense saved successfully.');
+            return redirect()->route('dashboard')->with('success', 'Payment saved successfully.');
         } elseif ($action === 'new') {
-            return redirect()->route('expense')->with('success', 'Expense saved successfully.');
+            return redirect()->route('expense')->with('success', 'Payment saved successfully.');
         }
 
-        return redirect()->back()->with('success', 'Expense saved successfully.');
+        return redirect()->back()->with('success', 'Payment saved successfully.');
     }
 
     public function edit(JournalEntry $journalEntry)

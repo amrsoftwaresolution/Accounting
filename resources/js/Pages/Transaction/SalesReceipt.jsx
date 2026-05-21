@@ -101,7 +101,7 @@ export default function SalesReceipt({
 
     return (
         <TransactionLayout
-            title={`Sales Receipt #${form.receipt_no}`}
+            title={`Cash sale #${form.receipt_no}`}
             amount={total.toFixed(2)}
             onAddLine={() => setItems([...items, { service_date: "", product_id: "", description: "", qty: 1, rate: 0, amount: 0 }])}
             onClearRows={() => setItems([{ service_date: "", product_id: "", description: "", qty: 1, rate: 0, amount: 0 }])}
@@ -141,7 +141,7 @@ export default function SalesReceipt({
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-slate-500 block mb-1 font-bold">Sales Receipt Date</label>
+                                <label className="text-xs text-slate-500 block mb-1 font-bold">Cash sale date</label>
                                 <input
                                     type="date"
                                     className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent"
@@ -162,7 +162,7 @@ export default function SalesReceipt({
                             </p>
                         </div>
                         <div className="w-full max-w-[200px]">
-                            <label className="text-xs text-slate-500 block mb-1 font-bold text-right">Sales Receipt no.</label>
+                            <label className="text-xs text-slate-500 block mb-1 font-bold text-right">Cash sale no.</label>
                             <input
                                 className="w-full border-b border-slate-300 py-1.5 text-sm text-right outline-none font-mono"
                                 value={form.receipt_no}
@@ -215,7 +215,7 @@ export default function SalesReceipt({
             <div className="mt-8 grid grid-cols-2 gap-12">
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-slate-600 block mb-2">Message displayed on sales receipt</label>
+                        <label className="text-xs font-bold text-slate-600 block mb-2">Message displayed on cash sale</label>
                         <textarea
                             className="w-full border border-slate-200 rounded-lg p-3 text-sm h-20 outline-none focus:border-primary transition-all"
                             value={form.message_on_receipt}

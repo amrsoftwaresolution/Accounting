@@ -148,14 +148,14 @@ class SalesReceiptController extends Controller
 
         $action = $request->input('action', 'save');
         if ($action === 'close') {
-            return redirect()->route('chart-of-account.index')->with('success', 'Sales Receipt saved successfully.');
+            return redirect()->route('chart-of-account.index')->with('success', 'Cash sale saved successfully.');
         }
 
         if ($action === 'new') {
-            return redirect()->route('receipt')->with('success', 'Sales Receipt saved successfully.');
+            return redirect()->route('receipt')->with('success', 'Cash sale saved successfully.');
         }
 
-        return redirect()->back()->with('success', 'Sales Receipt saved successfully.');
+        return redirect()->back()->with('success', 'Cash sale saved successfully.');
 
     }
 
