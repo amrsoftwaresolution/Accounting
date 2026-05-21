@@ -20,6 +20,7 @@ class Item extends Model
         'sale_price',
         'item_category_id',
         'income_account_id',
+        'expense_account_id',
     ];
 
     public function category()
@@ -30,5 +31,10 @@ class Item extends Model
     public function incomeAccount()
     {
         return $this->belongsTo(ChartOfAcc::class, 'income_account_id');
+    }
+
+    public function expenseAccount()
+    {
+        return $this->belongsTo(ChartOfAcc::class, 'expense_account_id');
     }
 }

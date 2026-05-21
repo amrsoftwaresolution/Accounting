@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import CommonButton from '@/Components/CommonButton';
 import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
 
-export default function ItemList({ items: initialItems, categories, incomeAccounts }) {
+export default function ItemList({ items: initialItems, categories, incomeAccounts, expenseAccounts }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || '$';
     const { delete: destroy } = useForm();
@@ -16,10 +16,10 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
         let sortableItems = [...initialItems];
         if (sortConfig.key) {
             sortableItems.sort((a, b) => {
-                const aValue = sortConfig.key.includes('.') 
+                const aValue = sortConfig.key.includes('.')
                     ? sortConfig.key.split('.').reduce((obj, key) => obj?.[key], a)
                     : a[sortConfig.key];
-                const bValue = sortConfig.key.includes('.') 
+                const bValue = sortConfig.key.includes('.')
                     ? sortConfig.key.split('.').reduce((obj, key) => obj?.[key], b)
                     : b[sortConfig.key];
 
@@ -69,7 +69,7 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
         if (sortConfig.key !== columnKey) return (
             <svg className="h-3 w-3 ml-1 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
         );
-        return sortConfig.direction === 'asc' 
+        return sortConfig.direction === 'asc'
             ? <svg className="h-3 w-3 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
             : <svg className="h-3 w-3 ml-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>;
     };
@@ -124,6 +124,7 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                                         <div className="flex items-center justify-end">Sales Price <SortIcon columnKey="sale_price" /></div>
                                     </th>
                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Income Account</th>
+                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expense Account</th>
                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -139,8 +140,8 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                                                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                     )}
                                                     {/* Hover Plus Button - triggers same panel */}
-                                                    <button 
-                                                        onClick={handleOpenCreate} 
+                                                    <button
+                                                        onClick={handleOpenCreate}
                                                         className="absolute inset-0 bg-blue-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                         title="Add New Similar Item"
                                                     >
@@ -172,6 +173,15 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                                                 ) : '-'}
                                             </div>
                                         </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-xs font-bold text-slate-600 truncate max-w-[150px]">
+                                                {item.expense_account ? (
+                                                    <span title={`${item.expense_account.account_code} - ${item.expense_account.name}`}>
+                                                        {item.expense_account.name}
+                                                    </span>
+                                                ) : '-'}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
@@ -192,7 +202,7 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                                 ))}
                                 {initialItems.length === 0 && (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-12 text-center">
+                                        <td colSpan="8" className="px-6 py-12 text-center">
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
                                                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
@@ -208,12 +218,13 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                 </div>
             </div>
 
-            <InventoryItemSidePanel 
+            <InventoryItemSidePanel
                 isOpen={isPanelOpen}
                 onClose={() => setIsPanelOpen(false)}
                 item={selectedItem}
                 categories={categories}
                 incomeAccounts={incomeAccounts}
+                expenseAccounts={expenseAccounts}
             />
         </AuthenticatedLayout>
     );

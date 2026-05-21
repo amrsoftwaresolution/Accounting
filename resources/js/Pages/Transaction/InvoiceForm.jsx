@@ -163,7 +163,7 @@ export default function InvoiceForm({
 
     return (
         <TransactionLayout
-            title={invoice?.id ? `Edit credit Sale no.${data.invoiceNo}` : `credit Sale no.${data.invoiceNo}`}
+            title={invoice?.id ? `Edit Credit Sale no.${data.invoiceNo}` : `Credit Sale no.${data.invoiceNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -250,7 +250,7 @@ export default function InvoiceForm({
                     <div className="w-[160px]">
                         <CommonInput
                             type="date"
-                            label="credit Sale date"
+                            label="Credit Sale date"
                             value={data.invoiceDate}
                             onChange={(e) => setData('invoiceDate', e.target.value)}
                             size="sm"
@@ -268,7 +268,7 @@ export default function InvoiceForm({
                     <div className="flex-1"></div>
                     <div className="w-[160px]">
                         <CommonInput
-                            label="credit Sale no."
+                            label="Credit Sale no."
                             value={data.invoiceNo}
                             onChange={(e) => setData('invoiceNo', e.target.value)}
                             size="sm"
@@ -294,8 +294,8 @@ export default function InvoiceForm({
                 <div className="w-[400px]">
                     <CommonInput
                         type="textarea"
-                        label="Message on credit Sale"
-                        placeholder="This will show up on the credit Sale."
+                        label="Message on Credit Sale"
+                        placeholder="This will show up on the Credit Sale."
                         value={data.memo}
                         onChange={(e) => setData('memo', e.target.value)}
                         size="sm"

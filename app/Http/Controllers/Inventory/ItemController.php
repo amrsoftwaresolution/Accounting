@@ -13,14 +13,16 @@ class ItemController extends Controller
 {
     public function index()
     {
-        $items = Item::with(['category', 'incomeAccount'])->get();
+        $items = Item::with(['category', 'incomeAccount', 'expenseAccount'])->get();
         $categories = ItemCategory::all();
         $incomeAccounts = ChartOfAcc::where('account_type', 'Income')->get();
+        $expenseAccounts = ChartOfAcc::where('account_type', 'Expense')->get();
 
         return Inertia::render('Inventory/ItemList', [
             'items' => $items,
             'categories' => $categories,
             'incomeAccounts' => $incomeAccounts,
+            'expenseAccounts' => $expenseAccounts,
         ]);
     }
 
@@ -28,10 +30,12 @@ class ItemController extends Controller
     {
         $categories = ItemCategory::all();
         $incomeAccounts = ChartOfAcc::where('account_type', 'Income')->get();
+        $expenseAccounts = ChartOfAcc::where('account_type', 'Expense')->get();
 
         return Inertia::render('Inventory/ItemForm', [
             'categories' => $categories,
-            'incomeAccounts' => $incomeAccounts
+            'incomeAccounts' => $incomeAccounts,
+            'expenseAccounts' => $expenseAccounts,
         ]);
     }
 
@@ -64,11 +68,13 @@ class ItemController extends Controller
     {
         $categories = ItemCategory::all();
         $incomeAccounts = ChartOfAcc::where('account_type', 'Income')->get();
+        $expenseAccounts = ChartOfAcc::where('account_type', 'Expense')->get();
 
         return Inertia::render('Inventory/ItemForm', [
             'item' => $item,
             'categories' => $categories,
-            'incomeAccounts' => $incomeAccounts
+            'incomeAccounts' => $incomeAccounts,
+            'expenseAccounts' => $expenseAccounts,
         ]);
     }
 
@@ -83,6 +89,7 @@ class ItemController extends Controller
             'sale_price' => 'required|numeric|min:0',
             'item_category_id' => 'nullable|exists:item_categories,id',
             'income_account_id' => 'nullable|exists:chart_of_accs,id',
+            'expense_account_id' => 'nullable|exists:chart_of_accs,id',
         ]);
 
         $item->update($validated);

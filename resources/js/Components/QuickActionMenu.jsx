@@ -28,7 +28,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
         {
             title: "Customers",
             links: [
-                { name: "credit Sale", href: "/invoice" },
+                { name: "Credit Sale", href: "/invoice" },
                 { name: "Receive payment", href: "/payment" },
                 { name: "Cash sale", href: "/receipt" },
                 { name: "Sales Return", href: "/credit-note" },

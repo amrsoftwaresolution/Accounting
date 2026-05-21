@@ -23,8 +23,6 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Customers', href: route('customers.index'), icon: 'users' },
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
-        { name: 'Finance Overview', href: route('chart-of-account.index'), icon: 'finance' },
-        { name: 'Settings', href: route('settings.index'), icon: 'users' },
     ];
 
     const teamLinks = user.role === 'super_admin' ? [] : [
@@ -32,21 +30,11 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'User Management', href: route('users.index'), adminOnly: true },
     ];
 
-    const transactions = user.role === 'super_admin' ? [] : [
-        { name: 'Payment', href: "/expense" },
-        { name: 'Journal Entries', href: "/journal" },
-        { name: 'Transfers', href: "/transfer" },
-        { name: 'Bank Deposit', href: "/deposit" },
-        { name: 'credit Sale', href: "/invoice" },
-        { name: 'Cash sale', href: "/receipt" },
-        { name: 'Payments', href: "/payment" },
-        { name: 'Sales Return', href: "/credit-note" },
-        { name: 'Supplier Return', href: "/SupplierCredit" },
-    ];
-
     const reports = user.role === 'super_admin' ? [] : [
         { name: 'Profit and Loss', href: route('reports.profit-loss') },
         { name: 'Balance Sheet', href: route('reports.balance-sheet') },
+        { name: 'Customer Report', href: '#' },
+        { name: 'Supplier Report', href: '#' },
     ];
 
     return (
@@ -58,7 +46,6 @@ export default function AuthenticatedLayout({ header, children }) {
                         <SidebarContent
                             navigation={navigation}
                             teamLinks={teamLinks}
-                            transactions={transactions}
                             reports={reports}
                             user={user}
                             onQuickMenuOpen={() => {
@@ -77,7 +64,6 @@ export default function AuthenticatedLayout({ header, children }) {
                         <SidebarContent
                             navigation={navigation}
                             teamLinks={teamLinks}
-                            transactions={transactions}
                             reports={reports}
                             user={user}
                             onQuickMenuOpen={() => setIsQuickMenuOpen(true)}
@@ -213,11 +199,11 @@ export default function AuthenticatedLayout({ header, children }) {
     );
 }
 
-function SidebarContent({ navigation, teamLinks, transactions, reports, user, onQuickMenuOpen }) {
+function SidebarContent({ navigation, teamLinks, reports, user, onQuickMenuOpen }) {
     const scrollContainerRef = useRef(null);
 
     const getInitialOpenMenu = () => {
-        if (typeof window === 'undefined') return 'transactions';
+        if (typeof window === 'undefined') return 'reports';
         const stored = sessionStorage.getItem('sidebar_open_menu');
         if (stored !== null) {
             return stored === 'null' ? null : stored;
@@ -235,10 +221,9 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
         };
 
         if (reports.some(r => matchesPath(r.href))) return 'reports';
-        if (transactions.some(t => matchesPath(t.href))) return 'transactions';
         if (teamLinks.some(t => matchesPath(t.href))) return 'team';
 
-        return 'transactions';
+        return null;
     };
 
     const [openMenu, setOpenMenu] = useState(getInitialOpenMenu);
@@ -329,7 +314,6 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
                 {/* Team Group */}
                 {teamLinks.length > 0 && (
                     <div>
-                        <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Team</h3>
                         <button
                             onClick={() => setOpenMenu(openMenu === 'team' ? null : 'team')}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'team' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -361,43 +345,9 @@ function SidebarContent({ navigation, teamLinks, transactions, reports, user, on
                     </div>
                 )}
 
-                {/* Dropdown Group (Transactions) */}
-                {transactions.length > 0 && (
-                    <div>
-                        <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Finance</h3>
-                        <button
-                            onClick={() => setOpenMenu(openMenu === 'transactions' ? null : 'transactions')}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'transactions' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <SidebarIcon name="transactions" />
-                                <span className="text-xs font-bold text-left">Activity</span>
-                            </div>
-                            <svg className={`h-3 w-3 transition-transform duration-300 ${openMenu === 'transactions' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-
-                        {openMenu === 'transactions' && (
-                            <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-800/50">
-                                {transactions.map((child) => (
-                                    <Link
-                                        key={child.href}
-                                        href={child.href}
-                                        className="block px-6 py-1.5 text-[11px] font-bold text-slate-500 hover:text-white transition-colors relative group"
-                                    >
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-[1px] bg-slate-800 transition-all group-hover:w-2 group-hover:bg-blue-500" />
-                                        {child.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* Reports Group */}
                 {reports.length > 0 && (
                     <div>
-                        <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[0.2em]">Insights</h3>
                         <button
                             onClick={() => setOpenMenu(openMenu === 'reports' ? null : 'reports')}
                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'reports' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'

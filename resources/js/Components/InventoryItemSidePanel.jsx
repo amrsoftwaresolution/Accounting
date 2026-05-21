@@ -8,13 +8,14 @@ import ItemCategorySidePanel from './ItemCategorySidePanel';
 import { useState } from 'react';
 import axios from 'axios';
 
-export default function InventoryItemSidePanel({ 
-    isOpen, 
-    onClose, 
-    item = null, 
+export default function InventoryItemSidePanel({
+    isOpen,
+    onClose,
+    item = null,
     categories = [],
     incomeAccounts = [],
-    onSuccess = null 
+    expenseAccounts = [],
+    onSuccess = null
 }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || '$';
@@ -31,6 +32,7 @@ export default function InventoryItemSidePanel({
         sale_price: 0,
         item_category_id: '',
         income_account_id: '',
+        expense_account_id: '',
     });
 
     const itemTypes = [
@@ -53,6 +55,7 @@ export default function InventoryItemSidePanel({
                     sale_price: item.sale_price || 0,
                     item_category_id: item.item_category_id || '',
                     income_account_id: item.income_account_id || '',
+                    expense_account_id: item.expense_account_id || '',
                 });
             } else {
                 reset();
@@ -68,7 +71,7 @@ export default function InventoryItemSidePanel({
             onSuccess: (page) => {
                 const newCategories = page.props.categories;
                 setLocalCategories(newCategories);
-                
+
                 // Find the one that's new
                 const newlyCreated = newCategories.find(c => !oldIds.includes(c.id));
                 if (newlyCreated) {
@@ -95,9 +98,9 @@ export default function InventoryItemSidePanel({
     };
 
     return (
-        <SlideOver 
-            isOpen={isOpen} 
-            onClose={onClose} 
+        <SlideOver
+            isOpen={isOpen}
+            onClose={onClose}
             title={isEdit ? "Edit Product/Service" : "New Product/Service"}
         >
             <form onSubmit={submit} className="space-y-8">
@@ -110,8 +113,8 @@ export default function InventoryItemSidePanel({
                                 type="button"
                                 onClick={() => setData('type', type.id)}
                                 className={`px-3 py-2.5 rounded-xl border text-[11px] font-bold transition-all ${
-                                    data.type === type.id 
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' 
+                                    data.type === type.id
+                                    ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
                                     : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-slate-700'
                                 }`}
                             >
@@ -181,6 +184,17 @@ export default function InventoryItemSidePanel({
                             placeholder="Link to Income Account"
                         />
                         {errors.income_account_id && <p className="mt-1 text-xs text-red-600">{errors.income_account_id}</p>}
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Expense Account</label>
+                        <SearchableSelect
+                            options={expenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
+                            value={data.expense_account_id}
+                            onChange={val => setData('expense_account_id', val)}
+                            placeholder="Link to Expense Account"
+                        />
+                        {errors.expense_account_id && <p className="mt-1 text-xs text-red-600">{errors.expense_account_id}</p>}
                     </div>
                 </div>
 

@@ -9,9 +9,10 @@ import axios from "axios";
 export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || '$';
-    
+
     const [categories, setCategories] = useState([]);
     const [incomeAccounts, setIncomeAccounts] = useState([]);
+    const [expenseAccounts, setExpenseAccounts] = useState([]);
     const [localErrors, setLocalErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,10 +24,15 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
         axios.get(route('api.accounts', { type: 'Income' })).then(res => setIncomeAccounts(res.data));
     };
 
+    const fetchExpenseAccounts = () => {
+        axios.get(route('api.accounts', { type: 'Expense' })).then(res => setExpenseAccounts(res.data));
+    };
+
     useEffect(() => {
         if (isOpen) {
             fetchCategories();
             fetchAccounts();
+            fetchExpenseAccounts();
             setLocalErrors({});
         }
     }, [isOpen]);
@@ -39,6 +45,7 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
         sale_price: '0.00',
         item_category_id: '',
         income_account_id: '',
+        expense_account_id: '',
     });
 
     useEffect(() => {
@@ -98,9 +105,9 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
     ];
 
     return (
-        <SlideOver 
-            isOpen={isOpen} 
-            onClose={onClose} 
+        <SlideOver
+            isOpen={isOpen}
+            onClose={onClose}
             title="New Product/Service"
         >
             <form onSubmit={submit} className="flex flex-col h-full">
@@ -114,8 +121,8 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                                     type="button"
                                     onClick={() => setData('type', type.id)}
                                     className={`px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all ${
-                                        data.type === type.id 
-                                        ? 'bg-green-50 border-green-500 text-green-700 shadow-sm' 
+                                        data.type === type.id
+                                        ? 'bg-green-50 border-green-500 text-green-700 shadow-sm'
                                         : 'bg-white border-slate-200 text-slate-500 hover:border-green-200 hover:text-slate-700'
                                     }`}
                                 >
@@ -124,7 +131,7 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                             ))}
                         </div>
                     </section>
- 
+
                     <CommonInput
                         label="Name"
                         value={data.name}
@@ -177,6 +184,16 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                                 value={data.income_account_id}
                                 onChange={val => setData('income_account_id', val)}
                                 placeholder="Link to Income Account"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Expense Account</label>
+                            <SearchableSelect
+                                options={expenseAccounts}
+                                value={data.expense_account_id}
+                                onChange={val => setData('expense_account_id', val)}
+                                placeholder="Link to Expense Account"
                             />
                         </div>
                     </div>

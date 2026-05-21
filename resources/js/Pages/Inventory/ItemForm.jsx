@@ -3,7 +3,7 @@ import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import SearchableSelect from '@/Components/SearchableSelect';
 import { useState } from 'react';
 
-export default function ItemForm({ item, categories, incomeAccounts }) {
+export default function ItemForm({ item, categories, incomeAccounts, expenseAccounts }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || '$';
 
@@ -16,6 +16,7 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
         sale_price: item?.sale_price || 0,
         item_category_id: item?.item_category_id || '',
         income_account_id: item?.income_account_id || '',
+        expense_account_id: item?.expense_account_id || '',
     });
 
     const itemTypes = [
@@ -139,6 +140,18 @@ export default function ItemForm({ item, categories, incomeAccounts }) {
                                 />
                                 <p className="mt-2 text-[10px] text-slate-400">This account will be credited when you sell this item.</p>
                                 {errors.income_account_id && <p className="mt-1 text-xs text-red-600">{errors.income_account_id}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Expense Account</label>
+                                <SearchableSelect
+                                    options={expenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
+                                    value={data.expense_account_id}
+                                    onChange={val => setData('expense_account_id', val)}
+                                    placeholder="Link to Expense Account"
+                                />
+                                <p className="mt-2 text-[10px] text-slate-400">This account will be debited when you purchase this item.</p>
+                                {errors.expense_account_id && <p className="mt-1 text-xs text-red-600">{errors.expense_account_id}</p>}
                             </div>
 
                             <div>
