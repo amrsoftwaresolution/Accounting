@@ -33,8 +33,8 @@ export default function AuthenticatedLayout({ header, children }) {
     const reports = user.role === 'super_admin' ? [] : [
         { name: 'Profit and Loss', href: route('reports.profit-loss') },
         { name: 'Balance Sheet', href: route('reports.balance-sheet') },
-        { name: 'Customer Report', href: '#' },
-        { name: 'Supplier Report', href: '#' },
+        { name: 'Customer Report', href: route('reports.customer-balance') },
+        { name: 'Supplier Report', href: route('reports.supplier-balance') },
     ];
 
     return (
