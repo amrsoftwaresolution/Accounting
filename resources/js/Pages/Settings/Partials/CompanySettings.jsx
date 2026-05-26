@@ -119,7 +119,7 @@ export default function CompanySettings({ settings }) {
                             )}
                         </div>
                     </div>
-                    <div 
+                    <div
                         onClick={(e) => {
                             e.stopPropagation();
                             selectFile();
@@ -140,7 +140,7 @@ export default function CompanySettings({ settings }) {
                                 <h2 className="text-sm font-bold text-gray-800">Company info</h2>
                                 <p className="text-gray-400 text-[10px]">This info may be used for billing purposes.</p>
                             </div>
-                            <button onClick={() => setIsEditing(true)} className="text-blue-600 hover:underline text-xs font-semibold">Edit</button>
+                            <button onClick={() => setIsEditing(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -213,7 +213,7 @@ export default function CompanySettings({ settings }) {
                                 <h2 className="text-sm font-bold text-gray-800">Legal info</h2>
                                 <p className="text-gray-400 text-[10px]">This is the info your business uses for tax purposes.</p>
                             </div>
-                            <button onClick={() => setIsEditingLegal(true)} className="text-blue-600 hover:underline text-xs font-semibold">Edit</button>
+                            <button onClick={() => setIsEditingLegal(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -274,7 +274,7 @@ export default function CompanySettings({ settings }) {
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-3">
                             <h2 className="text-sm font-bold text-gray-800">Currency</h2>
-                            <button onClick={() => setIsEditingCurrency(true)} className="text-blue-600 hover:underline text-xs font-semibold">Edit</button>
+                            <button onClick={() => setIsEditingCurrency(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -285,7 +285,7 @@ export default function CompanySettings({ settings }) {
                                 <div className="col-span-4 text-gray-500 text-xs font-bold">Multicurrency</div>
                                 <div className="col-span-8 text-xs text-gray-800 flex items-center gap-2">
                                     {currencyForm.data.multicurrency ? 'On' : 'Off'}
-                                    <button type="button" className="text-blue-600 hover:underline text-[10px]">Manage Currencies</button>
+                                    <button type="button" className="text-primary-600 hover:underline text-[10px]">Manage Currencies</button>
                                 </div>
                             </div>
                         </div>

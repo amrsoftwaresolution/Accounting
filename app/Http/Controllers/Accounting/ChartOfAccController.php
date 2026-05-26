@@ -34,7 +34,14 @@ class ChartOfAccController extends Controller
         }
 
         $request->validate([
-            'account_code' => 'required|string|max:255|unique:chart_of_accs,account_code',
+            'account_code' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('chart_of_accs', 'account_code')->where(function ($query) {
+                    return $query->where('company_id', session('active_company_id'));
+                })
+            ],
             'name' => 'required|string|max:255',
             'account_type' => 'required|in:asset,liability,equity,income,expense',
             'sub_type' => 'nullable|string|max:255',
@@ -43,6 +50,8 @@ class ChartOfAccController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'sometimes|boolean',
             'currency' => 'nullable|string|max:3',
+            'parent_id' => 'nullable|uuid|exists:chart_of_accs,id',
+            'is_locked' => 'nullable|boolean',
         ]);
 
         if ($request->filled('opening_balance_date')) {
@@ -63,6 +72,8 @@ class ChartOfAccController extends Controller
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
             'currency' => $currencyToSave,
+            'parent_id' => $request->input('is_subaccount') ? $request->input('parent_id') : null,
+            'is_locked' => $request->boolean('is_locked', false),
         ]);
 
         // If opening balance > 0, create a Journal Entry
@@ -139,14 +150,57 @@ class ChartOfAccController extends Controller
 
     public function update(Request $request, ChartOfAcc $chartOfAccount)
     {
+        if ($chartOfAccount->is_locked) {
+            // Only allow updates if we are explicitly unlocking it
+            if (!($request->has('is_locked') && !$request->boolean('is_locked'))) {
+                return redirect()->back()->with('error', 'This account is locked and cannot be modified.');
+            }
+        }
+
+        // Handle status toggle (active/inactive) from row action dropdown
+        if ($request->has('is_active') && !$request->has('name')) {
+            $chartOfAccount->update([
+                'is_active' => $request->boolean('is_active')
+            ]);
+            return redirect()->route('chart-of-account.index')->with('success', 'Account status updated successfully.');
+        }
+
+        // Handle lock toggle from row action dropdown
+        if ($request->has('is_locked') && !$request->has('name')) {
+            $chartOfAccount->update([
+                'is_locked' => $request->boolean('is_locked')
+            ]);
+            $statusText = $chartOfAccount->is_locked ? 'locked' : 'unlocked';
+            return redirect()->route('chart-of-account.index')->with('success', "Account {$statusText} successfully.");
+        }
+
         $request->validate([
-            'account_code' => 'required|string|max:255|unique:chart_of_accs,account_code,' . $chartOfAccount->id,
+            'account_code' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('chart_of_accs', 'account_code')
+                    ->ignore($chartOfAccount->id)
+                    ->where(function ($query) {
+                        return $query->where('company_id', session('active_company_id'));
+                    })
+            ],
             'name' => 'required|string|max:255',
             'account_type' => 'required|in:asset,liability,equity,income,expense',
             'sub_type' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'sometimes|boolean',
             'currency' => 'nullable|string|max:3',
+            'parent_id' => [
+                'nullable',
+                'uuid',
+                'exists:chart_of_accs,id',
+                function ($attribute, $value, $fail) use ($chartOfAccount) {
+                    if ($value === $chartOfAccount->id) {
+                        $fail('An account cannot be its own parent account.');
+                    }
+                }
+            ],
+            'is_locked' => 'nullable|boolean',
         ]);
 
         $company = \App\Models\Company::findOrFail(session('active_company_id'));
@@ -159,8 +213,9 @@ class ChartOfAccController extends Controller
             'account_type' => $request->input('account_type'),
             'sub_type' => $request->input('sub_type'),
             'description' => $request->input('description'),
-            'is_active' => $request->boolean('is_active', true),
             'currency' => $currencyToSave,
+            'parent_id' => $request->input('is_subaccount') ? $request->input('parent_id') : null,
+            'is_locked' => $request->boolean('is_locked', false),
         ]);
 
         return redirect()->route('chart-of-account.index')->with('success', 'Chart of account updated successfully.');
@@ -168,12 +223,16 @@ class ChartOfAccController extends Controller
 
     public function history(ChartOfAcc $chartOfAccount)
     {
+        if (!in_array($chartOfAccount->account_type, ['asset', 'liability', 'equity'])) {
+            return redirect()->route('reports.profit-loss')->with('error', 'History is only available for Asset, Liability, and Equity accounts.');
+        }
+
         $lines = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
-            ->where('chart_of_acc_id', $chartOfAccount->id)
-            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->orderBy('journal_entries.date', 'desc')
-            ->select('journal_entry_lines.*')
-            ->get();
+             ->where('chart_of_acc_id', $chartOfAccount->id)
+             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+             ->orderBy('journal_entries.date', 'desc')
+             ->select('journal_entry_lines.*')
+             ->get();
 
         $accounts = ChartOfAcc::orderBy('account_code')->get();
 
@@ -186,6 +245,10 @@ class ChartOfAccController extends Controller
 
     public function destroy(ChartOfAcc $chartOfAccount)
     {
+        if ($chartOfAccount->is_locked) {
+            return redirect()->back()->with('error', 'This account is locked and cannot be deleted.');
+        }
+
         $chartOfAccount->delete();
 
         return redirect()->route('chart-of-account.index')->with('success', 'Chart of account deleted successfully.');

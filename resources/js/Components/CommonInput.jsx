@@ -18,6 +18,7 @@ export default forwardRef(function CommonInput(
         size = 'md', // 'sm', 'md', 'lg'
         variant = 'boxed', // 'boxed', 'table', 'underlined'
         inputClass = '',
+        children,
         ...props
     },
     ref
@@ -31,9 +32,9 @@ export default forwardRef(function CommonInput(
     }, [isFocused]);
 
     const sizeClasses = {
-        sm: "h-[30px] text-xs px-2 rounded",
-        md: "h-[30px] text-xs px-2 rounded",
-        lg: "h-[30px] text-xs px-2 rounded"
+        sm: "h-[30px] text-xs px-2 rounded-sm",
+        md: "h-[30px] text-xs px-2 rounded-sm",
+        lg: "h-[30px] text-xs px-2 rounded-sm"
     };
 
     const variantClasses = {
@@ -99,6 +100,16 @@ export default forwardRef(function CommonInput(
                         ref={inputRef}
                         className={`${baseInputClasses} ${errorClasses} min-h-[80px] py-2 ${className} ${inputClass}`}
                     />
+                ) : type === 'select' ? (
+                    <select
+                        {...props}
+                        ref={inputRef}
+                        className={`${baseInputClasses} ${errorClasses} py-0 pl-2 pr-8 ${className} ${inputClass}`}
+                    >
+                        {children ? children : options.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
                 ) : (
                     <input
                         {...props}

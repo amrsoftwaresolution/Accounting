@@ -47,10 +47,10 @@ export default function ToastNotification() {
             badge: "bg-amber-500/10 text-amber-700"
         },
         info: {
-            bg: "bg-blue-50/95 border-blue-100",
-            iconBg: "bg-blue-100/80 text-blue-600",
-            text: "text-blue-800",
-            badge: "bg-blue-500/10 text-blue-700"
+            bg: "bg-primary-50/95 border-primary-100",
+            iconBg: "bg-primary-100/80 text-primary-600",
+            text: "text-primary-800",
+            badge: "bg-primary-500/10 text-primary-700"
         }
     };
 
@@ -82,8 +82,8 @@ export default function ToastNotification() {
                     {toast.message}
                 </p>
             </div>
-            <button 
-                onClick={() => setToast(null)} 
+            <button
+                onClick={() => setToast(null)}
                 className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-lg hover:bg-slate-100/50"
             >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>

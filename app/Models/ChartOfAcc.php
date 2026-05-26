@@ -20,7 +20,19 @@ class ChartOfAcc extends Model
         'currency',
         'description',
         'is_active',
+        'parent_id',
+        'is_locked',
     ];
+
+    public function parent()
+    {
+        return $this->belongsTo(ChartOfAcc::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(ChartOfAcc::class, 'parent_id');
+    }
 
     /**
      * Adjust account balance based on its type.

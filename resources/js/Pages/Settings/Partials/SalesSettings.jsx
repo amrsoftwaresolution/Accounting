@@ -18,7 +18,7 @@ const SalesSection = ({ title, children, isEditing, onEditClick }) => (
                 onClick={onEditClick}
                 className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-                <span className="material-icons text-blue-600 text-sm">edit</span>
+                <span className="material-icons text-primary-600 text-sm">edit</span>
             </button>
         )}
     </div>

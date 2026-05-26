@@ -91,7 +91,7 @@ export default function LineItemsTable({
                                 onDragStart={(e) => onDragStart(e, index)}
                                 onDragOver={(e) => onDragOver(e, index)}
                                 onDragEnd={onDragEnd}
-                                className={`group hover:bg-slate-50/50 transition-all ${draggedIndex === index ? 'opacity-40 bg-blue-50' : ''}`}
+                                className={`group hover:bg-slate-50/50 transition-all ${draggedIndex === index ? 'opacity-40 bg-primary-50' : ''}`}
                             >
                                 {/* Drag Handle */}
                                 <td className="px-0.5 py-0.5 align-middle w-8 border-r border-slate-100">
@@ -131,12 +131,12 @@ export default function LineItemsTable({
                                                     variant="table"
                                                     size="sm"
                                                     value={item[col.key] || ""}
-                                                    onChange={(e) => col.type === 'currency' 
+                                                    onChange={(e) => col.type === 'currency'
                                                         ? handleCurrencyChange(index, col.key, e.target.value)
                                                         : handleItemChange(index, col.key, e.target.value)
                                                     }
                                                     onFocus={col.type === 'currency' ? handleCurrencyFocus : undefined}
-                                                    onBlur={col.type === 'currency' 
+                                                    onBlur={col.type === 'currency'
                                                         ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
                                                         : undefined
                                                     }

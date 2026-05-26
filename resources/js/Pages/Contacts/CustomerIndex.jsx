@@ -48,7 +48,7 @@ export default function CustomerIndex({ customers = [] }) {
     const handleEdit = (customer) => {
         setIsEdit(true);
         setSelectedId(customer.id);
-        
+
         // Find billing and shipping addresses from the customer object
         const billing = customer.addresses?.find(a => a.type === 'billing') || {};
         const shipping = customer.addresses?.find(a => a.type === 'shipping') || {};
@@ -105,8 +105,8 @@ export default function CustomerIndex({ customers = [] }) {
         }
     };
 
-    const filteredCustomers = customers.filter(c => 
-        c.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredCustomers = customers.filter(c =>
+        c.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -126,17 +126,17 @@ export default function CustomerIndex({ customers = [] }) {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                             </div>
-                            <input 
-                                type="text" 
-                                placeholder="Find a customer" 
+                            <input
+                                type="text"
+                                placeholder="Find a customer"
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-full focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-full focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                             />
                         </div>
 
-                        <CommonButton 
-                            variant="primary" 
+                        <CommonButton
+                            variant="primary"
                             onClick={handleOpenCreate}
                         >
                             New customer
@@ -172,17 +172,17 @@ export default function CustomerIndex({ customers = [] }) {
                                         <td className="px-4 py-3 text-[11px] font-bold text-slate-800 text-right">LKR 0.00</td>
                                         <td className="px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                <CommonButton 
-                                                    variant="ghost" 
-                                                    size="xs" 
+                                                <CommonButton
+                                                    variant="ghost"
+                                                    size="xs"
                                                     onClick={() => handleEdit(customer)}
                                                 >
                                                     Edit
                                                 </CommonButton>
                                                 <div className="h-3 w-px bg-slate-200" />
-                                                <CommonButton 
-                                                    variant="ghost" 
-                                                    size="xs" 
+                                                <CommonButton
+                                                    variant="ghost"
+                                                    size="xs"
                                                     className="text-red-500 hover:text-red-600"
                                                     onClick={() => handleDelete(customer.id)}
                                                 >
@@ -205,8 +205,8 @@ export default function CustomerIndex({ customers = [] }) {
                 </div>
             </div>
 
-            <SlideOver 
-                isOpen={isCreateOpen} 
+            <SlideOver
+                isOpen={isCreateOpen}
                 onClose={() => setIsCreateOpen(false)}
                 title={isEdit ? "Edit Customer" : "New Customer"}
             >
@@ -215,23 +215,23 @@ export default function CustomerIndex({ customers = [] }) {
                         <section>
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Primary Info</h3>
                             <div className="grid grid-cols-2 gap-4">
-                                <CommonInput 
-                                    label="First Name" 
-                                    value={data.first_name} 
-                                    onChange={e => setData('first_name', e.target.value)} 
+                                <CommonInput
+                                    label="First Name"
+                                    value={data.first_name}
+                                    onChange={e => setData('first_name', e.target.value)}
                                 />
-                                <CommonInput 
-                                    label="Last Name" 
-                                    value={data.last_name} 
-                                    onChange={e => setData('last_name', e.target.value)} 
+                                <CommonInput
+                                    label="Last Name"
+                                    value={data.last_name}
+                                    onChange={e => setData('last_name', e.target.value)}
                                 />
                             </div>
                             <div className="mt-4">
-                                <CommonInput 
-                                    label="Display Name (REQUIRED)" 
-                                    value={data.display_name} 
-                                    onChange={e => setData('display_name', e.target.value)} 
-                                    required 
+                                <CommonInput
+                                    label="Display Name (REQUIRED)"
+                                    value={data.display_name}
+                                    onChange={e => setData('display_name', e.target.value)}
+                                    required
                                     error={errors.display_name}
                                 />
                             </div>
@@ -239,40 +239,40 @@ export default function CustomerIndex({ customers = [] }) {
 
                         <section>
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Business Details</h3>
-                            <CommonInput 
-                                label="Company Name" 
-                                value={data.company_name} 
-                                onChange={e => setData('company_name', e.target.value)} 
+                            <CommonInput
+                                label="Company Name"
+                                value={data.company_name}
+                                onChange={e => setData('company_name', e.target.value)}
                             />
                             <div className="grid grid-cols-2 gap-4 mt-4">
-                                <CommonInput 
-                                    label="Email Address" 
+                                <CommonInput
+                                    label="Email Address"
                                     type="email"
-                                    value={data.email} 
-                                    onChange={e => setData('email', e.target.value)} 
+                                    value={data.email}
+                                    onChange={e => setData('email', e.target.value)}
                                 />
-                                <CommonInput 
-                                    label="Phone Number" 
-                                    value={data.phone_number} 
-                                    onChange={e => setData('phone_number', e.target.value)} 
+                                <CommonInput
+                                    label="Phone Number"
+                                    value={data.phone_number}
+                                    onChange={e => setData('phone_number', e.target.value)}
                                 />
                             </div>
                         </section>
 
                         <section>
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Billing Address</h3>
-                            <AddressForm 
-                                data={data.billing_address} 
-                                setData={(key, val) => setData('billing_address', { ...data.billing_address, [key]: val })} 
+                            <AddressForm
+                                data={data.billing_address}
+                                setData={(key, val) => setData('billing_address', { ...data.billing_address, [key]: val })}
                                 errors={errors}
                             />
                         </section>
-                        
+
                         <section className="bg-slate-50/50 -mx-6 px-6 py-6 border-y border-slate-100">
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-200 pb-2">Shipping Address</h3>
-                            <AddressForm 
-                                data={data.shipping_address} 
-                                setData={(key, val) => setData('shipping_address', { ...data.shipping_address, [key]: val })} 
+                            <AddressForm
+                                data={data.shipping_address}
+                                setData={(key, val) => setData('shipping_address', { ...data.shipping_address, [key]: val })}
                                 errors={errors}
                             />
                         </section>

@@ -24,7 +24,7 @@ export default function Show({ company, packages }) {
                         {company.logo_url ? (
                             <img src={company.logo_url} alt="Company Logo" className="w-16 h-16 rounded-xl object-cover bg-white shadow-sm border border-slate-200" />
                         ) : (
-                            <div className="w-16 h-16 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-2xl shadow-sm border border-blue-200">
+                            <div className="w-16 h-16 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-2xl shadow-sm border border-primary-200">
                                 {company.company_name.charAt(0)}
                             </div>
                         )}
@@ -87,17 +87,17 @@ export default function Show({ company, packages }) {
                     <div className="lg:col-span-1 space-y-6">
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest border-b pb-4 mb-4">Active Subscription</h3>
-                            
+
                             {company.package ? (
-                                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6">
+                                <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 mb-6">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-lg font-bold text-blue-900">{company.package.name}</h4>
-                                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-widest rounded-md">
+                                        <h4 className="text-lg font-bold text-primary-900">{company.package.name}</h4>
+                                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-[10px] font-bold uppercase tracking-widest rounded-md">
                                             {company.package.billing_period}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-blue-800 font-semibold mb-1">${company.package.price}</p>
-                                    <p className="text-xs text-blue-600 line-clamp-2">{company.package.description}</p>
+                                    <p className="text-sm text-primary-800 font-semibold mb-1">${company.package.price}</p>
+                                    <p className="text-xs text-primary-600 line-clamp-2">{company.package.description}</p>
                                 </div>
                             ) : (
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-center">
@@ -107,8 +107,8 @@ export default function Show({ company, packages }) {
 
                             <form onSubmit={handleAssignPackage}>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Assign Package</label>
-                                <select 
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all mb-4"
+                                <select
+                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all mb-4"
                                     value={data.package_id}
                                     onChange={e => setData('package_id', e.target.value)}
                                 >

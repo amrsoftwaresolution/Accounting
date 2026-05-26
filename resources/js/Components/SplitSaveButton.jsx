@@ -25,11 +25,11 @@ export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, 
             type="button"
             disabled={processing}
             onClick={onSave}
-            className="inline-flex items-center px-6 py-2 bg-emerald-600 border border-transparent rounded-full text-[10px] font-black text-white uppercase tracking-widest hover:bg-emerald-500 focus:outline-none transition-all disabled:opacity-50 h-9 min-w-[120px] justify-center"
+            className="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-lg text-[10px] font-black uppercase tracking-widest text-white hover:bg-primary-600 transition-all focus:outline-none disabled:opacity-50 h-8 min-w-[100px] justify-center"
         >
             {processing ? (
                 <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
@@ -46,7 +46,7 @@ export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, 
                 type="button"
                 disabled={processing}
                 onClick={onSaveAndNew}
-                className="inline-flex items-center px-6 py-2 bg-emerald-600 border border-transparent rounded-l-full text-[10px] font-black text-white uppercase tracking-widest hover:bg-emerald-500 focus:outline-none transition-all disabled:opacity-50 h-9 min-w-[120px] justify-center"
+                className="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-l-lg text-[10px] font-black uppercase tracking-widest text-white hover:bg-primary-600 transition-all focus:outline-none disabled:opacity-50 h-8 min-w-[100px] justify-center"
             >
                 Save & New
             </button>
@@ -54,7 +54,7 @@ export default function SplitSaveButton({ onSave, onSaveAndClose, onSaveAndNew, 
                 type="button"
                 disabled={processing}
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex items-center px-2 py-2 bg-emerald-600 rounded-r-full text-white hover:bg-emerald-500 focus:outline-none transition-all disabled:opacity-50 h-9"
+                className="inline-flex items-center px-2 py-2 bg-primary border-l border-primary-600 rounded-r-lg text-white hover:bg-primary-600 focus:outline-none transition-all disabled:opacity-50 h-8"
             >
                 <svg className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />

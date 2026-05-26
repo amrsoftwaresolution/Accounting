@@ -53,7 +53,7 @@ export default function AdminIndex({ companies }) {
                                         <td className="px-6 py-4">
                                             {company.package ? (
                                                 <div>
-                                                    <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700">
+                                                    <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary-100 text-primary-700">
                                                         {company.package.name}
                                                     </span>
                                                     <div className="text-xs text-slate-400 mt-1">${company.package.price}/{company.package.billing_period}</div>
@@ -68,7 +68,7 @@ export default function AdminIndex({ companies }) {
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Link
                                                     href={route('companies.show', company.id)}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all uppercase tracking-widest"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-all uppercase tracking-widest"
                                                 >
                                                     Manage
                                                 </Link>

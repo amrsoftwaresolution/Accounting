@@ -56,7 +56,7 @@ export default function Index({ packages }) {
                             <tbody className="divide-y divide-slate-50">
                                 {packages.map((pkg) => (
                                     <React.Fragment key={pkg.id}>
-                                        <tr 
+                                        <tr
                                             className={`group hover:bg-slate-50/50 transition-colors cursor-pointer ${expandedRow === pkg.id ? 'bg-slate-50/50' : ''}`}
                                             onClick={() => toggleRow(pkg.id)}
                                         >
@@ -89,7 +89,7 @@ export default function Index({ packages }) {
                                                     <Link
                                                         href={route('packages.edit', pkg.id)}
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
                                                     >
                                                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                     </Link>

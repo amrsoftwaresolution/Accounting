@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
-export default function SearchableSelect({ 
-    options = [], 
-    value, 
-    onChange, 
+export default function SearchableSelect({
+    options = [],
+    value,
+    onChange,
     placeholder = "Select an option",
     className = "",
     label = "",
@@ -25,12 +25,12 @@ export default function SearchableSelect({
     const dropdownRef = useRef(null);
     const inputRef = useRef(null);
 
-    const filteredOptions = onSearch ? options : options.filter(opt => 
+    const filteredOptions = onSearch ? options : options.filter(opt =>
         (opt.label || "").toLowerCase().includes(search.toLowerCase())
     );
 
-    const displayOptions = (search === "" && initialLimit && !onSearch) 
-        ? filteredOptions.slice(0, initialLimit) 
+    const displayOptions = (search === "" && initialLimit && !onSearch)
+        ? filteredOptions.slice(0, initialLimit)
         : filteredOptions;
 
     useEffect(() => {
@@ -69,7 +69,7 @@ export default function SearchableSelect({
         updatePosition();
         window.addEventListener('scroll', closeOnScroll, true);
         window.addEventListener('resize', updatePosition);
-        
+
         return () => {
             window.removeEventListener('scroll', closeOnScroll, true);
             window.removeEventListener('resize', updatePosition);
@@ -80,7 +80,7 @@ export default function SearchableSelect({
         const handleClickOutside = (event) => {
             const isOutsideContainer = containerRef.current && !containerRef.current.contains(event.target);
             const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(event.target);
-            
+
             if (isOutsideContainer && isOutsideDropdown) {
                 setIsOpen(false);
             }
@@ -119,9 +119,9 @@ export default function SearchableSelect({
     const selectedOption = options.find(opt => String(opt.value) === String(value));
 
     const sizeClasses = {
-        sm: "h-[30px] text-xs rounded",
-        md: "h-[30px] text-xs rounded", // Changed md to match sm as per request for consistency
-        lg: "h-[30px] text-xs rounded"  // Changed lg to match sm as per request for consistency
+        sm: "h-[30px] text-xs rounded-sm",
+        md: "h-[30px] text-xs rounded-sm", // Changed md to match sm as per request for consistency
+        lg: "h-[30px] text-xs rounded-sm"  // Changed lg to match sm as per request for consistency
     };
 
     const getBaseClasses = () => {
@@ -129,14 +129,14 @@ export default function SearchableSelect({
             return `w-full h-8 bg-transparent border-none focus-within:bg-green-50/30 transition-all rounded-none ring-0 text-xs flex items-center`;
         }
         if (variant === "boxed") {
-            return `w-full border border-slate-300 bg-white text-slate-900 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20 h-[30px] text-xs rounded cursor-pointer flex items-center group overflow-hidden ${error ? 'border-red-300' : ''}`;
+            return `w-full border border-slate-300 bg-white text-slate-900 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20 h-[30px] text-xs rounded-sm cursor-pointer flex items-center group overflow-hidden ${error ? 'border-red-300' : ''}`;
         }
         return `w-full border-b border-slate-300 py-1 text-sm bg-transparent outline-none transition-all ${error ? 'border-red-300' : ''}`;
     };
 
     return (
-        <div 
-            className={`relative w-full outline-none ${variant === 'table' ? 'h-full' : ''}`} 
+        <div
+            className={`relative w-full outline-none ${variant === 'table' ? 'h-full' : ''}`}
             ref={containerRef}
             tabIndex={variant === 'table' ? -1 : 0}
             onKeyDown={handleKeyDown}
@@ -146,8 +146,8 @@ export default function SearchableSelect({
                     {label} {required && <span className="text-red-500">*</span>}
                 </label>
             )}
-            
-            <div 
+
+            <div
                 onClick={() => setIsOpen(!isOpen)}
                 className={`${getBaseClasses()} ${className}`}
             >
@@ -172,23 +172,23 @@ export default function SearchableSelect({
             )}
 
             {isOpen && dropdownPos.width > 0 && createPortal(
-                <div 
+                <div
                     ref={dropdownRef}
-                    style={{ 
+                    style={{
                         position: 'fixed',
-                        top: dropdownPos.top - window.scrollY, 
-                        left: dropdownPos.left - window.scrollX, 
+                        top: dropdownPos.top - window.scrollY,
+                        left: dropdownPos.left - window.scrollX,
                         width: dropdownPos.width,
-                        zIndex: 9999 
+                        zIndex: 9999
                     }}
-                    className="mt-1 bg-white border border-slate-300 rounded shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200"
+                    className="mt-1 bg-white border border-slate-300 rounded-sm shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200"
                 >
                     <div className="p-1.5 border-b border-slate-100 bg-slate-50">
                         <input
                             type="text"
                             ref={inputRef}
                             placeholder="Search..."
-                            className="w-full px-2 py-1 text-xs border border-slate-300 rounded focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all h-7"
+                            className="w-full px-2 py-1 text-xs border border-slate-300 rounded-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all h-7"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={handleKeyDown}
@@ -197,12 +197,12 @@ export default function SearchableSelect({
                     </div>
                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
                         {onAddNew && (
-                            <div 
+                            <div
                                 onClick={() => {
                                     onAddNew();
                                     setIsOpen(false);
                                 }}
-                                className="px-3 py-1.5 text-xs text-blue-600 font-bold border-b border-slate-100 hover:bg-blue-50 cursor-pointer flex items-center gap-2"
+                                className="px-3 py-1.5 text-xs text-primary-600 font-bold border-b border-slate-100 hover:bg-primary-50 cursor-pointer flex items-center gap-2"
                             >
                                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
                                 Add New
@@ -217,11 +217,9 @@ export default function SearchableSelect({
                                         setIsOpen(false);
                                         setSearch("");
                                     }}
-                                    className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex justify-between items-center ${
-                                        idx === activeIndex ? 'bg-slate-100' : ''
-                                    } ${
-                                        String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                                    }`}
+                                    className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex justify-between items-center ${idx === activeIndex ? 'bg-slate-100' : ''
+                                        } ${String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
+                                        }`}
                                 >
                                     <span>{opt.label}</span>
                                     {opt.type && (

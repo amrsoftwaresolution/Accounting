@@ -5,7 +5,7 @@ export default function LandingLayout({ children }) {
     const { auth } = usePage().props;
 
     return (
-        <div className="min-h-screen bg-slate-50 selection:bg-blue-500 selection:text-white">
+        <div className="min-h-screen bg-slate-50 selection:bg-primary-500 selection:text-white">
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,15 +15,15 @@ export default function LandingLayout({ children }) {
                                 <ApplicationLogo className="h-10 w-auto group-hover:scale-105 transition-transform duration-300" />
                                 <div className="flex flex-col">
                                     <span className="text-slate-900 text-xl font-black tracking-tight leading-none">{usePage().props.appName}</span>
-                                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">{usePage().props.appName}</span>
+                                    <span className="text-[10px] font-bold text-primary-600 uppercase tracking-widest mt-0.5">{usePage().props.appName}</span>
                                 </div>
                             </Link>
                         </div>
 
                         <div className="hidden md:flex items-center gap-8">
-                            <a href={route('welcome') + '#features'} className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">Features</a>
-                            <a href={route('welcome') + '#solutions'} className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">Solutions</a>
-                            <a href={route('welcome') + '#about'} className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">About</a>
+                            <a href={route('welcome') + '#features'} className="text-sm font-bold text-slate-600 hover:text-primary-600 transition-colors">Features</a>
+                            <a href={route('welcome') + '#solutions'} className="text-sm font-bold text-slate-600 hover:text-primary-600 transition-colors">Solutions</a>
+                            <a href={route('welcome') + '#about'} className="text-sm font-bold text-slate-600 hover:text-primary-600 transition-colors">About</a>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -70,7 +70,7 @@ export default function LandingLayout({ children }) {
                                 Empowering businesses with smart financial management and operational growth tools. Built for modern enterprises.
                             </p>
                         </div>
-                        
+
                         <div>
                             <h4 className="text-white text-sm font-bold uppercase tracking-widest mb-6">Product</h4>
                             <ul className="space-y-4 text-sm">
@@ -95,12 +95,12 @@ export default function LandingLayout({ children }) {
                             <h4 className="text-white text-sm font-bold uppercase tracking-widest mb-6">Newsletter</h4>
                             <p className="text-sm mb-4">Stay updated with our latest insights.</p>
                             <div className="flex gap-2">
-                                <input 
-                                    type="email" 
-                                    placeholder="your@email.com" 
-                                    className="bg-slate-800 border-none rounded-lg px-4 py-2 text-sm w-full focus:ring-2 focus:ring-blue-500"
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    className="bg-slate-800 border-none rounded-lg px-4 py-2 text-sm w-full focus:ring-2 focus:ring-primary-500"
                                 />
-                                <button className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                <button className="bg-primary-600 text-white p-2 rounded-lg hover:bg-primary-700 transition-colors">
                                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7-7 7M5 19l7-7-7-7" /></svg>
                                 </button>
                             </div>

@@ -18,20 +18,20 @@ export default function CommonButton({
     const variants = {
         primary: 'bg-green-600 text-white hover:bg-green-700 border-green-600 shadow-sm',
         secondary: 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200 shadow-sm',
-        blue: 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600 shadow-sm',
+        blue: 'bg-primary-600 text-white hover:bg-primary-700 border-primary-600 shadow-sm',
         danger: 'bg-red-600 text-white hover:bg-red-700 border-red-600 shadow-sm',
         outline: 'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 border-slate-200',
         ghost: 'bg-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-transparent',
     };
 
     const sizes = {
-        xs: 'px-2.5 py-1 text-[10px]',
-        sm: 'px-3 py-1.5 text-[11px]',
-        md: 'px-4 py-2 text-xs',
-        lg: 'px-6 py-2.5 text-sm',
+        xs: 'px-2 py-0.5 text-[9px]',
+        sm: 'px-2.5 py-1 text-[10px]',
+        md: 'px-3 py-1.5 text-[11px]',
+        lg: 'px-4.5 py-2 text-xs',
     };
 
-    const baseClasses = `inline-flex items-center justify-center font-bold uppercase tracking-widest rounded-full border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`;
+    const baseClasses = `inline-flex items-center justify-center font-bold uppercase tracking-widest rounded-sm border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`;
 
     if (href) {
         return (

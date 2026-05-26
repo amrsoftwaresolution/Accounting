@@ -19,7 +19,7 @@ const AdvancedSection = ({ title, children, isEditing, onEditClick, showEdit = t
                 onClick={onEditClick}
                 className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-                <span className="material-icons text-blue-600 text-sm">edit</span>
+                <span className="material-icons text-primary-600 text-sm">edit</span>
             </button>
         )}
     </div>
@@ -31,7 +31,7 @@ const Row = ({ label, value, subValue = null }) => (
             <span className="text-gray-500">{label}</span>
             <span className="font-semibold text-gray-800 text-right">{value}</span>
         </div>
-        {subValue && <div className="text-[10px] text-blue-600 hover:underline cursor-pointer">{subValue}</div>}
+        {subValue && <div className="text-[10px] text-primary-600 hover:underline cursor-pointer">{subValue}</div>}
     </div>
 );
 
@@ -205,7 +205,7 @@ export default function AdvancedSettings() {
 
             {/* Communications (No Edit) */}
             <AdvancedSection title="Communications with Intuit" showEdit={false}>
-                <a href="#" className="text-xs text-blue-600 hover:underline">Marketing preferences</a>
+                <a href="#" className="text-xs text-primary-600 hover:underline">Marketing preferences</a>
             </AdvancedSection>
 
             {/* Company Type */}

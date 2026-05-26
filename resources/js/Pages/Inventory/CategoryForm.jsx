@@ -52,7 +52,7 @@ export default function CategoryForm({ category, parents }) {
                                 type="text"
                                 value={data.name}
                                 onChange={e => setData('name', e.target.value)}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                                 placeholder="e.g. Services, Hardware, Software"
                             />
                             {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}

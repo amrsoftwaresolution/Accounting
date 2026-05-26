@@ -11,21 +11,21 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
         // The lines are already ordered by date desc in the controller.
         // For running balance, we need them ordered by date asc.
         const sortedLines = [...lines].reverse();
-        
+
         return sortedLines.map(line => {
             const debit = parseFloat(line.debit || 0);
             const credit = parseFloat(line.credit || 0);
-            
+
             // Asset/Expense: Debit increases, Credit decreases
             // Liability/Equity/Income: Credit increases, Debit decreases
             const isNormalDebit = ['asset', 'expense'].includes(account.account_type);
-            
+
             if (isNormalDebit) {
                 currentBalance += (debit - credit);
             } else {
                 currentBalance += (credit - debit);
             }
-            
+
             return {
                 ...line,
                 running_balance: currentBalance
@@ -86,6 +86,20 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
         if (!payeeId) return '-';
         const payee = payees.find(p => p.value === payeeId);
         return payee ? payee.label : '-';
+    };
+
+    const getEditRoute = (tx) => {
+        const type = tx.journal_entry?.transaction_type;
+        if (type === 'expense') {
+            return route('expense.edit', tx.journal_entry_id);
+        }
+        if (type === 'invoice') {
+            return route('invoice.edit', tx.journal_entry_id);
+        }
+        if (type === 'bill') {
+            return route('bill.edit', tx.journal_entry_id);
+        }
+        return route('journal-entries.edit', tx.journal_entry_id);
     };
 
     const handleStartEdit = (tx) => {
@@ -175,18 +189,18 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
                                 {transactions.map((tx) => {
                                     const isEditing = editingTxId === tx.id;
                                     const isSplit = (tx.journal_entry?.lines || []).length > 2;
-                                    
+
                                     // Determine the split account label dynamically
                                     const selectedOffsetAccount = accounts.find(a => a.id === editForm.offset_account_id);
-                                    const offsetAccountTypeLabel = selectedOffsetAccount 
-                                        ? (selectedOffsetAccount.account_type.charAt(0).toUpperCase() + selectedOffsetAccount.account_type.slice(1)) 
+                                    const offsetAccountTypeLabel = selectedOffsetAccount
+                                        ? (selectedOffsetAccount.account_type.charAt(0).toUpperCase() + selectedOffsetAccount.account_type.slice(1))
                                         : 'Account';
 
                                     if (isEditing) {
                                         return (
                                             <Fragment key={tx.id}>
                                                 {/* Editing Row */}
-                                                <tr className="bg-blue-50/20 hover:bg-blue-50/30 transition-colors">
+                                                <tr className="bg-primary-50/20 hover:bg-primary-50/30 transition-colors">
                                                     {/* Date */}
                                                     <td className="px-2 py-4 align-top">
                                                         <input
@@ -293,7 +307,7 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
                                                     <td className="px-4 py-4 align-top"></td>
                                                 </tr>
                                                 {/* Bottom Actions Bar Row */}
-                                                <tr className="bg-blue-50/30">
+                                                <tr className="bg-primary-50/30">
                                                     <td colSpan="8" className="px-4 py-2.5 text-right space-x-2 border-b border-slate-200">
                                                         <button
                                                             type="button"
@@ -303,7 +317,7 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
                                                             Delete
                                                         </button>
                                                         <Link
-                                                            href={route('journal-entries.edit', tx.journal_entry_id)}
+                                                            href={getEditRoute(tx)}
                                                             className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm inline-block"
                                                         >
                                                             Edit
@@ -363,15 +377,15 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
                                                 {parseFloat(tx.credit) > 0 ? parseFloat(tx.credit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
                                             </td>
                                             {/* Balance */}
-                                            <td className="px-4 py-3 text-[11px] font-bold text-blue-600 text-right font-mono">
+                                            <td className="px-4 py-3 text-[11px] font-bold text-primary-600 text-right font-mono">
                                                 LKR {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
                                             {/* Action */}
                                             <td className="px-4 py-3 text-center">
-                                                <CommonButton 
-                                                    variant="ghost" 
+                                                <CommonButton
+                                                    variant="ghost"
                                                     size="xs"
-                                                    onClick={() => handleStartEdit(tx)}
+                                                    href={getEditRoute(tx)}
                                                 >
                                                     View/Edit
                                                 </CommonButton>

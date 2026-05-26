@@ -1,10 +1,36 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { useForm, Head, Link } from '@inertiajs/react';
+import { useForm, Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import SlideOver from '@/Components/SlideOver';
 import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
+import Dropdown from '@/Components/Dropdown';
 import axios from 'axios';
+
+const Toggle = ({ checked, onChange, label, description, disabled }) => (
+    <label className={`flex items-start gap-3 select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+        <div className="relative mt-1">
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={e => onChange(e.target.checked)}
+                disabled={disabled}
+                className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+        </div>
+        <div className="flex flex-col">
+            <span className={`text-xs font-bold text-slate-700 leading-tight ${disabled ? '' : 'group-hover:text-slate-900 transition-colors'}`}>
+                {label}
+            </span>
+            {description && (
+                <span className="text-[10px] text-slate-400 mt-0.5 leading-normal">
+                    {description}
+                </span>
+            )}
+        </div>
+    </label>
+);
 
 export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpeningBalanceDate }) {
     const company = auth.company;
@@ -37,6 +63,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
     const [isEdit, setIsEdit] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [accountWasLockedInitially, setAccountWasLockedInitially] = useState(false);
     const [filterType, setFilterType] = useState('all');
 
     const initialDate = localStorage.getItem('last_opening_balance_date') || lastOpeningBalanceDate || new Date().toISOString().split('T')[0];
@@ -51,19 +78,36 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         description: '',
         is_active: true,
         currency: company?.home_currency || 'LKR',
+        is_subaccount: false,
+        parent_id: '',
+        is_locked: false,
     });
 
-    const handleOpenCreate = () => {
+    const handleOpenCreate = (parentAccount = null) => {
+        const isActualAccount = parentAccount && typeof parentAccount === 'object' && 'id' in parentAccount;
+
         setIsEdit(false);
         setSelectedId(null);
         reset();
         clearErrors();
-        
+        setAccountWasLockedInitially(false);
+
         const freshDate = localStorage.getItem('last_opening_balance_date') || lastOpeningBalanceDate || new Date().toISOString().split('T')[0];
+
+        const isSub = !!isActualAccount;
+        const parentId = isActualAccount ? parentAccount.id : '';
+        const accType = isActualAccount ? parentAccount.account_type : 'asset';
+        const subType = isActualAccount ? parentAccount.sub_type : (subtypeOptions[accType]?.[0]?.value || '');
+
         setData(prev => ({
             ...prev,
             opening_balance: '0.00',
-            opening_balance_date: freshDate
+            opening_balance_date: freshDate,
+            is_subaccount: isSub,
+            parent_id: parentId,
+            is_locked: false,
+            account_type: accType,
+            sub_type: subType,
         }));
 
         setIsPanelOpen(true);
@@ -73,7 +117,8 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         setIsEdit(true);
         setSelectedId(account.id);
         clearErrors();
-        
+        setAccountWasLockedInitially(!!account.is_locked);
+
         const formattedBalance = parseFloat(account.opening_balance || 0).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -89,6 +134,9 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
             description: account.description || '',
             is_active: !!account.is_active,
             currency: account.currency || company?.home_currency || 'LKR',
+            is_subaccount: !!account.parent_id,
+            parent_id: account.parent_id || '',
+            is_locked: !!account.is_locked,
         });
         setIsPanelOpen(true);
     };
@@ -122,11 +170,43 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
     const handleDateChange = (e) => {
         const dateVal = e.target.value;
         setData('opening_balance_date', dateVal);
-        
+
         axios.post(route('api.accounts.save-date'), { date: dateVal })
             .catch(err => console.error("Failed to save date to session:", err));
-            
+
         localStorage.setItem('last_opening_balance_date', dateVal);
+    };
+
+    const handleDelete = () => {
+        if (confirm("Are you sure you want to delete this account? This action cannot be undone.")) {
+            router.delete(route('chart-of-account.destroy', selectedId), {
+                onSuccess: () => {
+                    setIsPanelOpen(false);
+                }
+            });
+        }
+    };
+
+    const handleToggleActive = (account) => {
+        const actionText = account.is_active ? "inactive" : "active";
+        if (confirm(`Are you sure you want to make this account ${actionText}?`)) {
+            router.patch(route('chart-of-account.update', account.id), {
+                is_active: !account.is_active
+            }, {
+                preserveScroll: true
+            });
+        }
+    };
+
+    const handleToggleLock = (account) => {
+        const actionText = account.is_locked ? "unlock" : "lock";
+        if (confirm(`Are you sure you want to ${actionText} this account?`)) {
+            router.patch(route('chart-of-account.update', account.id), {
+                is_locked: !account.is_locked
+            }, {
+                preserveScroll: true
+            });
+        }
     };
 
     useEffect(() => {
@@ -134,24 +214,19 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
             axios.get(route('api.accounts.next-code'), {
                 params: { type: data.account_type }
             })
-            .then(res => {
-                if (res.data && res.data.next_code) {
-                    setData('account_code', res.data.next_code);
-                }
-            })
-            .catch(err => {
-                console.error("Failed to fetch next account code:", err);
-            });
+                .then(res => {
+                    if (res.data && res.data.next_code) {
+                        setData('account_code', res.data.next_code);
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch next account code:", err);
+                });
         }
     }, [isPanelOpen, isEdit, data.account_type]);
 
     const submit = (e) => {
         e.preventDefault();
-        
-        transform((data) => ({
-            ...data,
-            opening_balance: String(data.opening_balance || '').replace(/,/g, '')
-        }));
 
         const options = {
             onSuccess: () => {
@@ -196,14 +271,14 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                     placeholder="Filter by name or number"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
-                                    className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-64 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                                    className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-64 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                                 />
                             </div>
 
                             <select
                                 value={filterType}
                                 onChange={e => setFilterType(e.target.value)}
-                                className="px-3 py-1.5 border border-slate-300 rounded-md text-[11px] font-bold text-slate-600 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                                className="px-3 py-1.5 border border-slate-300 rounded-sm text-[11px] font-bold text-slate-600 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500"
                             >
                                 <option value="all">All Types</option>
                                 <option value="asset">Assets</option>
@@ -237,30 +312,93 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             <tbody className="divide-y divide-slate-100">
                                 {filteredAccounts.map((account) => (
                                     <tr key={account.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="px-4 py-2.5">
+                                        <td className="px-4 py-2.5" style={{ paddingLeft: account.parent_id ? '28px' : '16px' }}>
                                             <div className="flex flex-col">
-                                                <span className="text-[11px] font-bold text-slate-800">{account.name}</span>
-                                                <span className="text-[10px] text-slate-400">{account.account_code}</span>
+                                                <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1">
+                                                    {account.parent_id && (
+                                                        <span className="text-slate-300 font-normal">↳</span>
+                                                    )}
+                                                    {account.name}
+                                                    {account.is_locked ? (
+                                                        <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Locked Account">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                        </svg>
+                                                    ) : null}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                                    {account.account_code}
+                                                    {!account.is_active && (
+                                                        <span className="bg-slate-100 text-slate-500 px-1 py-0.5 rounded text-[8px] uppercase tracking-wider font-bold">Inactive</span>
+                                                    )}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-2.5 text-[11px] text-slate-600 capitalize">{account.account_type}</td>
                                         <td className="px-4 py-2.5 text-[11px] text-slate-600 capitalize">{account.sub_type?.replace(/-/g, ' ') || 'Main Account'}</td>
                                         <td className="px-4 py-2.5 text-[11px] font-bold text-slate-800 text-right">
-                                            {account.currency || company?.home_currency} {parseFloat(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {['asset', 'equity', 'liability'].includes(account.account_type) ? (
+                                                `${account.currency || company?.home_currency} ${parseFloat(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                            ) : (
+                                                ''
+                                            )}
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <CommonButton 
-                                                    variant="ghost" 
-                                                    size="xs"
-                                                    onClick={() => handleOpenEdit(account)}
-                                                >
-                                                    Edit
-                                                </CommonButton>
-                                                <div className="h-3 w-px bg-slate-200" />
-                                                <Link href={route('chart-of-account.history', account.id)}>
-                                                    <CommonButton variant="ghost" size="xs">History</CommonButton>
-                                                </Link>
+                                            <div className="flex items-center justify-center gap-1">
+                                                {['asset', 'equity', 'liability'].includes(account.account_type) ? (
+                                                    <CommonButton
+                                                        variant="ghost"
+                                                        size="xs"
+                                                        href={route('chart-of-account.history', account.id)}
+                                                    >
+                                                        History
+                                                    </CommonButton>
+                                                ) : (
+                                                    <CommonButton
+                                                        variant="ghost"
+                                                        size="xs"
+                                                        href={route('reports.profit-loss')}
+                                                    >
+                                                        Run Report
+                                                    </CommonButton>
+                                                )}
+
+                                                <Dropdown>
+                                                    <Dropdown.Trigger>
+                                                        <button className="p-1 hover:bg-slate-100 rounded text-slate-500 transition-colors focus:outline-none flex items-center">
+                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
+                                                    </Dropdown.Trigger>
+                                                    <Dropdown.Content align="right" width="48" contentClasses="py-1 bg-white ring-1 ring-black ring-opacity-5 rounded-md shadow-lg overflow-hidden mt-2">
+                                                        <button
+                                                            onClick={() => handleOpenEdit(account)}
+                                                            className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleOpenCreate(account)}
+                                                            className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold border-t border-slate-100"
+                                                        >
+                                                            Add Sub-account
+                                                        </button>
+                                                        {!account.is_locked && (
+                                                            <button
+                                                                onClick={() => handleToggleActive(account)}
+                                                                className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold border-t border-slate-100"
+                                                            >
+                                                                {account.is_active ? "Make Inactive" : "Make Active"}
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleToggleLock(account)}
+                                                            className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold border-t border-slate-100"
+                                                        >
+                                                            {account.is_locked ? "Unlock Account" : "Lock Account"}
+                                                        </button>
+                                                    </Dropdown.Content>
+                                                </Dropdown>
                                             </div>
                                         </td>
                                     </tr>
@@ -284,6 +422,15 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                 title={isEdit ? "Edit Account" : "New Account"}
             >
                 <form onSubmit={submit} className="space-y-6">
+                    {data.is_locked && (
+                        <div className="p-3 rounded-sm bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-2">
+                            <svg className="w-4.5 h-4.5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>This account is locked and cannot be edited or deleted.</span>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                         <CommonInput
                             label="Account Code"
@@ -291,6 +438,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             onChange={e => setData('account_code', e.target.value)}
                             error={errors.account_code}
                             required
+                            disabled={data.is_locked}
                         />
                         <CommonInput
                             label="Account Name"
@@ -298,52 +446,98 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             onChange={e => setData('name', e.target.value)}
                             error={errors.name}
                             required
+                            disabled={data.is_locked}
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Account Type</label>
-                            <select
-                                value={data.account_type}
-                                onChange={e => handleTypeChange(e.target.value)}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                            >
-                                <option value="asset">Asset</option>
-                                <option value="liability">Liability</option>
-                                <option value="equity">Equity</option>
-                                <option value="income">Income</option>
-                                <option value="expense">Expense</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detail Type</label>
-                            <select
-                                value={data.sub_type}
-                                onChange={e => setData('sub_type', e.target.value)}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                            >
-                                {subtypeOptions[data.account_type].map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <CommonInput
+                            type="select"
+                            label="Account Type"
+                            value={data.account_type}
+                            onChange={e => handleTypeChange(e.target.value)}
+                            error={errors.account_type}
+                            required
+                            disabled={data.is_locked}
+                        >
+                            <option value="asset">Asset</option>
+                            <option value="liability">Liability</option>
+                            <option value="equity">Equity</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </CommonInput>
+                        <CommonInput
+                            type="select"
+                            label="Detail Type"
+                            value={data.sub_type}
+                            onChange={e => setData('sub_type', e.target.value)}
+                            error={errors.sub_type}
+                            required
+                            options={subtypeOptions[data.account_type]}
+                            disabled={data.is_locked}
+                        />
                     </div>
+
+                    <div className="pt-4 border-t border-slate-150">
+                        <Toggle
+                            checked={data.is_subaccount}
+                            onChange={val => setData('is_subaccount', val)}
+                            label="Make this a sub-account"
+                            description="Sub-accounts nest under parent accounts in financial statements."
+                            disabled={data.is_locked}
+                        />
+                    </div>
+
+                    {data.is_subaccount && (
+                        <div className="pt-4 border-t border-slate-150 space-y-4">
+                            <CommonInput
+                                type="select"
+                                label="Parent Account"
+                                value={data.parent_id}
+                                onChange={e => setData('parent_id', e.target.value)}
+                                error={errors.parent_id}
+                                required={data.is_subaccount}
+                                disabled={data.is_locked}
+                            >
+                                <option value="">Select a parent account</option>
+                                {chartOfAccounts
+                                    .filter(acc => !selectedId || acc.id !== selectedId)
+                                    .map(acc => (
+                                        <option key={acc.id} value={acc.id}>
+                                            {acc.account_code} - {acc.name} ({acc.account_type})
+                                        </option>
+                                    ))}
+                            </CommonInput>
+
+                            <CommonInput
+                                type="textarea"
+                                label="Description"
+                                value={data.description}
+                                onChange={e => setData('description', e.target.value)}
+                                error={errors.description}
+                                rows="3"
+                                className="resize-none"
+                                disabled={data.is_locked}
+                            />
+                        </div>
+                    )}
 
                     {multicurrencyEnabled && (
                         <div className="pt-4 border-t border-slate-100">
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Account Currency</label>
-                            <select
+                            <CommonInput
+                                type="select"
+                                label="Account Currency"
                                 value={data.currency}
                                 onChange={e => setData('currency', e.target.value)}
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                error={errors.currency}
+                                disabled={data.is_locked}
                             >
                                 <option value="LKR">Sri Lankan Rupee (LKR)</option>
                                 <option value="USD">United States Dollar (USD)</option>
                                 <option value="EUR">Euro (EUR)</option>
                                 <option value="GBP">British Pound (GBP)</option>
                                 <option value="AUD">Australian Dollar (AUD)</option>
-                            </select>
+                            </CommonInput>
                             <p className="mt-1.5 text-[10px] text-slate-400 font-medium italic">All transactions for this account will be recorded in this currency.</p>
                         </div>
                     )}
@@ -359,6 +553,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 onBlur={handleBalanceBlur}
                                 error={errors.opening_balance}
                                 icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || 'LKR'}</span>}
+                                disabled={data.is_locked}
                             />
                             <CommonInput
                                 type="date"
@@ -366,36 +561,43 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 value={data.opening_balance_date}
                                 onChange={handleDateChange}
                                 error={errors.opening_balance_date}
+                                disabled={data.is_locked}
                             />
                         </div>
                     )}
 
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
-                            <textarea
-                                value={data.description}
-                                onChange={e => setData('description', e.target.value)}
-                                rows="3"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={data.is_active}
-                                onChange={e => setData('is_active', e.target.checked)}
-                                className="rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Active Account</span>
-                        </div>
+                    <div className="pt-4 border-t border-slate-150">
+                        <Toggle
+                            checked={data.is_locked}
+                            onChange={val => setData('is_locked', val)}
+                            label="Lock Account"
+                            description="Locking prevents deletion or modification of the account details."
+                        />
                     </div>
 
-                    <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
-                        <CommonButton variant="ghost" onClick={() => setIsPanelOpen(false)}>Cancel</CommonButton>
-                        <CommonButton type="submit" variant="primary" processing={processing}>
-                            {isEdit ? "Update Account" : "Save Account"}
-                        </CommonButton>
+                    <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-between gap-3 border-t border-slate-100">
+                        <div>
+                            {isEdit && !data.is_locked && (
+                                <CommonButton
+                                    type="button"
+                                    variant="danger"
+                                    onClick={handleDelete}
+                                    processing={processing}
+                                >
+                                    Delete
+                                </CommonButton>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <CommonButton variant="ghost" onClick={() => setIsPanelOpen(false)} size="sm">
+                                {data.is_locked ? "Close" : "Cancel"}
+                            </CommonButton>
+                            {(!data.is_locked || !accountWasLockedInitially || !isEdit) && (
+                                <CommonButton type="submit" variant="primary" processing={processing} size="sm">
+                                    {isEdit ? "Update Account" : "Save Account"}
+                                </CommonButton>
+                            )}
+                        </div>
                     </div>
                 </form>
             </SlideOver>

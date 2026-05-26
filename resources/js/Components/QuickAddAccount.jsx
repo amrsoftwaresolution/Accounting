@@ -1,11 +1,40 @@
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import SlideOver from './SlideOver';
 import CommonInput from './CommonInput';
 import CommonButton from './CommonButton';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const Toggle = ({ checked, onChange, label, description, disabled }) => (
+    <label className={`flex items-start gap-3 select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+        <div className="relative mt-1">
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={e => onChange(e.target.checked)}
+                disabled={disabled}
+                className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+        </div>
+        <div className="flex flex-col">
+            <span className={`text-xs font-bold text-slate-700 leading-tight ${disabled ? '' : 'group-hover:text-slate-900 transition-colors'}`}>
+                {label}
+            </span>
+            {description && (
+                <span className="text-[10px] text-slate-400 mt-0.5 leading-normal">
+                    {description}
+                </span>
+            )}
+        </div>
+    </label>
+);
+
 export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultType = 'asset' }) {
+    const { auth } = usePage().props;
+    const company = auth?.company;
+    const multicurrencyEnabled = !!company?.multicurrency;
+
     const subtypeOptions = {
         asset: [
             { value: 'cash-and-cash-equivalents', label: 'Cash and cash equivalents' },
@@ -14,6 +43,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
             { value: 'fixed-assets', label: 'Fixed assets' },
             { value: 'non-current-assets', label: 'Non-current assets' },
         ],
+        subtype: [], // placeholder or fallback
         liability: [
             { value: 'credit-card', label: 'Credit card' },
             { value: 'accounts-payable', label: 'Accounts payable (A/P)' },
@@ -28,38 +58,84 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         expense: [{ value: 'expense', label: 'Expense' }],
     };
 
+    const [parentAccounts, setParentAccounts] = useState([]);
+
+    const initialDate = localStorage.getItem('last_opening_balance_date') || new Date().toISOString().split('T')[0];
+
     const { data, setData, post, processing, errors, reset } = useForm({
         account_code: '',
         name: '',
         account_type: defaultType,
-        sub_type: subtypeOptions[defaultType][0].value,
-        opening_balance: 0,
-        opening_balance_date: new Date().toISOString().split('T')[0],
+        sub_type: subtypeOptions[defaultType]?.[0]?.value || '',
+        opening_balance: '0.00',
+        opening_balance_date: initialDate,
         description: '',
         is_active: true,
+        currency: company?.home_currency || 'LKR',
+        is_subaccount: false,
+        parent_id: '',
+        is_locked: false,
     });
 
     const handleTypeChange = (value) => {
         setData(prev => ({
             ...prev,
             account_type: value,
-            sub_type: subtypeOptions[value][0].value
+            sub_type: subtypeOptions[value]?.[0]?.value || ''
         }));
     };
+
+    const handleBalanceChange = (e) => {
+        const rawValue = e.target.value;
+        const cleanValue = rawValue.replace(/[^\d.,-]/g, ''); // Allow digits, commas, decimals, and minus sign
+        setData('opening_balance', cleanValue);
+    };
+
+    const handleBalanceBlur = () => {
+        const numericValue = parseFloat(String(data.opening_balance || '').replace(/,/g, ''));
+        if (!isNaN(numericValue)) {
+            setData('opening_balance', numericValue.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }));
+        } else {
+            setData('opening_balance', '0.00');
+        }
+    };
+
+    const handleDateChange = (e) => {
+        const dateVal = e.target.value;
+        setData('opening_balance_date', dateVal);
+
+        axios.post(route('api.accounts.save-date'), { date: dateVal })
+            .catch(err => console.error("Failed to save date to session:", err));
+
+        localStorage.setItem('last_opening_balance_date', dateVal);
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            axios.get(route('api.accounts'))
+                .then(res => {
+                    setParentAccounts(res.data);
+                })
+                .catch(err => console.error("Failed to load accounts for parent select:", err));
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen && data.account_type) {
             axios.get(route('api.accounts.next-code'), {
                 params: { type: data.account_type }
             })
-            .then(res => {
-                if (res.data && res.data.next_code) {
-                    setData('account_code', res.data.next_code);
-                }
-            })
-            .catch(err => {
-                console.error("Failed to fetch next account code:", err);
-            });
+                .then(res => {
+                    if (res.data && res.data.next_code) {
+                        setData('account_code', res.data.next_code);
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch next account code:", err);
+                });
         }
     }, [isOpen, data.account_type]);
 
@@ -89,6 +165,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         onChange={e => setData('account_code', e.target.value)}
                         error={errors.account_code}
                         required
+                        disabled={data.is_locked}
                     />
                     <CommonInput
                         label="Account Name"
@@ -96,53 +173,138 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         onChange={e => setData('name', e.target.value)}
                         error={errors.name}
                         required
+                        disabled={data.is_locked}
                     />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Account Type</label>
-                        <select
-                            value={data.account_type}
-                            onChange={e => handleTypeChange(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00713D]/20 focus:border-[#00713D] transition-all"
-                        >
-                            <option value="asset">Asset</option>
-                            <option value="liability">Liability</option>
-                            <option value="equity">Equity</option>
-                            <option value="income">Income</option>
-                            <option value="expense">Expense</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Detail Type</label>
-                        <select
-                            value={data.sub_type}
-                            onChange={e => setData('sub_type', e.target.value)}
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00713D]/20 focus:border-[#00713D] transition-all"
-                        >
-                            {subtypeOptions[data.account_type].map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <CommonInput
+                        type="select"
+                        label="Account Type"
+                        value={data.account_type}
+                        onChange={e => handleTypeChange(e.target.value)}
+                        error={errors.account_type}
+                        required
+                        disabled={data.is_locked}
+                    >
+                        <option value="asset">Asset</option>
+                        <option value="liability">Liability</option>
+                        <option value="equity">Equity</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </CommonInput>
+
+                    <CommonInput
+                        type="select"
+                        label="Detail Type"
+                        value={data.sub_type}
+                        onChange={e => setData('sub_type', e.target.value)}
+                        error={errors.sub_type}
+                        required
+                        options={subtypeOptions[data.account_type]}
+                        disabled={data.is_locked}
+                    />
                 </div>
 
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
-                        <textarea
+                <div className="pt-4 border-t border-slate-150">
+                    <Toggle
+                        checked={data.is_subaccount}
+                        onChange={val => setData('is_subaccount', val)}
+                        label="Make this a sub-account"
+                        description="Sub-accounts nest under parent accounts in financial statements."
+                        disabled={data.is_locked}
+                    />
+                </div>
+
+                {data.is_subaccount && (
+                    <div className="pt-4 border-t border-slate-150 space-y-4">
+                        <CommonInput
+                            type="select"
+                            label="Parent Account"
+                            value={data.parent_id}
+                            onChange={e => setData('parent_id', e.target.value)}
+                            error={errors.parent_id}
+                            required={data.is_subaccount}
+                            disabled={data.is_locked}
+                        >
+                            <option value="">Select a parent account</option>
+                            {parentAccounts
+                                .map(acc => (
+                                    <option key={acc.value} value={acc.value}>
+                                        {acc.label} {acc.account_type ? `(${acc.account_type})` : ''}
+                                    </option>
+                                ))}
+                        </CommonInput>
+
+                        <CommonInput
+                            type="textarea"
+                            label="Description"
                             value={data.description}
                             onChange={e => setData('description', e.target.value)}
+                            error={errors.description}
                             rows="3"
-                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00713D]/20 focus:border-[#00713D] transition-all resize-none"
+                            className="resize-none"
+                            disabled={data.is_locked}
                         />
                     </div>
+                )}
+
+                {multicurrencyEnabled && (
+                    <div className="pt-4 border-t border-slate-100">
+                        <CommonInput
+                            type="select"
+                            label="Account Currency"
+                            value={data.currency}
+                            onChange={e => setData('currency', e.target.value)}
+                            error={errors.currency}
+                            disabled={data.is_locked}
+                        >
+                            <option value="LKR">Sri Lankan Rupee (LKR)</option>
+                            <option value="USD">United States Dollar (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                            <option value="GBP">British Pound (GBP)</option>
+                            <option value="AUD">Australian Dollar (AUD)</option>
+                        </CommonInput>
+                        <p className="mt-1.5 text-[10px] text-slate-400 font-medium italic">All transactions for this account will be recorded in this currency.</p>
+                    </div>
+                )}
+
+                {['asset', 'liability', 'equity'].includes(data.account_type) && (
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                        <CommonInput
+                            type="text"
+                            label="Opening Balance"
+                            value={data.opening_balance}
+                            onChange={handleBalanceChange}
+                            onFocus={e => e.target.select()}
+                            onBlur={handleBalanceBlur}
+                            error={errors.opening_balance}
+                            icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || 'LKR'}</span>}
+                            disabled={data.is_locked}
+                        />
+                        <CommonInput
+                            type="date"
+                            label="As of Date"
+                            value={data.opening_balance_date}
+                            onChange={handleDateChange}
+                            error={errors.opening_balance_date}
+                            disabled={data.is_locked}
+                        />
+                    </div>
+                )}
+
+                <div className="pt-4 border-t border-slate-150">
+                    <Toggle
+                        checked={data.is_locked}
+                        onChange={val => setData('is_locked', val)}
+                        label="Lock Account"
+                        description="Locking prevents deletion or modification of the account details."
+                    />
                 </div>
 
                 <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
-                    <CommonButton variant="ghost" onClick={onClose}>Cancel</CommonButton>
-                    <CommonButton type="submit" variant="primary" processing={processing}>
+                    <CommonButton variant="ghost" onClick={onClose} size="sm">Cancel</CommonButton>
+                    <CommonButton type="submit" variant="primary" processing={processing} size="sm">
                         Save Account
                     </CommonButton>
                 </div>

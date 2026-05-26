@@ -14,7 +14,7 @@ export default function Onboarding({ company, salesSettings }) {
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-primary-100 selection:text-primary-900">
             <Head title="Setup Your Workspace" />
 
             {/* Header */}
@@ -28,16 +28,14 @@ export default function Onboarding({ company, salesSettings }) {
                         <nav className="flex items-center gap-2">
                             {steps.map((s, i) => (
                                 <React.Fragment key={s.id}>
-                                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${
-                                        step === s.id 
-                                            ? 'bg-emerald-50 text-[#00713D]' 
-                                            : step > s.id 
-                                                ? 'text-slate-400' 
+                                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${step === s.id
+                                            ? 'bg-emerald-50 text-[#00713D]'
+                                            : step > s.id
+                                                ? 'text-slate-400'
                                                 : 'text-slate-300'
-                                    }`}>
-                                        <span className={`text-xs font-black h-5 w-5 rounded-full flex items-center justify-center border-2 ${
-                                            step === s.id ? 'border-[#00713D]' : 'border-current'
                                         }`}>
+                                        <span className={`text-xs font-black h-5 w-5 rounded-full flex items-center justify-center border-2 ${step === s.id ? 'border-[#00713D]' : 'border-current'
+                                            }`}>
                                             {step > s.id ? '✓' : s.id}
                                         </span>
                                         <span className="text-[10px] font-bold uppercase tracking-widest">{s.name}</span>
@@ -62,7 +60,7 @@ export default function Onboarding({ company, salesSettings }) {
                             <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                                 <CompanySettings settings={company} />
                                 <div className="p-8 bg-slate-50 border-t border-slate-200 flex justify-end">
-                                    <button 
+                                    <button
                                         onClick={() => setStep(2)}
                                         className="px-8 py-3 bg-[#00713D] text-white font-bold rounded-2xl hover:bg-[#005a30] transition-all hover:-translate-y-0.5 shadow-lg shadow-emerald-200 flex items-center gap-2"
                                     >
@@ -83,14 +81,14 @@ export default function Onboarding({ company, salesSettings }) {
                             <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                                 <SalesSettings settings={salesSettings} />
                                 <div className="p-8 bg-slate-50 border-t border-slate-200 flex justify-between">
-                                    <button 
+                                    <button
                                         onClick={() => setStep(1)}
                                         className="px-6 py-3 text-slate-600 font-bold hover:text-slate-900 transition-colors flex items-center gap-2"
                                     >
                                         <span className="material-icons text-sm">arrow_back</span>
                                         Back
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setStep(3)}
                                         className="px-8 py-3 bg-[#00713D] text-white font-bold rounded-2xl hover:bg-[#005a30] transition-all hover:-translate-y-0.5 shadow-lg shadow-emerald-200 flex items-center gap-2"
                                     >
@@ -110,8 +108,8 @@ export default function Onboarding({ company, salesSettings }) {
                                 </div>
                                 <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-4">You're all set!</h1>
                                 <p className="text-slate-500 text-sm font-medium mb-12">Your workspace is ready. You can now start creating invoices, tracking expenses, and growing your business.</p>
-                                
-                                <button 
+
+                                <button
                                     onClick={() => router.post(route('onboarding.complete'))}
                                     className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-slate-200 flex items-center justify-center gap-3 group"
                                 >

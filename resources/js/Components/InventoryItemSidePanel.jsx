@@ -1,12 +1,47 @@
 import { useForm, router, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import SlideOver from './SlideOver';
 import CommonInput from './CommonInput';
 import CommonButton from './CommonButton';
 import SearchableSelect from './SearchableSelect';
 import ItemCategorySidePanel from './ItemCategorySidePanel';
-import { useState } from 'react';
-import axios from 'axios';
+import QuickAddAccount from './QuickAddAccount';
+
+const Toggle = ({ checked, onChange, label, description }) => (
+    <label className="flex items-start gap-3 cursor-pointer select-none group">
+        <div className="relative mt-1">
+            <input
+                type="checkbox"
+                checked={checked}
+                onChange={e => onChange(e.target.checked)}
+                className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+        </div>
+        <div className="flex flex-col">
+            <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 transition-colors leading-tight">
+                {label}
+            </span>
+            {description && (
+                <span className="text-[10px] text-slate-400 mt-0.5 leading-normal">
+                    {description}
+                </span>
+            )}
+        </div>
+    </label>
+);
+
+const FormSection = ({ title, children, show = true }) => {
+    if (!show) return null;
+    return (
+        <div className="pt-4 border-t border-slate-150 space-y-3">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{title}</h3>
+            <div className="space-y-3">
+                {children}
+            </div>
+        </div>
+    );
+};
 
 export default function InventoryItemSidePanel({
     isOpen,
@@ -15,6 +50,9 @@ export default function InventoryItemSidePanel({
     categories = [],
     incomeAccounts = [],
     expenseAccounts = [],
+    inventoryAccounts = [],
+    suppliers = [],
+    allItems = [],
     onSuccess = null
 }) {
     const { auth } = usePage().props;
@@ -22,25 +60,96 @@ export default function InventoryItemSidePanel({
     const isEdit = !!item;
     const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
     const [localCategories, setLocalCategories] = useState(categories);
+    const [localInventoryAccounts, setLocalInventoryAccounts] = useState(inventoryAccounts);
+    const [localIncomeAccounts, setLocalIncomeAccounts] = useState(incomeAccounts);
+    const [localExpenseAccounts, setLocalExpenseAccounts] = useState(expenseAccounts);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [accountModalType, setAccountModalType] = useState('asset');
 
-    const { data, setData, post, patch, processing, errors, reset, clearErrors } = useForm({
+    const findDefaultAccounts = () => {
+        let defaultInventoryId = '';
+        if (inventoryAccounts && inventoryAccounts.length > 0) {
+            const match = inventoryAccounts.find(acc => acc.account_code === '1200' || acc.name.toLowerCase().includes('inventory asset') || acc.name.toLowerCase().includes('inventory'));
+            defaultInventoryId = match ? match.id : inventoryAccounts[0].id;
+        }
+
+        let defaultIncomeId = '';
+        if (incomeAccounts && incomeAccounts.length > 0) {
+            const match = incomeAccounts.find(acc => acc.account_code === '4000' || acc.name.toLowerCase().includes('sales income') || acc.name.toLowerCase().includes('sales'));
+            defaultIncomeId = match ? match.id : incomeAccounts[0].id;
+        }
+
+        let defaultExpenseId = '';
+        if (expenseAccounts && expenseAccounts.length > 0) {
+            const match = expenseAccounts.find(acc => acc.account_code === '5000' || acc.name.toLowerCase().includes('cost of goods sold') || acc.name.toLowerCase().includes('cogs'));
+            defaultExpenseId = match ? match.id : expenseAccounts[0].id;
+        }
+
+        return {
+            inventory_account_id: defaultInventoryId,
+            income_account_id: defaultIncomeId,
+            expense_account_id: defaultExpenseId
+        };
+    };
+
+    const initialDefaults = findDefaultAccounts();
+
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         type: 'service',
         name: '',
         sku: '',
         image: '',
         description: '',
-        sale_price: 0,
+        sale_price: '0.00',
         item_category_id: '',
-        income_account_id: '',
-        expense_account_id: '',
+        income_account_id: initialDefaults.income_account_id,
+        expense_account_id: initialDefaults.expense_account_id,
+        purchase_price: '0.00',
+        purchase_description: '',
+        preferred_supplier_id: '',
+        quantity_on_hand: '0',
+        as_of_date: '',
+        reorder_point: '0',
+        inventory_account_id: initialDefaults.inventory_account_id,
+        is_sold: true,
+        is_purchased: false,
+        bundle_items: []
     });
 
     const itemTypes = [
         { id: 'service', name: 'Service' },
-        { id: 'inventory', name: 'Inventory Item' },
+        { id: 'inventory', name: 'Inventory' },
         { id: 'non-inventory', name: 'Non-inventory' },
         { id: 'bundle', name: 'Bundle' },
     ];
+
+    const fileInputRef = useRef(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
+    useEffect(() => {
+        if (data.image instanceof File) {
+            const url = URL.createObjectURL(data.image);
+            setImagePreviewUrl(url);
+            return () => URL.revokeObjectURL(url);
+        } else {
+            setImagePreviewUrl(data.image || null);
+        }
+    }, [data.image]);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData('image', file);
+        }
+    };
+
+    const handleRemoveImage = (e) => {
+        e.stopPropagation();
+        setData('image', null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -52,17 +161,54 @@ export default function InventoryItemSidePanel({
                     sku: item.sku || '',
                     image: item.image || '',
                     description: item.description || '',
-                    sale_price: item.sale_price || 0,
+                    sale_price: item.sale_price ? parseFloat(item.sale_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00',
                     item_category_id: item.item_category_id || '',
                     income_account_id: item.income_account_id || '',
                     expense_account_id: item.expense_account_id || '',
+                    purchase_price: item.purchase_price ? parseFloat(item.purchase_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00',
+                    purchase_description: item.purchase_description || '',
+                    preferred_supplier_id: item.preferred_supplier_id || '',
+                    quantity_on_hand: item.quantity_on_hand ? Math.round(parseFloat(item.quantity_on_hand)).toString() : '0',
+                    as_of_date: item.as_of_date || '',
+                    reorder_point: item.reorder_point ? parseFloat(item.reorder_point).toLocaleString('en-US') : '0',
+                    inventory_account_id: item.inventory_account_id || '',
+                    is_sold: item.is_sold !== undefined ? !!item.is_sold : true,
+                    is_purchased: item.is_purchased !== undefined ? !!item.is_purchased : false,
+                    bundle_items: item.bundle_components ? item.bundle_components.map(bc => ({
+                        item_id: bc.item_id || '',
+                        quantity: bc.quantity ? parseFloat(bc.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '1.00'
+                    })) : []
                 });
             } else {
-                reset();
+                const defaults = findDefaultAccounts();
+                setData({
+                    type: 'service',
+                    name: '',
+                    sku: '',
+                    image: '',
+                    description: '',
+                    sale_price: '0.00',
+                    item_category_id: '',
+                    income_account_id: defaults.income_account_id,
+                    expense_account_id: defaults.expense_account_id,
+                    purchase_price: '0.00',
+                    purchase_description: '',
+                    preferred_supplier_id: '',
+                    quantity_on_hand: '0',
+                    as_of_date: '',
+                    reorder_point: '0',
+                    inventory_account_id: defaults.inventory_account_id,
+                    is_sold: true,
+                    is_purchased: false,
+                    bundle_items: []
+                });
                 clearErrors();
             }
+            setLocalInventoryAccounts(inventoryAccounts);
+            setLocalIncomeAccounts(incomeAccounts);
+            setLocalExpenseAccounts(expenseAccounts);
         }
-    }, [isOpen, item, categories]);
+    }, [isOpen, item, categories, inventoryAccounts, incomeAccounts, expenseAccounts]);
 
     const handleCategorySuccess = () => {
         const oldIds = localCategories.map(c => c.id);
@@ -71,14 +217,68 @@ export default function InventoryItemSidePanel({
             onSuccess: (page) => {
                 const newCategories = page.props.categories;
                 setLocalCategories(newCategories);
-
-                // Find the one that's new
                 const newlyCreated = newCategories.find(c => !oldIds.includes(c.id));
                 if (newlyCreated) {
                     setData('item_category_id', newlyCreated.id);
                 }
             }
         });
+    };
+
+    const handleAccountSuccess = (newAcc, type) => {
+        router.reload({
+            only: ['inventoryAccounts', 'incomeAccounts', 'expenseAccounts'],
+            onSuccess: (page) => {
+                setLocalInventoryAccounts(page.props.inventoryAccounts || []);
+                setLocalIncomeAccounts(page.props.incomeAccounts || []);
+                setLocalExpenseAccounts(page.props.expenseAccounts || []);
+                if (newAcc && newAcc.value) {
+                    if (type === 'asset') {
+                        setData('inventory_account_id', newAcc.value);
+                    } else if (type === 'income') {
+                        setData('income_account_id', newAcc.value);
+                    } else if (type === 'expense') {
+                        setData('expense_account_id', newAcc.value);
+                    }
+                }
+            }
+        });
+    };
+
+    const handleTypeChange = (newType) => {
+        setData(prev => {
+            const updated = { ...prev, type: newType };
+            if (newType === 'inventory') {
+                updated.is_sold = true;
+                updated.is_purchased = true;
+            } else if (newType === 'bundle') {
+                updated.is_sold = true;
+                updated.is_purchased = false;
+            } else {
+                updated.is_sold = true;
+                updated.is_purchased = false;
+            }
+            return updated;
+        });
+    };
+
+    const addBundleItem = () => {
+        setData('bundle_items', [...data.bundle_items, { item_id: '', quantity: '1.00' }]);
+    };
+
+    const updateBundleItem = (index, field, value) => {
+        const updated = data.bundle_items.map((item, idx) => {
+            if (idx === index) {
+                return { ...item, [field]: value };
+            }
+            return item;
+        });
+        setData('bundle_items', updated);
+    };
+
+    const removeBundleItem = (index) => {
+        const updated = data.bundle_items.filter((_, idx) => idx !== index);
+        setData('bundle_items', updated);
     };
 
     const submit = (e) => {
@@ -91,11 +291,22 @@ export default function InventoryItemSidePanel({
         };
 
         if (isEdit) {
-            patch(route('items.update', item.id), options);
+            transform((data) => ({
+                ...data,
+                _method: 'PATCH'
+            }));
+            post(route('items.update', item.id), options);
         } else {
             post(route('items.store'), options);
         }
     };
+
+    // Conditional visibility checkers
+    const showInventoryDetails = data.type === 'inventory';
+    const showSalesSection = data.type === 'inventory' || data.type === 'bundle' || ((data.type === 'service' || data.type === 'non-inventory') && data.is_sold);
+    const showPurchasingSection = data.type === 'inventory' || ((data.type === 'service' || data.type === 'non-inventory') && data.is_purchased);
+    const showBundleSection = data.type === 'bundle';
+    const showToggles = data.type === 'service' || data.type === 'non-inventory';
 
     return (
         <SlideOver
@@ -103,130 +314,418 @@ export default function InventoryItemSidePanel({
             onClose={onClose}
             title={isEdit ? "Edit Product/Service" : "New Product/Service"}
         >
-            <form onSubmit={submit} className="space-y-8">
-                <section>
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Item Type</label>
-                    <div className="grid grid-cols-2 gap-2">
+            <form onSubmit={submit} className="space-y-5">
+
+                    {/* Item Type Selection */}
+                    <div className="grid grid-cols-4 gap-1.5">
                         {itemTypes.map((type) => (
                             <button
                                 key={type.id}
                                 type="button"
-                                onClick={() => setData('type', type.id)}
-                                className={`px-3 py-2.5 rounded-xl border text-[11px] font-bold transition-all ${
-                                    data.type === type.id
-                                    ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm'
-                                    : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-slate-700'
-                                }`}
+                                onClick={() => handleTypeChange(type.id)}
+                                className={`px-1 py-1.5 rounded-sm border text-[10px] font-bold transition-all text-center ${data.type === type.id
+                                    ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-500 hover:border-primary-200 hover:text-slate-700'
+                                    }`}
                             >
                                 {type.name}
                             </button>
                         ))}
                     </div>
-                    {errors.type && <p className="mt-1 text-xs text-red-600">{errors.type}</p>}
-                </section>
+                    {errors.type && <p className="mt-0.5 text-xs text-red-600">{errors.type}</p>}
 
-                <CommonInput
-                    label="Name"
-                    value={data.name}
-                    onChange={e => setData('name', e.target.value)}
-                    error={errors.name}
-                    required
-                    placeholder="e.g. Professional Consulting"
-                />
+                    {/* 1. Basic Information */}
+                    <FormSection title="Basic Information">
+                        <div className="flex flex-col sm:flex-row gap-4 items-start">
+                            {/* Left Column: Input Fields */}
+                            <div className="flex-1 w-full space-y-3">
+                                <CommonInput
+                                    label="Name"
+                                    value={data.name}
+                                    onChange={e => setData('name', e.target.value)}
+                                    error={errors.name}
+                                    required
+                                    placeholder="e.g. Professional Consulting"
+                                />
 
-                <div className="grid grid-cols-2 gap-4">
-                    <CommonInput
-                        label="SKU"
-                        value={data.sku}
-                        onChange={e => setData('sku', e.target.value)}
-                        error={errors.sku}
-                        placeholder="Optional"
-                    />
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
-                        <SearchableSelect
-                            options={localCategories.map(c => ({ value: c.id, label: c.name }))}
-                            value={data.item_category_id}
-                            onChange={val => setData('item_category_id', val)}
-                            placeholder="Select category"
-                            onAddNew={() => setIsCategoryPanelOpen(true)}
-                        />
-                        {errors.item_category_id && <p className="mt-1 text-xs text-red-600">{errors.item_category_id}</p>}
-                    </div>
-                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <CommonInput
+                                        label="SKU"
+                                        value={data.sku}
+                                        onChange={e => setData('sku', e.target.value)}
+                                        error={errors.sku}
+                                        placeholder="Optional"
+                                    />
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Category</label>
+                                        <SearchableSelect
+                                            options={localCategories.map(c => ({ value: c.id, label: c.name }))}
+                                            value={data.item_category_id}
+                                            onChange={val => setData('item_category_id', val)}
+                                            placeholder="Select category"
+                                            onAddNew={() => setIsCategoryPanelOpen(true)}
+                                        />
+                                        {errors.item_category_id && <p className="mt-1 text-xs text-red-600">{errors.item_category_id}</p>}
+                                    </div>
+                                </div>
+                            </div>
 
-                <div className="bg-slate-50/50 -mx-6 px-6 py-6 border-y border-slate-100 space-y-6">
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Sales Price / Rate</label>
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
-                            <input
-                                type="text"
-                                value={data.sale_price}
-                                onChange={e => setData('sale_price', e.target.value)}
-                                onFocus={e => e.target.select()}
-                                onBlur={e => {
-                                    const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
-                                    setData('sale_price', num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                                }}
-                                className="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
+                            {/* Right Column: Passport Photo Upload */}
+                            <div className="flex flex-col items-center sm:items-start shrink-0 pt-1">
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1 self-start">Photo</label>
+                                <div
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="relative w-24 h-24 border border-dashed border-slate-300 hover:border-primary-500 hover:bg-slate-50 rounded-sm transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group select-none bg-white shadow-sm"
+                                >
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileChange}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+
+                                    {imagePreviewUrl ? (
+                                        <>
+                                            <img
+                                                src={imagePreviewUrl}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                                                <svg className="w-4 h-4 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                <span className="text-[9px] font-bold text-white uppercase tracking-wider">Change</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveImage}
+                                                className="absolute top-1 right-1 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100"
+                                                title="Remove Photo"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-2 text-center">
+                                            <svg className="w-5 h-5 text-slate-400 mb-1 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-primary-500 transition-colors">Upload</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {errors.image && <p className="mt-1 text-xs text-red-600">{errors.image}</p>}
+                            </div>
+                        </div>
+                    </FormSection>
+
+                    {/* Toggles for Sales/Purchasing (Service / Non-inventory only) */}
+                    {showToggles && (
+                        <div className="pt-4 border-t border-slate-150 space-y-3">
+                            <Toggle
+                                checked={data.is_sold}
+                                onChange={val => setData('is_sold', val)}
+                                label="I sell this to my customers"
+                                description="Enable this if the item is sold in invoices or receipts."
+                            />
+                            <Toggle
+                                checked={data.is_purchased}
+                                onChange={val => setData('is_purchased', val)}
+                                label="I purchase this from a supplier"
+                                description="Enable this if the item is bought via purchase orders or bills."
                             />
                         </div>
-                        {errors.sale_price && <p className="mt-1 text-xs text-red-600">{errors.sale_price}</p>}
-                    </div>
+                    )}
 
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Income Account</label>
-                        <SearchableSelect
-                            options={incomeAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
-                            value={data.income_account_id}
-                            onChange={val => setData('income_account_id', val)}
-                            placeholder="Link to Income Account"
-                        />
-                        {errors.income_account_id && <p className="mt-1 text-xs text-red-600">{errors.income_account_id}</p>}
-                    </div>
+                    {/* 2. Inventory Details Section */}
+                    <FormSection title="Inventory Details" show={showInventoryDetails}>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Initial Qty on Hand</label>
+                                <input
+                                    type="text"
+                                    value={data.quantity_on_hand}
+                                    onChange={e => setData('quantity_on_hand', e.target.value)}
+                                    onFocus={e => e.target.select()}
+                                    onBlur={e => {
+                                        const num = Math.round(parseFloat(String(e.target.value).replace(/,/g, '')) || 0);
+                                        setData('quantity_on_hand', num.toString());
+                                    }}
+                                    className="w-full px-2 h-[30px] bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all font-mono"
+                                    placeholder="0"
+                                />
+                                {errors.quantity_on_hand && <p className="mt-1 text-xs text-red-600">{errors.quantity_on_hand}</p>}
+                            </div>
 
-                    <div>
-                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Expense Account</label>
-                        <SearchableSelect
-                            options={expenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
-                            value={data.expense_account_id}
-                            onChange={val => setData('expense_account_id', val)}
-                            placeholder="Link to Expense Account"
-                        />
-                        {errors.expense_account_id && <p className="mt-1 text-xs text-red-600">{errors.expense_account_id}</p>}
-                    </div>
-                </div>
+                            <CommonInput
+                                type="date"
+                                label="As of Date"
+                                value={data.as_of_date}
+                                onChange={e => setData('as_of_date', e.target.value)}
+                                error={errors.as_of_date}
+                            />
+                        </div>
 
-                <div className="space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
-                    <textarea
-                        value={data.description}
-                        onChange={e => setData('description', e.target.value)}
-                        rows="3"
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-                        placeholder="Brief description for invoices..."
-                    />
-                    {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
-                </div>
-                <div className="pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
-                    <CommonButton variant="ghost" onClick={onClose} type="button">Cancel</CommonButton>
-                    <CommonButton variant="primary" type="submit" processing={processing}>
-                        {isEdit ? "Update Item" : "Save Item"}
-                    </CommonButton>
-                </div>
-            </form>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Reorder Point (Min Stock)</label>
+                                <input
+                                    type="text"
+                                    value={data.reorder_point}
+                                    onChange={e => setData('reorder_point', e.target.value)}
+                                    onFocus={e => e.target.select()}
+                                    onBlur={e => {
+                                        const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
+                                        setData('reorder_point', num.toLocaleString('en-US'));
+                                    }}
+                                    className="w-full px-2 h-[30px] bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all font-mono"
+                                    placeholder="0"
+                                />
+                                {errors.reorder_point && <p className="mt-1 text-xs text-red-600">{errors.reorder_point}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Inventory Asset Account</label>
+                                <SearchableSelect
+                                    options={localInventoryAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
+                                    value={data.inventory_account_id}
+                                    onChange={val => setData('inventory_account_id', val)}
+                                    placeholder="Link to Inventory Asset"
+                                    onAddNew={() => {
+                                        setAccountModalType('asset');
+                                        setIsAccountModalOpen(true);
+                                    }}
+                                />
+                                {errors.inventory_account_id && <p className="mt-1 text-xs text-red-600">{errors.inventory_account_id}</p>}
+                            </div>
+                        </div>
+                    </FormSection>
+
+                    {/* 3. Sales Information Section */}
+                    <FormSection title="Sales Information" show={showSalesSection}>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Sales Price / Rate</label>
+                                <div className="relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
+                                    <input
+                                        type="text"
+                                        value={data.sale_price}
+                                        onChange={e => setData('sale_price', e.target.value)}
+                                        onFocus={e => e.target.select()}
+                                        onBlur={e => {
+                                            const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
+                                            setData('sale_price', num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                        }}
+                                        className="w-full pl-6 pr-2 h-[30px] bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all font-mono"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                {errors.sale_price && <p className="mt-1 text-xs text-red-600">{errors.sale_price}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Income Account</label>
+                                <SearchableSelect
+                                    options={localIncomeAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
+                                    value={data.income_account_id}
+                                    onChange={val => setData('income_account_id', val)}
+                                    placeholder="Link to Income Account"
+                                    onAddNew={() => {
+                                        setAccountModalType('income');
+                                        setIsAccountModalOpen(true);
+                                    }}
+                                />
+                                {errors.income_account_id && <p className="mt-1 text-xs text-red-600">{errors.income_account_id}</p>}
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="font-bold text-slate-600 ml-0.5 text-xs">Sales Description</label>
+                            <textarea
+                                value={data.description}
+                                onChange={e => setData('description', e.target.value)}
+                                rows="2"
+                                className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all resize-none"
+                                placeholder="Description for invoices..."
+                            />
+                            {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
+                        </div>
+                    </FormSection>
+
+                    {/* 4. Purchasing Information Section */}
+                    <FormSection title="Purchasing Information" show={showPurchasingSection}>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Purchase Cost</label>
+                                <div className="relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
+                                    <input
+                                        type="text"
+                                        value={data.purchase_price}
+                                        onChange={e => setData('purchase_price', e.target.value)}
+                                        onFocus={e => e.target.select()}
+                                        onBlur={e => {
+                                            const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
+                                            setData('purchase_price', num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                        }}
+                                        className="w-full pl-6 pr-2 h-[30px] bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all font-mono"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                {errors.purchase_price && <p className="mt-1 text-xs text-red-600">{errors.purchase_price}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Expense Account</label>
+                                <SearchableSelect
+                                    options={localExpenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
+                                    value={data.expense_account_id}
+                                    onChange={val => setData('expense_account_id', val)}
+                                    placeholder="Link to Expense Account"
+                                    onAddNew={() => {
+                                        setAccountModalType('expense');
+                                        setIsAccountModalOpen(true);
+                                    }}
+                                />
+                                {errors.expense_account_id && <p className="mt-1 text-xs text-red-600">{errors.expense_account_id}</p>}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Preferred Supplier</label>
+                            <SearchableSelect
+                                options={suppliers.map(s => ({ value: s.id, label: s.name }))}
+                                value={data.preferred_supplier_id}
+                                onChange={val => setData('preferred_supplier_id', val)}
+                                placeholder="Select Preferred Supplier"
+                            />
+                            {errors.preferred_supplier_id && <p className="mt-1 text-xs text-red-600">{errors.preferred_supplier_id}</p>}
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="font-bold text-slate-600 ml-0.5 text-xs">Purchase Description</label>
+                            <textarea
+                                value={data.purchase_description}
+                                onChange={e => setData('purchase_description', e.target.value)}
+                                rows="2"
+                                className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all resize-none"
+                                placeholder="Description for purchase orders/bills..."
+                            />
+                            {errors.purchase_description && <p className="mt-1 text-xs text-red-600">{errors.purchase_description}</p>}
+                        </div>
+                    </FormSection>
+
+                    {/* 5. Bundle Items Section */}
+                    {showBundleSection && (
+                        <div className="pt-4 border-t border-slate-150 space-y-3">
+                            <div className="flex items-center justify-between pb-1">
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bundle Components</h3>
+                                <button
+                                    type="button"
+                                    onClick={addBundleItem}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold bg-primary-50 border border-primary-200 text-primary-600 rounded-sm hover:bg-primary-100 transition-all uppercase tracking-wider shadow-sm"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                                    Add Line
+                                </button>
+                            </div>
+                            {errors.bundle_items && <p className="text-xs text-red-600 font-bold">{errors.bundle_items}</p>}
+
+                            <div className="border border-slate-150 rounded bg-white overflow-hidden shadow-2xs">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                                            <th className="px-3 py-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-2/3">Product / Service</th>
+                                            <th className="px-3 py-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-1/4">Quantity</th>
+                                            <th className="px-3 py-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {data.bundle_items.map((bi, idx) => (
+                                            <tr key={idx} className="group hover:bg-slate-50/20 transition-colors">
+                                                <td className="p-2">
+                                                    <SearchableSelect
+                                                        options={allItems.map(i => ({ value: i.id, label: `${i.name} (${i.sku || 'No SKU'})` }))}
+                                                        value={bi.item_id}
+                                                        onChange={val => updateBundleItem(idx, 'item_id', val)}
+                                                        placeholder="Select item"
+                                                        variant="table"
+                                                        hideChevron
+                                                    />
+                                                    {errors[`bundle_items.${idx}.item_id`] && (
+                                                        <p className="mt-0.5 text-[9px] text-red-500 font-bold ml-1">{errors[`bundle_items.${idx}.item_id`]}</p>
+                                                    )}
+                                                </td>
+                                                <td className="p-2">
+                                                    <input
+                                                        type="text"
+                                                        value={bi.quantity}
+                                                        onChange={e => updateBundleItem(idx, 'quantity', e.target.value)}
+                                                        onFocus={e => e.target.select()}
+                                                        onBlur={e => {
+                                                            const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 1.00;
+                                                            updateBundleItem(idx, 'quantity', num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                                        }}
+                                                        className="w-full px-2 py-1 bg-transparent border-none focus:bg-slate-50/50 focus:ring-0 text-xs font-mono text-slate-800 text-right h-8"
+                                                        placeholder="1.00"
+                                                    />
+                                                    {errors[`bundle_items.${idx}.quantity`] && (
+                                                        <p className="mt-0.5 text-[9px] text-red-500 font-bold text-right mr-1">{errors[`bundle_items.${idx}.quantity`]}</p>
+                                                    )}
+                                                </td>
+                                                <td className="p-2 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeBundleItem(idx)}
+                                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {data.bundle_items.length === 0 && (
+                                            <tr>
+                                                <td colSpan="3" className="px-3 py-6 text-center">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No bundle items added</span>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+                        <CommonButton variant="ghost" onClick={onClose} type="button" size="sm">Cancel</CommonButton>
+                        <CommonButton variant="primary" type="submit" processing={processing} size="sm">
+                            {isEdit ? "Update Item" : "Save Item"}
+                        </CommonButton>
+                    </div>
+                </form>
 
             <ItemCategorySidePanel
                 isOpen={isCategoryPanelOpen}
                 onClose={() => setIsCategoryPanelOpen(false)}
                 parents={localCategories}
-                onSuccess={(page) => {
-                    // This is tricky because the backend might not return the created category object in the response
-                    // Usually we reload and find the latest one
-                    handleCategorySuccess();
-                }}
+                onSuccess={handleCategorySuccess}
             />
+
+            {isAccountModalOpen && (
+                <QuickAddAccount
+                    isOpen={isAccountModalOpen}
+                    onClose={() => setIsAccountModalOpen(false)}
+                    defaultType={accountModalType}
+                    onSuccess={(newAcc) => handleAccountSuccess(newAcc, accountModalType)}
+                />
+            )}
         </SlideOver>
     );
 }

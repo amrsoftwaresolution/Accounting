@@ -6,7 +6,7 @@ export default function Index({ users }) {
     return (
         <AuthenticatedLayout>
             <Head title="Team Management" />
-            
+
             <div className="py-8 px-4 sm:px-6 lg:px-8">
                 {/* Header Section */}
                 <div className="mb-8 flex items-center justify-between">
@@ -90,7 +90,7 @@ export default function Index({ users }) {
                                         <td className="px-6 py-4">
                                             {user.manager ? (
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-[10px] font-black text-blue-600">
+                                                    <div className="w-6 h-6 rounded-lg bg-primary-50 flex items-center justify-center text-[10px] font-black text-primary-600">
                                                         {user.manager.name.charAt(0)}
                                                     </div>
                                                     <span className="text-xs font-bold text-slate-600">{user.manager.name}</span>

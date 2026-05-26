@@ -10,7 +10,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             <section className="relative overflow-hidden pt-20 pb-32 lg:pt-32 lg:pb-48">
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/50 rounded-full blur-[120px]" />
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-100/50 rounded-full blur-[120px]" />
                     <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100/50 rounded-full blur-[120px]" />
                 </div>
 
@@ -90,25 +90,25 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <FeatureCard 
+                        <FeatureCard
                             icon="accounting"
                             title="Finance & Books"
                             description="Real-time ledger tracking, journals, and automated invoicing with multi-currency support."
                             color="green"
                         />
-                        <FeatureCard 
+                        <FeatureCard
                             icon="inventory"
                             title="Inventory Control"
                             description="Monitor warehouses, track suppliers, and manage stock levels with precision alerts."
                             color="green"
                         />
-                        <FeatureCard 
+                        <FeatureCard
                             icon="team"
                             title="Team Management"
                             description="Organize your workforce, assign roles, and track performance across departments."
                             color="green"
                         />
-                        <FeatureCard 
+                        <FeatureCard
                             icon="analytics"
                             title="Business Insights"
                             description="Comprehensive dashboards and reports that give you a bird's eye view of your growth."
@@ -137,7 +137,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             <section className="py-32 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[#00713D] -z-10" />
                 <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[600px] h-[600px] bg-green-500 rounded-full blur-[120px] opacity-50" />
-                
+
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
                     <h2 className="text-4xl lg:text-6xl font-black mb-8 leading-tight">Ready to take your business to the next level?</h2>
                     <p className="text-xl text-green-100 mb-12">Join thousands of businesses that trust {usePage().props.appName} for their daily operations.</p>
@@ -158,7 +158,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 </div>
             </section>
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @keyframes fade-in-up {
                     from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
@@ -205,7 +206,7 @@ function FeatureIcon({ name }) {
 function StatItem({ value, label }) {
     return (
         <div className="text-center group">
-            <div className="text-3xl lg:text-5xl font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">{value}</div>
+            <div className="text-3xl lg:text-5xl font-black text-slate-900 mb-2 group-hover:text-primary-600 transition-colors">{value}</div>
             <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</div>
         </div>
     );

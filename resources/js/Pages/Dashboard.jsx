@@ -41,7 +41,7 @@ export default function Dashboard({ auth }) {
                     <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between">
                             <h3 className="font-bold text-xs text-slate-800 uppercase tracking-widest">Recent Activity</h3>
-                            <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider">All</button>
+                            <button className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-wider">All</button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -82,7 +82,7 @@ function StatCard({ title, value, change, isPositive, isNeutral, icon }) {
     return (
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 group">
             <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                <div className="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
                     <DashboardIcon name={icon} />
                 </div>
                 {!isNeutral && (
@@ -114,7 +114,7 @@ function TransactionRow({ name, category, status, date, amount, negative }) {
                 </span>
             </td>
             <td className="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-tight">{date}</td>
-            <td className={`px-5 py-3 text-xs font-mono font-bold text-right ${negative ? 'text-slate-900' : 'text-blue-600'}`}>
+            <td className={`px-5 py-3 text-xs font-mono font-bold text-right ${negative ? 'text-slate-900' : 'text-primary-600'}`}>
                 {amount}
             </td>
         </tr>
