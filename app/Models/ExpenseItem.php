@@ -11,6 +11,6 @@ class ExpenseItem extends Model
     use HasUuids;
 
     protected $fillable = [
-        'expense_id', 'chart_of_acc_id', 'description', 'amount'
+        'expense_id', 'item_id', 'chart_of_acc_id', 'description', 'quantity', 'rate', 'amount'
     ];
 }

@@ -11,6 +11,6 @@ class BillItem extends Model
     use HasUuids;
 
     protected $fillable = [
-        'bill_id', 'chart_of_acc_id', 'description', 'amount'
+        'bill_id', 'item_id', 'chart_of_acc_id', 'description', 'quantity', 'rate', 'amount'
     ];
 }

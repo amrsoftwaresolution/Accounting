@@ -77,7 +77,7 @@ class CreditNoteController extends Controller
             ]);
 
             // Credit Accounts Receivable (Reduce balance)
-            $arAccount = ChartOfAcc::where('sub_type', 'accounts-receivable')->first();
+            $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
                 'chart_of_acc_id' => $arAccount->id,
@@ -89,7 +89,7 @@ class CreditNoteController extends Controller
             // Debit Income / Returns account
             foreach ($request->items as $itemData) {
                 $itemModel = Item::find($itemData['product']);
-                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+                $incomeAccount = $itemModel?->income_account_id ?? (ChartOfAcc::where('account_type', 'income')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-income')->id);
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,

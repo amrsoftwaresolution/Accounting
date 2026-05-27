@@ -43,7 +43,7 @@ export default forwardRef(function CommonInput(
         underlined: "border-b border-slate-300 bg-transparent focus:border-green-500 focus:ring-0 rounded-none px-0"
     };
 
-    const baseInputClasses = `w-full text-slate-900 transition-all placeholder:text-slate-400 ${variant !== 'table' ? sizeClasses[size] : ''} ${variantClasses[variant]}`;
+    const baseInputClasses = `w-full text-slate-900 transition-all placeholder:text-slate-400 ${variant !== 'table' ? (type === 'textarea' ? 'text-xs px-2 rounded-sm' : sizeClasses[size]) : ''} ${variantClasses[variant]}`;
     const errorClasses = error ? "border-red-300 focus:border-red-500 focus:ring-red-500/10" : "";
 
 
@@ -98,7 +98,7 @@ export default forwardRef(function CommonInput(
                     <textarea
                         {...props}
                         ref={inputRef}
-                        className={`${baseInputClasses} ${errorClasses} min-h-[80px] py-2 ${className} ${inputClass}`}
+                        className={`${baseInputClasses} ${errorClasses} py-1.5 resize-y ${className} ${inputClass}`}
                     />
                 ) : type === 'select' ? (
                     <select

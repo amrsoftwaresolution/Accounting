@@ -89,7 +89,7 @@ class LookupController extends Controller
     {
         $search = $request->query('search');
 
-        $items = \App\Models\Item::select('id', 'name', 'sale_price')
+        $items = \App\Models\Item::select('id', 'name', 'sale_price', 'purchase_price', 'description')
             ->when($search, function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('sku', 'like', "%{$search}%");
@@ -100,7 +100,9 @@ class LookupController extends Controller
                 return [
                     'value' => $item->id,
                     'label' => $item->name,
-                    'rate' => $item->sale_price
+                    'rate' => $item->sale_price,
+                    'purchase_price' => $item->purchase_price,
+                    'description' => $item->description
                 ];
             });
 
@@ -166,6 +168,76 @@ class LookupController extends Controller
 
         return response()->json([
             'success' => true
+        ]);
+    }
+
+    public function customerInfo(Customer $customer)
+    {
+        $customer->load('addresses');
+        $billingAddress = $customer->addresses->where('type', 'billing')->first();
+        
+        $addressString = '';
+        if ($billingAddress) {
+            $parts = array_filter([
+                $billingAddress->address_line_1,
+                $billingAddress->address_line_2,
+                $billingAddress->city,
+                $billingAddress->province,
+                $billingAddress->postal_code,
+                $billingAddress->country
+            ]);
+            $addressString = implode(", ", $parts);
+        }
+
+        return response()->json([
+            'email' => $customer->email,
+            'billing_address' => $addressString
+        ]);
+    }
+
+    public function customerInvoices(Customer $customer)
+    {
+        $invoices = \App\Models\Invoice::where('customer_id', $customer->id)
+            ->where('status', 'posted')
+            ->where('company_id', session('active_company_id'))
+            ->get()
+            ->map(function($invoice) {
+                $allocatedAmount = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id)
+                    ->sum('amount');
+                $openBalance = $invoice->total_amount - $allocatedAmount;
+                
+                return [
+                    'id' => $invoice->id,
+                    'invoice_no' => $invoice->invoice_no,
+                    'invoice_date' => $invoice->invoice_date,
+                    'due_date' => $invoice->due_date,
+                    'total_amount' => $invoice->total_amount,
+                    'open_balance' => $openBalance
+                ];
+            })
+            ->filter(fn($inv) => $inv['open_balance'] > 0.01)
+            ->values();
+
+        return response()->json($invoices);
+    }
+
+    public function itemCreateOptions()
+    {
+        $categories = \App\Models\ItemCategory::orderBy('name')->get();
+        $incomeAccounts = \App\Models\ChartOfAcc::where('account_type', 'Income')->orderBy('account_code')->get();
+        $expenseAccounts = \App\Models\ChartOfAcc::where('account_type', 'Expense')->orderBy('account_code')->get();
+        $inventoryAccounts = \App\Models\ChartOfAcc::where('account_type', 'asset')->orderBy('account_code')->get();
+        $suppliers = \App\Models\Supplier::orderBy('display_name')->get()
+            ->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name]);
+        $allItems = \App\Models\Item::where('type', '!=', 'bundle')->orderBy('name')->get();
+
+        return response()->json([
+            'categories' => $categories,
+            'incomeAccounts' => $incomeAccounts,
+            'expenseAccounts' => $expenseAccounts,
+            'inventoryAccounts' => $inventoryAccounts,
+            'suppliers' => $suppliers,
+            'allItems' => $allItems,
         ]);
     }
 }

@@ -17,41 +17,15 @@ class ItemController extends Controller
     public function index()
     {
         $items = Item::with(['category', 'incomeAccount', 'expenseAccount', 'inventoryAccount', 'preferredSupplier', 'bundleComponents.item'])->get();
-        $categories = ItemCategory::all();
-        $incomeAccounts = ChartOfAcc::where('account_type', 'Income')->get();
-        $expenseAccounts = ChartOfAcc::where('account_type', 'Expense')->get();
-        $inventoryAccounts = ChartOfAcc::where('account_type', 'asset')->get();
-        $suppliers = Supplier::all();
-        $allItems = Item::where('type', '!=', 'bundle')->get();
 
         return Inertia::render('Inventory/ItemList', [
             'items' => $items,
-            'categories' => $categories,
-            'incomeAccounts' => $incomeAccounts,
-            'expenseAccounts' => $expenseAccounts,
-            'inventoryAccounts' => $inventoryAccounts,
-            'suppliers' => $suppliers,
-            'allItems' => $allItems,
         ]);
     }
 
     public function create()
     {
-        $categories = ItemCategory::all();
-        $incomeAccounts = ChartOfAcc::where('account_type', 'Income')->get();
-        $expenseAccounts = ChartOfAcc::where('account_type', 'Expense')->get();
-        $inventoryAccounts = ChartOfAcc::where('account_type', 'asset')->get();
-        $suppliers = Supplier::all();
-        $allItems = Item::where('type', '!=', 'bundle')->get();
-
-        return Inertia::render('Inventory/ItemForm', [
-            'categories' => $categories,
-            'incomeAccounts' => $incomeAccounts,
-            'expenseAccounts' => $expenseAccounts,
-            'inventoryAccounts' => $inventoryAccounts,
-            'suppliers' => $suppliers,
-            'allItems' => $allItems,
-        ]);
+        return Inertia::render('Inventory/ItemForm');
     }
 
     private function sanitizePrices(Request $request)
@@ -153,21 +127,9 @@ class ItemController extends Controller
     public function edit(Item $item)
     {
         $item->load('bundleComponents.item');
-        $categories = ItemCategory::all();
-        $incomeAccounts = ChartOfAcc::where('account_type', 'Income')->get();
-        $expenseAccounts = ChartOfAcc::where('account_type', 'Expense')->get();
-        $inventoryAccounts = ChartOfAcc::where('account_type', 'asset')->get();
-        $suppliers = Supplier::all();
-        $allItems = Item::where('type', '!=', 'bundle')->where('id', '!=', $item->id)->get();
 
         return Inertia::render('Inventory/ItemForm', [
             'item' => $item,
-            'categories' => $categories,
-            'incomeAccounts' => $incomeAccounts,
-            'expenseAccounts' => $expenseAccounts,
-            'inventoryAccounts' => $inventoryAccounts,
-            'suppliers' => $suppliers,
-            'allItems' => $allItems,
         ]);
     }
 

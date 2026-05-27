@@ -35,6 +35,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/accounts/next-code', [\App\Http\Controllers\Api\LookupController::class, 'nextCode'])->name('api.accounts.next-code');
     Route::post('/api/accounts/save-date', [\App\Http\Controllers\Api\LookupController::class, 'saveOpeningBalanceDate'])->name('api.accounts.save-date');
     Route::get('/api/items', [\App\Http\Controllers\Api\LookupController::class, 'items'])->name('api.items');
+    Route::get('/api/items/create-options', [\App\Http\Controllers\Api\LookupController::class, 'itemCreateOptions'])->name('api.items.create-options');
+    Route::get('/api/customers/{customer}', [\App\Http\Controllers\Api\LookupController::class, 'customerInfo'])->name('api.customers.info');
+    Route::get('/api/customers/{customer}/invoices', [\App\Http\Controllers\Api\LookupController::class, 'customerInvoices'])->name('api.customers.invoices');
     Route::get('/api/categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('api.categories');
 
     Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);

@@ -123,11 +123,7 @@ class SalesReceiptController extends Controller
                 // Credit Income accounts
                 foreach ($items as $itemData) {
                     $itemModel = Item::find($itemData['product']);
-                    $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
-
-                    if (!$incomeAccount) {
-                        throw new \Exception('Income account not found for product: ' . $itemData['product']);
-                    }
+                    $incomeAccount = $itemModel?->income_account_id ?? (ChartOfAcc::where('account_type', 'income')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-income')->id);
 
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,

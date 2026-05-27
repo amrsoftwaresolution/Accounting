@@ -95,7 +95,7 @@ class InvoiceController extends Controller
             // Income Credits
             foreach ($request->items as $lineItem) {
                 $itemModel = \App\Models\Item::find($lineItem['product']);
-                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+                $incomeAccount = $itemModel?->income_account_id ?? (ChartOfAcc::where('account_type', 'income')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-income')->id);
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -108,7 +108,7 @@ class InvoiceController extends Controller
             }
 
             // Accounts Receivable Debit
-            $arAccount = ChartOfAcc::where('sub_type', 'accounts-receivable')->first();
+            $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
                 'chart_of_acc_id' => $arAccount->id,
@@ -135,7 +135,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoice')->with('success', 'credit Sale saved successfully.');
         }
 
-        return redirect()->back()->with('success', 'credit Sale saved successfully.');
+        return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'credit Sale saved successfully.');
     }
 
     public function edit(JournalEntry $journalEntry)
@@ -233,7 +233,7 @@ class InvoiceController extends Controller
 
             foreach ($request->items as $lineItem) {
                 $itemModel = \App\Models\Item::find($lineItem['product']);
-                $incomeAccount = $itemModel?->income_account_id ?? ChartOfAcc::where('account_type', 'income')->first()?->id;
+                $incomeAccount = $itemModel?->income_account_id ?? (ChartOfAcc::where('account_type', 'income')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-income')->id);
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -245,7 +245,7 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            $arAccount = ChartOfAcc::where('sub_type', 'accounts-receivable')->first();
+            $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
                 'chart_of_acc_id' => $arAccount->id,
@@ -258,6 +258,8 @@ class InvoiceController extends Controller
         $action = $request->input('action', 'save');
         if ($action === 'close') {
             return redirect()->route('dashboard')->with('success', 'Invoice updated successfully.');
+        } elseif ($action === 'new') {
+            return redirect()->route('invoice')->with('success', 'Invoice updated successfully.');
         }
 
         return redirect()->back()->with('success', 'Invoice updated successfully.');

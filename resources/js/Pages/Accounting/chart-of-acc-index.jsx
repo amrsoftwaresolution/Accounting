@@ -305,6 +305,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Name / Code</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Type</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Detail Type</th>
+                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Balance</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
                                 </tr>
@@ -335,6 +336,9 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                         </td>
                                         <td className="px-4 py-2.5 text-[11px] text-slate-600 capitalize">{account.account_type}</td>
                                         <td className="px-4 py-2.5 text-[11px] text-slate-600 capitalize">{account.sub_type?.replace(/-/g, ' ') || 'Main Account'}</td>
+                                        <td className="px-4 py-2.5 text-[11px] text-slate-500 max-w-[200px] truncate" title={account.description || ''}>
+                                            {account.description || '-'}
+                                        </td>
                                         <td className="px-4 py-2.5 text-[11px] font-bold text-slate-800 text-right">
                                             {['asset', 'equity', 'liability'].includes(account.account_type) ? (
                                                 `${account.currency || company?.home_currency} ${parseFloat(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -405,7 +409,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 ))}
                                 {filteredAccounts.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
+                                        <td colSpan={6} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
                                             No accounts found.
                                         </td>
                                     </tr>
@@ -489,7 +493,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                     </div>
 
                     {data.is_subaccount && (
-                        <div className="pt-4 border-t border-slate-150 space-y-4">
+                        <div className="pt-4 border-t border-slate-150">
                             <CommonInput
                                 type="select"
                                 label="Parent Account"
@@ -508,19 +512,21 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                         </option>
                                     ))}
                             </CommonInput>
-
-                            <CommonInput
-                                type="textarea"
-                                label="Description"
-                                value={data.description}
-                                onChange={e => setData('description', e.target.value)}
-                                error={errors.description}
-                                rows="3"
-                                className="resize-none"
-                                disabled={data.is_locked}
-                            />
                         </div>
                     )}
+
+                    <div className="pt-4 border-t border-slate-150">
+                        <CommonInput
+                            type="textarea"
+                            label="Description"
+                            value={data.description}
+                            onChange={e => setData('description', e.target.value)}
+                            error={errors.description}
+                            rows="3"
+                            className="resize-none"
+                            disabled={data.is_locked}
+                        />
+                    </div>
 
                     {multicurrencyEnabled && (
                         <div className="pt-4 border-t border-slate-100">

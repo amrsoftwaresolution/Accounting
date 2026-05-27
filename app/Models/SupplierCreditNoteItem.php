@@ -10,6 +10,6 @@ class SupplierCreditNoteItem extends Model
     use HasUuids;
 
     protected $fillable = [
-        'supplier_credit_note_id', 'item_id', 'description', 'quantity', 'rate', 'amount'
+        'supplier_credit_note_id', 'item_id', 'chart_of_acc_id', 'description', 'quantity', 'rate', 'amount'
     ];
 }

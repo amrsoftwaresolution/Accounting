@@ -6,7 +6,7 @@ import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
-import QuickAddItem from "@/Components/QuickAddItem";
+import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 
 export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote = null }) {
     const company = auth.company;
@@ -105,6 +105,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                 updated[index].rate = formatCurrencyValue(rateValue);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * rateValue);
+                updated[index].description = product.description || "";
             }
         }
 
@@ -134,7 +135,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
 
     return (
         <TransactionLayout
-            title={creditNote?.id ? `Edit Sales Return no.${data.creditNoteNo}` : `Sales Return no.${data.creditNoteNo}`}
+            title={`Refund Receipt #${data.creditNoteNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -196,7 +197,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
-                            label="Sales return date"
+                            label="Refund Receipt date"
                             value={data.creditNoteDate}
                             onChange={(e) => setData('creditNoteDate', e.target.value)}
                             size="sm"
@@ -205,7 +206,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     </div>
                     <div className="w-[160px]">
                         <CommonInput
-                            label="Sales return no."
+                            label="Refund Receipt no."
                             value={data.creditNoteNo}
                             onChange={(e) => setData('creditNoteNo', e.target.value)}
                             size="sm"
@@ -268,7 +269,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                 initialType="customer"
             />
 
-            <QuickAddItem
+            <InventoryItemSidePanel
                 isOpen={isItemModalOpen}
                 onClose={() => {
                     setIsItemModalOpen(false);

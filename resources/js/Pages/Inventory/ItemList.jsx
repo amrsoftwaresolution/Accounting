@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import CommonButton from '@/Components/CommonButton';
 import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
 
-export default function ItemList({ items: initialItems, categories, incomeAccounts, expenseAccounts, inventoryAccounts, suppliers, allItems }) {
+export default function ItemList({ items: initialItems }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || '$';
     const { delete: destroy } = useForm();
@@ -222,12 +222,6 @@ export default function ItemList({ items: initialItems, categories, incomeAccoun
                 isOpen={isPanelOpen}
                 onClose={() => setIsPanelOpen(false)}
                 item={selectedItem}
-                categories={categories}
-                incomeAccounts={incomeAccounts}
-                expenseAccounts={expenseAccounts}
-                inventoryAccounts={inventoryAccounts}
-                suppliers={suppliers}
-                allItems={allItems}
             />
         </AuthenticatedLayout>
     );

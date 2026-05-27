@@ -6,7 +6,7 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import TermModal from "@/Components/TermModal";
 import QuickAddPayee from "@/Components/QuickAddPayee";
-import QuickAddItem from "@/Components/QuickAddItem";
+import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import axios from "axios";
 
 export default function InvoiceForm({
@@ -36,6 +36,22 @@ export default function InvoiceForm({
         });
     };
 
+    const handleCustomerChange = (val) => {
+        setData(prev => ({ ...prev, customer: val }));
+        if (val) {
+            axios.get(route('api.customers.info', val)).then(res => {
+                if (res.data) {
+                    setData(prev => {
+                        const updates = { customer: val };
+                        if (res.data.email) updates.email = res.data.email;
+                        if (res.data.billing_address) updates.billingAddress = res.data.billing_address;
+                        return { ...prev, ...updates };
+                    });
+                }
+            }).catch(err => console.error("Failed to fetch customer info:", err));
+        }
+    };
+
     const fetchItems = (search = "") => {
         return axios.get(route('api.items', { search })).then(res => {
             setProductOptions(res.data);
@@ -50,7 +66,6 @@ export default function InvoiceForm({
 
     // 1. Define Invoice Specific Columns
     const INVOICE_COLUMNS = [
-        { key: "serviceDate", label: "Service Date", type: "date", width: "150px" },
         {
             key: "product",
             label: "Product/Service",
@@ -73,6 +88,48 @@ export default function InvoiceForm({
 
     const actionRef = useRef(lastSaveAction);
 
+    const calculateDueDate = (invoiceDateStr, termsStr) => {
+        if (!invoiceDateStr) return "";
+        const parts = invoiceDateStr.split('-');
+        if (parts.length !== 3) return "";
+        
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        
+        const date = new Date(year, month, day);
+        if (isNaN(date.getTime())) return "";
+
+        let daysToAdd = 30;
+        if (termsStr) {
+            const lowerTerms = termsStr.toLowerCase();
+            if (lowerTerms.includes("receipt")) {
+                daysToAdd = 0;
+            } else {
+                const match = termsStr.match(/\d+/);
+                if (match) {
+                    daysToAdd = parseInt(match[0], 10);
+                }
+            }
+        }
+        date.setDate(date.getDate() + daysToAdd);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const getInitialInvoiceDate = () => {
+        if (invoice?.invoiceDate) return invoice.invoiceDate;
+        const cached = localStorage.getItem('last_invoice_date');
+        if (cached) return cached;
+        return lastInvoiceDate || new Date().toISOString().split('T')[0];
+    };
+
+    const initialInvoiceDate = getInitialInvoiceDate();
+    const initialTerms = invoice?.terms || "Net 30";
+    const initialDueDate = invoice?.dueDate || calculateDueDate(initialInvoiceDate, initialTerms);
+
     const [termOptions, setTermOptions] = useState([
         { label: "Net 30", value: "Net 30" },
         { label: "Net 15", value: "Net 15" },
@@ -83,9 +140,9 @@ export default function InvoiceForm({
         customer: invoice?.customer || "",
         email: invoice?.email || "",
         billingAddress: invoice?.billingAddress || "",
-        terms: invoice?.terms || "Net 30",
-        invoiceDate: invoice?.invoiceDate || lastInvoiceDate || new Date().toISOString().split('T')[0],
-        dueDate: invoice?.dueDate || lastDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        terms: initialTerms,
+        invoiceDate: initialInvoiceDate,
+        dueDate: initialDueDate,
         invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
         memo: invoice?.memo || "",
         items: invoice?.items || [
@@ -109,6 +166,47 @@ export default function InvoiceForm({
         }));
     }, [transform]);
 
+    useEffect(() => {
+        if (invoice) {
+            setData(prev => ({
+                ...prev,
+                customer: invoice.customer || "",
+                email: invoice.email || "",
+                billingAddress: invoice.billingAddress || "",
+                terms: invoice.terms || "Net 30",
+                invoiceDate: invoice.invoiceDate || "",
+                dueDate: invoice.dueDate || "",
+                invoiceNo: invoice.invoiceNo || "",
+                memo: invoice.memo || "",
+                items: invoice.items || [
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                ],
+                action: lastSaveAction
+            }));
+        } else {
+            const cachedDate = localStorage.getItem('last_invoice_date') || lastInvoiceDate || new Date().toISOString().split('T')[0];
+            const termsVal = "Net 30";
+            setData(prev => ({
+                ...prev,
+                customer: "",
+                email: "",
+                billingAddress: "",
+                terms: termsVal,
+                invoiceDate: cachedDate,
+                dueDate: calculateDueDate(cachedDate, termsVal),
+                invoiceNo: nextInvoiceNo || "0001",
+                memo: "",
+                items: [
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                ],
+                action: lastSaveAction
+            }));
+        }
+        clearErrors();
+    }, [invoice?.id, nextInvoiceNo]);
+
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
         0
@@ -128,6 +226,7 @@ export default function InvoiceForm({
                 updated[index].rate = formatCurrencyValue(rateValue);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * rateValue);
+                updated[index].description = product.description || "";
             }
         }
 
@@ -142,7 +241,11 @@ export default function InvoiceForm({
     const handleAddTerm = (newTerm) => {
         const option = { label: newTerm.name, value: newTerm.name };
         setTermOptions([...termOptions, option]);
-        setData("terms", newTerm.name);
+        setData(prev => ({
+            ...prev,
+            terms: newTerm.name,
+            dueDate: calculateDueDate(prev.invoiceDate, newTerm.name)
+        }));
     };
 
     const handleSave = (action = 'save') => {
@@ -163,7 +266,7 @@ export default function InvoiceForm({
 
     return (
         <TransactionLayout
-            title={invoice?.id ? `Edit Credit Sale no.${data.invoiceNo}` : `Credit Sale no.${data.invoiceNo}`}
+            title={`Invoice ${data.invoiceNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -186,14 +289,7 @@ export default function InvoiceForm({
                                 label="Customer"
                                 placeholder="Select a customer"
                                 value={data.customer}
-                                onChange={(val) => {
-                                    setData('customer', val);
-                                    const customer = customerOptions.find(c => c.value === val);
-                                    if (customer) {
-                                        // We might need to fetch full customer details if needed
-                                        // But for now let's assume we have what we need or just use the val
-                                    }
-                                }}
+                                onChange={handleCustomerChange}
                                 options={customerOptions}
                                 onSearch={fetchPayees}
                                 size="sm"
@@ -241,7 +337,13 @@ export default function InvoiceForm({
                         <SearchableSelect
                             label="Terms"
                             value={data.terms}
-                            onChange={(val) => setData('terms', val)}
+                            onChange={(val) => {
+                                setData(prev => ({
+                                    ...prev,
+                                    terms: val,
+                                    dueDate: calculateDueDate(prev.invoiceDate, val)
+                                }));
+                            }}
                             onAddNew={() => setIsTermModalOpen(true)}
                             options={termOptions}
                             size="sm"
@@ -252,7 +354,15 @@ export default function InvoiceForm({
                             type="date"
                             label="Credit Sale date"
                             value={data.invoiceDate}
-                            onChange={(e) => setData('invoiceDate', e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                localStorage.setItem('last_invoice_date', newDate);
+                                setData(prev => ({
+                                    ...prev,
+                                    invoiceDate: newDate,
+                                    dueDate: calculateDueDate(newDate, prev.terms)
+                                }));
+                            }}
                             size="sm"
                         />
                     </div>
@@ -261,7 +371,7 @@ export default function InvoiceForm({
                             type="date"
                             label="Due date"
                             value={data.dueDate}
-                            onChange={(e) => setData('dueDate', e.target.value)}
+                            onChange={(e) => setData(prev => ({ ...prev, dueDate: e.target.value }))}
                             size="sm"
                         />
                     </div>
@@ -294,7 +404,7 @@ export default function InvoiceForm({
                 <div className="w-[400px]">
                     <CommonInput
                         type="textarea"
-                        label="Message on Credit Sale"
+                        label="Memo"
                         placeholder="This will show up on the Credit Sale."
                         value={data.memo}
                         onChange={(e) => setData('memo', e.target.value)}
@@ -318,13 +428,13 @@ export default function InvoiceForm({
                 onSuccess={(newPayee) => {
                     if (newPayee) {
                         fetchPayees();
-                        setData("customer", newPayee.value);
+                        handleCustomerChange(newPayee.value);
                     }
                 }}
                 initialType="customer"
             />
 
-            <QuickAddItem
+            <InventoryItemSidePanel
                 isOpen={isItemModalOpen}
                 onClose={() => {
                     setIsItemModalOpen(false);
