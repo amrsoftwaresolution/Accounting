@@ -29,7 +29,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
             title: "Customers",
             links: [
                 { name: "Credit Sale", href: "/invoice" },
-                { name: "Receive payment", href: "/payment" },
+                { name: "Receive Payment", href: "/payment" },
                 { name: "Cash Sale", href: "/receipt" },
                 { name: "Sales Return", href: "/credit-note" },
                 { name: "Add Customer", href: route('customers.create'), isSolid: true },

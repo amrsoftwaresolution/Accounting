@@ -168,29 +168,9 @@ export default function BillForm({
                 ],
                 action: 'save'
             });
-        } else {
-            const cachedDate = localStorage.getItem('last_bill_date') || lastBillDate || new Date().toISOString().split('T')[0];
-            setData({
-                supplier: "",
-                mailingAddress: "",
-                terms: "Net 30",
-                billDate: cachedDate,
-                dueDate: calculateDueDate(cachedDate, "Net 30"),
-                billNo: nextBillNo || "",
-                memo: "",
-                items: [
-                    { category: "", description: "", amount: "0.00" },
-                    { category: "", description: "", amount: "0.00" },
-                ],
-                itemDetails: [
-                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ],
-                action: 'save'
-            });
         }
         clearErrors();
-    }, [bill?.id, nextBillNo]);
+    }, [bill]);
 
     useEffect(() => {
         transform((data) => ({
@@ -329,7 +309,7 @@ export default function BillForm({
 
     return (
         <TransactionLayout
-            title={bill?.id ? `Bill #${data.billNo}` : "Bill"}
+            title={`Bill #${data.billNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -574,4 +554,3 @@ export default function BillForm({
         </TransactionLayout>
     );
 }
-

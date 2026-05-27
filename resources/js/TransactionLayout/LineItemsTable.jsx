@@ -124,6 +124,7 @@ export default function LineItemsTable({
                                                     variant="table"
                                                     size="sm"
                                                     onAddNew={col.onAddNew ? () => col.onAddNew(index) : null}
+                                                    onSearch={col.onSearch}
                                                     hideChevron={col.hideChevron}
                                                 />
                                             ) : (

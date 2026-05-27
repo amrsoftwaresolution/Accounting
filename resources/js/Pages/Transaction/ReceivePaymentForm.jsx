@@ -22,6 +22,21 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
+    const [currentAction, setCurrentAction] = useState('save');
+
+    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
+        customer: "",
+        email: "",
+        paymentDate: new Date().toISOString().split('T')[0],
+        paymentMethod: "",
+        referenceNo: "",
+        depositTo: "",
+        amountReceived: "0.00",
+        memo: "",
+        action: 'save',
+    });
+
+
     const handleCustomerChange = (val) => {
         setData(prev => ({ ...prev, customer: val }));
         if (val) {
@@ -175,19 +190,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
     }, []);
 
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
-    const [currentAction, setCurrentAction] = useState('save');
 
-    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
-        customer: "",
-        email: "",
-        paymentDate: new Date().toISOString().split('T')[0],
-        paymentMethod: "",
-        referenceNo: "",
-        depositTo: "",
-        amountReceived: "0.00",
-        memo: "",
-        action: 'save',
-    });
 
     useEffect(() => {
         transform((data) => ({
@@ -355,7 +358,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
                                 <div className="relative w-48">
                                     <input
                                         type="text"
-                                        placeholder="Find Invoice No."
+                                        placeholder="Find Credit Sale No."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="w-full pl-3 pr-8 h-[30px] bg-white border border-slate-350 rounded-md text-xs focus:border-green-600 focus:ring-0 focus:outline-hidden"
@@ -419,7 +422,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-blue-600 font-bold hover:underline cursor-pointer">
-                                                    Invoice # {inv.invoice_no} ({new Date(inv.invoice_date).toLocaleDateString('en-GB')})
+                                                    Credit Sale # {inv.invoice_no} ({new Date(inv.invoice_date).toLocaleDateString('en-GB')})
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-medium">
                                                     {new Date(inv.due_date).toLocaleDateString('en-GB')}
@@ -445,7 +448,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
                                     {filteredInvoices.length === 0 && (
                                         <tr>
                                             <td colSpan="6" className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-widest">
-                                                No outstanding invoices found
+                                                No outstanding credit sales found
                                             </td>
                                         </tr>
                                     )}

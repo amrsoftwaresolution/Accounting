@@ -98,7 +98,7 @@ class ReceivePaymentController extends Controller
             ]);
 
             // Accounts Receivable (Credit)
-            $arAccount = ChartOfAcc::where('sub_type', 'accounts-receivable')->first();
+            $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');
             JournalEntryLine::create([
                 'journal_entry_id' => $journalEntry->id,
                 'chart_of_acc_id' => $arAccount->id,

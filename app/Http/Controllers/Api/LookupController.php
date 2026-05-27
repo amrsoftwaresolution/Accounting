@@ -198,6 +198,8 @@ class LookupController extends Controller
     public function customerInvoices(Customer $customer)
     {
         $invoices = \App\Models\Invoice::where('customer_id', $customer->id)
+            ->where('status', 'posted')
+            ->where('company_id', session('active_company_id'))
             ->get()
             ->map(function($invoice) {
                 $allocatedAmount = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id)

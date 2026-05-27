@@ -51,7 +51,7 @@ class BillController extends Controller
                 $companyId = session('active_company_id');
 
                 $categoryItems = collect($request->items)->filter(function($item) {
-                    return !empty($item['category']) && (float)$item['amount'] > 0;
+                    return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
                 
                 $productItems = collect($request->itemDetails)->filter(function($item) {
@@ -63,7 +63,7 @@ class BillController extends Controller
                 }
 
                 $totalAmount = $categoryItems->sum(function($item) {
-                    return (float) $item['amount'];
+                    return (float)str_replace(',', '', $item['amount']);
                 }) + $productItems->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
                 });
@@ -82,13 +82,14 @@ class BillController extends Controller
 
                 // 2. Create Bill Items (Categories)
                 foreach ($categoryItems as $lineItem) {
+                    $amount = (float)str_replace(',', '', $lineItem['amount']);
                     BillItem::create([
                         'bill_id' => $bill->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'description' => $lineItem['description'] ?? '',
-                        'amount' => $lineItem['amount'],
+                        'amount' => $amount,
                         'quantity' => 1,
-                        'rate' => $lineItem['amount'],
+                        'rate' => $amount,
                     ]);
                 }
 
@@ -96,11 +97,11 @@ class BillController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory' 
-                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
                     
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                     }
 
                     BillItem::create([
@@ -135,7 +136,7 @@ class BillController extends Controller
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'chart_of_acc_id' => $lineItem['category'],
-                        'debit' => $lineItem['amount'],
+                        'debit' => (float)str_replace(',', '', $lineItem['amount']),
                         'credit' => 0,
                         'memo' => $lineItem['description'] ?? $request->memo,
                     ]);
@@ -162,13 +163,7 @@ class BillController extends Controller
                 }
 
                 // Credit (Accounts Payable)
-                $apAccount = ChartOfAcc::where('company_id', $companyId)
-                    ->where('sub_type', 'accounts-payable')
-                    ->first();
-
-                if (!$apAccount) {
-                    throw new \Exception("Accounts Payable account not found.");
-                }
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -256,7 +251,7 @@ class BillController extends Controller
                 $companyId = session('active_company_id');
 
                 $categoryItems = collect($request->items)->filter(function($item) {
-                    return !empty($item['category']) && (float)$item['amount'] > 0;
+                    return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
                 
                 $productItems = collect($request->itemDetails)->filter(function($item) {
@@ -268,7 +263,7 @@ class BillController extends Controller
                 }
 
                 $totalAmount = $categoryItems->sum(function($item) {
-                    return (float) $item['amount'];
+                    return (float)str_replace(',', '', $item['amount']);
                 }) + $productItems->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
                 });
@@ -289,13 +284,14 @@ class BillController extends Controller
                     
                     // Categories
                     foreach ($categoryItems as $lineItem) {
+                        $amount = (float)str_replace(',', '', $lineItem['amount']);
                         BillItem::create([
                             'bill_id' => $bill->id,
                             'chart_of_acc_id' => $lineItem['category'],
                             'description' => $lineItem['description'] ?? '',
-                            'amount' => $lineItem['amount'],
+                            'amount' => $amount,
                             'quantity' => 1,
-                            'rate' => $lineItem['amount'],
+                            'rate' => $amount,
                         ]);
                     }
 
@@ -303,11 +299,11 @@ class BillController extends Controller
                     foreach ($productItems as $productItem) {
                         $itemModel = \App\Models\Item::find($productItem['product']);
                         $chartOfAccId = $itemModel?->type === 'inventory' 
-                            ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
-                            : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                            ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
+                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
                         
                         if (!$chartOfAccId) {
-                            $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                            $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                         }
 
                         BillItem::create([
@@ -338,7 +334,7 @@ class BillController extends Controller
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'chart_of_acc_id' => $lineItem['category'],
-                        'debit' => $lineItem['amount'],
+                        'debit' => (float)str_replace(',', '', $lineItem['amount']),
                         'credit' => 0,
                         'memo' => $lineItem['description'] ?? $request->memo,
                     ]);
@@ -365,13 +361,7 @@ class BillController extends Controller
                 }
 
                 // Credit (Accounts Payable)
-                $apAccount = ChartOfAcc::where('company_id', $companyId)
-                    ->where('sub_type', 'accounts-payable')
-                    ->first();
-
-                if (!$apAccount) {
-                    throw new \Exception("Accounts Payable account not found.");
-                }
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
