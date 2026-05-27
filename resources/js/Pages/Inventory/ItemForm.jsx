@@ -44,39 +44,42 @@ const FormSection = ({ title, children, show = true }) => {
 
 export default function ItemForm({
     item = null,
-    categories = [],
-    incomeAccounts = [],
-    expenseAccounts = [],
-    inventoryAccounts = [],
-    suppliers = [],
-    allItems = []
+    categories: initialCategories = [],
+    incomeAccounts: initialIncomeAccounts = [],
+    expenseAccounts: initialExpenseAccounts = [],
+    inventoryAccounts: initialInventoryAccounts = [],
+    suppliers: initialSuppliers = [],
+    allItems: initialAllItems = []
 }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || '$';
-    const isEdit = !!item;
-    const [localInventoryAccounts, setLocalInventoryAccounts] = useState(inventoryAccounts);
-    const [localIncomeAccounts, setLocalIncomeAccounts] = useState(incomeAccounts);
-    const [localExpenseAccounts, setLocalExpenseAccounts] = useState(expenseAccounts);
+    const [localCategories, setLocalCategories] = useState(initialCategories);
+    const [localInventoryAccounts, setLocalInventoryAccounts] = useState(initialInventoryAccounts);
+    const [localIncomeAccounts, setLocalIncomeAccounts] = useState(initialIncomeAccounts);
+    const [localExpenseAccounts, setLocalExpenseAccounts] = useState(initialExpenseAccounts);
+    const [localSuppliers, setLocalSuppliers] = useState(initialSuppliers);
+    const [localAllItems, setLocalAllItems] = useState(initialAllItems);
+    const [isLoadingOptions, setIsLoadingOptions] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
 
     const findDefaultAccounts = () => {
         let defaultInventoryId = '';
-        if (inventoryAccounts && inventoryAccounts.length > 0) {
-            const match = inventoryAccounts.find(acc => acc.account_code === '1200' || acc.name.toLowerCase().includes('inventory asset') || acc.name.toLowerCase().includes('inventory'));
-            defaultInventoryId = match ? match.id : inventoryAccounts[0].id;
+        if (initialInventoryAccounts && initialInventoryAccounts.length > 0) {
+            const match = initialInventoryAccounts.find(acc => acc.account_code === '1200' || acc.name.toLowerCase().includes('inventory asset') || acc.name.toLowerCase().includes('inventory'));
+            defaultInventoryId = match ? match.id : initialInventoryAccounts[0].id;
         }
 
         let defaultIncomeId = '';
-        if (incomeAccounts && incomeAccounts.length > 0) {
-            const match = incomeAccounts.find(acc => acc.account_code === '4000' || acc.name.toLowerCase().includes('sales income') || acc.name.toLowerCase().includes('sales'));
-            defaultIncomeId = match ? match.id : incomeAccounts[0].id;
+        if (initialIncomeAccounts && initialIncomeAccounts.length > 0) {
+            const match = initialIncomeAccounts.find(acc => acc.account_code === '4000' || acc.name.toLowerCase().includes('sales income') || acc.name.toLowerCase().includes('sales'));
+            defaultIncomeId = match ? match.id : initialIncomeAccounts[0].id;
         }
 
         let defaultExpenseId = '';
-        if (expenseAccounts && expenseAccounts.length > 0) {
-            const match = expenseAccounts.find(acc => acc.account_code === '5000' || acc.name.toLowerCase().includes('cost of goods sold') || acc.name.toLowerCase().includes('cogs'));
-            defaultExpenseId = match ? match.id : expenseAccounts[0].id;
+        if (initialExpenseAccounts && initialExpenseAccounts.length > 0) {
+            const match = initialExpenseAccounts.find(acc => acc.account_code === '5000' || acc.name.toLowerCase().includes('cost of goods sold') || acc.name.toLowerCase().includes('cogs'));
+            defaultExpenseId = match ? match.id : initialExpenseAccounts[0].id;
         }
 
         return {
@@ -88,6 +91,7 @@ export default function ItemForm({
 
     const initialDefaults = findDefaultAccounts();
 
+    const isEdit = !!item;
     const { data, setData, post, put, processing, errors, transform } = useForm({
         type: item?.type || 'service',
         name: item?.name || '',
@@ -127,10 +131,52 @@ export default function ItemForm({
     }, [data.image]);
 
     useEffect(() => {
-        setLocalInventoryAccounts(inventoryAccounts);
-        setLocalIncomeAccounts(incomeAccounts);
-        setLocalExpenseAccounts(expenseAccounts);
-    }, [inventoryAccounts, incomeAccounts, expenseAccounts]);
+        setIsLoadingOptions(true);
+        axios.get(route('api.items.create-options'))
+            .then(res => {
+                const dataOptions = res.data;
+                setLocalCategories(dataOptions.categories || []);
+                setLocalIncomeAccounts(dataOptions.incomeAccounts || []);
+                setLocalExpenseAccounts(dataOptions.expenseAccounts || []);
+                setLocalInventoryAccounts(dataOptions.inventoryAccounts || []);
+                setLocalSuppliers(dataOptions.suppliers || []);
+                setLocalAllItems(dataOptions.allItems || []);
+
+                // If creating a new item, set default accounts dynamically from the fetched list
+                if (!item) {
+                    const invAccs = dataOptions.inventoryAccounts || [];
+                    const incAccs = dataOptions.incomeAccounts || [];
+                    const expAccs = dataOptions.expenseAccounts || [];
+
+                    let defaultInventoryId = '';
+                    if (invAccs.length > 0) {
+                        const match = invAccs.find(acc => acc.account_code === '1200' || acc.name.toLowerCase().includes('inventory asset') || acc.name.toLowerCase().includes('inventory'));
+                        defaultInventoryId = match ? match.id : invAccs[0].id;
+                    }
+
+                    let defaultIncomeId = '';
+                    if (incAccs.length > 0) {
+                        const match = incAccs.find(acc => acc.account_code === '4000' || acc.name.toLowerCase().includes('sales income') || acc.name.toLowerCase().includes('sales'));
+                        defaultIncomeId = match ? match.id : incAccs[0].id;
+                    }
+
+                    let defaultExpenseId = '';
+                    if (expAccs.length > 0) {
+                        const match = expAccs.find(acc => acc.account_code === '5000' || acc.name.toLowerCase().includes('cost of goods sold') || acc.name.toLowerCase().includes('cogs'));
+                        defaultExpenseId = match ? match.id : expAccs[0].id;
+                    }
+
+                    setData(prev => ({
+                        ...prev,
+                        inventory_account_id: prev.inventory_account_id || defaultInventoryId,
+                        income_account_id: prev.income_account_id || defaultIncomeId,
+                        expense_account_id: prev.expense_account_id || defaultExpenseId
+                    }));
+                }
+            })
+            .catch(err => console.error("Failed to fetch item creation options:", err))
+            .finally(() => setIsLoadingOptions(false));
+    }, []);
 
     const handleAccountSuccess = (newAcc, type) => {
         router.reload({
@@ -292,7 +338,7 @@ export default function ItemForm({
                                     <div>
                                         <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Category</label>
                                         <SearchableSelect
-                                            options={categories.map(c => ({ value: c.id, label: c.name }))}
+                                            options={localCategories.map(c => ({ value: c.id, label: c.name }))}
                                             value={data.item_category_id}
                                             onChange={val => setData('item_category_id', val)}
                                             placeholder="Select category"
@@ -529,16 +575,7 @@ export default function ItemForm({
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Preferred Supplier</label>
-                            <SearchableSelect
-                                options={suppliers.map(s => ({ value: s.id, label: s.name }))}
-                                value={data.preferred_supplier_id}
-                                onChange={val => setData('preferred_supplier_id', val)}
-                                placeholder="Select Preferred Supplier"
-                            />
-                            {errors.preferred_supplier_id && <p className="mt-1 text-xs text-red-600">{errors.preferred_supplier_id}</p>}
-                        </div>
+
 
                         <div className="space-y-1">
                             <label className="font-bold text-slate-600 ml-0.5 text-xs">Purchase Description</label>
@@ -583,7 +620,7 @@ export default function ItemForm({
                                             <tr key={idx} className="group hover:bg-slate-50/20 transition-colors">
                                                 <td className="p-2">
                                                     <SearchableSelect
-                                                        options={allItems.map(i => ({ value: i.id, label: `${i.name} (${i.sku || 'No SKU'})` }))}
+                                                        options={localAllItems.map(i => ({ value: i.id, label: `${i.name} (${i.sku || 'No SKU'})` }))}
                                                         value={bi.item_id}
                                                         onChange={val => updateBundleItem(idx, 'item_id', val)}
                                                         placeholder="Select item"

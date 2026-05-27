@@ -11,7 +11,7 @@ import { Head, usePage } from "@inertiajs/react";
 export default function JournalEntryForm({ journalEntry = null, nextJournalNo = "" }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
-    
+
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
 
@@ -46,15 +46,15 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         { key: "debit", label: "Debits", type: "currency", className: "text-right w-[10%]", inputClass: "text-right" },
         { key: "credit", label: "Credits", type: "currency", className: "text-right w-[10%]", inputClass: "text-right" },
         { key: "description", label: "Description", placeholder: "Enter description", className: "w-[30%]" },
-        { 
-            key: "payee_id", 
-            label: "Name", 
-            type: "select", 
+        {
+            key: "payee_id",
+            label: "Name",
+            type: "select",
             options: payeeOptions,
             onSearch: fetchPayees,
             onAddNew: () => setIsPayeeModalOpen(true),
             placeholder: "Select name",
-            className: "w-[25%]" 
+            className: "w-[25%]"
         },
     ];
 
@@ -140,7 +140,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
     return (
         <TransactionLayout
-            title={journalEntry ? `Edit Journal Entry #${form.journalNo}` : `New Journal Entry`}
+            title={`Journal Entry #${form.journalNo}`}
             amount={totals.debit.toFixed(2)}
             dirty={isDirty}
             onSave={() => handleSave('save')}
@@ -158,11 +158,11 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                 setIsDirty(true);
             }}
         >
-            <Head title={journalEntry ? "Edit Journal Entry" : "New Journal Entry"} />
+            <Head title={"Journal Entry"} />
 
             <div className="flex items-end gap-6 py-6 border-b border-slate-100">
                 <div className="w-[180px]">
-                    <CommonInput 
+                    <CommonInput
                         type="date"
                         label="Journal date"
                         value={form.date}
@@ -175,7 +175,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                 </div>
 
                 <div className="w-[180px]">
-                    <CommonInput 
+                    <CommonInput
                         label="Journal no."
                         value={form.journalNo}
                         onChange={(e) => {
@@ -211,7 +211,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             />
 
             <div className="mt-8 w-[500px]">
-                <CommonInput 
+                <CommonInput
                     type="textarea"
                     label="Memo"
                     value={form.memo}

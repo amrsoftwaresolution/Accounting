@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
+import CommonButton from "@/Components/CommonButton";
 
 export default function LineItemsTable({
     columns,
@@ -182,7 +183,26 @@ export default function LineItemsTable({
             {/* Footer / Actions */}
             <div className="px-3 py-2 bg-slate-50/30 flex justify-between items-center border-t border-slate-200">
                 <div className="flex gap-2">
-                    {/* Buttons commented as per previous step */}
+                    {addRow && (
+                        <CommonButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={addRow}
+                            className="gap-1.5"
+                        >
+                            Add Row
+                        </CommonButton>
+                    )}
+                    {clearRows && (
+                        <CommonButton
+                            variant="secondary"
+                            size="sm"
+                            onClick={clearRows}
+                            className="gap-1.5"
+                        >
+                            Clear All
+                        </CommonButton>
+                    )}
                 </div>
 
                 {totals && (

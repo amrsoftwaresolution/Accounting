@@ -42,17 +42,30 @@ class BillController extends Controller
             'supplier' => 'required',
             'billDate' => 'required|date',
             'billNo' => 'required',
-            'items' => 'required|array|min:1',
-            'items.*.category' => 'required',
-            'items.*.amount' => 'required|numeric',
+            'items' => 'nullable|array',
+            'itemDetails' => 'nullable|array',
         ]);
 
         try {
             DB::transaction(function() use ($request) {
                 $companyId = session('active_company_id');
 
-                $totalAmount = collect($request->items)->sum(function($item) {
+                $categoryItems = collect($request->items)->filter(function($item) {
+                    return !empty($item['category']) && (float)$item['amount'] > 0;
+                });
+                
+                $productItems = collect($request->itemDetails)->filter(function($item) {
+                    return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                });
+
+                if ($categoryItems->isEmpty() && $productItems->isEmpty()) {
+                    throw new \Exception('At least one Category item or Product item is required.');
+                }
+
+                $totalAmount = $categoryItems->sum(function($item) {
                     return (float) $item['amount'];
+                }) + $productItems->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
                 });
 
                 // 1. Create the Bill
@@ -67,13 +80,37 @@ class BillController extends Controller
                     'status' => 'posted',
                 ]);
 
-                // 2. Create Bill Items
-                foreach ($request->items as $lineItem) {
+                // 2. Create Bill Items (Categories)
+                foreach ($categoryItems as $lineItem) {
                     BillItem::create([
                         'bill_id' => $bill->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'description' => $lineItem['description'] ?? '',
                         'amount' => $lineItem['amount'],
+                        'quantity' => 1,
+                        'rate' => $lineItem['amount'],
+                    ]);
+                }
+
+                // Create Bill Items (Products)
+                foreach ($productItems as $productItem) {
+                    $itemModel = \App\Models\Item::find($productItem['product']);
+                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                    
+                    if (!$chartOfAccId) {
+                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                    }
+
+                    BillItem::create([
+                        'bill_id' => $bill->id,
+                        'item_id' => $productItem['product'],
+                        'chart_of_acc_id' => $chartOfAccId,
+                        'description' => $productItem['description'] ?? '',
+                        'quantity' => (float)str_replace(',', '', $productItem['qty'] ?? 1),
+                        'rate' => (float)str_replace(',', '', $productItem['rate'] ?? 0),
+                        'amount' => (float)str_replace(',', '', $productItem['amount']),
                     ]);
                 }
 
@@ -93,14 +130,34 @@ class BillController extends Controller
                     'transactionable_type' => Bill::class,
                 ]);
 
-                // Debits (Expenses)
-                foreach ($request->items as $lineItem) {
+                // Debits (Expenses/Assets) - Categories
+                foreach ($categoryItems as $lineItem) {
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'debit' => $lineItem['amount'],
                         'credit' => 0,
                         'memo' => $lineItem['description'] ?? $request->memo,
+                    ]);
+                }
+
+                // Debits (Expenses/Assets) - Products
+                foreach ($productItems as $productItem) {
+                    $itemModel = \App\Models\Item::find($productItem['product']);
+                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                    
+                    if (!$chartOfAccId) {
+                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                    }
+
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $chartOfAccId,
+                        'debit' => (float)str_replace(',', '', $productItem['amount']),
+                        'credit' => 0,
+                        'memo' => $productItem['description'] ?? $request->memo,
                     ]);
                 }
 
@@ -153,18 +210,27 @@ class BillController extends Controller
             'id' => $journalEntry->id,
             'supplier' => $bill?->supplier_id ?? $journalEntry->payee_id,
             'mailingAddress' => '',
-            'terms' => 'Net 30',
+            'terms' => $bill?->terms ?? 'Net 30',
             'billDate' => $journalEntry->date,
             'dueDate' => $bill?->due_date ?? $journalEntry->due_date,
             'billNo' => $journalEntry->reference,
             'memo' => $journalEntry->description,
-            'items' => $journalEntry->lines->where('debit', '>', 0)->map(function ($line) {
+            'items' => $bill ? $bill->items->whereNull('item_id')->map(function ($item) {
                 return [
-                    'category' => $line->chart_of_acc_id,
-                    'description' => $line->memo,
-                    'amount' => $line->debit,
+                    'category' => $item->chart_of_acc_id,
+                    'description' => $item->description,
+                    'amount' => $item->amount,
                 ];
-            })->values()->toArray(),
+            })->values()->toArray() : [],
+            'itemDetails' => $bill ? $bill->items->whereNotNull('item_id')->map(function ($item) {
+                return [
+                    'product' => $item->item_id,
+                    'description' => $item->description,
+                    'qty' => $item->quantity ?? 1,
+                    'rate' => $item->rate ?? $item->amount,
+                    'amount' => $item->amount,
+                ];
+            })->values()->toArray() : [],
         ];
 
         return Inertia::render('Transaction/BillForm', [
@@ -181,17 +247,30 @@ class BillController extends Controller
             'supplier' => 'required',
             'billDate' => 'required|date',
             'billNo' => 'required',
-            'items' => 'required|array|min:1',
-            'items.*.category' => 'required',
-            'items.*.amount' => 'required|numeric',
+            'items' => 'nullable|array',
+            'itemDetails' => 'nullable|array',
         ]);
 
         try {
             DB::transaction(function() use ($request, $journalEntry) {
                 $companyId = session('active_company_id');
 
-                $totalAmount = collect($request->items)->sum(function($item) {
+                $categoryItems = collect($request->items)->filter(function($item) {
+                    return !empty($item['category']) && (float)$item['amount'] > 0;
+                });
+                
+                $productItems = collect($request->itemDetails)->filter(function($item) {
+                    return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                });
+
+                if ($categoryItems->isEmpty() && $productItems->isEmpty()) {
+                    throw new \Exception('At least one Category item or Product item is required.');
+                }
+
+                $totalAmount = $categoryItems->sum(function($item) {
                     return (float) $item['amount'];
+                }) + $productItems->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
                 });
 
                 // 1. Update the Bill
@@ -207,12 +286,38 @@ class BillController extends Controller
                     ]);
 
                     $bill->items()->delete();
-                    foreach ($request->items as $lineItem) {
+                    
+                    // Categories
+                    foreach ($categoryItems as $lineItem) {
                         BillItem::create([
                             'bill_id' => $bill->id,
                             'chart_of_acc_id' => $lineItem['category'],
                             'description' => $lineItem['description'] ?? '',
                             'amount' => $lineItem['amount'],
+                            'quantity' => 1,
+                            'rate' => $lineItem['amount'],
+                        ]);
+                    }
+
+                    // Products
+                    foreach ($productItems as $productItem) {
+                        $itemModel = \App\Models\Item::find($productItem['product']);
+                        $chartOfAccId = $itemModel?->type === 'inventory' 
+                            ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
+                            : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                        
+                        if (!$chartOfAccId) {
+                            $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                        }
+
+                        BillItem::create([
+                            'bill_id' => $bill->id,
+                            'item_id' => $productItem['product'],
+                            'chart_of_acc_id' => $chartOfAccId,
+                            'description' => $productItem['description'] ?? '',
+                            'quantity' => (float)str_replace(',', '', $productItem['qty'] ?? 1),
+                            'rate' => (float)str_replace(',', '', $productItem['rate'] ?? 0),
+                            'amount' => (float)str_replace(',', '', $productItem['amount']),
                         ]);
                     }
                 }
@@ -228,14 +333,34 @@ class BillController extends Controller
 
                 $journalEntry->lines()->delete();
 
-                // Debits (Expenses)
-                foreach ($request->items as $lineItem) {
+                // Debits (Expenses/Assets) - Categories
+                foreach ($categoryItems as $lineItem) {
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'debit' => $lineItem['amount'],
                         'credit' => 0,
                         'memo' => $lineItem['description'] ?? $request->memo,
+                    ]);
+                }
+
+                // Debits (Expenses/Assets) - Products
+                foreach ($productItems as $productItem) {
+                    $itemModel = \App\Models\Item::find($productItem['product']);
+                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                    
+                    if (!$chartOfAccId) {
+                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                    }
+
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $chartOfAccId,
+                        'debit' => (float)str_replace(',', '', $productItem['amount']),
+                        'credit' => 0,
+                        'memo' => $productItem['description'] ?? $request->memo,
                     ]);
                 }
 

@@ -7,7 +7,7 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
-import QuickAddItem from "@/Components/QuickAddItem";
+import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 
 export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceiptNo = "", receipt = null }) {
@@ -48,7 +48,6 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
     }, []);
 
     const COLUMNS = [
-        { key: "serviceDate", label: "Service Date", type: "date", width: "150px" },
         {
             key: "product",
             label: "Product/Service",
@@ -104,6 +103,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                 updated[index].rate = formatCurrencyValue(rateValue);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * rateValue);
+                updated[index].description = product.description || "";
             }
         }
 
@@ -139,7 +139,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
 
     return (
         <TransactionLayout
-            title={receipt?.id ? `Edit Cash sale no.${data.receiptNo}` : `Cash sale no.${data.receiptNo}`}
+            title={`Sales Receipt #${data.receiptNo}`}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
@@ -271,31 +271,17 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             />
 
             <div className="grid grid-cols-2 gap-10 mt-8">
-                <div className="space-y-6">
-                    <div className="w-[400px]">
-                        <CommonInput
-                            type="textarea"
-                            label="Message displayed on cash sale"
-                            placeholder="Enter message"
-                            value={data.memo}
-                            onChange={(e) => setData('memo', e.target.value)}
-                            size="sm"
-                            className="h-20"
-                            error={errors.memo}
-                        />
-                    </div>
-                    <div className="w-[400px]">
-                        <CommonInput
-                            type="textarea"
-                            label="Message displayed on statement"
-                            placeholder="Enter message"
-                            value={data.statementMessage}
-                            onChange={(e) => setData('statementMessage', e.target.value)}
-                            size="sm"
-                            className="h-20"
-                            error={errors.statementMessage}
-                        />
-                    </div>
+                <div className="w-[400px]">
+                    <CommonInput
+                        type="textarea"
+                        label="Memo"
+                        placeholder="This will show up on the Cash Sale."
+                        value={data.memo}
+                        onChange={(e) => setData('memo', e.target.value)}
+                        size="sm"
+                        className="h-24"
+                        error={errors.memo}
+                    />
                 </div>
             </div>
 
@@ -318,7 +304,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                 }}
             />
 
-            <QuickAddItem
+            <InventoryItemSidePanel
                 isOpen={isItemModalOpen}
                 onClose={() => {
                     setIsItemModalOpen(false);

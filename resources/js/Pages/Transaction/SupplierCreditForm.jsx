@@ -6,7 +6,7 @@ import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
-import QuickAddItem from "@/Components/QuickAddItem";
+import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 
 export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = null }) {
     const currencyPrefix = auth.company?.home_currency_prefix || 'Rs.';
@@ -87,10 +87,11 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         if (field === "product") {
             const product = productOptions.find(p => p.value === value);
             if (product) {
-                const costPrice = parseFloat(product.cost_price || 0);
+                const costPrice = parseFloat(product.purchase_price || 0);
                 updated[index].rate = formatCurrencyValue(costPrice);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * costPrice);
+                updated[index].description = product.description || "";
             }
         }
 
@@ -207,7 +208,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                 initialType="supplier"
             />
 
-            <QuickAddItem
+            <InventoryItemSidePanel
                 isOpen={isItemModalOpen}
                 onClose={() => {
                     setIsItemModalOpen(false);

@@ -6,11 +6,12 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import QuickAddPayee from "@/Components/QuickAddPayee";
+import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import TermModal from "@/Components/TermModal";
 import axios from "axios";
 
-export default function BillForm({ 
-    auth, 
+export default function BillForm({
+    auth,
     terms = [],
     bill = null,
     lastBillDate = null,
@@ -20,16 +21,23 @@ export default function BillForm({
     const { props } = usePage();
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
-    
+
+    // Accordion States (Expanded by default)
+    const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
+    const [isItemsExpanded, setIsItemsExpanded] = useState(true);
+
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
+    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('expense');
+    const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
-    
+    const [productOptions, setProductOptions] = useState([]);
+
     const fetchPayees = async (search = '') => {
         try {
             const response = await axios.get(route('api.payees', { search }));
@@ -48,29 +56,141 @@ export default function BillForm({
         }
     };
 
+    const fetchItems = async (search = '') => {
+        try {
+            const response = await axios.get(route('api.items', { search }));
+            setProductOptions(response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Failed to fetch items:", error);
+        }
+    };
+
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
+        fetchItems();
     }, []);
 
-    const [termOptions, setTermOptions] = useState(terms.map(t => ({ value: t.name, label: t.name })));
+    const defaultTerms = [
+        { value: "Due on Receipt", label: "Due on Receipt" },
+        { value: "Net 15", label: "Net 15" },
+        { value: "Net 30", label: "Net 30" },
+        { value: "Net 60", label: "Net 60" },
+    ];
+    const [termOptions, setTermOptions] = useState(() => {
+        if (terms && terms.length > 0) {
+            return terms.map(t => ({ value: t.name, label: t.name }));
+        }
+        return defaultTerms;
+    });
+
+    const calculateDueDate = (dateStr, termName) => {
+        if (!dateStr) return "";
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return "";
+        
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        
+        const date = new Date(year, month, day);
+        if (isNaN(date.getTime())) return "";
+
+        let daysToAdd = 30; // default for Net 30
+        if (termName) {
+            const lower = termName.toLowerCase();
+            if (lower.includes("receipt")) {
+                daysToAdd = 0;
+            } else {
+                const match = termName.match(/\d+/);
+                if (match) {
+                    daysToAdd = parseInt(match[0], 10);
+                }
+            }
+        }
+        date.setDate(date.getDate() + daysToAdd);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const getInitialBillDate = () => {
+        if (bill?.billDate) return bill.billDate;
+        const cached = localStorage.getItem('last_bill_date');
+        if (cached) return cached;
+        return lastBillDate || new Date().toISOString().split('T')[0];
+    };
+
+    const initialBillDate = getInitialBillDate();
+    const initialTerms = bill?.terms || "Net 30";
+    const initialDueDate = bill?.dueDate || calculateDueDate(initialBillDate, initialTerms);
 
     const [currentAction, setCurrentAction] = useState(lastSaveAction);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         supplier: bill?.supplier || bill?.payee_id || "",
         mailingAddress: bill?.mailingAddress || "",
-        terms: bill?.terms || "Net 30",
-        billDate: bill?.billDate || lastBillDate || new Date().toISOString().split('T')[0],
-        dueDate: bill?.dueDate || "",
-        billNo: bill?.billNo || "",
+        terms: initialTerms,
+        billDate: initialBillDate,
+        dueDate: initialDueDate,
+        billNo: bill?.billNo || nextBillNo || "",
         memo: bill?.memo || "",
-        items: bill?.items || [
+        items: bill?.items && bill.items.length > 0 ? bill.items : [
             { category: "", description: "", amount: "0.00" },
             { category: "", description: "", amount: "0.00" },
         ],
+        itemDetails: bill?.itemDetails && bill.itemDetails.length > 0 ? bill.itemDetails : [
+            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+        ],
         action: 'save'
     });
+
+    useEffect(() => {
+        if (bill) {
+            setData({
+                supplier: bill.supplier || bill.payee_id || "",
+                mailingAddress: bill.mailingAddress || "",
+                terms: bill.terms || "Net 30",
+                billDate: bill.billDate || "",
+                dueDate: bill.dueDate || "",
+                billNo: bill.billNo || "",
+                memo: bill.memo || "",
+                items: bill.items && bill.items.length > 0 ? bill.items : [
+                    { category: "", description: "", amount: "0.00" },
+                    { category: "", description: "", amount: "0.00" },
+                ],
+                itemDetails: bill.itemDetails && bill.itemDetails.length > 0 ? bill.itemDetails : [
+                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                ],
+                action: 'save'
+            });
+        } else {
+            const cachedDate = localStorage.getItem('last_bill_date') || lastBillDate || new Date().toISOString().split('T')[0];
+            setData({
+                supplier: "",
+                mailingAddress: "",
+                terms: "Net 30",
+                billDate: cachedDate,
+                dueDate: calculateDueDate(cachedDate, "Net 30"),
+                billNo: nextBillNo || "",
+                memo: "",
+                items: [
+                    { category: "", description: "", amount: "0.00" },
+                    { category: "", description: "", amount: "0.00" },
+                ],
+                itemDetails: [
+                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                ],
+                action: 'save'
+            });
+        }
+        clearErrors();
+    }, [bill?.id, nextBillNo]);
 
     useEffect(() => {
         transform((data) => ({
@@ -81,19 +201,76 @@ export default function BillForm({
                 .map(item => ({
                     ...item,
                     amount: String(item.amount).replace(/,/g, '')
+                })),
+            itemDetails: data.itemDetails
+                .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .map(item => ({
+                    ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
                 }))
         }));
     }, [currentAction, transform]);
 
-    const totalAmount = data.items.reduce(
-        (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
-        0
+    const totalAmount = (
+        data.items.reduce(
+            (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
+            0
+        ) +
+        data.itemDetails.reduce(
+            (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
+            0
+        )
     ).toFixed(2);
+
+    const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
+    const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
     const handleItemChange = (index, field, value) => {
         const updated = [...data.items];
         updated[index][field] = value;
         setData("items", updated);
+    };
+
+    const handleProductItemChange = (index, field, value) => {
+        const updated = [...data.itemDetails];
+        updated[index][field] = value;
+
+        if (field === "product") {
+            const product = productOptions.find(p => p.value === value);
+            if (product) {
+                const rateValue = parseFloat(product.purchase_price) || parseFloat(product.rate) || 0;
+                updated[index].rate = formatCurrencyValue(rateValue);
+                const q = parseFloat(updated[index].qty) || 0;
+                updated[index].amount = formatCurrencyValue(q * rateValue);
+                updated[index].description = product.description || "";
+            }
+        }
+
+        if (field === "qty" || field === "rate") {
+            const q = parseFloat(updated[index].qty) || 0;
+            const r = parseCurrency(updated[index].rate);
+            updated[index].amount = formatCurrencyValue(q * r);
+        }
+        setData("itemDetails", updated);
+    };
+
+    const handleBillDateChange = (dateVal) => {
+        localStorage.setItem('last_bill_date', dateVal);
+        setData(prev => ({
+            ...prev,
+            billDate: dateVal,
+            dueDate: calculateDueDate(dateVal, prev.terms)
+        }));
+    };
+
+    const handleTermsChange = (termsVal) => {
+        setData(prev => ({
+            ...prev,
+            terms: termsVal,
+            dueDate: calculateDueDate(data.billDate, termsVal)
+        }));
     };
 
     const handleSave = (action = 'save') => {
@@ -102,20 +279,14 @@ export default function BillForm({
         const method = bill?.id ? patch : post;
 
         method(url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                if (action === 'new') {
-                    reset();
-                    clearErrors();
-                }
-            }
+            preserveScroll: true
         });
     };
 
     const BILL_COLUMNS = [
-        { 
-            key: "category", 
-            label: "Category", 
+        {
+            key: "category",
+            label: "Category",
             options: accountOptions,
             onSearch: fetchAccounts,
             type: "select",
@@ -126,33 +297,54 @@ export default function BillForm({
             }
         },
         { key: "description", label: "Description" },
-        { 
-            key: "amount", 
-            label: "Amount", 
-            type: "currency", 
-            className: "text-right", 
+        {
+            key: "amount",
+            label: "Amount",
+            type: "currency",
+            className: "text-right",
             inputClass: "text-right",
             width: "120px"
         },
     ];
 
+    const ITEM_COLUMNS = [
+        {
+            key: "product",
+            label: "Product/Service",
+            placeholder: "Select product",
+            options: productOptions,
+            onSearch: fetchItems,
+            type: "select",
+            width: "280px",
+            onAddNew: (index) => {
+                setAddingItemRowIndex(index);
+                setIsItemModalOpen(true);
+            }
+        },
+        { key: "description", label: "Description", placeholder: "Enter description" },
+        { key: "qty", label: "Qty", type: "number", width: "80px", className: "text-right" },
+        { key: "rate", label: "Rate", type: "currency", width: "120px", className: "text-right", inputClass: "text-right" },
+        { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
+    ];
+
     return (
         <TransactionLayout
-            title={bill?.id ? `Edit Bill no.${data.billNo}` : "New Bill"}
+            title={bill?.id ? `Bill #${data.billNo}` : "Bill"}
             amount={totalAmount}
             processing={processing}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
-            onAddLine={() => {
-                setData("items", [...data.items, { category: "", description: "", amount: "0.00" }]);
-            }}
-            onClearRows={() => {
-                setData("items", [{ category: "", description: "", amount: "0.00" }]);
-            }}
             lastAction={lastSaveAction}
         >
             <div className="py-6 px-1 space-y-8">
+                {/* Error Banner */}
+                {errors.error && (
+                    <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                        {errors.error}
+                    </div>
+                )}
+
                 {/* ROW 1: Supplier & Address */}
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
@@ -194,7 +386,7 @@ export default function BillForm({
                         <SearchableSelect
                             label="Terms"
                             value={data.terms}
-                            onChange={(val) => setData('terms', val)}
+                            onChange={handleTermsChange}
                             onAddNew={() => setIsTermModalOpen(true)}
                             options={termOptions}
                             size="sm"
@@ -205,7 +397,7 @@ export default function BillForm({
                             type="date"
                             label="Bill date"
                             value={data.billDate}
-                            onChange={(e) => setData('billDate', e.target.value)}
+                            onChange={(e) => handleBillDateChange(e.target.value)}
                             size="sm"
                         />
                     </div>
@@ -230,19 +422,85 @@ export default function BillForm({
                 </div>
             </div>
 
-            <LineItemsTable
-                columns={BILL_COLUMNS}
-                items={data.items}
-                handleItemChange={handleItemChange}
-                addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
-                removeRow={(index) => setData("items", data.items.filter((_, i) => i !== index))}
-                clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
-                totals={{ "Total": totalAmount }}
-                currencyPrefix={currencyPrefix}
-                hideActions={true}
-            />
+            {/* Collapsible Category details Accordion */}
+            <div className="mt-8 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm transition-all duration-300">
+                <button
+                    type="button"
+                    onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
+                    className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100/80 transition-colors duration-200 text-left border-b border-slate-200"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className={`text-slate-500 transition-transform duration-300 transform inline-block text-xs ${isCategoryExpanded ? 'rotate-90' : ''}`}>
+                            ▶
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">Category details</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold uppercase tracking-wider">
+                            {data.items.filter(item => item.category).length} lines
+                        </span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        Total Category: <span className="text-slate-800 font-black">{currencyPrefix} {data.items.reduce((sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </span>
+                </button>
+                {isCategoryExpanded && (
+                    <div className="p-4 bg-slate-50/10">
+                        <LineItemsTable
+                            columns={BILL_COLUMNS}
+                            items={data.items}
+                            handleItemChange={handleItemChange}
+                            addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
+                            removeRow={(index) => {
+                                const remaining = data.items.filter((_, i) => i !== index);
+                                setData("items", remaining.length > 0 ? remaining : [{ category: "", description: "", amount: "0.00" }]);
+                            }}
+                            clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
+                            currencyPrefix={currencyPrefix}
+                            hideActions={true}
+                        />
+                    </div>
+                )}
+            </div>
 
-            <div className="grid grid-cols-2 gap-10 mt-8">
+            {/* Collapsible Item details Accordion */}
+            <div className="mt-6 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm transition-all duration-300">
+                <button
+                    type="button"
+                    onClick={() => setIsItemsExpanded(!isItemsExpanded)}
+                    className="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100/80 transition-colors duration-200 text-left border-b border-slate-200"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className={`text-slate-500 transition-transform duration-300 transform inline-block text-xs ${isItemsExpanded ? 'rotate-90' : ''}`}>
+                            ▶
+                        </span>
+                        <span className="font-semibold text-slate-700 text-sm">Item details</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider">
+                            {data.itemDetails.filter(item => item.product).length} lines
+                        </span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                        Total Item: <span className="text-slate-800 font-black">{currencyPrefix} {data.itemDetails.reduce((sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </span>
+                </button>
+                {isItemsExpanded && (
+                    <div className="p-4 bg-slate-50/10">
+                        <LineItemsTable
+                            columns={ITEM_COLUMNS}
+                            items={data.itemDetails}
+                            handleItemChange={handleProductItemChange}
+                            addRow={() => setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            removeRow={(index) => {
+                                const remaining = data.itemDetails.filter((_, i) => i !== index);
+                                setData("itemDetails", remaining.length > 0 ? remaining : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                            }}
+                            clearRows={() => setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            currencyPrefix={currencyPrefix}
+                            hideActions={true}
+                        />
+                    </div>
+                )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-10 mt-8 pb-12">
                 <div className="w-[400px]">
                     <CommonInput
                         type="textarea"
@@ -261,12 +519,12 @@ export default function BillForm({
                 onClose={() => setIsTermModalOpen(false)}
                 onSave={(newTerm) => {
                     setTermOptions([...termOptions, { value: newTerm.name, label: newTerm.name }]);
-                    setData("terms", newTerm.name);
+                    handleTermsChange(newTerm.name);
                 }}
             />
 
-            <QuickAddPayee 
-                isOpen={isPayeeModalOpen} 
+            <QuickAddPayee
+                isOpen={isPayeeModalOpen}
                 onClose={() => setIsPayeeModalOpen(false)}
                 onSuccess={(newPayee) => {
                     if (newPayee) {
@@ -277,16 +535,43 @@ export default function BillForm({
                 initialType="supplier"
             />
 
-            <QuickAddAccount 
-                isOpen={isAccountModalOpen} 
-                onClose={() => setIsAccountModalOpen(false)} 
+            <QuickAddAccount
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
                 type={accountModalType}
                 onSuccess={(newAcc) => {
                     if (newAcc) {
-                        // Handled by Inertia reload/redirect
+                        fetchAccounts().then(() => {
+                            // Automatically select the new account in the last active row if needed,
+                            // or just reload options so user can choose it.
+                        });
                     }
+                }}
+            />
+
+            <InventoryItemSidePanel
+                isOpen={isItemModalOpen}
+                onClose={() => {
+                    setIsItemModalOpen(false);
+                    setAddingItemRowIndex(null);
+                }}
+                onSuccess={(newItem) => {
+                    fetchItems().then(() => {
+                        if (addingItemRowIndex !== null && newItem) {
+                            const updated = [...data.itemDetails];
+                            updated[addingItemRowIndex].product = newItem.id;
+                            updated[addingItemRowIndex].description = newItem.description || "";
+                            const rateValue = parseFloat(newItem.purchase_price) || parseFloat(newItem.sale_price) || 0;
+                            updated[addingItemRowIndex].rate = formatCurrencyValue(rateValue);
+                            const q = parseFloat(updated[addingItemRowIndex].qty) || 0;
+                            updated[addingItemRowIndex].amount = formatCurrencyValue(q * rateValue);
+                            setData("itemDetails", updated);
+                        }
+                        setAddingItemRowIndex(null);
+                    });
                 }}
             />
         </TransactionLayout>
     );
 }
+

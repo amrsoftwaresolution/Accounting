@@ -30,9 +30,9 @@ export default function QuickActionMenu({ isOpen, onClose }) {
             links: [
                 { name: "Credit Sale", href: "/invoice" },
                 { name: "Receive payment", href: "/payment" },
-                { name: "Cash sale", href: "/receipt" },
+                { name: "Cash Sale", href: "/receipt" },
                 { name: "Sales Return", href: "/credit-note" },
-                { name: "Add customer", href: route('customers.create'), isSolid: true },
+                { name: "Add Customer", href: route('customers.create'), isSolid: true },
             ]
         },
         {
@@ -43,7 +43,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                 // { name: "Pay bills", href: "#" },
                 // { name: "Purchase order", href: "#" },
                 { name: "Supplier Return", href: "/SupplierCredit" },
-                { name: "Add supplier", href: route('suppliers.create'), isSolid: true },
+                { name: "Add Supplier", href: route('suppliers.create'), isSolid: true },
             ]
         },
         {
@@ -52,7 +52,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                 { name: "Bank Deposit", href: "/deposit" },
                 { name: "Transfer", href: "/transfer" },
                 { name: "Journal entry", href: "/journal" },
-                { name: "Add account", href: route('chart-of-account.create'), isSolid: true },
+                { name: "Add Account", href: route('chart-of-account.create'), isSolid: true },
             ]
         }
     ];
