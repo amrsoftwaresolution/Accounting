@@ -7,8 +7,6 @@ export default function Create({ managers }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
-        password: '',
-        password_confirmation: '',
         role: 'user',
         phone: '',
     });
@@ -21,7 +19,7 @@ export default function Create({ managers }) {
     return (
         <AuthenticatedLayout>
             <Head title="Create System User" />
-            
+
             <div className="py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-2xl mx-auto">
                     <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -59,24 +57,6 @@ export default function Create({ managers }) {
                                 </div>
 
                                 <CommonInput
-                                    type="password"
-                                    label="Password"
-                                    placeholder="••••••••"
-                                    value={data.password}
-                                    onChange={(e) => setData('password', e.target.value)}
-                                    error={errors.password}
-                                />
-
-                                <CommonInput
-                                    type="password"
-                                    label="Confirm Password"
-                                    placeholder="••••••••"
-                                    value={data.password_confirmation}
-                                    onChange={(e) => setData('password_confirmation', e.target.value)}
-                                    error={errors.password_confirmation}
-                                />
-
-                                <CommonInput
                                     label="Phone Number"
                                     placeholder="+1 (555) 000-0000"
                                     value={data.phone}
@@ -98,6 +78,9 @@ export default function Create({ managers }) {
                                 </div>
                             </div>
 
+                            <div className="text-sm text-slate-500 leading-relaxed">
+                                When you create this account, the user will receive an invitation email with a secure password setup link.
+                            </div>
                             <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
                                 <Link href={route('users.index')}>
                                     <button type="button" className="text-sm font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">
