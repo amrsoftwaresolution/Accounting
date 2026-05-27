@@ -103,6 +103,7 @@ Route::middleware('auth')->group(function () {
 
     // Users
     Route::resource('users', \App\Http\Controllers\UserController::class);
+    Route::post('/users/{user}/resend-invite', [\App\Http\Controllers\UserController::class, 'resendInvitation'])->name('users.resend-invite');
 
     // Reports
     Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');

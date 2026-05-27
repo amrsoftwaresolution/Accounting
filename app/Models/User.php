@@ -26,15 +26,25 @@ class User extends Authenticatable
      *
      */
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'role',
-    'phone',
-    'is_active',
-    'hire_date',
-    'manager_id',
-];
+        'name',
+        'email',
+        'password',
+        'role',
+        'phone',
+        'is_active',
+        'hire_date',
+        'manager_id',
+        'invite_token',
+        'invite_expires_at',
+        'is_invited',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'invite_expires_at' => 'datetime',
+        'is_invited' => 'boolean',
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -53,19 +63,6 @@ class User extends Authenticatable
      */
     protected $appends = [
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
 
     public function manager()
     {

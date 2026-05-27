@@ -1,8 +1,9 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 export default function Select({ companies }) {
     const { post } = useForm();
+    const user = usePage().props.auth.user;
 
     const handleSelect = (companyId) => {
         post(route('companies.switch', companyId));
@@ -11,7 +12,7 @@ export default function Select({ companies }) {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
             <Head title="Select Company" />
-            
+
             <div className="w-full max-w-2xl">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Welcome Back</h1>
@@ -52,17 +53,19 @@ export default function Select({ companies }) {
                                 </button>
                             ))}
 
-                            <Link
-                                href={route('companies.create')}
-                                className="bg-slate-100 p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:bg-slate-200 hover:border-slate-300 transition-all text-center flex flex-col items-center justify-center gap-2 group"
-                            >
-                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover:text-slate-600 transition-colors">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                </div>
-                                <span className="text-sm font-bold text-slate-500">Create New Company</span>
-                            </Link>
+                            {user.role === 'admin' && (
+                                <Link
+                                    href={route('companies.create')}
+                                    className="bg-slate-100 p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:bg-slate-200 hover:border-slate-300 transition-all text-center flex flex-col items-center justify-center gap-2 group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-400 group-hover:text-slate-600 transition-colors">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-500">Create New Company</span>
+                                </Link>
+                            )}
                         </>
                     ) : (
                         <div className="bg-white p-12 rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 text-center w-full max-w-md">
@@ -72,17 +75,22 @@ export default function Select({ companies }) {
                                 </svg>
                             </div>
                             <h2 className="text-xl font-black text-slate-900 mb-2">No Companies Found</h2>
-                            <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">It looks like you haven't joined or created a company yet. Create your first one to start managing your finances.</p>
-                            
-                            <Link
-                                href={route('companies.create')}
-                                className="inline-flex items-center justify-center gap-3 w-full bg-primary text-white font-black py-4 rounded-2xl hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all uppercase tracking-widest text-xs"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Create Your First Company
-                            </Link>
+                            <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">
+                                It looks like you haven't joined any company yet.
+                                {user.role === 'admin' ? ' Create your first one to start managing your finances.' : ' Please contact your administrator to be added to a company.'}
+                            </p>
+
+                            {user.role === 'admin' && (
+                                <Link
+                                    href={route('companies.create')}
+                                    className="inline-flex items-center justify-center gap-3 w-full bg-primary text-white font-black py-4 rounded-2xl hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all uppercase tracking-widest text-xs"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Create Your First Company
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>

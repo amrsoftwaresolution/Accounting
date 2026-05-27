@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserInvitationMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,19 +40,21 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|confirmed|min:8',
+            'email' => 'required|string|email|max:255|unique:users,email',
             'role' => 'required|in:admin,user',
             'phone' => 'nullable|string|max:20',
         ]);
 
+        $inviteToken = Str::random(64);
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
             'role' => $request->role,
             'phone' => $request->phone,
             'is_active' => true,
+            'invite_token' => $inviteToken,
+            'invite_expires_at' => now()->addHours(48),
+            'is_invited' => true,
         ]);
 
         // Link to active company
@@ -58,7 +63,30 @@ class UserController extends Controller
             $user->companies()->attach($activeCompanyId, ['role' => $request->role]);
         }
 
-        return redirect()->route('users.index')->with('success', 'User created successfully');
+        $inviteUrl = route('invite.setup', $inviteToken);
+        Mail::to($user->email)->send(new UserInvitationMail($user, $inviteUrl));
+
+        return redirect()->route('users.index')->with('success', 'User created and invitation email sent successfully');
+    }
+
+    public function resendInvitation(User $user)
+    {
+        abort_unless(auth()->user()->role === 'admin', 403);
+
+        if (! $user->is_invited) {
+            return back()->with('error', 'This user has already completed their invitation.');
+        }
+
+        $user->update([
+            'invite_token' => Str::random(64),
+            'invite_expires_at' => now()->addHours(48),
+            'is_invited' => true,
+        ]);
+
+        $inviteUrl = route('invite.setup', $user->invite_token);
+        Mail::to($user->email)->send(new UserInvitationMail($user, $inviteUrl));
+
+        return back()->with('success', 'Invitation resent successfully.');
     }
 
     /**

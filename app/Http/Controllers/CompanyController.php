@@ -28,11 +28,15 @@ class CompanyController extends Controller
 
     public function create()
     {
+        abort_unless(Auth::user()->role === 'admin', 403);
+
         return Inertia::render('Company/Create');
     }
 
     public function store(Request $request)
     {
+        abort_unless(Auth::user()->role === 'admin', 403);
+
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
             'company_email' => 'nullable|email|max:255',
@@ -70,7 +74,7 @@ class CompanyController extends Controller
     {
         // Load the assigned package
         $company->load('package');
-        
+
         $packages = \App\Models\Package::where('is_active', true)->get();
 
         return Inertia::render('Company/Show', [
