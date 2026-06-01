@@ -76,6 +76,8 @@ Route::middleware('auth')->group(function () {
     // Inventory Routes
     Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);
     Route::resource('item-categories', \App\Http\Controllers\Inventory\ItemCategoryController::class);
+    Route::get('/inventory-adjustment', [\App\Http\Controllers\Inventory\InventoryQuantityAdjustmentController::class, 'create'])->name('inventory-adjustment');
+    Route::post('/inventory-adjustment', [\App\Http\Controllers\Inventory\InventoryQuantityAdjustmentController::class, 'store'])->name('inventory-adjustment.store');
 
     // Contacts Routes
     Route::resource('customers', \App\Http\Controllers\Contacts\CustomerController::class);

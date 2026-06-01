@@ -23,8 +23,8 @@ export default function Index({ users }) {
                     </Link>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
-                    <table className="w-full text-left border-collapse">
+                <div className="bg-white border border-slate-200 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-x-auto">
+                    <table className="w-full min-w-max text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">User Profile</th>
@@ -83,8 +83,8 @@ export default function Index({ users }) {
                                     <td className="px-6 py-4 text-xs font-bold text-slate-500 font-mono">
                                         {user.phone || 'N/A'}
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <td className="px-6 py-4 text-right whitespace-nowrap">
+                                        <div className="flex items-center justify-end gap-2">
                                             <Link href="#" className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all">
                                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
