@@ -26,10 +26,7 @@ class InvoiceController extends Controller
         $nextInvoiceNo = ($lastRef && is_numeric($lastRef->reference)) ? (int) $lastRef->reference + 1 : 1001;
 
         return Inertia::render('Transaction/InvoiceForm', [
-            'nextInvoiceNo' => (string) str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT),
-            'lastInvoiceDate' => session('last_invoice_date'),
-            'lastDueDate' => session('last_due_date'),
-            'lastSaveAction' => session('last_save_action_invoice', 'save'),
+            'nextInvoiceNo' => (string) str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT)
         ]);
     }
 
@@ -113,21 +110,6 @@ class InvoiceController extends Controller
 
             return $journalEntry;
         });
-
-        $action = $request->input('action', 'save');
-
-        // Save to session
-        session([
-            'last_invoice_date' => $request->invoiceDate,
-            'last_due_date' => $request->dueDate,
-            'last_save_action_invoice' => $action
-        ]);
-
-        if ($action === 'close') {
-            return redirect()->route('dashboard')->with('success', 'credit Sale saved successfully.');
-        } elseif ($action === 'new') {
-            return redirect()->route('invoice')->with('success', 'credit Sale saved successfully.');
-        }
 
         return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'credit Sale saved successfully.');
     }
@@ -243,13 +225,6 @@ class InvoiceController extends Controller
                 'memo' => $request->memo,
             ]);
         });
-
-        $action = $request->input('action', 'save');
-        if ($action === 'close') {
-            return redirect()->route('dashboard')->with('success', 'Invoice updated successfully.');
-        } elseif ($action === 'new') {
-            return redirect()->route('invoice')->with('success', 'Invoice updated successfully.');
-        }
 
         return redirect()->back()->with('success', 'Invoice updated successfully.');
     }

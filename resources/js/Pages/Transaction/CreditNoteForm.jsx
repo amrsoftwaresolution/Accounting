@@ -56,7 +56,6 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
         { key: "amount", label: "Amount", type: "currency", width: "160px", className: "text-right", inputClass: "text-right" },
     ];
 
-    const [currentAction, setCurrentAction] = useState('save');
 
     const getInitialDate = () => {
         if (creditNote?.creditNoteDate) return creditNote.creditNoteDate;
@@ -76,7 +75,6 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
-        action: 'save'
     });
 
     useEffect(() => {
@@ -92,8 +90,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                 items: creditNote.items || [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ],
-                action: 'save'
+                ]
             }));
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -108,8 +105,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                 items: [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ],
-                action: 'save'
+                ]
             }));
         }
         clearErrors();
@@ -118,7 +114,6 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     useEffect(() => {
         transform((data) => ({
             ...data,
-            action: currentAction,
             items: data.items
                 .filter(item => item.product)
                 .map(item => ({
@@ -127,7 +122,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     amount: String(item.amount).replace(/,/g, '')
                 }))
         }));
-    }, [currentAction]);
+    }, []);
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -161,7 +156,6 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     };
 
     const handleSave = (action = 'save') => {
-        setCurrentAction(action);
         const url = creditNote?.id ? route('credit-note.update', creditNote.id) : route('credit-note.store');
         const method = creditNote?.id ? patch : post;
 

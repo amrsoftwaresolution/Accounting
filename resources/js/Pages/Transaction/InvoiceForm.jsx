@@ -12,10 +12,7 @@ import axios from "axios";
 export default function InvoiceForm({
     auth,
     nextInvoiceNo = "",
-    invoice = null,
-    lastInvoiceDate = null,
-    lastDueDate = null,
-    lastSaveAction = 'save'
+    invoice = null
 }) {
     const { props } = usePage();
     const company = auth.company;
@@ -86,7 +83,6 @@ export default function InvoiceForm({
         { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
     ];
 
-    const actionRef = useRef(lastSaveAction);
 
     const calculateDueDate = (invoiceDateStr, termsStr) => {
         if (!invoiceDateStr) return "";
@@ -123,7 +119,7 @@ export default function InvoiceForm({
         if (invoice?.invoiceDate) return invoice.invoiceDate;
         const cached = localStorage.getItem('last_transaction_date');
         if (cached) return cached;
-        return lastInvoiceDate || new Date().toISOString().split('T')[0];
+        return new Date().toISOString().split('T')[0];
     };
 
     const initialInvoiceDate = getInitialInvoiceDate();
@@ -148,14 +144,12 @@ export default function InvoiceForm({
         items: invoice?.items || [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-        ],
-        action: lastSaveAction
+        ]
     });
 
     useEffect(() => {
         transform((data) => ({
             ...data,
-            action: actionRef.current,
             items: data.items
                 .filter(item => item.product)
                 .map(item => ({
@@ -181,11 +175,10 @@ export default function InvoiceForm({
                 items: invoice.items || [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ],
-                action: lastSaveAction
+                ]
             }));
         } else {
-            const cachedDate = localStorage.getItem('last_transaction_date') || lastInvoiceDate || new Date().toISOString().split('T')[0];
+            const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
             const termsVal = "Net 30";
             setData(prev => ({
                 ...prev,
@@ -200,8 +193,7 @@ export default function InvoiceForm({
                 items: [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ],
-                action: lastSaveAction
+                ]
             }));
         }
         clearErrors();
@@ -249,7 +241,6 @@ export default function InvoiceForm({
     };
 
     const handleSave = (action = 'save') => {
-        actionRef.current = action;
         const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
         const method = invoice?.id ? patch : post;
 
@@ -278,7 +269,6 @@ export default function InvoiceForm({
             onClearRows={() => {
                 setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
-            lastAction={lastSaveAction}
         >
             <div className="py-6 px-1 space-y-8">
                 {/* ROW 1: Customer & Email & Balance */}

@@ -31,10 +31,7 @@ class BillController extends Controller
         $nextBillNo = is_numeric($lastRef) ? (int)$lastRef + 1 : 1001;
 
         return Inertia::render('Transaction/BillForm', [
-            'nextBillNo' => (string)str_pad($nextBillNo, 4, '0', STR_PAD_LEFT),
-            'lastBillDate' => session('last_bill_date'),
-            'lastDueDate' => session('last_due_date_bill'),
-            'lastSaveAction' => session('last_save_action_bill', 'save'),
+            'nextBillNo' => (string)str_pad($nextBillNo, 4, '0', STR_PAD_LEFT)
         ]);
     }
 
@@ -172,21 +169,6 @@ class BillController extends Controller
                 return $journalEntry;
             });
 
-            $action = $request->input('action', 'save');
-
-            // Save to session
-            session([
-                'last_bill_date' => $request->billDate, 
-                'last_due_date_bill' => $request->dueDate, 
-                'last_save_action_bill' => $action
-            ]);
-
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Bill saved successfully.');
-            } elseif ($action === 'new') {
-                return redirect()->route('bill.create')->with('success', 'Bill saved successfully.');
-            }
-
             return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill saved successfully.');
 
         } catch (\Exception $e) {
@@ -227,10 +209,7 @@ class BillController extends Controller
         ];
 
         return Inertia::render('Transaction/BillForm', [
-            'bill' => $billData,
-            'lastBillDate' => session('last_bill_date'),
-            'lastDueDate' => session('last_due_date_bill'),
-            'lastSaveAction' => session('last_save_action_bill', 'save'),
+            'bill' => $billData
         ]);
     }
 

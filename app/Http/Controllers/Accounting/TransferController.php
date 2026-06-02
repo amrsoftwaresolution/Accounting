@@ -17,10 +17,7 @@ class TransferController extends Controller
 {
     public function create()
     {
-        return Inertia::render('Transaction/TransferForm', [
-            'lastTransferDate' => session('last_transfer_date'),
-            'lastSaveAction' => session('last_save_action_transfer', 'save'),
-        ]);
+        return Inertia::render('Transaction/TransferForm');
     }
 
     public function store(StoreTransferRequest $request)
@@ -73,13 +70,6 @@ class TransferController extends Controller
                     'memo'             => $request->memo,
                 ]);
             });
-
-            $action = $request->input('action', 'save');
-            // No session saving needed
-
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Transfer saved successfully.');
-            }
 
             return redirect()->back()->with('success', 'Transfer saved successfully.');
 

@@ -1,21 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router } from '@inertiajs/react';
+import CommonInput from '@/Components/CommonInput';
 
 export default function SupplierBalance({ reportData, filters, auth }) {
-    const toDateRef = useRef(null);
+    const [startDate, setStartDate] = useState(filters.start_date);
+    const [endDate, setEndDate] = useState(filters.end_date);
 
-    const openDatePicker = (ref) => {
-        if (ref.current) {
-            try {
-                ref.current.showPicker();
-            } catch (err) {
-                ref.current.click();
-            }
-        }
-    };
-    const handleFilterChange = (key, value) => {
-        router.get(route('reports.supplier-balance'), { ...filters, [key]: value }, {
+    const handleRunReport = () => {
+        router.get(route('reports.supplier-balance'), { start_date: startDate, end_date: endDate }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -35,6 +28,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
 
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'GrowDigitec';
+        const startDate = filters.start_date;
         const endDate = filters.end_date;
         
         let csvContent = "";
@@ -42,7 +36,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
         // Add Title Header
         csvContent += `"${companyName}"\n`;
         csvContent += `"Supplier Report"\n`;
-        csvContent += `"As of ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
         
         // Headers
         csvContent += `"Supplier Name","Email","Phone","Balance (${homeCurrency})"\n`;
@@ -67,22 +61,31 @@ export default function SupplierBalance({ reportData, filters, auth }) {
     };
 
     const filterElements = (
-        <div className="flex gap-4">
-            <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">As Of</label>
-                <div 
-                    onClick={() => openDatePicker(toDateRef)}
-                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
-                >
-                    <input 
-                        ref={toDateRef}
-                        type="date" 
-                        value={filters.end_date}
-                        onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
-                    />
-                </div>
+        <div className="flex items-end gap-4">
+            <div className="w-[140px]">
+                <CommonInput 
+                    type="date"
+                    label="From"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    size="sm"
+                />
             </div>
+            <div className="w-[140px]">
+                <CommonInput 
+                    type="date"
+                    label="To"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    size="sm"
+                />
+            </div>
+            <button 
+                onClick={handleRunReport}
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
+            >
+                Run Report
+            </button>
         </div>
     );
 
@@ -94,46 +97,56 @@ export default function SupplierBalance({ reportData, filters, auth }) {
         >
             <Head title="Supplier Report" />
             
-            <div className="text-center mb-12">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{auth.company?.company_name}</h2>
-                <h3 className="text-lg font-bold text-slate-600 mt-1 uppercase tracking-widest">Supplier Report</h3>
-                <p className="text-xs text-slate-400 mt-2 font-medium">
-                    As of {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            <div className="text-center mb-8 font-serif">
+                <h2 className="text-xl font-bold text-gray-900">Supplier Balance Summary</h2>
+                <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
+                <p className="text-[13px] text-gray-500 mt-1">
+                    {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
             </div>
 
-            <div className="space-y-10">
-                <section>
-                    <div className="grid grid-cols-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 border-b border-slate-100 pb-2 px-4">
-                        <div className="col-span-2">Supplier</div>
-                        <div className="text-right col-span-2">Balance</div>
-                    </div>
-                    <div className="space-y-3">
+            <div className="w-full overflow-x-auto pb-10">
+                <table className="w-full text-[13px] text-left border-collapse">
+                    <thead>
+                        <tr className="border-y-2 border-gray-300">
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-3/4">
+                                Supplier <span className="inline-block ml-1 text-gray-400 text-[10px]">▲</span>
+                            </th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">
+                                Open Balance <span className="inline-block ml-1 text-gray-400 text-[10px]">↕</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
                         {suppliers.length === 0 ? (
-                            <div className="text-center py-8 text-slate-400 text-sm font-medium">No supplier balances found.</div>
+                            <tr>
+                                <td colSpan="2" className="py-8 text-center text-gray-500">No supplier balances found.</td>
+                            </tr>
                         ) : (
                             suppliers.map((item, index) => (
-                                <div key={index} className="grid grid-cols-4 items-center text-xs font-medium text-slate-700 hover:bg-slate-50 p-2 rounded-lg transition-colors">
-                                    <div className="col-span-2 flex flex-col pl-4">
-                                        <span className="font-bold text-slate-900">{item.name}</span>
+                                <tr key={index} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="py-2 px-3 text-gray-900">
+                                        {item.name}
                                         {(item.email || item.phone) && (
-                                            <span className="text-[10px] text-slate-400 mt-0.5">
+                                            <span className="block text-[11px] text-gray-400 mt-0.5">
                                                 {item.email} {item.email && item.phone && '|'} {item.phone}
                                             </span>
                                         )}
-                                    </div>
-                                    <div className="text-right col-span-2">
+                                    </td>
+                                    <td className="py-2 px-3 text-right tabular-nums">
                                         <Currency value={item.balance} />
-                                    </div>
-                                </div>
+                                    </td>
+                                </tr>
                             ))
                         )}
-                        <div className="flex justify-between text-sm font-black text-slate-900 pt-4 border-t-2 border-slate-900 px-2">
-                            <span>Total</span>
-                            <Currency value={totalBalance} />
-                        </div>
-                    </div>
-                </section>
+                        <tr className="border-t-2 border-b-2 border-gray-400 font-bold bg-white">
+                            <td className="py-2.5 px-3 text-gray-900">TOTAL</td>
+                            <td className="py-2.5 px-3 text-right tabular-nums text-gray-900">
+                                <Currency value={totalBalance} />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <div className="mt-20 text-[10px] text-slate-400 font-bold text-center uppercase tracking-widest italic">
