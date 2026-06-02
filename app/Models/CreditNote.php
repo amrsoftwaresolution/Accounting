@@ -19,4 +19,9 @@ class CreditNote extends Model
     {
         return $this->hasMany(CreditNoteItem::class);
     }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 }

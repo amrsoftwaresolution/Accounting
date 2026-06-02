@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Accounting\StoreTransferRequest;
 
 class TransferController extends Controller
 {
@@ -22,16 +23,9 @@ class TransferController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreTransferRequest $request)
     {
-        // FIX 3: Changed keys to match your frontend (transfer_from, transfer_to)
-        $validated = $request->validate([
-            'transfer_from' => 'required|uuid|exists:chart_of_accs,id',
-            'transfer_to'   => 'required|uuid|exists:chart_of_accs,id|different:transfer_from',
-            'amount'        => 'required|numeric|min:0.01',
-            'date'          => 'required|date',
-            'memo'          => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::transaction(function() use ($request) {
@@ -81,7 +75,7 @@ class TransferController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            session(['last_transfer_date' => $request->date, 'last_save_action_transfer' => $action]);
+            // No session saving needed
 
             if ($action === 'close') {
                 return redirect()->route('dashboard')->with('success', 'Transfer saved successfully.');

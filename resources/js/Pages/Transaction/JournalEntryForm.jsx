@@ -58,8 +58,15 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         },
     ];
 
+    const getInitialDate = () => {
+        if (journalEntry?.date) return journalEntry.date;
+        const cached = localStorage.getItem('last_transaction_date');
+        if (cached) return cached;
+        return new Date().toISOString().split('T')[0];
+    };
+
     const [form, setForm] = useState({
-        date: journalEntry?.date || new Date().toISOString().split('T')[0],
+        date: getInitialDate(),
         journalNo: journalEntry?.reference || nextJournalNo || "",
         memo: journalEntry?.description || "",
     });
@@ -167,7 +174,9 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                         label="Journal date"
                         value={form.date}
                         onChange={(e) => {
-                            setForm({ ...form, date: e.target.value });
+                            const newDate = e.target.value;
+                            localStorage.setItem('last_transaction_date', newDate);
+                            setForm({ ...form, date: newDate });
                             setIsDirty(true);
                         }}
                         size="sm"

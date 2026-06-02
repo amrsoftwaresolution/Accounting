@@ -11,6 +11,8 @@ use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Http\Requests\Accounting\StoreExpenseRequest;
+use App\Http\Requests\Accounting\UpdateExpenseRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -19,42 +21,12 @@ class ExpenseController extends Controller
 {
     public function create()
     {
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
-        return Inertia::render('Transaction/ExpenseForm', [
-            'paymentMethods' => $paymentMethods,
-            'lastPaymentDate' => session('last_payment_date'),
-            'lastSaveAction' => session('last_save_action', 'save')
-        ]);
+        return Inertia::render('Transaction/ExpenseForm');
     }
 
-    public function store(Request $request)
+    public function store(StoreExpenseRequest $request)
     {
-        $validated = $request->validate([
-            'payee' => 'nullable',
-            'account' => 'required',
-            'date' => 'required|date',
-            'method' => 'nullable',
-            'ref' => 'nullable|string',
-            'memo' => 'nullable|string',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-            'paymentAccount' => 'required_without:account',
-            'paymentDate' => 'required_without:date|date',
-            'paymentMethod' => 'nullable',
-        ]);
+        $validated = $request->validated();
 
         $paymentAccount = $request->input('account', $request->input('paymentAccount'));
         $paymentDate = $request->input('date', $request->input('paymentDate'));
@@ -192,8 +164,7 @@ class ExpenseController extends Controller
 
             $action = $request->input('action', 'save');
 
-            // Save to session
-            session(['last_payment_date' => $paymentDate, 'last_save_action' => $action]);
+            // No session saving needed
 
             if ($action === 'close') {
                 return redirect()->route('dashboard')->with('success', 'Payment saved successfully.');
@@ -201,7 +172,7 @@ class ExpenseController extends Controller
                 return redirect()->route('expense')->with('success', 'Payment saved successfully.');
             }
 
-            return redirect()->back()->with('success', 'Payment saved successfully.');
+            return redirect()->route('expense.edit', $journalEntry->id)->with('success', 'Payment saved successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -256,7 +227,7 @@ class ExpenseController extends Controller
         return Inertia::render('Transaction/ExpenseForm', [
             'payees' => array_merge(
                 Customer::orderBy('display_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->display_name, 'type' => 'customer'])->toArray(),
-                Supplier::orderBy('name')->get()->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'type' => 'supplier'])->toArray()
+                Supplier::orderBy('display_name')->get()->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name, 'type' => 'supplier'])->toArray()
             ),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'expense' => $expenseData,
@@ -264,18 +235,9 @@ class ExpenseController extends Controller
         ]);
     }
 
-    public function update(Request $request, JournalEntry $journalEntry)
+    public function update(UpdateExpenseRequest $request, JournalEntry $journalEntry)
     {
-        $validated = $request->validate([
-            'payee' => 'nullable',
-            'account' => 'required',
-            'date' => 'required|date',
-            'method' => 'nullable',
-            'ref' => 'nullable|string',
-            'memo' => 'nullable|string',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         $paymentAccount = $request->input('account', $request->input('paymentAccount'));
         $paymentDate = $request->input('date', $request->input('paymentDate'));

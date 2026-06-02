@@ -12,10 +12,7 @@ import axios from "axios";
 
 export default function ExpenseForm({
     auth,
-    paymentMethods = [],
-    expense = null,
-    lastPaymentDate = null,
-    lastSaveAction = 'save'
+    expense = null
 }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
@@ -27,7 +24,7 @@ export default function ExpenseForm({
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
-    const [localPaymentMethods, setLocalPaymentMethods] = useState(paymentMethods);
+    const [paymentMethodOptions, setPaymentMethodOptions] = useState([]);
 
     // Modal States
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -62,22 +59,25 @@ export default function ExpenseForm({
         }
     };
 
+    const fetchPaymentMethods = () => {
+        axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
+    };
+
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
         fetchItems();
+        fetchPaymentMethods();
     }, []);
-
-    const methodOptions = localPaymentMethods.map(m => ({ value: m.id, label: m.name }));
 
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
     const getInitialPaymentDate = () => {
         if (expense?.paymentDate) return expense.paymentDate;
-        const cached = localStorage.getItem('last_payment_date');
+        const cached = localStorage.getItem('last_transaction_date');
         if (cached) return cached;
-        return lastPaymentDate || new Date().toISOString().split('T')[0];
+        return new Date().toISOString().split('T')[0];
     };
 
     const initialPaymentDate = getInitialPaymentDate();
@@ -99,7 +99,7 @@ export default function ExpenseForm({
         action: 'save'
     });
 
-    const actionRef = useRef(lastSaveAction);
+    const actionRef = useRef('save');
 
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0) +
@@ -126,7 +126,7 @@ export default function ExpenseForm({
                 action: 'save'
             });
         } else {
-            const cachedDate = localStorage.getItem('last_payment_date') || lastPaymentDate || new Date().toISOString().split('T')[0];
+            const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
             setData({
                 payee: "",
                 account: "",
@@ -197,7 +197,7 @@ export default function ExpenseForm({
     };
 
     const handlePaymentDateChange = (dateVal) => {
-        localStorage.setItem('last_payment_date', dateVal);
+        localStorage.setItem('last_transaction_date', dateVal);
         setData("date", dateVal);
     };
 
@@ -263,7 +263,6 @@ export default function ExpenseForm({
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
-            lastAction={lastSaveAction}
         >
             <div className="py-6 px-1 space-y-8">
                 {/* Error Banner */}
@@ -340,7 +339,7 @@ export default function ExpenseForm({
                             placeholder="Select method"
                             value={data.method}
                             onChange={(val) => setData("method", val)}
-                            options={methodOptions}
+                            options={paymentMethodOptions}
                             onAddNew={() => setIsPaymentMethodModalOpen(true)}
                             size="sm"
                             error={errors.method}
@@ -478,7 +477,7 @@ export default function ExpenseForm({
                 onClose={() => setIsPaymentMethodModalOpen(false)}
                 onSuccess={(newMethod) => {
                     if (newMethod) {
-                        setLocalPaymentMethods([...localPaymentMethods, { id: newMethod.value, name: newMethod.label }]);
+                        setPaymentMethodOptions([...paymentMethodOptions, newMethod]);
                         setData("method", newMethod.value);
                     }
                 }}

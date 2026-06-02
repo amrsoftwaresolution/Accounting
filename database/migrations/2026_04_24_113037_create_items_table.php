@@ -31,6 +31,15 @@ return new class extends Migration
             $table->foreignUuid('inventory_account_id')->nullable()->constrained('chart_of_accs')->onDelete('set null');
             
             $table->foreignUuid('item_category_id')->nullable()->constrained('item_categories')->onDelete('set null');
+            
+            // Extended fields
+            $table->date('as_of_date')->nullable();
+            $table->decimal('reorder_point', 15, 2)->default(0);
+            $table->text('purchase_description')->nullable();
+            $table->foreignUuid('preferred_supplier_id')->nullable()->constrained('suppliers')->onDelete('set null');
+            $table->boolean('is_sold')->default(true);
+            $table->boolean('is_purchased')->default(false);
+            
             $table->timestamps();
         });
     }

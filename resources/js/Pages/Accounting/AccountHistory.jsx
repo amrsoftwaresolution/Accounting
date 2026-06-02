@@ -99,6 +99,12 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
         if (type === 'bill') {
             return route('bill.edit', tx.journal_entry_id);
         }
+        if (type === 'payment') {
+            return route('payment.edit', tx.journal_entry_id);
+        }
+        if (type === 'sales_receipt') {
+            return route('receipt.edit', tx.journal_entry_id);
+        }
         return route('journal-entries.edit', tx.journal_entry_id);
     };
 

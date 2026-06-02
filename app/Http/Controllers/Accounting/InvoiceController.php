@@ -8,6 +8,8 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\ChartOfAcc;
 use App\Models\Customer;
+use App\Http\Requests\Accounting\StoreInvoiceRequest;
+use App\Http\Requests\Accounting\UpdateInvoiceRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -31,17 +33,9 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreInvoiceRequest $request)
     {
-        $validated = $request->validate([
-            'customer' => 'required',
-            'invoiceNo' => 'required',
-            'invoiceDate' => 'required|date',
-            'dueDate' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.product' => 'required',
-            'items.*.amount' => 'required',
-        ]);
+        $validated = $request->validated();
 
         $journalEntry = DB::transaction(function () use ($request) {
             $totalAmount = collect($request->items)->sum(function ($item) {
@@ -175,14 +169,9 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function update(Request $request, JournalEntry $journalEntry)
+    public function update(UpdateInvoiceRequest $request, JournalEntry $journalEntry)
     {
-        $validated = $request->validate([
-            'customer' => 'required',
-            'invoiceNo' => 'required',
-            'invoiceDate' => 'required|date',
-            'items' => 'required|array|min:1',
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($request, $journalEntry) {
             $totalAmount = collect($request->items)->sum(function ($item) {

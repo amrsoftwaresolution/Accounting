@@ -118,7 +118,7 @@ export default function BillForm({
 
     const getInitialBillDate = () => {
         if (bill?.billDate) return bill.billDate;
-        const cached = localStorage.getItem('last_bill_date');
+        const cached = localStorage.getItem('last_transaction_date');
         if (cached) return cached;
         return lastBillDate || new Date().toISOString().split('T')[0];
     };
@@ -237,7 +237,7 @@ export default function BillForm({
     };
 
     const handleBillDateChange = (dateVal) => {
-        localStorage.setItem('last_bill_date', dateVal);
+        localStorage.setItem('last_transaction_date', dateVal);
         setData(prev => ({
             ...prev,
             billDate: dateVal,

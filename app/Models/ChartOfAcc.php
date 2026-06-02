@@ -24,6 +24,8 @@ class ChartOfAcc extends Model
         'is_locked',
     ];
 
+    protected $appends = ['is_system'];
+
     public function parent()
     {
         return $this->belongsTo(ChartOfAcc::class, 'parent_id');
@@ -134,5 +136,29 @@ class ChartOfAcc extends Model
             'is_locked' => true,
             'is_active' => true,
         ]);
+    }
+
+    public function isSystemAccount(): bool
+    {
+        $systemNames = [
+            'Opening Balance Equity',
+            'Retained Earnings',
+        ];
+
+        $systemSubTypes = [
+            'accounts-receivable',
+            'accounts-payable',
+            'inventory',
+            'cost-of-goods-sold',
+            'retained-earnings',
+            'opening-balance-equity',
+        ];
+
+        return in_array($this->name, $systemNames) || in_array($this->sub_type, $systemSubTypes);
+    }
+
+    public function getIsSystemAttribute(): bool
+    {
+        return $this->isSystemAccount();
     }
 }

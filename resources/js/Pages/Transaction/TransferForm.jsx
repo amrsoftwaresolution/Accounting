@@ -15,7 +15,7 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
         transfer_from: "",
         transfer_to: "",
         amount: "",
-        date: lastTransferDate || new Date().toISOString().split('T')[0],
+        date: localStorage.getItem('last_transaction_date') || lastTransferDate || new Date().toISOString().split('T')[0],
         memo: "",
         action: lastSaveAction
     });
@@ -150,7 +150,11 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
                             type="date"
                             label="Date"
                             value={data.date}
-                            onChange={(e) => setData('date', e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                localStorage.setItem('last_transaction_date', newDate);
+                                setData('date', newDate);
+                            }}
                             size="sm"
                             error={errors.date}
                         />

@@ -36,7 +36,7 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
     const [form, setForm] = useState({
         supplier_id: "",
         mailing_address: "",
-        date: new Date().toISOString().split('T')[0],
+        date: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         ref: "",
         memo: ""
     });
@@ -145,7 +145,11 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
                                     type="date"
                                     className="w-full border-b border-slate-300 py-2 text-sm outline-none focus:border-primary bg-transparent transition-all"
                                     value={form.date}
-                                    onChange={(e) => setForm({...form, date: e.target.value})}
+                                    onChange={(e) => {
+                                        const newDate = e.target.value;
+                                        localStorage.setItem('last_transaction_date', newDate);
+                                        setForm({...form, date: newDate});
+                                    }}
                                 />
                             </div>
                             <div>

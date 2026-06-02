@@ -8,7 +8,7 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 
-export default function ReceivePaymentForm({ paymentMethods = [] }) {
+export default function ReceivePaymentForm({ paymentMethods = [], payment = null }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || 'LKR';
 
@@ -24,15 +24,15 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
 
     const [currentAction, setCurrentAction] = useState('save');
 
-    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
-        customer: "",
-        email: "",
-        paymentDate: new Date().toISOString().split('T')[0],
-        paymentMethod: "",
-        referenceNo: "",
-        depositTo: "",
-        amountReceived: "0.00",
-        memo: "",
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
+        customer: payment?.customer || "",
+        email: payment?.email || "",
+        paymentDate: payment?.paymentDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+        paymentMethod: payment?.paymentMethod || "",
+        referenceNo: payment?.referenceNo || "",
+        depositTo: payment?.depositTo || "",
+        amountReceived: payment?.amountReceived || "0.00",
+        memo: payment?.memo || "",
         action: 'save',
     });
 
@@ -47,11 +47,14 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
             }).catch(err => console.error("Failed to fetch customer info:", err));
 
             // Fetch outstanding invoices
-            axios.get(route('api.customers.invoices', val)).then(res => {
+            const url = payment?.payment_id
+                ? route('api.customers.invoices', val) + '?payment_id=' + payment.payment_id
+                : route('api.customers.invoices', val);
+            axios.get(url).then(res => {
                 setInvoices(res.data.map(inv => ({
                     ...inv,
-                    applied: 0,
-                    checked: false
+                    applied: inv.applied || 0,
+                    checked: inv.applied > 0
                 })));
             }).catch(err => console.error("Failed to fetch customer invoices:", err));
         } else {
@@ -189,6 +192,47 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
         fetchAccounts();
     }, []);
 
+    useEffect(() => {
+        if (payment) {
+            setData({
+                customer: payment.customer || "",
+                email: payment.email || "",
+                paymentDate: payment.paymentDate || "",
+                paymentMethod: payment.paymentMethod || "",
+                referenceNo: payment.referenceNo || "",
+                depositTo: payment.depositTo || "",
+                amountReceived: payment.amountReceived || "0.00",
+                memo: payment.memo || "",
+                action: 'save'
+            });
+            if (payment.customer) {
+                axios.get(route('api.customers.invoices', payment.customer) + '?payment_id=' + payment.payment_id)
+                    .then(res => {
+                        setInvoices(res.data.map(inv => ({
+                            ...inv,
+                            applied: inv.applied || 0,
+                            checked: inv.applied > 0
+                        })));
+                    })
+                    .catch(err => console.error("Failed to fetch customer invoices:", err));
+            }
+        } else {
+            setData({
+                customer: "",
+                email: "",
+                paymentDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                paymentMethod: "",
+                referenceNo: "",
+                depositTo: "",
+                amountReceived: "0.00",
+                memo: "",
+                action: 'save'
+            });
+            setInvoices([]);
+        }
+        clearErrors();
+    }, [payment?.id]);
+
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
 
 
@@ -209,7 +253,10 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
     const submit = (action = 'save') => {
         setCurrentAction(action);
 
-        post(route('payment.store'), {
+        const url = payment?.id ? route('payment.update', payment.id) : route('payment.store');
+        const submitMethod = payment?.id ? patch : post;
+
+        submitMethod(url, {
             preserveScroll: true,
             preserveState: action === 'save',
             onSuccess: () => {
@@ -223,7 +270,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
 
     return (
         <TransactionLayout
-            title="Receive Payment"
+            title={payment?.id ? `Edit Payment no.${data.referenceNo}` : "Receive Payment"}
             amount={parseFloat(data.amountReceived || 0).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
@@ -232,6 +279,13 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
             dirty={Object.keys(data).some((key) => key !== 'action' && String(data[key]) !== "")}
         >
             <Head title="Receive Payment" />
+
+            {/* Error Banner */}
+            {errors.error && (
+                <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                    {errors.error}
+                </div>
+            )}
 
             <div className="py-6 space-y-8">
                 {/* ROW 1: Customer & Summaries */}
@@ -269,7 +323,11 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
                             type="date"
                             label="Payment Date"
                             value={data.paymentDate}
-                            onChange={(e) => setData("paymentDate", e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                localStorage.setItem('last_transaction_date', newDate);
+                                setData("paymentDate", newDate);
+                            }}
                             size="sm"
                             error={errors.paymentDate}
                         />

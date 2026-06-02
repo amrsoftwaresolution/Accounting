@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/customers/{customer}', [\App\Http\Controllers\Api\LookupController::class, 'customerInfo'])->name('api.customers.info');
     Route::get('/api/customers/{customer}/invoices', [\App\Http\Controllers\Api\LookupController::class, 'customerInvoices'])->name('api.customers.invoices');
     Route::get('/api/categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('api.categories');
+    Route::get('/api/payment-methods', [\App\Http\Controllers\Api\LookupController::class, 'paymentMethods'])->name('api.payment-methods');
 
     Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
     Route::post('/journal-entries/{journalEntry}/quick-update', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'quickUpdate'])->name('journal-entries.quick-update');
@@ -59,9 +60,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'create'])->name('payment');
     Route::post('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'store'])->name('payment.store');
+    Route::get('/payment/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'edit'])->name('payment.edit');
+    Route::patch('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'update'])->name('payment.update');
 
     Route::get('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
     Route::post('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
+    Route::get('/receipt/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'edit'])->name('receipt.edit');
+    Route::patch('/receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'update'])->name('receipt.update');
 
     // Bank Deposit
     Route::get('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'create'])->name('deposit');
@@ -69,9 +74,13 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
     Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
+    Route::get('/credit-note/{journalEntry}/edit', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'edit'])->name('credit-note.edit');
+    Route::patch('/credit-note/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'update'])->name('credit-note.update');
 
     Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('supplier-credit');
     Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('supplier-credit.store');
+    Route::get('/SupplierCredit/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
+    Route::patch('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
 
     // Inventory Routes
     Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);

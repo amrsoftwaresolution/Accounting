@@ -121,7 +121,7 @@ export default function InvoiceForm({
 
     const getInitialInvoiceDate = () => {
         if (invoice?.invoiceDate) return invoice.invoiceDate;
-        const cached = localStorage.getItem('last_invoice_date');
+        const cached = localStorage.getItem('last_transaction_date');
         if (cached) return cached;
         return lastInvoiceDate || new Date().toISOString().split('T')[0];
     };
@@ -185,7 +185,7 @@ export default function InvoiceForm({
                 action: lastSaveAction
             }));
         } else {
-            const cachedDate = localStorage.getItem('last_invoice_date') || lastInvoiceDate || new Date().toISOString().split('T')[0];
+            const cachedDate = localStorage.getItem('last_transaction_date') || lastInvoiceDate || new Date().toISOString().split('T')[0];
             const termsVal = "Net 30";
             setData(prev => ({
                 ...prev,
@@ -356,7 +356,7 @@ export default function InvoiceForm({
                             value={data.invoiceDate}
                             onChange={(e) => {
                                 const newDate = e.target.value;
-                                localStorage.setItem('last_invoice_date', newDate);
+                                localStorage.setItem('last_transaction_date', newDate);
                                 setData(prev => ({
                                     ...prev,
                                     invoiceDate: newDate,

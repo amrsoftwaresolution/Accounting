@@ -13,43 +13,20 @@ use App\Models\BankDeposit;
 use App\Models\BankDepositItem;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Http\Requests\Accounting\StoreBankDepositRequest;
 
 class BankDepositController extends Controller
 {
     public function create()
     {
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Transaction/BankDepositForm', [
-            'paymentMethods' => $paymentMethods,
             'nextDepositNo' => $this->getNextDepositNo()
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBankDepositRequest $request)
     {
-        $validated = $request->validate([
-            'depositDate' => 'required|date',
-            'depositNo' => 'required',
-            'depositTo' => 'required',
-            'cashBackAccount' => 'nullable|uuid',
-            'cashBackMemo' => 'nullable|string',
-            'cashBackAmount' => 'nullable|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.amount' => 'required',
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function() use ($request) {
             $items = collect($request->items)->filter(fn($i) => (float)str_replace(',', '', $i['amount']) > 0)->values()->all();

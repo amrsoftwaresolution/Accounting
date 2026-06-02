@@ -47,6 +47,44 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
         fetchProducts();
     }, []);
 
+    useEffect(() => {
+        if (receipt) {
+            setData({
+                customer: receipt.customer || "",
+                email: receipt.email || "",
+                billingAddress: receipt.billingAddress || "",
+                receiptDate: receipt.receiptDate || "",
+                receiptNo: receipt.receiptNo || "",
+                paymentMethod: receipt.paymentMethod || "",
+                depositTo: receipt.depositTo || "",
+                memo: receipt.memo || "",
+                statementMessage: receipt.statementMessage || "",
+                items: receipt.items && receipt.items.length > 0 ? receipt.items : [
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
+                ],
+                action: 'save'
+            });
+        } else {
+            setData({
+                customer: "",
+                email: "",
+                billingAddress: "",
+                receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                receiptNo: nextReceiptNo || "1001",
+                paymentMethod: "",
+                depositTo: "",
+                memo: "",
+                statementMessage: "",
+                items: [
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                ],
+                action: 'save'
+            });
+        }
+        clearErrors();
+    }, [receipt?.id]);
+
     const COLUMNS = [
         {
             key: "product",
@@ -71,7 +109,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
         customer: receipt?.customer || "",
         email: receipt?.email || "",
         billingAddress: receipt?.billingAddress || "",
-        receiptDate: receipt?.receiptDate || new Date().toISOString().split('T')[0],
+        receiptDate: receipt?.receiptDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         receiptNo: receipt?.receiptNo || nextReceiptNo || "1001",
         paymentMethod: receipt?.paymentMethod || "",
         depositTo: receipt?.depositTo || "",
@@ -153,6 +191,14 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             }}
         >
             <Head title="Cash sale" />
+            
+            {/* Error Banner */}
+            {errors.error && (
+                <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                    {errors.error}
+                </div>
+            )}
+
             <div className="py-6 px-1 space-y-8">
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
@@ -215,7 +261,11 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                             type="date"
                             label="Cash sale date"
                             value={data.receiptDate}
-                            onChange={(e) => setData('receiptDate', e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                localStorage.setItem('last_transaction_date', newDate);
+                                setData('receiptDate', newDate);
+                            }}
                             size="sm"
                             error={errors.receiptDate}
                         />

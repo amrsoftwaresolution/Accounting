@@ -50,9 +50,16 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         fetchAccounts();
     }, []);
 
+    const getInitialDate = () => {
+        if (credit?.credit_date) return credit.credit_date;
+        const cached = localStorage.getItem('last_transaction_date');
+        if (cached) return cached;
+        return new Date().toISOString().split('T')[0];
+    };
+
     const { data, setData, post, patch, processing, errors, reset, transform } = useForm({
         supplier: credit?.supplier_id || "",
-        creditDate: credit?.credit_date || new Date().toISOString().split('T')[0],
+        creditDate: getInitialDate(),
         creditNo: credit?.credit_no || nextCreditNo || "1001",
         memo: credit?.memo || "",
         items: credit?.items?.filter(i => !i.item_id).map(i => ({
@@ -95,8 +102,24 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                     amount: i.amount
                 })) || [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
             });
+        } else {
+            const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+            setData({
+                supplier: "",
+                creditDate: cachedDate,
+                creditNo: nextCreditNo || "1001",
+                memo: "",
+                items: [
+                    { category: "", description: "", amount: "0.00" },
+                    { category: "", description: "", amount: "0.00" },
+                ],
+                itemDetails: [
+                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                ],
+            });
         }
-    }, [credit]);
+    }, [credit?.id, nextCreditNo]);
 
     const totalAmount = (
         data.items.reduce((sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0), 0) +
@@ -245,7 +268,11 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                             type="date"
                             label="Supplier Return date"
                             value={data.creditDate}
-                            onChange={(e) => setData('creditDate', e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                localStorage.setItem('last_transaction_date', newDate);
+                                setData('creditDate', newDate);
+                            }}
                             error={errors.creditDate}
                             size="sm"
                         />

@@ -10,6 +10,8 @@ use App\Models\ChartOfAcc;
 use App\Models\Supplier;
 use App\Models\Bill;
 use App\Models\BillItem;
+use App\Http\Requests\Accounting\StoreBillRequest;
+use App\Http\Requests\Accounting\UpdateBillRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -36,18 +38,12 @@ class BillController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBillRequest $request)
     {
-        $request->validate([
-            'supplier' => 'required',
-            'billDate' => 'required|date',
-            'billNo' => 'required',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $request->validated();
 
         try {
-            DB::transaction(function() use ($request) {
+            $journalEntry = DB::transaction(function() use ($request) {
                 $companyId = session('active_company_id');
 
                 $categoryItems = collect($request->items)->filter(function($item) {
@@ -172,6 +168,8 @@ class BillController extends Controller
                     'credit' => $totalAmount,
                     'memo' => $request->memo,
                 ]);
+
+                return $journalEntry;
             });
 
             $action = $request->input('action', 'save');
@@ -189,7 +187,7 @@ class BillController extends Controller
                 return redirect()->route('bill.create')->with('success', 'Bill saved successfully.');
             }
 
-            return redirect()->back()->with('success', 'Bill saved successfully.');
+            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -236,15 +234,9 @@ class BillController extends Controller
         ]);
     }
 
-    public function update(Request $request, JournalEntry $journalEntry)
+    public function update(UpdateBillRequest $request, JournalEntry $journalEntry)
     {
-        $request->validate([
-            'supplier' => 'required',
-            'billDate' => 'required|date',
-            'billNo' => 'required',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $request->validated();
 
         try {
             DB::transaction(function() use ($request, $journalEntry) {

@@ -19,4 +19,9 @@ class SupplierCreditNote extends Model
     {
         return $this->hasMany(SupplierCreditNoteItem::class);
     }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 }

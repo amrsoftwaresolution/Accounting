@@ -14,6 +14,7 @@ use App\Models\Item;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Accounting\StoreSupplierCreditRequest;
 
 class SupplierCreditController extends Controller
 {
@@ -37,15 +38,9 @@ class SupplierCreditController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSupplierCreditRequest $request)
     {
-        $request->validate([
-            'supplier' => 'required',
-            'creditDate' => 'required|date',
-            'creditNo' => 'required',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $request->validated();
 
         try {
             DB::transaction(function() use ($request) {
