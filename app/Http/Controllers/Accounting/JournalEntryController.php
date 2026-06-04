@@ -11,6 +11,9 @@ use App\Models\ChartOfAcc;
 use App\Models\Supplier;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Http\Requests\Accounting\StoreJournalEntryRequest;
+use App\Http\Requests\Accounting\UpdateJournalEntryRequest;
+use App\Http\Requests\Accounting\QuickUpdateJournalEntryRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,15 +47,9 @@ class JournalEntryController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreJournalEntryRequest $request)
 {
-    $request->validate([
-        'date' => 'required|date',
-        'lines' => 'required|array|min:2',
-        'lines.*.account_id' => 'required|exists:chart_of_accs,id',
-        'lines.*.debit' => 'nullable|numeric',
-        'lines.*.credit' => 'nullable|numeric',
-    ]);
+    $request->validated();
 
     return DB::transaction(function () use ($request) {
         $totalDebit = 0;
@@ -121,13 +118,9 @@ class JournalEntryController extends Controller
         ]);
     }
 
-    public function update(Request $request, JournalEntry $journalEntry)
+    public function update(UpdateJournalEntryRequest $request, JournalEntry $journalEntry)
     {
-        $request->validate([
-            'date' => 'required|date',
-            'lines' => 'required|array|min:2',
-            'lines.*.account_id' => 'required|exists:chart_of_accs,id',
-        ]);
+        $request->validated();
 
         return DB::transaction(function () use ($request, $journalEntry) {
             $journalEntry->update([
@@ -136,7 +129,7 @@ class JournalEntryController extends Controller
                 'description' => $request->description,
             ]);
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
 
             $totalDebit = 0;
             foreach ($request->lines as $line) {
@@ -174,18 +167,9 @@ class JournalEntryController extends Controller
     /**
      * Quick update a JournalEntry from the Account History register.
      */
-    public function quickUpdate(Request $request, JournalEntry $journalEntry)
+    public function quickUpdate(QuickUpdateJournalEntryRequest $request, JournalEntry $journalEntry)
     {
-        $request->validate([
-            'date' => 'required|date',
-            'reference' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'chart_of_acc_id' => 'required|exists:chart_of_accs,id',
-            'offset_account_id' => 'nullable|exists:chart_of_accs,id',
-            'debit' => 'required|numeric|min:0',
-            'credit' => 'required|numeric|min:0',
-            'payee_id' => 'nullable',
-        ]);
+        $request->validated();
 
         return DB::transaction(function () use ($request, $journalEntry) {
             $payeeId = $request->input('payee_id');
@@ -264,7 +248,7 @@ class JournalEntryController extends Controller
     public function destroy(JournalEntry $journalEntry)
     {
         return DB::transaction(function () use ($journalEntry) {
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
             return response()->json(['message' => 'Journal Entry Deleted Successfully']);
         });

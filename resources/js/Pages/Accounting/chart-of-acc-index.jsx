@@ -81,6 +81,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         is_subaccount: false,
         parent_id: '',
         is_locked: false,
+        is_system: false,
     });
 
     const handleOpenCreate = (parentAccount = null) => {
@@ -108,6 +109,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
             is_locked: false,
             account_type: accType,
             sub_type: subType,
+            is_system: false,
         }));
 
         setIsPanelOpen(true);
@@ -137,6 +139,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
             is_subaccount: !!account.parent_id,
             parent_id: account.parent_id || '',
             is_locked: !!account.is_locked,
+            is_system: !!account.is_system,
         });
         setIsPanelOpen(true);
     };
@@ -395,12 +398,14 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                                                 {account.is_active ? "Make Inactive" : "Make Active"}
                                                             </button>
                                                         )}
-                                                        <button
-                                                            onClick={() => handleToggleLock(account)}
-                                                            className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold border-t border-slate-100"
-                                                        >
-                                                            {account.is_locked ? "Unlock Account" : "Lock Account"}
-                                                        </button>
+                                                        {!account.is_system && (
+                                                            <button
+                                                                onClick={() => handleToggleLock(account)}
+                                                                className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold border-t border-slate-100"
+                                                            >
+                                                                {account.is_locked ? "Unlock Account" : "Lock Account"}
+                                                            </button>
+                                                        )}
                                                     </Dropdown.Content>
                                                 </Dropdown>
                                             </div>
@@ -426,12 +431,16 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                 title={isEdit ? "Edit Account" : "New Account"}
             >
                 <form onSubmit={submit} className="space-y-6">
-                    {data.is_locked && (
-                        <div className="p-3 rounded-sm bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-2">
+                    {(data.is_locked || data.is_system) && (
+                        <div className="p-3 rounded-sm bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-2 animate-in fade-in duration-200">
                             <svg className="w-4.5 h-4.5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <span>This account is locked and cannot be edited or deleted.</span>
+                            <span>
+                                {data.is_system 
+                                    ? "This is a system account. Its properties cannot be modified or deleted." 
+                                    : "This account is locked and cannot be edited or deleted."}
+                            </span>
                         </div>
                     )}
 
@@ -442,7 +451,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             onChange={e => setData('account_code', e.target.value)}
                             error={errors.account_code}
                             required
-                            disabled={data.is_locked}
+                            disabled={data.is_locked || data.is_system}
                         />
                         <CommonInput
                             label="Account Name"
@@ -450,10 +459,10 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             onChange={e => setData('name', e.target.value)}
                             error={errors.name}
                             required
-                            disabled={data.is_locked}
+                            disabled={data.is_locked || data.is_system}
                         />
                     </div>
-
+ 
                     <div className="grid grid-cols-2 gap-4">
                         <CommonInput
                             type="select"
@@ -462,7 +471,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             onChange={e => handleTypeChange(e.target.value)}
                             error={errors.account_type}
                             required
-                            disabled={data.is_locked}
+                            disabled={data.is_locked || data.is_system}
                         >
                             <option value="asset">Asset</option>
                             <option value="liability">Liability</option>
@@ -478,7 +487,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             error={errors.sub_type}
                             required
                             options={subtypeOptions[data.account_type]}
-                            disabled={data.is_locked}
+                            disabled={data.is_locked || data.is_system}
                         />
                     </div>
 
@@ -488,10 +497,10 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             onChange={val => setData('is_subaccount', val)}
                             label="Make this a sub-account"
                             description="Sub-accounts nest under parent accounts in financial statements."
-                            disabled={data.is_locked}
+                            disabled={data.is_locked || data.is_system}
                         />
                     </div>
-
+ 
                     {data.is_subaccount && (
                         <div className="pt-4 border-t border-slate-150">
                             <CommonInput
@@ -501,7 +510,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 onChange={e => setData('parent_id', e.target.value)}
                                 error={errors.parent_id}
                                 required={data.is_subaccount}
-                                disabled={data.is_locked}
+                                disabled={data.is_locked || data.is_system}
                             >
                                 <option value="">Select a parent account</option>
                                 {chartOfAccounts
@@ -524,7 +533,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             error={errors.description}
                             rows="3"
                             className="resize-none"
-                            disabled={data.is_locked}
+                            disabled={data.is_locked || data.is_system}
                         />
                     </div>
 
@@ -536,7 +545,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 value={data.currency}
                                 onChange={e => setData('currency', e.target.value)}
                                 error={errors.currency}
-                                disabled={data.is_locked}
+                                disabled={data.is_locked || data.is_system}
                             >
                                 <option value="LKR">Sri Lankan Rupee (LKR)</option>
                                 <option value="USD">United States Dollar (USD)</option>
@@ -547,7 +556,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             <p className="mt-1.5 text-[10px] text-slate-400 font-medium italic">All transactions for this account will be recorded in this currency.</p>
                         </div>
                     )}
-
+ 
                     {!isEdit && ['asset', 'liability', 'equity'].includes(data.account_type) && (
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                             <CommonInput
@@ -559,7 +568,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 onBlur={handleBalanceBlur}
                                 error={errors.opening_balance}
                                 icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || 'LKR'}</span>}
-                                disabled={data.is_locked}
+                                disabled={data.is_locked || data.is_system}
                             />
                             <CommonInput
                                 type="date"
@@ -567,23 +576,25 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 value={data.opening_balance_date}
                                 onChange={handleDateChange}
                                 error={errors.opening_balance_date}
-                                disabled={data.is_locked}
+                                disabled={data.is_locked || data.is_system}
                             />
                         </div>
                     )}
 
-                    <div className="pt-4 border-t border-slate-150">
-                        <Toggle
-                            checked={data.is_locked}
-                            onChange={val => setData('is_locked', val)}
-                            label="Lock Account"
-                            description="Locking prevents deletion or modification of the account details."
-                        />
-                    </div>
-
+                    {!data.is_system && (
+                        <div className="pt-4 border-t border-slate-150">
+                            <Toggle
+                                checked={data.is_locked}
+                                onChange={val => setData('is_locked', val)}
+                                label="Lock Account"
+                                description="Locking prevents deletion or modification of the account details."
+                            />
+                        </div>
+                    )}
+ 
                     <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-between gap-3 border-t border-slate-100">
                         <div>
-                            {isEdit && !data.is_locked && (
+                            {isEdit && !data.is_locked && !data.is_system && (
                                 <CommonButton
                                     type="button"
                                     variant="danger"
@@ -596,7 +607,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                         </div>
                         <div className="flex items-center gap-3">
                             <CommonButton variant="ghost" onClick={() => setIsPanelOpen(false)} size="sm">
-                                {data.is_locked ? "Close" : "Cancel"}
+                                {(data.is_locked || data.is_system) ? "Close" : "Cancel"}
                             </CommonButton>
                             {(!data.is_locked || !accountWasLockedInitially || !isEdit) && (
                                 <CommonButton type="submit" variant="primary" processing={processing} size="sm">

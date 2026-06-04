@@ -6,7 +6,7 @@ import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import axios from "axios";
 
-export default function TransferForm({ lastTransferDate = null, lastSaveAction = 'save' }) {
+export default function TransferForm() {
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
@@ -15,9 +15,8 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
         transfer_from: "",
         transfer_to: "",
         amount: "",
-        date: lastTransferDate || new Date().toISOString().split('T')[0],
-        memo: "",
-        action: lastSaveAction
+        date: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+        memo: ""
     });
 
     const fetchAccounts = (search = "") => {
@@ -52,18 +51,14 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
         }
     };
 
-    const [currentAction, setCurrentAction] = useState(lastSaveAction);
-
     useEffect(() => {
         transform((data) => ({
             ...data,
-            action: currentAction,
             amount: String(data.amount).replace(/,/g, '')
         }));
-    }, [data.amount, currentAction, transform]);
+    }, [data.amount, transform]);
 
     const handleSave = (type = 'save') => {
-        setCurrentAction(type);
         post(route('transfer.store'), {
             onSuccess: () => {
                 if (type === 'new') reset();
@@ -80,7 +75,6 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             processing={processing}
-            lastAction={lastSaveAction}
         >
             <Head title="Transfer Funds" />
 
@@ -151,7 +145,11 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
                             type="date"
                             label="Date"
                             value={data.date}
-                            onChange={(e) => setData('date', e.target.value)}
+                            onChange={(e) => {
+                                const newDate = e.target.value;
+                                localStorage.setItem('last_transaction_date', newDate);
+                                setData('date', newDate);
+                            }}
                             size="sm"
                             error={errors.date}
                         />

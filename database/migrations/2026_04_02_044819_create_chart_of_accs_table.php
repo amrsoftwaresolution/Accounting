@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('chart_of_accs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
+            $table->uuid('parent_id')->nullable();
             $table->string('account_code');
             $table->string('name');
             $table->string('account_type');
@@ -22,9 +23,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('balance', 15, 2)->default(0);
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_locked')->default(false);
             $table->timestamps();
 
             $table->unique(['company_id', 'account_code']);
+            $table->foreign('parent_id')->references('id')->on('chart_of_accs')->onDelete('set null');
         });
     }
 

@@ -8,13 +8,13 @@ import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 
-export default function BankDepositForm({ auth, paymentMethods = [], nextDepositNo = "" }) {
+export default function BankDepositForm({ auth, nextDepositNo = "" }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
-    const paymentMethodOptions = paymentMethods.map(pm => ({ value: pm.id, label: pm.name }));
+    const [paymentMethodOptions, setPaymentMethodOptions] = useState([]);
 
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -29,6 +29,10 @@ export default function BankDepositForm({ auth, paymentMethods = [], nextDeposit
         axios.get(route('api.accounts', { search })).then(res => setAccountOptions(res.data));
     };
 
+    const fetchPaymentMethods = () => {
+        axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
+    };
+
     const openAccountModal = (target, rowIndex = null) => {
         setAccountModalTarget(target);
         setAccountModalRowIndex(rowIndex);
@@ -38,6 +42,7 @@ export default function BankDepositForm({ auth, paymentMethods = [], nextDeposit
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
+        fetchPaymentMethods();
     }, []);
 
     const COLUMNS = [
@@ -51,7 +56,7 @@ export default function BankDepositForm({ auth, paymentMethods = [], nextDeposit
 
     const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
         depositTo: "",
-        depositDate: new Date().toISOString().split('T')[0],
+        depositDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         depositNo: nextDepositNo || "1001",
         items: [
             { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }
@@ -121,7 +126,11 @@ export default function BankDepositForm({ auth, paymentMethods = [], nextDeposit
                                 type="date"
                                 label="Date"
                                 value={data.depositDate}
-                                onChange={(e) => setData('depositDate', e.target.value)}
+                                onChange={(e) => {
+                                    const newDate = e.target.value;
+                                    localStorage.setItem('last_transaction_date', newDate);
+                                    setData('depositDate', newDate);
+                                }}
                                 size="sm"
                                 error={errors.depositDate}
                             />

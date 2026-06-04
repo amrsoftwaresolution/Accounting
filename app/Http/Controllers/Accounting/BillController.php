@@ -10,6 +10,8 @@ use App\Models\ChartOfAcc;
 use App\Models\Supplier;
 use App\Models\Bill;
 use App\Models\BillItem;
+use App\Http\Requests\Accounting\StoreBillRequest;
+use App\Http\Requests\Accounting\UpdateBillRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -29,25 +31,16 @@ class BillController extends Controller
         $nextBillNo = is_numeric($lastRef) ? (int)$lastRef + 1 : 1001;
 
         return Inertia::render('Transaction/BillForm', [
-            'nextBillNo' => (string)str_pad($nextBillNo, 4, '0', STR_PAD_LEFT),
-            'lastBillDate' => session('last_bill_date'),
-            'lastDueDate' => session('last_due_date_bill'),
-            'lastSaveAction' => session('last_save_action_bill', 'save'),
+            'nextBillNo' => (string)str_pad($nextBillNo, 4, '0', STR_PAD_LEFT)
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBillRequest $request)
     {
-        $request->validate([
-            'supplier' => 'required',
-            'billDate' => 'required|date',
-            'billNo' => 'required',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $request->validated();
 
         try {
-            DB::transaction(function() use ($request) {
+            $journalEntry = DB::transaction(function() use ($request) {
                 $companyId = session('active_company_id');
 
                 $categoryItems = collect($request->items)->filter(function($item) {
@@ -172,24 +165,11 @@ class BillController extends Controller
                     'credit' => $totalAmount,
                     'memo' => $request->memo,
                 ]);
+
+                return $journalEntry;
             });
 
-            $action = $request->input('action', 'save');
-
-            // Save to session
-            session([
-                'last_bill_date' => $request->billDate, 
-                'last_due_date_bill' => $request->dueDate, 
-                'last_save_action_bill' => $action
-            ]);
-
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Bill saved successfully.');
-            } elseif ($action === 'new') {
-                return redirect()->route('bill.create')->with('success', 'Bill saved successfully.');
-            }
-
-            return redirect()->back()->with('success', 'Bill saved successfully.');
+            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -229,22 +209,13 @@ class BillController extends Controller
         ];
 
         return Inertia::render('Transaction/BillForm', [
-            'bill' => $billData,
-            'lastBillDate' => session('last_bill_date'),
-            'lastDueDate' => session('last_due_date_bill'),
-            'lastSaveAction' => session('last_save_action_bill', 'save'),
+            'bill' => $billData
         ]);
     }
 
-    public function update(Request $request, JournalEntry $journalEntry)
+    public function update(UpdateBillRequest $request, JournalEntry $journalEntry)
     {
-        $request->validate([
-            'supplier' => 'required',
-            'billDate' => 'required|date',
-            'billNo' => 'required',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $request->validated();
 
         try {
             DB::transaction(function() use ($request, $journalEntry) {
@@ -327,7 +298,7 @@ class BillController extends Controller
                     'total_amount' => $totalAmount,
                 ]);
 
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // Debits (Expenses/Assets) - Categories
                 foreach ($categoryItems as $lineItem) {

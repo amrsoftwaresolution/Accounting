@@ -24,6 +24,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
+                'chart_of_accs.id',
                 'chart_of_accs.name as account_name',
                 'chart_of_accs.account_type',
                 'chart_of_accs.sub_type',
@@ -39,6 +40,7 @@ class ReportController extends Controller
                 // Expense: Debit - Credit
                 $balance = ($type === 'income') ? ($item->total_credit - $item->total_debit) : ($item->total_debit - $item->total_credit);
                 return [
+                    'id' => $item->id,
                     'name' => $item->account_name,
                     'sub_type' => $item->sub_type,
                     'balance' => (float) $balance
@@ -65,6 +67,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
+                'chart_of_accs.id',
                 'chart_of_accs.name as account_name',
                 'chart_of_accs.account_type',
                 'chart_of_accs.sub_type',
@@ -80,6 +83,7 @@ class ReportController extends Controller
                 // Liability/Equity: Credit - Debit
                 $balance = ($type === 'asset') ? ($item->total_debit - $item->total_credit) : ($item->total_credit - $item->total_debit);
                 return [
+                    'id' => $item->id,
                     'name' => $item->account_name,
                     'sub_type' => $item->sub_type,
                     'balance' => (float) $balance
@@ -98,6 +102,7 @@ class ReportController extends Controller
 
     public function customerBalance(Request $request)
     {
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
 
         $customers = Customer::all();
@@ -107,7 +112,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entry_lines.payee_type', Customer::class)
             ->where('chart_of_accs.sub_type', 'accounts_receivable')
-            ->where('journal_entries.date', '<=', $endDate)
+            ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.payee_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -138,6 +143,7 @@ class ReportController extends Controller
         return Inertia::render('Reports/CustomerBalance', [
             'reportData' => $reportData,
             'filters' => [
+                'start_date' => $startDate,
                 'end_date' => $endDate
             ]
         ]);
@@ -145,6 +151,7 @@ class ReportController extends Controller
 
     public function supplierBalance(Request $request)
     {
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
 
         $suppliers = Supplier::all();
@@ -154,7 +161,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entry_lines.payee_type', Supplier::class)
             ->where('chart_of_accs.sub_type', 'accounts_payable')
-            ->where('journal_entries.date', '<=', $endDate)
+            ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.payee_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -186,6 +193,7 @@ class ReportController extends Controller
         return Inertia::render('Reports/SupplierBalance', [
             'reportData' => $reportData,
             'filters' => [
+                'start_date' => $startDate,
                 'end_date' => $endDate
             ]
         ]);

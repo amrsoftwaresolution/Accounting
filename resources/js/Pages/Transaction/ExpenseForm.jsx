@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage, Head } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
@@ -12,22 +12,21 @@ import axios from "axios";
 
 export default function ExpenseForm({
     auth,
-    paymentMethods = [],
-    expense = null,
-    lastPaymentDate = null,
-    lastSaveAction = 'save'
+    expense = null
 }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
 
     // Accordion States (Expanded by default)
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
-    const [isItemsExpanded, setIsItemsExpanded] = useState(true);
+    const [isItemsExpanded, setIsItemsExpanded] = useState(() => {
+        return expense?.itemDetails && expense.itemDetails.some(i => i.product) ? true : false;
+    });
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
-    const [localPaymentMethods, setLocalPaymentMethods] = useState(paymentMethods);
+    const [paymentMethodOptions, setPaymentMethodOptions] = useState([]);
 
     // Modal States
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -62,22 +61,25 @@ export default function ExpenseForm({
         }
     };
 
+    const fetchPaymentMethods = () => {
+        axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
+    };
+
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
         fetchItems();
+        fetchPaymentMethods();
     }, []);
-
-    const methodOptions = localPaymentMethods.map(m => ({ value: m.id, label: m.name }));
 
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
     const getInitialPaymentDate = () => {
         if (expense?.paymentDate) return expense.paymentDate;
-        const cached = localStorage.getItem('last_payment_date');
+        const cached = localStorage.getItem('last_transaction_date');
         if (cached) return cached;
-        return lastPaymentDate || new Date().toISOString().split('T')[0];
+        return new Date().toISOString().split('T')[0];
     };
 
     const initialPaymentDate = getInitialPaymentDate();
@@ -85,21 +87,26 @@ export default function ExpenseForm({
     // useForm
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         payee: expense?.payee || expense?.payee_id || "",
-        account: expense?.account || expense?.payment_account_id || "",
-        date: initialPaymentDate,
-        method: expense?.method || expense?.payment_method_id || "",
-        ref: expense?.ref || expense?.reference_no || "",
+        account: expense?.paymentAccount || expense?.account || expense?.payment_account_id || "",
+        date: expense?.paymentDate || expense?.date || initialPaymentDate,
+        method: expense?.paymentMethod || expense?.method || expense?.payment_method_id || "",
+        ref: expense?.referenceNo || expense?.ref || expense?.reference_no || "",
         memo: expense?.memo || "",
-        items: expense?.items && expense.items.length > 0 ? expense.items : [
+        items: expense?.items && expense.items.length > 0 ? expense.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: expense?.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails : [
+        itemDetails: expense?.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails.map(i => ({
+            ...i,
+            qty: parseFloat(i.qty||0).toLocaleString('en-US'),
+            rate: parseFloat(i.rate||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+            amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
         action: 'save'
     });
 
-    const actionRef = useRef(lastSaveAction);
+    const actionRef = useRef('save');
 
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0) +
@@ -112,21 +119,26 @@ export default function ExpenseForm({
         if (expense) {
             setData({
                 payee: expense.payee || expense.payee_id || "",
-                account: expense.account || expense.payment_account_id || "",
+                account: expense.paymentAccount || expense.account || expense.payment_account_id || "",
                 date: expense.paymentDate || expense.date || "",
                 method: expense.paymentMethod || expense.method || "",
                 ref: expense.referenceNo || expense.ref || "",
                 memo: expense.memo || "",
-                items: expense.items && expense.items.length > 0 ? expense.items : [
+                items: expense.items && expense.items.length > 0 ? expense.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
                     { category: "", description: "", amount: "0.00" }
                 ],
-                itemDetails: expense.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails : [
+                itemDetails: expense.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails.map(i => ({
+                    ...i,
+                    qty: parseFloat(i.qty||0).toLocaleString('en-US'),
+                    rate: parseFloat(i.rate||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+                    amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
                 ],
                 action: 'save'
             });
         } else {
-            const cachedDate = localStorage.getItem('last_payment_date') || lastPaymentDate || new Date().toISOString().split('T')[0];
+            const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
             setData({
                 payee: "",
                 account: "",
@@ -197,7 +209,7 @@ export default function ExpenseForm({
     };
 
     const handlePaymentDateChange = (dateVal) => {
-        localStorage.setItem('last_payment_date', dateVal);
+        localStorage.setItem('last_transaction_date', dateVal);
         setData("date", dateVal);
     };
 
@@ -207,7 +219,20 @@ export default function ExpenseForm({
         const method = expense?.id ? patch : post;
 
         method(url, {
-            preserveScroll: true
+            preserveScroll: true,
+            onSuccess: () => {
+                if (action === 'new') {
+                    reset();
+                    clearErrors();
+                    const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                    setData({
+                        payee: "", account: "", date: cachedDate, method: "", ref: "", memo: "",
+                        items: [{ category: "", description: "", amount: "0.00" }],
+                        itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                        action: 'save'
+                    });
+                }
+            }
         });
     };
 
@@ -264,8 +289,8 @@ export default function ExpenseForm({
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
-            lastAction={lastSaveAction}
         >
+            <Head title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"} />
             <div className="py-6 px-1 space-y-8">
                 {/* Error Banner */}
                 {errors.error && (
@@ -284,7 +309,6 @@ export default function ExpenseForm({
                                 value={data.payee}
                                 onChange={(val) => setData("payee", val)}
                                 options={payeeOptions}
-                                onSearch={fetchPayees}
                                 size="sm"
                                 error={errors.payee}
                                 onAddNew={() => setIsPayeeModalOpen(true)}
@@ -298,8 +322,6 @@ export default function ExpenseForm({
                                     value={data.account}
                                     onChange={(val) => setData("account", val)}
                                     options={accountOptions}
-                                    onSearch={fetchAccounts}
-                                    initialLimit={10}
                                     size="sm"
                                     error={errors.account}
                                     onAddNew={() => {
@@ -341,7 +363,7 @@ export default function ExpenseForm({
                             placeholder="Select method"
                             value={data.method}
                             onChange={(val) => setData("method", val)}
-                            options={methodOptions}
+                            options={paymentMethodOptions}
                             onAddNew={() => setIsPaymentMethodModalOpen(true)}
                             size="sm"
                             error={errors.method}
@@ -479,7 +501,7 @@ export default function ExpenseForm({
                 onClose={() => setIsPaymentMethodModalOpen(false)}
                 onSuccess={(newMethod) => {
                     if (newMethod) {
-                        setLocalPaymentMethods([...localPaymentMethods, { id: newMethod.value, name: newMethod.label }]);
+                        setPaymentMethodOptions([...paymentMethodOptions, newMethod]);
                         setData("method", newMethod.value);
                     }
                 }}

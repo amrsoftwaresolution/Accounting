@@ -50,7 +50,7 @@ export default function SalesReceipt({
         customer_id: "",
         email: "",
         billing_address: "",
-        date: new Date().toISOString().split('T')[0],
+        date: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         payment_method: "",
         reference_no: "",
         deposit_to: "",
@@ -147,7 +147,11 @@ export default function SalesReceipt({
                                     type="date"
                                     className="w-full border-b border-slate-300 py-1.5 text-sm outline-none focus:border-primary bg-transparent"
                                     value={form.date}
-                                    onChange={(e) => setForm({...form, date: e.target.value})}
+                                    onChange={(e) => {
+                                        const newDate = e.target.value;
+                                        localStorage.setItem('last_transaction_date', newDate);
+                                        setForm({...form, date: newDate});
+                                    }}
                                 />
                             </div>
                         </div>

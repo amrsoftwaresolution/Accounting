@@ -1,22 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import CommonInput from '@/Components/CommonInput';
 
 export default function BalanceSheet({ reportData, filters, auth }) {
-    const fromDateRef = useRef(null);
-    const toDateRef = useRef(null);
+    const [startDate, setStartDate] = useState(filters.start_date);
+    const [endDate, setEndDate] = useState(filters.end_date);
 
-    const openDatePicker = (ref) => {
-        if (ref.current) {
-            try {
-                ref.current.showPicker();
-            } catch (err) {
-                ref.current.click();
-            }
-        }
-    };
-    const handleFilterChange = (key, value) => {
-        router.get(route('reports.balance-sheet'), { ...filters, [key]: value }, {
+    const handleRunReport = () => {
+        router.get(route('reports.balance-sheet'), { start_date: startDate, end_date: endDate }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -90,37 +82,31 @@ export default function BalanceSheet({ reportData, filters, auth }) {
     };
 
     const filterElements = (
-        <div className="flex gap-4">
-            <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">From</label>
-                <div 
-                    onClick={() => openDatePicker(fromDateRef)}
-                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
-                >
-                    <input 
-                        ref={fromDateRef}
-                        type="date" 
-                        value={filters.start_date}
-                        onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
-                    />
-                </div>
+        <div className="flex items-end gap-4">
+            <div className="w-[140px]">
+                <CommonInput 
+                    type="date"
+                    label="From"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    size="sm"
+                />
             </div>
-            <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">To</label>
-                <div 
-                    onClick={() => openDatePicker(toDateRef)}
-                    className="relative flex items-center group cursor-pointer border-b border-slate-200 focus-within:border-primary transition-colors py-1"
-                >
-                    <input 
-                        ref={toDateRef}
-                        type="date" 
-                        value={filters.end_date}
-                        onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                        className="text-xs font-bold bg-transparent outline-none cursor-pointer w-28 date-picker-input [color-scheme:light]"
-                    />
-                </div>
+            <div className="w-[140px]">
+                <CommonInput 
+                    type="date"
+                    label="To"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    size="sm"
+                />
             </div>
+            <button 
+                onClick={handleRunReport}
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
+            >
+                Run Report
+            </button>
         </div>
     );
 
@@ -132,73 +118,103 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         >
             <Head title="Balance Sheet" />
             
-            <div className="text-center mb-12">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{auth.company?.company_name}</h2>
-                <h3 className="text-lg font-bold text-slate-600 mt-1 uppercase tracking-widest">Balance Sheet</h3>
-                <p className="text-xs text-slate-400 mt-2 font-medium">
+            <div className="text-center mb-8 font-serif">
+                <h2 className="text-xl font-bold text-gray-900">Balance Sheet</h2>
+                <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
+                <p className="text-[13px] text-gray-500 mt-1">
                     {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
             </div>
 
-            <div className="space-y-12">
-                {/* Assets Section */}
-                <section>
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 border-b border-slate-100 pb-2">Assets</h4>
-                    <div className="space-y-3">
+            <div className="w-full overflow-x-auto pb-10">
+                <table className="w-full text-[13px] text-left border-collapse">
+                    <thead>
+                        <tr className="border-y-2 border-gray-300">
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-3/4">
+                                Account
+                            </th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">
+                                Total <span className="inline-block ml-1 text-gray-400 text-[10px]">↕</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {/* Assets Section */}
+                        <tr className="bg-gray-50 border-y border-gray-300">
+                            <td colSpan="2" className="py-2 px-3 font-bold text-gray-900">
+                                <span className="inline-block mr-1 text-[10px]">▼</span> ASSETS
+                            </td>
+                        </tr>
                         {asset.map((item, index) => (
-                            <div key={index} className="flex justify-between text-xs font-medium text-slate-700">
-                                <span className="pl-4">{item.name}</span>
-                                <Currency value={item.balance} />
-                            </div>
+                            <tr key={`asset-${index}`} className="hover:bg-gray-50 transition-colors">
+                                <td className="py-2 px-3 pl-8 text-gray-900">{item.name}</td>
+                                <td className="py-2 px-3 text-right tabular-nums">
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                        <Currency value={item.balance} />
+                                    </Link>
+                                </td>
+                            </tr>
                         ))}
-                        <div className="flex justify-between text-sm font-black text-slate-900 pt-4 border-t-2 border-slate-900">
-                            <span>Total Assets</span>
-                            <Currency value={totalAsset} />
-                        </div>
-                    </div>
-                </section>
+                        <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
+                            <td className="py-2 px-3 pl-8 text-gray-900">Total Assets</td>
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalAsset} /></td>
+                        </tr>
 
-                {/* Liabilities & Equity Section */}
-                <section>
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 border-b border-slate-100 pb-2">Liabilities and Equity</h4>
-                    
-                    <div className="space-y-8">
-                        {/* Liabilities */}
-                        <div className="pl-4 space-y-3">
-                            <h5 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Liabilities</h5>
-                            {liability.map((item, index) => (
-                                <div key={index} className="flex justify-between text-xs font-medium text-slate-700">
-                                    <span className="pl-4">{item.name}</span>
-                                    <Currency value={item.balance} />
-                                </div>
-                            ))}
-                            <div className="flex justify-between text-xs font-black text-slate-900 pt-2 border-t border-slate-100">
-                                <span>Total Liabilities</span>
-                                <Currency value={totalLiability} />
-                            </div>
-                        </div>
+                        {/* Liabilities & Equity Section */}
+                        <tr className="bg-gray-50 border-y border-gray-300">
+                            <td colSpan="2" className="py-2 px-3 font-bold text-gray-900 mt-4">
+                                <span className="inline-block mr-1 text-[10px]">▼</span> LIABILITIES AND EQUITY
+                            </td>
+                        </tr>
+                        
+                        {/* Liabilities Sub-section */}
+                        <tr className="bg-white">
+                            <td colSpan="2" className="py-2 px-3 pl-6 font-semibold text-gray-700 italic">
+                                Liabilities
+                            </td>
+                        </tr>
+                        {liability.map((item, index) => (
+                            <tr key={`liab-${index}`} className="hover:bg-gray-50 transition-colors">
+                                <td className="py-2 px-3 pl-10 text-gray-900">{item.name}</td>
+                                <td className="py-2 px-3 text-right tabular-nums">
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                        <Currency value={item.balance} />
+                                    </Link>
+                                </td>
+                            </tr>
+                        ))}
+                        <tr className="border-t border-gray-200 bg-white font-medium">
+                            <td className="py-2 px-3 pl-10 text-gray-900">Total Liabilities</td>
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalLiability} /></td>
+                        </tr>
 
-                        {/* Equity */}
-                        <div className="pl-4 space-y-3">
-                            <h5 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 italic">Equity</h5>
-                            {equity.map((item, index) => (
-                                <div key={index} className="flex justify-between text-xs font-medium text-slate-700">
-                                    <span className="pl-4">{item.name}</span>
-                                    <Currency value={item.balance} />
-                                </div>
-                            ))}
-                            <div className="flex justify-between text-xs font-black text-slate-900 pt-2 border-t border-slate-100">
-                                <span>Total Equity</span>
-                                <Currency value={totalEquity} />
-                            </div>
-                        </div>
+                        {/* Equity Sub-section */}
+                        <tr className="bg-white mt-2">
+                            <td colSpan="2" className="py-2 px-3 pl-6 font-semibold text-gray-700 italic border-t border-gray-100">
+                                Equity
+                            </td>
+                        </tr>
+                        {equity.map((item, index) => (
+                            <tr key={`eq-${index}`} className="hover:bg-gray-50 transition-colors">
+                                <td className="py-2 px-3 pl-10 text-gray-900">{item.name}</td>
+                                <td className="py-2 px-3 text-right tabular-nums">
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                        <Currency value={item.balance} />
+                                    </Link>
+                                </td>
+                            </tr>
+                        ))}
+                        <tr className="border-t border-gray-200 bg-white font-medium">
+                            <td className="py-2 px-3 pl-10 text-gray-900">Total Equity</td>
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalEquity} /></td>
+                        </tr>
 
-                        <div className="flex justify-between text-sm font-black text-slate-900 pt-4 border-t-2 border-slate-900">
-                            <span>Total Liabilities and Equity</span>
-                            <Currency value={totalLiabilityEquity} />
-                        </div>
-                    </div>
-                </section>
+                        <tr className="border-t-2 border-b-4 border-gray-400 font-bold bg-white text-[14px]">
+                            <td className="py-3 px-3 text-gray-900">TOTAL LIABILITIES AND EQUITY</td>
+                            <td className="py-3 px-3 text-right tabular-nums text-gray-900"><Currency value={totalLiabilityEquity} /></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <div className="mt-20 text-[10px] text-slate-400 font-bold text-center uppercase tracking-widest italic">

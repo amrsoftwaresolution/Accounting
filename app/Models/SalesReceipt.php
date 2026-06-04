@@ -19,4 +19,9 @@ class SalesReceipt extends Model
     {
         return $this->hasMany(SalesReceiptItem::class);
     }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 }

@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use App\Models\ChartOfAcc;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Accounting\StoreChartOfAccRequest;
+use App\Http\Requests\Accounting\UpdateChartOfAccRequest;
 
 
 class ChartOfAccController extends Controller
@@ -24,7 +26,7 @@ class ChartOfAccController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreChartOfAccRequest $request)
     {
         // Strip commas from opening_balance if present
         if ($request->has('opening_balance')) {
@@ -33,26 +35,7 @@ class ChartOfAccController extends Controller
             ]);
         }
 
-        $request->validate([
-            'account_code' => [
-                'required',
-                'string',
-                'max:255',
-                \Illuminate\Validation\Rule::unique('chart_of_accs', 'account_code')->where(function ($query) {
-                    return $query->where('company_id', session('active_company_id'));
-                })
-            ],
-            'name' => 'required|string|max:255',
-            'account_type' => 'required|in:asset,liability,equity,income,expense',
-            'sub_type' => 'nullable|string|max:255',
-            'opening_balance' => 'nullable|numeric',
-            'opening_balance_date' => 'nullable|date',
-            'description' => 'nullable|string',
-            'is_active' => 'sometimes|boolean',
-            'currency' => 'nullable|string|max:3',
-            'parent_id' => 'nullable|uuid|exists:chart_of_accs,id',
-            'is_locked' => 'nullable|boolean',
-        ]);
+        $request->validated();
 
         if ($request->filled('opening_balance_date')) {
             session(['last_opening_balance_date' => $request->input('opening_balance_date')]);
@@ -148,8 +131,25 @@ class ChartOfAccController extends Controller
         ]);
     }
 
-    public function update(Request $request, ChartOfAcc $chartOfAccount)
+    public function update(UpdateChartOfAccRequest $request, ChartOfAcc $chartOfAccount)
     {
+        if ($chartOfAccount->isSystemAccount()) {
+            if ($request->has('is_locked') && !$request->boolean('is_locked')) {
+                return redirect()->back()->with('error', 'System accounts cannot be unlocked.');
+            }
+            if ($request->has('is_active') && !$request->boolean('is_active')) {
+                return redirect()->back()->with('error', 'System accounts must remain active.');
+            }
+            if ($request->has('name') && (
+                $request->input('name') !== $chartOfAccount->name ||
+                $request->input('account_code') !== $chartOfAccount->account_code ||
+                $request->input('account_type') !== $chartOfAccount->account_type ||
+                $request->input('sub_type') !== $chartOfAccount->sub_type
+            )) {
+                return redirect()->back()->with('error', 'System account details cannot be modified.');
+            }
+        }
+
         if ($chartOfAccount->is_locked) {
             // Only allow updates if we are explicitly unlocking it
             if (!($request->has('is_locked') && !$request->boolean('is_locked'))) {
@@ -159,6 +159,9 @@ class ChartOfAccController extends Controller
 
         // Handle status toggle (active/inactive) from row action dropdown
         if ($request->has('is_active') && !$request->has('name')) {
+            if ($chartOfAccount->isSystemAccount() && !$request->boolean('is_active')) {
+                return redirect()->back()->with('error', 'System accounts must remain active.');
+            }
             $chartOfAccount->update([
                 'is_active' => $request->boolean('is_active')
             ]);
@@ -167,6 +170,9 @@ class ChartOfAccController extends Controller
 
         // Handle lock toggle from row action dropdown
         if ($request->has('is_locked') && !$request->has('name')) {
+            if ($chartOfAccount->isSystemAccount() && !$request->boolean('is_locked')) {
+                return redirect()->back()->with('error', 'System accounts cannot be unlocked.');
+            }
             $chartOfAccount->update([
                 'is_locked' => $request->boolean('is_locked')
             ]);
@@ -174,34 +180,7 @@ class ChartOfAccController extends Controller
             return redirect()->route('chart-of-account.index')->with('success', "Account {$statusText} successfully.");
         }
 
-        $request->validate([
-            'account_code' => [
-                'required',
-                'string',
-                'max:255',
-                \Illuminate\Validation\Rule::unique('chart_of_accs', 'account_code')
-                    ->ignore($chartOfAccount->id)
-                    ->where(function ($query) {
-                        return $query->where('company_id', session('active_company_id'));
-                    })
-            ],
-            'name' => 'required|string|max:255',
-            'account_type' => 'required|in:asset,liability,equity,income,expense',
-            'sub_type' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'currency' => 'nullable|string|max:3',
-            'parent_id' => [
-                'nullable',
-                'uuid',
-                'exists:chart_of_accs,id',
-                function ($attribute, $value, $fail) use ($chartOfAccount) {
-                    if ($value === $chartOfAccount->id) {
-                        $fail('An account cannot be its own parent account.');
-                    }
-                }
-            ],
-            'is_locked' => 'nullable|boolean',
-        ]);
+        $request->validated();
 
         $company = \App\Models\Company::findOrFail(session('active_company_id'));
         $selectedCurrency = $request->input('currency');
@@ -221,16 +200,17 @@ class ChartOfAccController extends Controller
         return redirect()->route('chart-of-account.index')->with('success', 'Chart of account updated successfully.');
     }
 
-    public function history(ChartOfAcc $chartOfAccount)
+    public function history(Request $request, ChartOfAcc $chartOfAccount)
     {
-        if (!in_array($chartOfAccount->account_type, ['asset', 'liability', 'equity'])) {
-            return redirect()->route('reports.profit-loss')->with('error', 'History is only available for Asset, Liability, and Equity accounts.');
+        $query = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
+             ->where('chart_of_acc_id', $chartOfAccount->id)
+             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id');
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('journal_entries.date', [$request->start_date, $request->end_date]);
         }
 
-        $lines = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
-             ->where('chart_of_acc_id', $chartOfAccount->id)
-             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-             ->orderBy('journal_entries.date', 'desc')
+        $lines = $query->orderBy('journal_entries.date', 'desc')
              ->select('journal_entry_lines.*')
              ->get();
 
@@ -245,6 +225,10 @@ class ChartOfAccController extends Controller
 
     public function destroy(ChartOfAcc $chartOfAccount)
     {
+        if ($chartOfAccount->isSystemAccount()) {
+            return redirect()->back()->with('error', 'This is a system account and cannot be deleted.');
+        }
+
         if ($chartOfAccount->is_locked) {
             return redirect()->back()->with('error', 'This account is locked and cannot be deleted.');
         }

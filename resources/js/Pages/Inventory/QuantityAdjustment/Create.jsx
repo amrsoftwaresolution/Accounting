@@ -18,7 +18,7 @@ const FormSection = ({ title, children, show = true }) => {
 };
 
 export default function CreateAdjustment({ items, accounts }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         adjustment_date: new Date().toISOString().split('T')[0],
         reference_number: '1',
         adjustment_reason: 'Damaged Goods',
@@ -97,8 +97,11 @@ export default function CreateAdjustment({ items, accounts }) {
 
     const submit = (e, close = false) => {
         e.preventDefault();
-        // filter out empty rows
-        const validItems = data.items.filter(item => item.item_id !== '');
+        
+        transform((data) => ({
+            ...data,
+            items: data.items.filter(item => item.item_id !== '')
+        }));
         
         post(route('inventory-adjustment.store'), {
             onSuccess: () => {
@@ -111,10 +114,6 @@ export default function CreateAdjustment({ items, accounts }) {
                         reference_number: parseInt(data.reference_number || '0') + 1 + ''
                     });
                 }
-            },
-            data: {
-                ...data,
-                items: validItems
             }
         });
     };

@@ -195,16 +195,27 @@ class LookupController extends Controller
         ]);
     }
 
-    public function customerInvoices(Customer $customer)
+    public function customerInvoices(Customer $customer, Request $request)
     {
+        $paymentId = $request->query('payment_id');
         $invoices = \App\Models\Invoice::where('customer_id', $customer->id)
             ->where('status', 'posted')
             ->where('company_id', session('active_company_id'))
             ->get()
-            ->map(function($invoice) {
-                $allocatedAmount = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id)
-                    ->sum('amount');
+            ->map(function($invoice) use ($paymentId) {
+                $query = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id);
+                if ($paymentId) {
+                    $query->where('payment_id', '!=', $paymentId);
+                }
+                $allocatedAmount = $query->sum('amount');
                 $openBalance = $invoice->total_amount - $allocatedAmount;
+                
+                $applied = 0;
+                if ($paymentId) {
+                    $applied = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id)
+                        ->where('payment_id', $paymentId)
+                        ->sum('amount');
+                }
                 
                 return [
                     'id' => $invoice->id,
@@ -212,10 +223,11 @@ class LookupController extends Controller
                     'invoice_date' => $invoice->invoice_date,
                     'due_date' => $invoice->due_date,
                     'total_amount' => $invoice->total_amount,
-                    'open_balance' => $openBalance
+                    'open_balance' => $openBalance,
+                    'applied' => (float)$applied
                 ];
             })
-            ->filter(fn($inv) => $inv['open_balance'] > 0.01)
+            ->filter(fn($inv) => $inv['open_balance'] > 0.01 || $inv['applied'] > 0.01)
             ->values();
 
         return response()->json($invoices);
@@ -239,5 +251,33 @@ class LookupController extends Controller
             'suppliers' => $suppliers,
             'allItems' => $allItems,
         ]);
+    }
+
+    /**
+     * Endpoint to fetch payment methods
+     */
+    public function paymentMethods(Request $request)
+    {
+        $companyId = session('active_company_id');
+
+        $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->where(function ($query) use ($companyId) {
+                $query->whereNull('company_id');
+
+                if ($companyId) {
+                    $query->orWhere('company_id', $companyId);
+                }
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function($pm) {
+                return [
+                    'value' => $pm->id,
+                    'label' => $pm->name,
+                ];
+            });
+
+        return response()->json($paymentMethods);
     }
 }

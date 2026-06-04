@@ -14,6 +14,8 @@ use App\Models\Item;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Accounting\StoreSupplierCreditRequest;
+use App\Http\Requests\Accounting\UpdateSupplierCreditRequest;
 
 class SupplierCreditController extends Controller
 {
@@ -37,18 +39,12 @@ class SupplierCreditController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSupplierCreditRequest $request)
     {
-        $request->validate([
-            'supplier' => 'required',
-            'creditDate' => 'required|date',
-            'creditNo' => 'required',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-        ]);
+        $request->validated();
 
         try {
-            DB::transaction(function() use ($request) {
+            $journalEntry = DB::transaction(function() use ($request) {
                 $companyId = session('active_company_id');
 
                 $categoryItems = collect($request->items)->filter(function($item) {
@@ -170,11 +166,186 @@ class SupplierCreditController extends Controller
                         'memo' => $productItem['description'] ?? $request->memo,
                     ]);
                 }
+                
+                return $journalEntry;
             });
 
-            return redirect()->route('dashboard')->with('success', 'Supplier Return saved successfully.');
+            return redirect()->route('supplier-credit.edit', $journalEntry->id)->with('success', 'Supplier Return saved successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $creditNote = SupplierCreditNote::find($journalEntry->transactionable_id);
+
+        if (!$creditNote) {
+            abort(404, 'Supplier Return not found');
+        }
+
+        $creditNote->load('items');
+
+        $creditNoteData = [
+            'id' => $journalEntry->id,
+            'supplier' => $creditNote->supplier_id,
+            'creditDate' => $creditNote->credit_date,
+            'creditNo' => $journalEntry->reference,
+            'memo' => $creditNote->memo,
+            'items' => $creditNote->items->whereNull('item_id')->map(function ($item) {
+                return [
+                    'category' => $item->chart_of_acc_id,
+                    'description' => $item->description,
+                    'amount' => number_format($item->amount, 2, '.', ''),
+                ];
+            })->values()->toArray(),
+            'itemDetails' => $creditNote->items->whereNotNull('item_id')->map(function ($item) {
+                return [
+                    'product' => $item->item_id,
+                    'description' => $item->description,
+                    'qty' => $item->quantity,
+                    'rate' => number_format($item->rate, 2, '.', ''),
+                    'amount' => number_format($item->amount, 2, '.', ''),
+                ];
+            })->values()->toArray(),
+        ];
+
+        return Inertia::render('Transaction/SupplierCreditForm', [
+            'creditNote' => $creditNoteData,
+            'nextCreditNo' => $this->getNextNo()
+        ]);
+    }
+
+    public function update(UpdateSupplierCreditRequest $request, JournalEntry $journalEntry)
+    {
+        $request->validated();
+
+        try {
+            DB::transaction(function() use ($request, $journalEntry) {
+                $companyId = session('active_company_id');
+
+                $categoryItems = collect($request->items)->filter(function($item) {
+                    return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                });
+                
+                $productItems = collect($request->itemDetails)->filter(function($item) {
+                    return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                });
+
+                if ($categoryItems->isEmpty() && $productItems->isEmpty()) {
+                    throw new \Exception('At least one Category item or Product item is required.');
+                }
+
+                $totalAmount = $categoryItems->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
+                }) + $productItems->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
+                });
+
+                // 1. Update Credit Note
+                $creditNote = SupplierCreditNote::findOrFail($journalEntry->transactionable_id);
+                $creditNote->update([
+                    'supplier_id' => $request->supplier,
+                    'credit_date' => $request->creditDate,
+                    'total_amount' => $totalAmount,
+                    'memo' => $request->memo,
+                ]);
+
+                // Recreate Items
+                $creditNote->items()->delete();
+
+                // Create Credit Note Items (Categories)
+                foreach ($categoryItems as $lineItem) {
+                    SupplierCreditNoteItem::create([
+                        'supplier_credit_note_id' => $creditNote->id,
+                        'chart_of_acc_id' => $lineItem['category'],
+                        'description' => $lineItem['description'] ?? '',
+                        'quantity' => 1,
+                        'rate' => (float) str_replace(',', '', $lineItem['amount']),
+                        'amount' => (float) str_replace(',', '', $lineItem['amount']),
+                    ]);
+                }
+
+                // Create Credit Note Items (Products)
+                foreach ($productItems as $productItem) {
+                    $itemModel = Item::find($productItem['product']);
+                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                    
+                    if (!$chartOfAccId) {
+                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                    }
+
+                    SupplierCreditNoteItem::create([
+                        'supplier_credit_note_id' => $creditNote->id,
+                        'item_id' => $productItem['product'],
+                        'chart_of_acc_id' => $chartOfAccId,
+                        'description' => $productItem['description'] ?? '',
+                        'quantity' => (float)str_replace(',', '', $productItem['qty'] ?? 1),
+                        'rate' => (float)str_replace(',', '', $productItem['rate'] ?? 0),
+                        'amount' => (float)str_replace(',', '', $productItem['amount']),
+                    ]);
+                }
+
+                // 2. Update Financial Entry
+                $journalEntry->update([
+                    'date' => $request->creditDate,
+                    'reference' => $request->creditNo,
+                    'description' => $request->memo,
+                    'payee_id' => $request->supplier,
+                    'total_amount' => $totalAmount,
+                ]);
+
+                $journalEntry->lines->each->delete();
+
+                // Debit Accounts Payable (Reducing what we owe)
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
+
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $apAccount->id,
+                    'debit' => $totalAmount,
+                    'credit' => 0,
+                    'memo' => $request->memo,
+                ]);
+
+                // Credit Expense/Inventory - Categories
+                foreach ($categoryItems as $lineItem) {
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $lineItem['category'],
+                        'debit' => 0,
+                        'credit' => (float) str_replace(',', '', $lineItem['amount']),
+                        'memo' => $lineItem['description'] ?? $request->memo,
+                    ]);
+                }
+
+                // Credit Expense/Inventory - Products
+                foreach ($productItems as $productItem) {
+                    $itemModel = Item::find($productItem['product']);
+                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                    
+                    if (!$chartOfAccId) {
+                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                    }
+
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $chartOfAccId,
+                        'debit' => 0,
+                        'credit' => (float) str_replace(',', '', $productItem['amount']),
+                        'memo' => $productItem['description'] ?? $request->memo,
+                    ]);
+                }
+            });
+
+            return redirect()->back()->with('success', 'Supplier Return updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 

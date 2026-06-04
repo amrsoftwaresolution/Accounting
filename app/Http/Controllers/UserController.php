@@ -18,8 +18,17 @@ class UserController extends Controller
      */
     public function index(): Response
     {
+        $activeCompanyId = session('active_company_id');
+        $usersQuery = User::with('manager');
+        
+        if ($activeCompanyId) {
+            $usersQuery->whereHas('companies', function($q) use ($activeCompanyId) {
+                $q->where('company_id', $activeCompanyId);
+            });
+        }
+
         return Inertia::render('Users/Index', [
-            'users' => User::with('manager')->get(),
+            'users' => $usersQuery->get(),
         ]);
     }
 
@@ -28,8 +37,17 @@ class UserController extends Controller
      */
     public function create(): Response
     {
+        $activeCompanyId = session('active_company_id');
+        $managersQuery = User::where('role', 'admin');
+        
+        if ($activeCompanyId) {
+            $managersQuery->whereHas('companies', function($q) use ($activeCompanyId) {
+                $q->where('company_id', $activeCompanyId);
+            });
+        }
+
         return Inertia::render('Users/Create', [
-            'managers' => User::where('role', 'admin')->get(['id', 'name']),
+            'managers' => $managersQuery->get(['id', 'name']),
         ]);
     }
 
@@ -40,10 +58,24 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => 'required|string|email|max:255',
             'role' => 'required|in:admin,user',
             'phone' => 'nullable|string|max:20',
         ]);
+
+        $activeCompanyId = session('active_company_id');
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            if ($activeCompanyId) {
+                if ($user->companies()->where('company_id', $activeCompanyId)->exists()) {
+                    return back()->withErrors(['email' => 'This user is already part of this company.']);
+                }
+                $user->companies()->attach($activeCompanyId, ['role' => $request->role]);
+                return redirect()->route('users.index')->with('success', 'Existing user added to this company successfully.');
+            }
+            return back()->withErrors(['email' => 'The email has already been taken.']);
+        }
 
         $inviteToken = Str::random(64);
         $user = User::create([
@@ -58,7 +90,6 @@ class UserController extends Controller
         ]);
 
         // Link to active company
-        $activeCompanyId = session('active_company_id');
         if ($activeCompanyId) {
             $user->companies()->attach($activeCompanyId, ['role' => $request->role]);
         }

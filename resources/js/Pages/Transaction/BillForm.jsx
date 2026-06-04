@@ -14,8 +14,6 @@ export default function BillForm({
     auth,
     terms = [],
     bill = null,
-    lastBillDate = null,
-    lastSaveAction = 'save',
     nextBillNo = ""
 }) {
     const { props } = usePage();
@@ -118,16 +116,14 @@ export default function BillForm({
 
     const getInitialBillDate = () => {
         if (bill?.billDate) return bill.billDate;
-        const cached = localStorage.getItem('last_bill_date');
+        const cached = localStorage.getItem('last_transaction_date');
         if (cached) return cached;
-        return lastBillDate || new Date().toISOString().split('T')[0];
+        return new Date().toISOString().split('T')[0];
     };
 
     const initialBillDate = getInitialBillDate();
     const initialTerms = bill?.terms || "Net 30";
     const initialDueDate = bill?.dueDate || calculateDueDate(initialBillDate, initialTerms);
-
-    const [currentAction, setCurrentAction] = useState(lastSaveAction);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         supplier: bill?.supplier || bill?.payee_id || "",
@@ -237,7 +233,7 @@ export default function BillForm({
     };
 
     const handleBillDateChange = (dateVal) => {
-        localStorage.setItem('last_bill_date', dateVal);
+        localStorage.setItem('last_transaction_date', dateVal);
         setData(prev => ({
             ...prev,
             billDate: dateVal,
@@ -316,7 +312,6 @@ export default function BillForm({
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
-            lastAction={lastSaveAction}
         >
             <div className="py-6 px-1 space-y-8">
                 {/* Error Banner */}

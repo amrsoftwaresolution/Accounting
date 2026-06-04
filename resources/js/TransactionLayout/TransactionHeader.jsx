@@ -2,7 +2,11 @@ import { router, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import RecentTransactionHistory from '@/Components/RecentTransactionHistory';
 
+<<<<<<< HEAD
 export default function TransactionHeader({ title, amount, historyType = null, dirty = false }) {
+=======
+export default function TransactionHeader({ title, amount, onClose }) {
+>>>>>>> 6d0d435a033b9d4ac792157d5af0b462f7470bca
     const { auth } = usePage().props;
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
@@ -27,7 +31,7 @@ export default function TransactionHeader({ title, amount, historyType = null, d
                 {/* Icons */}
                 <div className="flex items-center gap-4 text-gray-500 text-sm">
                     <button
-                        onClick={() => router.get(route('dashboard'))}
+                        onClick={onClose || (() => router.get(route('dashboard')))}
                         className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
                     >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
