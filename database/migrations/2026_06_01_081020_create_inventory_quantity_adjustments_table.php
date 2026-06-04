@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('inventory_quantity_adjustments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('company_id')->constrained('companies')->cascadeOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->date('adjustment_date');
             $table->string('reference_number')->nullable();
             $table->string('adjustment_reason')->nullable();
-            $table->foreignUuid('inventory_adjustment_account_id')->nullable()->constrained('chart_of_accs')->nullOnDelete();
+            $table->foreignUuid('inventory_adjustment_account_id')->nullable()->constrained('chart_of_accs', indexName: 'fk_inv_adj_acc_id')->nullOnDelete();
             $table->text('memo')->nullable();
             $table->timestamps();
         });

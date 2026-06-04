@@ -135,6 +135,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
 
     return (
         <TransactionLayout
+            historyType="sales return"
             title={`Refund Receipt #${data.creditNoteNo}`}
             amount={totalAmount}
             processing={processing}

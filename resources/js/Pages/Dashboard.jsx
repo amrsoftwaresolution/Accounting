@@ -21,7 +21,7 @@ export default function Dashboard({ auth }) {
                 {/* Welcome Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Good Morning, {userName}!</h1>
+                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">WellCome, {userName}!</h1>
                         <p className="text-slate-500 mt-0.5 text-xs font-semibold">Overview of your business today.</p>
                     </div>
 

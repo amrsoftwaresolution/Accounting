@@ -211,6 +211,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
 
     return (
         <TransactionLayout
+            historyType="supplier return"
             title={credit?.id ? `Edit Supplier Return` : `Supplier Return`}
             amount={totalAmount}
             currencyPrefix={currencyPrefix}

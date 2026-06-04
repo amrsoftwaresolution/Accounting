@@ -31,6 +31,11 @@ class JournalEntry extends Model
         return $this->morphTo();
     }
 
+    public function payee()
+    {
+        return $this->morphTo();
+    }
+
     public function lines()
     {
         return $this->hasMany(JournalEntryLine::class);

@@ -89,11 +89,11 @@ export default function BillForm({
         if (!dateStr) return "";
         const parts = dateStr.split('-');
         if (parts.length !== 3) return "";
-        
+
         const year = parseInt(parts[0], 10);
         const month = parseInt(parts[1], 10) - 1;
         const day = parseInt(parts[2], 10);
-        
+
         const date = new Date(year, month, day);
         if (isNaN(date.getTime())) return "";
 
@@ -309,6 +309,7 @@ export default function BillForm({
 
     return (
         <TransactionLayout
+            historyType="bill"
             title={`Bill #${data.billNo}`}
             amount={totalAmount}
             processing={processing}

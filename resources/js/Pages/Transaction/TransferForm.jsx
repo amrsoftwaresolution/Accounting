@@ -10,7 +10,7 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
-    
+
     const { data, setData, post, processing, errors, reset, transform } = useForm({
         transfer_from: "",
         transfer_to: "",
@@ -73,6 +73,7 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
 
     return (
         <TransactionLayout
+            historyType="transfer"
             title="Transfer Funds"
             amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => handleSave('save')}
@@ -183,9 +184,9 @@ export default function TransferForm({ lastTransferDate = null, lastSaveAction =
                 </div>
             </div>
 
-            <QuickAddAccount 
-                isOpen={isAccountModalOpen} 
-                onClose={() => setIsAccountModalOpen(false)} 
+            <QuickAddAccount
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
                 type={accountModalType}
                 onSuccess={(newAcc) => {
                     if (newAcc) {

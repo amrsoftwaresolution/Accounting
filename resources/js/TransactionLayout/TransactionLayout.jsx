@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import TransactionHeader from "./TransactionHeader";
 import { router } from '@inertiajs/react';
 import SplitSaveButton from "@/Components/SplitSaveButton";
@@ -14,10 +15,29 @@ export default function TransactionLayout({
     onClearRows,
     processing = false,
     dirty = false,
+    historyType = null,
     lastAction = 'save'
 }) {
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(dirty);
+
+    useEffect(() => {
+        setHasUnsavedChanges(dirty);
+    }, [dirty]);
+
+    useEffect(() => {
+        const markDirty = () => setHasUnsavedChanges(true);
+
+        document.addEventListener('input', markDirty, true);
+        document.addEventListener('change', markDirty, true);
+
+        return () => {
+            document.removeEventListener('input', markDirty, true);
+            document.removeEventListener('change', markDirty, true);
+        };
+    }, []);
+
     const handleClose = () => {
-        if (dirty) {
+        if (hasUnsavedChanges) {
             if (confirm('You have unsaved changes. Are you sure you want to close?')) {
                 window.history.back();
             }
@@ -29,7 +49,7 @@ export default function TransactionLayout({
     return (
         <div className="flex flex-col h-screen bg-slate-50">
             {/* HEADER */}
-            <TransactionHeader title={title} amount={amount} />
+            <TransactionHeader title={title} amount={amount} historyType={historyType} dirty={hasUnsavedChanges} />
 
             {/* CONTENT */}
             <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">

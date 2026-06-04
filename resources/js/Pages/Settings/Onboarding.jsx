@@ -4,7 +4,7 @@ import CompanySettings from './Partials/CompanySettings';
 import SalesSettings from './Partials/SalesSettings';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
-export default function Onboarding({ company, salesSettings }) {
+export default function Onboarding({ company, salesSettings, currencies = [] }) {
     const [step, setStep] = useState(1);
 
     const steps = [
@@ -58,7 +58,7 @@ export default function Onboarding({ company, salesSettings }) {
                                 <p className="text-slate-500 text-sm font-medium">Add your business details and branding to get started.</p>
                             </div>
                             <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-                                <CompanySettings settings={company} />
+                                <CompanySettings settings={company} currencies={currencies} />
                                 <div className="p-8 bg-slate-50 border-t border-slate-200 flex justify-end">
                                     <button
                                         onClick={() => setStep(2)}

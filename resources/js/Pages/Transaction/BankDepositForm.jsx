@@ -87,6 +87,7 @@ export default function BankDepositForm({ auth, paymentMethods = [], nextDeposit
 
     return (
         <TransactionLayout
+            historyType="bank deposit"
             title={`Bank Deposit #${data.depositNo}`}
             amount={parseFloat(totalAmount)}
             processing={processing}

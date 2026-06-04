@@ -16,7 +16,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
     const [accountOptions, setAccountOptions] = useState([]);
     const [invoices, setInvoices] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
-    
+
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
@@ -223,6 +223,7 @@ export default function ReceivePaymentForm({ paymentMethods = [] }) {
 
     return (
         <TransactionLayout
+            historyType="recivepayment"
             title="Receive Payment"
             amount={parseFloat(data.amountReceived || 0).toFixed(2)}
             onSave={() => submit('save')}

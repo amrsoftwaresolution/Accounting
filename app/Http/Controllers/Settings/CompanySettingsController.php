@@ -35,6 +35,7 @@ class CompanySettingsController extends Controller
         if (!$company) return redirect()->route('dashboard');
 
         $settings = $this->getSettings();
+        $currencies = \App\Models\Currency::all();
 
         // Merge company info and specific settings
         $mergedData = array_merge($company->toArray(), $settings->toArray(), [
@@ -54,6 +55,7 @@ class CompanySettingsController extends Controller
 
         return Inertia::render('Settings/Index', [
             'settings' => $mergedData,
+            'currencies' => $currencies,
             'tab' => request('tab', 'company'),
         ]);
     }
@@ -100,8 +102,7 @@ class CompanySettingsController extends Controller
     public function updateCurrency(Request $request)
     {
         $validated = $request->validate([
-            'home_currency' => 'required|string',
-            'home_currency_prefix' => 'nullable|string|max:10',
+            'currency_id' => 'required|exists:currencies,id',
             'multicurrency' => 'required|boolean',
         ]);
 

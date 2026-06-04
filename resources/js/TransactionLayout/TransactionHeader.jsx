@@ -1,7 +1,8 @@
 import { router, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import RecentTransactionHistory from '@/Components/RecentTransactionHistory';
 
-export default function TransactionHeader({ title, amount }) {
+export default function TransactionHeader({ title, amount, historyType = null, dirty = false }) {
     const { auth } = usePage().props;
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
@@ -14,6 +15,7 @@ export default function TransactionHeader({ title, amount }) {
                 <div className="flex items-center gap-3">
                     <ApplicationLogo className="h-7 w-auto" />
                     <div className="h-6 w-px bg-slate-200 mx-1" />
+                    {historyType && <RecentTransactionHistory historyType={historyType} dirty={dirty} />}
                     <h1 className="text-lg font-semibold text-gray-800">
                         {title}
                     </h1>

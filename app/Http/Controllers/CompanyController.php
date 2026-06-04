@@ -13,7 +13,7 @@ class CompanyController extends Controller
     public function index()
     {
         $companies = Auth::user()->companies;
-        return Inertia::render('Company/Select', [
+        return Inertia::render('Company/SelectCompany', [
             'companies' => $companies
         ]);
     }
@@ -43,6 +43,11 @@ class CompanyController extends Controller
             'phone' => 'nullable|string|max:20',
             'industry' => 'nullable|string|max:255',
         ]);
+
+        // Dynamically assign system base currency ID as default currency
+        $defaultCurrency = \App\Models\Currency::where('is_base_currency', true)->first()
+            ?? \App\Models\Currency::where('code', 'LKR')->first();
+        $validated['currency_id'] = $defaultCurrency?->id;
 
         $company = Company::create($validated);
 

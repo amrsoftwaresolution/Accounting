@@ -140,6 +140,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
     return (
         <TransactionLayout
+            historyType="journal entry"
             title={`Journal Entry #${form.journalNo}`}
             amount={totals.debit.toFixed(2)}
             dirty={isDirty}

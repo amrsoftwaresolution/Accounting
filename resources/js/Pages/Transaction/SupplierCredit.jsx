@@ -91,6 +91,7 @@ export default function SupplierCreditForm({ suppliers = [], accounts = [] }) {
     return (
         <form onSubmit={handleSubmit}>
             <TransactionLayout
+                historyType="supplier return"
                 title="Supplier Return"
                 amount={totalAmount}
                 onAddLine={() => setItems([...items, { category: "", description: "", amount: "" }])}

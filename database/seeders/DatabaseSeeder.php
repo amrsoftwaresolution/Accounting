@@ -94,6 +94,20 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        // Seed Currencies
+        $lkr = \App\Models\Currency::updateOrCreate(
+            ['code' => 'LKR'],
+            ['name' => 'Sri Lankan Rupee', 'symbol' => 'Rs.', 'exchange_rate' => 1.0, 'is_base_currency' => true]
+        );
+        $usd = \App\Models\Currency::updateOrCreate(
+            ['code' => 'USD'],
+            ['name' => 'US Dollar', 'symbol' => '$', 'exchange_rate' => 300.0, 'is_base_currency' => false]
+        );
+        $eur = \App\Models\Currency::updateOrCreate(
+            ['code' => 'EUR'],
+            ['name' => 'Euro', 'symbol' => '€', 'exchange_rate' => 320.0, 'is_base_currency' => false]
+        );
+
         // 2. Create only one company dummy data
         $testCompany = Company::updateOrCreate(
             ['id' => 1],
@@ -104,7 +118,7 @@ class DatabaseSeeder extends Seeder
                 'address' => '123 Business Road, Colombo, Sri Lanka',
                 'website' => 'https://testcompany.example.com',
                 'industry' => 'Financial Services',
-                'home_currency' => 'LKR',
+                'currency_id' => $lkr->id,
                 'package_id' => 2, // Assign Standard Plan
             ]
         );
@@ -115,6 +129,16 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Ilham Sadath',
                 'password' => Hash::make('RoshanAara10'),
+                'role' => 'admin',
+                'is_active' => 1,
+            ]
+        );
+
+        $caderammar = User::updateOrCreate(
+            ['email' => 'ammargrowdigitec@gmail.com'],
+            [
+                'name' => 'Ammar',
+                'password' => Hash::make('ammar123'),
                 'role' => 'admin',
                 'is_active' => 1,
             ]
@@ -163,6 +187,7 @@ class DatabaseSeeder extends Seeder
 
         // Link users to company
         $ilhamsadath->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
+        $caderammar->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
         $amrasacc->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
         $staff02->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'user']]);
         $staff01->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'user']]);
@@ -201,6 +226,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PaymentMethodSeeder::class,
             AdvancedSettingsSeeder::class,
+            CurrencyMetadataSeeder::class,
         ]);
     }
 }

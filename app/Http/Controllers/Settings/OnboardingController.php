@@ -15,10 +15,12 @@ class OnboardingController extends Controller
         $company = \App\Models\Company::findOrFail($companyId);
         
         $salesSettings = SalesSetting::where('company_id', $companyId)->first();
+        $currencies = \App\Models\Currency::all();
 
         return Inertia::render('Settings/Onboarding', [
             'company' => $company,
             'salesSettings' => $salesSettings,
+            'currencies' => $currencies,
         ]);
     }
 

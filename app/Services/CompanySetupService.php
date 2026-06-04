@@ -32,6 +32,8 @@ class CompanySetupService
             ['code' => '5300', 'name' => 'Office Expense', 'type' => 'expense', 'sub' => 'expense'],
         ];
 
+        $company->loadMissing('currency');
+
         foreach ($accounts as $acc) {
             ChartOfAcc::firstOrCreate(
                 ['company_id' => $company->id, 'account_code' => $acc['code']],
@@ -40,7 +42,7 @@ class CompanySetupService
                     'account_type' => $acc['type'],
                     'sub_type' => $acc['sub'],
                     'balance' => 0,
-                    'currency' => $company->home_currency ?? 'LKR'
+                    'currency' => $company->currency->code ?? 'LKR'
                 ]
             );
         }

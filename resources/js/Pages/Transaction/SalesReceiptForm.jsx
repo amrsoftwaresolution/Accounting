@@ -139,6 +139,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
 
     return (
         <TransactionLayout
+            historyType="cash sale"
             title={`Sales Receipt #${data.receiptNo}`}
             amount={totalAmount}
             processing={processing}

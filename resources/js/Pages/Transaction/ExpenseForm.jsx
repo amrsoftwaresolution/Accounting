@@ -257,6 +257,7 @@ export default function ExpenseForm({
 
     return (
         <TransactionLayout
+            historyType="expense"
             title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"}
             amount={totalAmount}
             processing={processing}

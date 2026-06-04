@@ -39,6 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/customers/{customer}', [\App\Http\Controllers\Api\LookupController::class, 'customerInfo'])->name('api.customers.info');
     Route::get('/api/customers/{customer}/invoices', [\App\Http\Controllers\Api\LookupController::class, 'customerInvoices'])->name('api.customers.invoices');
     Route::get('/api/categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('api.categories');
+    Route::get('/api/history/{transactionType}', [\App\Http\Controllers\Api\TransactionHistoryController::class, 'index'])->name('api.history');
+    Route::get('/history/{transactionType}', [\App\Http\Controllers\Api\TransactionHistoryController::class, 'page'])->name('history.index');
 
     Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
     Route::post('/journal-entries/{journalEntry}/quick-update', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'quickUpdate'])->name('journal-entries.quick-update');

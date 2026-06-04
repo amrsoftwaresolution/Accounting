@@ -101,6 +101,7 @@ export default function SalesReceipt({
 
     return (
         <TransactionLayout
+            historyType="cash sale"
             title={`Cash sale #${form.receipt_no}`}
             amount={total.toFixed(2)}
             onAddLine={() => setItems([...items, { service_date: "", product_id: "", description: "", qty: 1, rate: 0, amount: 0 }])}

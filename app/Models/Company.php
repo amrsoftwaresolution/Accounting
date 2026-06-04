@@ -22,14 +22,30 @@ class Company extends Model
         'tax_id',
         'business_type',
         'legal_address',
-        'home_currency',
-        'home_currency_prefix',
+        'currency_id',
         'multicurrency',
         'is_onboarded',
         'package_id',
     ];
     
-    protected $appends = ['logo_url', 'slug'];
+    protected $appends = ['logo_url', 'slug', 'home_currency', 'home_currency_prefix'];
+    
+    protected $with = ['currency'];
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
+    public function getHomeCurrencyAttribute()
+    {
+        return $this->currency?->code;
+    }
+
+    public function getHomeCurrencyPrefixAttribute()
+    {
+        return $this->currency?->symbol;
+    }
 
     public function getLogoUrlAttribute()
     {

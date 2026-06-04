@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
 
-export default function CompanySettings({ settings }) {
+export default function CompanySettings({ settings, currencies = [] }) {
     // 1. Logic for Company Info Text (Edit Mode)
     const [isEditing, setIsEditing] = useState(false);
     const infoForm = useForm({
@@ -38,25 +38,14 @@ export default function CompanySettings({ settings }) {
 
     const [isEditingCurrency, setIsEditingCurrency] = useState(false);
     const currencyForm = useForm({
-        home_currency: settings?.home_currency || 'LKR',
-        home_currency_prefix: settings?.home_currency_prefix || 'Rs.',
+        currency_id: settings?.currency_id || '',
         multicurrency: settings?.multicurrency || false,
     });
 
+    const currentCurrency = currencies.find(c => c.id == currencyForm.data.currency_id) || settings?.currency;
+
     const handleCurrencyChange = (e) => {
-        const value = e.target.value;
-        const prefixes = {
-            'LKR': 'Rs.',
-            'USD': '$',
-            'EUR': '€',
-            'GBP': '£',
-            'AUD': 'A$',
-        };
-        currencyForm.setData({
-            ...currencyForm.data,
-            home_currency: value,
-            home_currency_prefix: prefixes[value] || value
-        });
+        currencyForm.setData('currency_id', e.target.value);
     };
     const handleCurrencySubmit = (e) => {
         e.preventDefault();
@@ -279,7 +268,7 @@ export default function CompanySettings({ settings }) {
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
                                 <div className="col-span-4 text-gray-500 text-xs font-bold">Home Currency</div>
-                                <div className="col-span-8 text-xs text-gray-800">{currencyForm.data.home_currency} ({currencyForm.data.home_currency_prefix})</div>
+                                <div className="col-span-8 text-xs text-gray-800">{currentCurrency ? `${currentCurrency.code} (${currentCurrency.symbol})` : 'Not set'}</div>
                             </div>
                             <div className="grid grid-cols-12 pb-2">
                                 <div className="col-span-4 text-gray-500 text-xs font-bold">Multicurrency</div>
@@ -294,20 +283,15 @@ export default function CompanySettings({ settings }) {
                     <form onSubmit={handleCurrencySubmit} className="p-6">
                         <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Currency info</h2>
                         <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                                 <div>
                                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Home Currency</label>
-                                    <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5 bg-white" value={currencyForm.data.home_currency} onChange={handleCurrencyChange}>
-                                        <option value="LKR">Sri Lankan Rupee (LKR)</option>
-                                        <option value="USD">United States Dollar (USD)</option>
-                                        <option value="EUR">Euro (EUR)</option>
-                                        <option value="GBP">British Pound (GBP)</option>
-                                        <option value="AUD">Australian Dollar (AUD)</option>
+                                    <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5 bg-white" value={currencyForm.data.currency_id} onChange={handleCurrencyChange}>
+                                        <option value="">Select a currency</option>
+                                        {currencies.map(c => (
+                                            <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
+                                        ))}
                                     </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currency Prefix</label>
-                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={currencyForm.data.home_currency_prefix} onChange={e => currencyForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. Rs." />
                                 </div>
                             </div>
                             <div className="flex items-center gap-2.5 pt-1">
