@@ -279,7 +279,7 @@ class SalesReceiptController extends Controller
                     'total_amount' => $totalAmount,
                 ]);
 
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // Debit Cash/Bank (Deposit To)
                 JournalEntryLine::create([

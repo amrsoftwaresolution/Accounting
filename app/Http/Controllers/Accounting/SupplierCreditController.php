@@ -298,7 +298,7 @@ class SupplierCreditController extends Controller
                     'total_amount' => $totalAmount,
                 ]);
 
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // Debit Accounts Payable (Reducing what we owe)
                 $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);

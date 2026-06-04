@@ -195,7 +195,7 @@ class CreditNoteController extends Controller
                 ]);
 
                 // Recreate lines
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // Credit Accounts Receivable (Reduce balance)
                 $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');

@@ -129,7 +129,7 @@ class JournalEntryController extends Controller
                 'description' => $request->description,
             ]);
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
 
             $totalDebit = 0;
             foreach ($request->lines as $line) {
@@ -248,7 +248,7 @@ class JournalEntryController extends Controller
     public function destroy(JournalEntry $journalEntry)
     {
         return DB::transaction(function () use ($journalEntry) {
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
             return response()->json(['message' => 'Journal Entry Deleted Successfully']);
         });

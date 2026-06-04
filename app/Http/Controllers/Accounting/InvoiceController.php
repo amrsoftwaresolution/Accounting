@@ -200,7 +200,7 @@ class InvoiceController extends Controller
                 'total_amount' => $totalAmount,
             ]);
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
 
             foreach ($request->items as $lineItem) {
                 $itemModel = \App\Models\Item::find($lineItem['product']);

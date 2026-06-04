@@ -298,7 +298,7 @@ class BillController extends Controller
                     'total_amount' => $totalAmount,
                 ]);
 
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // Debits (Expenses/Assets) - Categories
                 foreach ($categoryItems as $lineItem) {

@@ -214,7 +214,7 @@ class ReceivePaymentController extends Controller
                 ]);
 
                 // Re-create lines
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // Cash/Bank Account (Debit)
                 JournalEntryLine::create([
