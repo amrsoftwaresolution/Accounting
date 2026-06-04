@@ -308,7 +308,6 @@ export default function ExpenseForm({
                                 value={data.payee}
                                 onChange={(val) => setData("payee", val)}
                                 options={payeeOptions}
-                                onSearch={fetchPayees}
                                 size="sm"
                                 error={errors.payee}
                                 onAddNew={() => setIsPayeeModalOpen(true)}
@@ -322,8 +321,6 @@ export default function ExpenseForm({
                                     value={data.account}
                                     onChange={(val) => setData("account", val)}
                                     options={accountOptions}
-                                    onSearch={fetchAccounts}
-                                    initialLimit={10}
                                     size="sm"
                                     error={errors.account}
                                     onAddNew={() => {

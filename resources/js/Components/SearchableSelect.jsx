@@ -49,9 +49,9 @@ export default function SearchableSelect({
     }, [search, onSearch, isOpen]);
 
     useEffect(() => {
-        const closeOnScroll = () => {
+        const handleScroll = () => {
             if (isOpen) {
-                setIsOpen(false);
+                updatePosition();
             }
         };
 
@@ -67,11 +67,11 @@ export default function SearchableSelect({
         };
 
         updatePosition();
-        window.addEventListener('scroll', closeOnScroll, true);
+        window.addEventListener('scroll', handleScroll, true);
         window.addEventListener('resize', updatePosition);
 
         return () => {
-            window.removeEventListener('scroll', closeOnScroll, true);
+            window.removeEventListener('scroll', handleScroll, true);
             window.removeEventListener('resize', updatePosition);
         };
     }, [isOpen]);

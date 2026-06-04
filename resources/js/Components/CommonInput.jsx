@@ -109,11 +109,21 @@ export default forwardRef(function CommonInput(
 
     const handlePaste = (e) => {
         if (type === 'date') {
-            const pastedText = e.clipboardData.getData('text');
+            const pastedText = e.clipboardData.getData('text').trim();
+            
+            // Try parsing Excel serial numbers (if it's a number, though rare in plain text paste, just in case)
+            // or standard strings
             const d = new Date(pastedText);
+            
             if (!isNaN(d.getTime())) {
                 e.preventDefault();
-                const formatted = d.toISOString().split('T')[0];
+                
+                // Construct YYYY-MM-DD locally to avoid timezone shifts
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const formatted = `${yyyy}-${mm}-${dd}`;
+                
                 const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
                 nativeInputValueSetter.call(inputRef.current, formatted);
                 const ev = new Event('input', { bubbles: true });

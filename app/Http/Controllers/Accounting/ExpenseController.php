@@ -373,6 +373,8 @@ class ExpenseController extends Controller
             $action = $request->input('action', 'save');
             if ($action === 'close') {
                 return redirect()->route('dashboard')->with('success', 'Expense updated successfully.');
+            } elseif ($action === 'new') {
+                return redirect()->route('expense')->with('success', 'Expense updated successfully.');
             }
 
             return redirect()->back()->with('success', 'Expense updated successfully.');

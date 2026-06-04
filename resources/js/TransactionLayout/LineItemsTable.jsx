@@ -120,7 +120,6 @@ export default function LineItemsTable({
                                                     onChange={(val) => handleItemChange(index, col.key, val)}
                                                     options={col.options}
                                                     placeholder={col.placeholder}
-                                                    initialLimit={50}
                                                     variant="table"
                                                     size="sm"
                                                     onAddNew={col.onAddNew ? () => col.onAddNew(index) : null}
