@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage, Head } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
@@ -19,7 +19,9 @@ export default function ExpenseForm({
 
     // Accordion States (Expanded by default)
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
-    const [isItemsExpanded, setIsItemsExpanded] = useState(true);
+    const [isItemsExpanded, setIsItemsExpanded] = useState(() => {
+        return expense?.itemDetails && expense.itemDetails.some(i => i.product) ? true : false;
+    });
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
@@ -85,15 +87,20 @@ export default function ExpenseForm({
     // useForm
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         payee: expense?.payee || expense?.payee_id || "",
-        account: expense?.account || expense?.payment_account_id || "",
-        date: initialPaymentDate,
-        method: expense?.method || expense?.payment_method_id || "",
-        ref: expense?.ref || expense?.reference_no || "",
+        account: expense?.paymentAccount || expense?.account || expense?.payment_account_id || "",
+        date: expense?.paymentDate || expense?.date || initialPaymentDate,
+        method: expense?.paymentMethod || expense?.method || expense?.payment_method_id || "",
+        ref: expense?.referenceNo || expense?.ref || expense?.reference_no || "",
         memo: expense?.memo || "",
-        items: expense?.items && expense.items.length > 0 ? expense.items : [
+        items: expense?.items && expense.items.length > 0 ? expense.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: expense?.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails : [
+        itemDetails: expense?.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails.map(i => ({
+            ...i,
+            qty: parseFloat(i.qty||0).toLocaleString('en-US'),
+            rate: parseFloat(i.rate||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+            amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
         action: 'save'
@@ -112,15 +119,20 @@ export default function ExpenseForm({
         if (expense) {
             setData({
                 payee: expense.payee || expense.payee_id || "",
-                account: expense.account || expense.payment_account_id || "",
+                account: expense.paymentAccount || expense.account || expense.payment_account_id || "",
                 date: expense.paymentDate || expense.date || "",
                 method: expense.paymentMethod || expense.method || "",
                 ref: expense.referenceNo || expense.ref || "",
                 memo: expense.memo || "",
-                items: expense.items && expense.items.length > 0 ? expense.items : [
+                items: expense.items && expense.items.length > 0 ? expense.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
                     { category: "", description: "", amount: "0.00" }
                 ],
-                itemDetails: expense.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails : [
+                itemDetails: expense.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails.map(i => ({
+                    ...i,
+                    qty: parseFloat(i.qty||0).toLocaleString('en-US'),
+                    rate: parseFloat(i.rate||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+                    amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
                 ],
                 action: 'save'
@@ -207,7 +219,20 @@ export default function ExpenseForm({
         const method = expense?.id ? patch : post;
 
         method(url, {
-            preserveScroll: true
+            preserveScroll: true,
+            onSuccess: () => {
+                if (action === 'new') {
+                    reset();
+                    clearErrors();
+                    const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                    setData({
+                        payee: "", account: "", date: cachedDate, method: "", ref: "", memo: "",
+                        items: [{ category: "", description: "", amount: "0.00" }],
+                        itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                        action: 'save'
+                    });
+                }
+            }
         });
     };
 
@@ -264,6 +289,7 @@ export default function ExpenseForm({
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
         >
+            <Head title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"} />
             <div className="py-6 px-1 space-y-8">
                 {/* Error Banner */}
                 {errors.error && (

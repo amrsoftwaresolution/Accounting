@@ -200,16 +200,17 @@ class ChartOfAccController extends Controller
         return redirect()->route('chart-of-account.index')->with('success', 'Chart of account updated successfully.');
     }
 
-    public function history(ChartOfAcc $chartOfAccount)
+    public function history(Request $request, ChartOfAcc $chartOfAccount)
     {
-        if (!in_array($chartOfAccount->account_type, ['asset', 'liability', 'equity'])) {
-            return redirect()->route('reports.profit-loss')->with('error', 'History is only available for Asset, Liability, and Equity accounts.');
+        $query = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
+             ->where('chart_of_acc_id', $chartOfAccount->id)
+             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id');
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('journal_entries.date', [$request->start_date, $request->end_date]);
         }
 
-        $lines = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
-             ->where('chart_of_acc_id', $chartOfAccount->id)
-             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-             ->orderBy('journal_entries.date', 'desc')
+        $lines = $query->orderBy('journal_entries.date', 'desc')
              ->select('journal_entry_lines.*')
              ->get();
 

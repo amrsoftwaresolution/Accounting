@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function ProfitAndLoss({ reportData, filters, auth }) {
@@ -140,7 +140,11 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         {income.map((item, index) => (
                             <tr key={`inc-${index}`} className="hover:bg-gray-50 transition-colors">
                                 <td className="py-2 px-3 pl-8 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums"><Currency value={item.balance} /></td>
+                                <td className="py-2 px-3 text-right tabular-nums">
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                        <Currency value={item.balance} />
+                                    </Link>
+                                </td>
                             </tr>
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
@@ -157,7 +161,11 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         {expense.map((item, index) => (
                             <tr key={`exp-${index}`} className="hover:bg-gray-50 transition-colors">
                                 <td className="py-2 px-3 pl-8 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums"><Currency value={item.balance} /></td>
+                                <td className="py-2 px-3 text-right tabular-nums">
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                        <Currency value={item.balance} />
+                                    </Link>
+                                </td>
                             </tr>
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">

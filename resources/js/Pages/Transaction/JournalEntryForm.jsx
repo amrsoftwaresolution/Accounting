@@ -38,7 +38,6 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             label: "Account",
             type: "select",
             options: accountOptions,
-            onSearch: fetchAccounts,
             onAddNew: () => setIsAccountModalOpen(true),
             placeholder: "Select account",
             className: "w-[25%]"
@@ -51,7 +50,6 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             label: "Name",
             type: "select",
             options: payeeOptions,
-            onSearch: fetchPayees,
             onAddNew: () => setIsPayeeModalOpen(true),
             placeholder: "Select name",
             className: "w-[25%]"
@@ -116,6 +114,11 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
     const handleSave = async (type = 'save') => {
         try {
+            if (Math.abs(totals.debit - totals.credit) > 0.001) {
+                alert("Debits and Credits must balance to save this entry.");
+                return;
+            }
+
             const payload = {
                 date: form.date,
                 reference_no: form.journalNo,
@@ -131,14 +134,17 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
             if (journalEntry) {
                 await axios.patch(`/journal-entries/${journalEntry.id}`, payload);
+                setIsDirty(false);
+                if (type === 'close') window.history.back();
+                else if (type === 'new') window.location.href = "/journal-entries/create";
+                else window.location.reload();
             } else {
-                await axios.post("/journal-entries", payload);
+                const res = await axios.post("/journal-entries", payload);
+                setIsDirty(false);
+                if (type === 'close') window.history.back();
+                else if (type === 'new') window.location.reload();
+                else window.location.href = "/journal-entries/" + res.data.id + "/edit";
             }
-
-            setIsDirty(false);
-            if (type === 'close') window.history.back();
-            else window.location.reload();
-
         } catch (error) {
             console.error(error.response?.data || error);
             alert(error.response?.data?.message || "Error saving entry ❌");

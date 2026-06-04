@@ -44,7 +44,7 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                 margin:       [0.4, 0.4, 0.4, 0.4],
                 filename:     `${cleanTitle}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 1024 },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();

@@ -107,6 +107,21 @@ export default forwardRef(function CommonInput(
         return null;
     };
 
+    const handlePaste = (e) => {
+        if (type === 'date') {
+            const pastedText = e.clipboardData.getData('text');
+            const d = new Date(pastedText);
+            if (!isNaN(d.getTime())) {
+                e.preventDefault();
+                const formatted = d.toISOString().split('T')[0];
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                nativeInputValueSetter.call(inputRef.current, formatted);
+                const ev = new Event('input', { bubbles: true });
+                inputRef.current.dispatchEvent(ev);
+            }
+        }
+    };
+
     return (
         <div
             className={`flex flex-col gap-0.5 ${containerClass} ${variant === 'table' ? 'h-full' : ''}`}
@@ -139,6 +154,7 @@ export default forwardRef(function CommonInput(
                         {...props}
                         type={type === 'password' ? (showPassword ? 'text' : 'password') : type}
                         ref={inputRef}
+                        onPaste={props.onPaste || handlePaste}
                         className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} ${(type === 'date' || type === 'password' || icon) ? 'pr-8' : ''}`}
                     />
                 )}

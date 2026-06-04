@@ -24,6 +24,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
+                'chart_of_accs.id',
                 'chart_of_accs.name as account_name',
                 'chart_of_accs.account_type',
                 'chart_of_accs.sub_type',
@@ -39,6 +40,7 @@ class ReportController extends Controller
                 // Expense: Debit - Credit
                 $balance = ($type === 'income') ? ($item->total_credit - $item->total_debit) : ($item->total_debit - $item->total_credit);
                 return [
+                    'id' => $item->id,
                     'name' => $item->account_name,
                     'sub_type' => $item->sub_type,
                     'balance' => (float) $balance
@@ -65,6 +67,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
+                'chart_of_accs.id',
                 'chart_of_accs.name as account_name',
                 'chart_of_accs.account_type',
                 'chart_of_accs.sub_type',
@@ -80,6 +83,7 @@ class ReportController extends Controller
                 // Liability/Equity: Credit - Debit
                 $balance = ($type === 'asset') ? ($item->total_debit - $item->total_credit) : ($item->total_credit - $item->total_debit);
                 return [
+                    'id' => $item->id,
                     'name' => $item->account_name,
                     'sub_type' => $item->sub_type,
                     'balance' => (float) $balance
