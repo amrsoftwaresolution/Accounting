@@ -59,10 +59,11 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
     };
 
     const [parentAccounts, setParentAccounts] = useState([]);
+    const [nameDuplicateError, setNameDuplicateError] = useState('');
 
     const initialDate = localStorage.getItem('last_opening_balance_date') || new Date().toISOString().split('T')[0];
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, setError } = useForm({
         account_code: '',
         name: '',
         account_type: defaultType,
@@ -76,6 +77,11 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         parent_id: '',
         is_locked: false,
     });
+
+    const validateAccountName = (value) => {
+        const normalized = String(value || '').trim().toLowerCase();
+        return parentAccounts.some(acc => String(acc.name || '').trim().toLowerCase() === normalized);
+    };
 
     const handleTypeChange = (value) => {
         setData(prev => ({
@@ -117,7 +123,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         if (isOpen) {
             axios.get(route('api.accounts'))
                 .then(res => {
-                    setParentAccounts(res.data);
+                    setParentAccounts(res.data || []);
                 })
                 .catch(err => console.error("Failed to load accounts for parent select:", err));
         }
@@ -139,8 +145,19 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         }
     }, [isOpen, data.account_type]);
 
+    useEffect(() => {
+        setNameDuplicateError(validateAccountName(data.name) ? 'An account with this name already exists.' : '');
+    }, [data.name, parentAccounts]);
+
     const submit = (e) => {
         e.preventDefault();
+
+        if (validateAccountName(data.name)) {
+            setError('name', 'An account with this name already exists.');
+            setNameDuplicateError('An account with this name already exists.');
+            return;
+        }
+
         post(route('chart-of-account.store'), {
             onSuccess: (page) => {
                 const newAccount = page.props.flash?.new_account;
@@ -171,7 +188,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         label="Account Name"
                         value={data.name}
                         onChange={e => setData('name', e.target.value)}
-                        error={errors.name}
+                        error={errors.name || nameDuplicateError}
                         required
                         disabled={data.is_locked}
                     />

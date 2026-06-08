@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { forwardRef, useState, useRef, useEffect, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 
-export default function SearchableSelect({
+const SearchableSelect = forwardRef(function SearchableSelect({
     options = [],
     value,
     onChange,
@@ -15,13 +15,20 @@ export default function SearchableSelect({
     error = null,
     required = false,
     size = "md",
-    hideChevron = false
-}) {
+    hideChevron = false,
+    tabIndex = 0,
+    onKeyDown: externalOnKeyDown,
+}, ref) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
     const [activeIndex, setActiveIndex] = useState(-1);
     const containerRef = useRef(null);
+
+    useImperativeHandle(ref, () => ({
+        focus: () => containerRef.current?.focus(),
+        open: () => setIsOpen(true),
+    }));
     const dropdownRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -138,8 +145,11 @@ export default function SearchableSelect({
         <div
             className={`relative w-full outline-none ${variant === 'table' ? 'h-full' : ''}`}
             ref={containerRef}
-            tabIndex={variant === 'table' ? -1 : 0}
-            onKeyDown={handleKeyDown}
+            tabIndex={tabIndex}
+            onKeyDown={(e) => {
+                handleKeyDown(e);
+                externalOnKeyDown?.(e);
+            }}
         >
             {label && (
                 <label className="font-bold text-slate-600 ml-0.5 block text-xs mb-1">
@@ -245,4 +255,6 @@ export default function SearchableSelect({
             )}
         </div>
     );
-}
+});
+
+export default SearchableSelect;

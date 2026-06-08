@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import SlideOver from '@/Components/SlideOver';
 import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
+import SearchableSelect from '@/Components/SearchableSelect';
 import Dropdown from '@/Components/Dropdown';
 import axios from 'axios';
 
@@ -65,10 +66,11 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
     const [searchTerm, setSearchTerm] = useState('');
     const [accountWasLockedInitially, setAccountWasLockedInitially] = useState(false);
     const [filterType, setFilterType] = useState('all');
+    const [nameDuplicateError, setNameDuplicateError] = useState('');
 
     const initialDate = localStorage.getItem('last_opening_balance_date') || lastOpeningBalanceDate || new Date().toISOString().split('T')[0];
 
-    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, setError } = useForm({
         account_code: '',
         name: '',
         account_type: 'asset',
@@ -84,6 +86,11 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         is_system: false,
     });
 
+    const validateAccountName = (value) => {
+        const normalized = String(value || '').trim().toLowerCase();
+        return chartOfAccounts.some(account => account.id !== selectedId && String(account.name || '').trim().toLowerCase() === normalized);
+    };
+
     const handleOpenCreate = (parentAccount = null) => {
         const isActualAccount = parentAccount && typeof parentAccount === 'object' && 'id' in parentAccount;
 
@@ -91,6 +98,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         setSelectedId(null);
         reset();
         clearErrors();
+        setNameDuplicateError('');
         setAccountWasLockedInitially(false);
 
         const freshDate = localStorage.getItem('last_opening_balance_date') || lastOpeningBalanceDate || new Date().toISOString().split('T')[0];
@@ -119,6 +127,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         setIsEdit(true);
         setSelectedId(account.id);
         clearErrors();
+        setNameDuplicateError('');
         setAccountWasLockedInitially(!!account.is_locked);
 
         const formattedBalance = parseFloat(account.opening_balance || 0).toLocaleString('en-US', {
@@ -148,7 +157,8 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         setData(prev => ({
             ...prev,
             account_type: value,
-            sub_type: subtypeOptions[value][0].value
+            sub_type: subtypeOptions[value][0].value,
+            parent_id: '', // reset parent when type changes — filtered list will differ
         }));
     };
 
@@ -213,6 +223,11 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
     };
 
     useEffect(() => {
+        const duplicate = validateAccountName(data.name);
+        setNameDuplicateError(duplicate ? 'An account with this name already exists.' : '');
+    }, [data.name, selectedId, chartOfAccounts]);
+
+    useEffect(() => {
         if (isPanelOpen && !isEdit && data.account_type) {
             axios.get(route('api.accounts.next-code'), {
                 params: { type: data.account_type }
@@ -231,10 +246,40 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
     const submit = (e) => {
         e.preventDefault();
 
+        if (validateAccountName(data.name)) {
+            setError('name', 'An account with this name already exists.');
+            setNameDuplicateError('An account with this name already exists.');
+            return;
+        }
+
         const options = {
             onSuccess: () => {
                 setIsPanelOpen(false);
                 reset();
+            },
+        };
+
+        if (isEdit) {
+            patch(route('chart-of-account.update', selectedId), options);
+        } else {
+            post(route('chart-of-account.store'), options);
+        }
+    };
+
+    const submitAndNew = (e) => {
+        e.preventDefault();
+
+        if (validateAccountName(data.name)) {
+            setError('name', 'An account with this name already exists.');
+            setNameDuplicateError('An account with this name already exists.');
+            return;
+        }
+
+        const options = {
+            onSuccess: () => {
+                reset();
+                clearErrors();
+                handleOpenCreate();
             },
         };
 
@@ -437,32 +482,13 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                             <span>
-                                {data.is_system 
-                                    ? "This is a system account. Its properties cannot be modified or deleted." 
+                                {data.is_system
+                                    ? "This is a system account. Its properties cannot be modified or deleted."
                                     : "This account is locked and cannot be edited or deleted."}
                             </span>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <CommonInput
-                            label="Account Code"
-                            value={data.account_code}
-                            onChange={e => setData('account_code', e.target.value)}
-                            error={errors.account_code}
-                            required
-                            disabled={data.is_locked || data.is_system}
-                        />
-                        <CommonInput
-                            label="Account Name"
-                            value={data.name}
-                            onChange={e => setData('name', e.target.value)}
-                            error={errors.name}
-                            required
-                            disabled={data.is_locked || data.is_system}
-                        />
-                    </div>
- 
                     <div className="grid grid-cols-2 gap-4">
                         <CommonInput
                             type="select"
@@ -491,6 +517,25 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                         />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <CommonInput
+                            label="Account Code"
+                            value={data.account_code}
+                            onChange={e => setData('account_code', e.target.value)}
+                            error={errors.account_code}
+                            required
+                            disabled={data.is_locked || data.is_system}
+                        />
+                        <CommonInput
+                            label="Account Name"
+                            value={data.name}
+                            onChange={e => setData('name', e.target.value)}
+                            error={errors.name || nameDuplicateError}
+                            required
+                            disabled={data.is_locked || data.is_system}
+                        />
+                    </div>
+
                     <div className="pt-4 border-t border-slate-150">
                         <Toggle
                             checked={data.is_subaccount}
@@ -500,27 +545,36 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             disabled={data.is_locked || data.is_system}
                         />
                     </div>
- 
+
                     {data.is_subaccount && (
                         <div className="pt-4 border-t border-slate-150">
-                            <CommonInput
-                                type="select"
+                            <SearchableSelect
                                 label="Parent Account"
                                 value={data.parent_id}
-                                onChange={e => setData('parent_id', e.target.value)}
+                                onChange={val => setData('parent_id', val)}
                                 error={errors.parent_id}
                                 required={data.is_subaccount}
-                                disabled={data.is_locked || data.is_system}
-                            >
-                                <option value="">Select a parent account</option>
-                                {chartOfAccounts
-                                    .filter(acc => !selectedId || acc.id !== selectedId)
-                                    .map(acc => (
-                                        <option key={acc.id} value={acc.id}>
-                                            {acc.account_code} - {acc.name} ({acc.account_type})
-                                        </option>
-                                    ))}
-                            </CommonInput>
+                                placeholder="Search and select a parent account"
+                                options={chartOfAccounts
+                                    .filter(acc =>
+                                        acc.account_type === data.account_type &&
+                                        (!selectedId || acc.id !== selectedId)
+                                    )
+                                    .map(acc => ({
+                                        value: acc.id,
+                                        label: `${acc.account_code} - ${acc.name}`,
+                                        type: acc.account_type,
+                                    }))
+                                }
+                            />
+                            {chartOfAccounts.filter(acc =>
+                                acc.account_type === data.account_type &&
+                                (!selectedId || acc.id !== selectedId)
+                            ).length === 0 && (
+                                <p className="mt-1.5 text-[10px] text-amber-500 font-medium italic">
+                                    No {data.account_type} accounts available to use as parent.
+                                </p>
+                            )}
                         </div>
                     )}
 
@@ -531,7 +585,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             value={data.description}
                             onChange={e => setData('description', e.target.value)}
                             error={errors.description}
-                            rows="3"
+                            rows="1"
                             className="resize-none"
                             disabled={data.is_locked || data.is_system}
                         />
@@ -556,7 +610,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             <p className="mt-1.5 text-[10px] text-slate-400 font-medium italic">All transactions for this account will be recorded in this currency.</p>
                         </div>
                     )}
- 
+
                     {!isEdit && ['asset', 'liability', 'equity'].includes(data.account_type) && (
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                             <CommonInput
@@ -591,7 +645,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                             />
                         </div>
                     )}
- 
+
                     <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-between gap-3 border-t border-slate-100">
                         <div>
                             {isEdit && !data.is_locked && !data.is_system && (
@@ -610,9 +664,22 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 {(data.is_locked || data.is_system) ? "Close" : "Cancel"}
                             </CommonButton>
                             {(!data.is_locked || !accountWasLockedInitially || !isEdit) && (
-                                <CommonButton type="submit" variant="primary" processing={processing} size="sm">
-                                    {isEdit ? "Update Account" : "Save Account"}
-                                </CommonButton>
+                                <>
+                                    {!isEdit && (
+                                        <CommonButton
+                                            type="button"
+                                            variant="secondary"
+                                            processing={processing}
+                                            size="sm"
+                                            onClick={submitAndNew}
+                                        >
+                                            Save &amp; New
+                                        </CommonButton>
+                                    )}
+                                    <CommonButton type="submit" variant="primary" processing={processing} size="sm">
+                                        {isEdit ? "Update" : "Save"}
+                                    </CommonButton>
+                                </>
                             )}
                         </div>
                     </div>

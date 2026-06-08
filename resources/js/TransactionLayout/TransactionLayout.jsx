@@ -49,11 +49,13 @@ export default function TransactionLayout({
     return (
         <div className="flex flex-col h-screen bg-slate-50">
             {/* HEADER */}
-<<<<<<< HEAD
-            <TransactionHeader title={title} amount={amount} historyType={historyType} dirty={hasUnsavedChanges} />
-=======
-            <TransactionHeader title={title} amount={amount} onClose={handleClose} />
->>>>>>> 6d0d435a033b9d4ac792157d5af0b462f7470bca
+            <TransactionHeader
+                title={title}
+                amount={amount}
+                historyType={historyType}
+                dirty={hasUnsavedChanges}
+                onClose={handleClose}
+            />
 
             {/* CONTENT */}
             <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">

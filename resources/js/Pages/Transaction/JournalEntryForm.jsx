@@ -3,7 +3,6 @@ import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import CommonInput from "@/Components/CommonInput";
-import SearchableSelect from "@/Components/SearchableSelect";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import { Head, usePage } from "@inertiajs/react";
@@ -52,7 +51,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             options: payeeOptions,
             onAddNew: () => setIsPayeeModalOpen(true),
             placeholder: "Select name",
-            className: "w-[25%]"
+            className: "w-[25%]",
+            tabIndex: -1
         },
     ];
 
@@ -69,9 +69,17 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         memo: journalEntry?.description || "",
     });
 
+    const createBlankLine = (description = "") => ({
+        account_id: "",
+        debit: "",
+        credit: "",
+        description,
+        payee_id: "",
+    });
+
     const [items, setItems] = useState([
-        { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
-        { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
+        createBlankLine(),
+        createBlankLine(),
     ]);
 
     useEffect(() => {
@@ -99,6 +107,34 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         },
         { debit: 0, credit: 0 }
     );
+
+    const getSuggestedBalance = (currentItems) => {
+        const totalsNow = currentItems.reduce((acc, item) => {
+            acc.debit += parseCurrency(item.debit);
+            acc.credit += parseCurrency(item.credit);
+            return acc;
+        }, { debit: 0, credit: 0 });
+
+        const difference = totalsNow.debit - totalsNow.credit;
+        if (Math.abs(difference) < 0.001) return null;
+
+        return difference > 0
+            ? { credit: difference.toFixed(2) }
+            : { debit: Math.abs(difference).toFixed(2) };
+    };
+
+    const addJournalLine = () => {
+        const lastDescription = items[items.length - 1]?.description || "";
+        const suggestion = getSuggestedBalance(items);
+
+        setItems((prev) => {
+            const nextLine = createBlankLine(lastDescription);
+            if (suggestion?.credit !== undefined) nextLine.credit = suggestion.credit;
+            if (suggestion?.debit !== undefined) nextLine.debit = suggestion.debit;
+            return [...prev, nextLine];
+        });
+        setIsDirty(true);
+    };
 
     const handleItemChange = (index, field, value) => {
         const updated = [...items];
@@ -160,14 +196,11 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
-            onAddLine={() => {
-                setItems([...items, { account_id: "", debit: "", credit: "", description: "", payee_id: "" }]);
-                setIsDirty(true);
-            }}
+            onAddLine={addJournalLine}
             onClearRows={() => {
                 setItems([
-                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
-                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
+                    createBlankLine(),
+                    createBlankLine(),
                 ]);
                 setIsDirty(true);
             }}
@@ -208,9 +241,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                 columns={JOURNAL_COLUMNS}
                 items={items}
                 handleItemChange={handleItemChange}
-                addRow={() =>
-                    setItems([...items, { account_id: "", debit: "", credit: "", description: "", payee_id: "" }])
-                }
+                addRow={addJournalLine}
                 removeRow={(index) =>
                     setItems(items.filter((_, i) => i !== index))
                 }
@@ -220,8 +251,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                 }}
                 currencyPrefix={currencyPrefix}
                 clearRows={() => setItems([
-                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
-                    { account_id: "", debit: "", credit: "", description: "", payee_id: "" },
+                    createBlankLine(),
+                    createBlankLine(),
                 ])}
                 hideActions={true}
             />

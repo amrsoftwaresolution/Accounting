@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import CommonButton from "@/Components/CommonButton";
@@ -17,6 +17,7 @@ export default function LineItemsTable({
     hideActions = false
 }) {
     const [draggedIndex, setDraggedIndex] = useState(null);
+    const inputRefs = useRef({});
 
     const onDragStart = (e, index) => {
         setDraggedIndex(index);
@@ -53,8 +54,30 @@ export default function LineItemsTable({
     };
 
     const handleCurrencyFocus = (e) => {
-        // Select all text so the user's first keypress fully replaces the value
         e.target.select();
+    };
+
+    const handleDescriptionFocus = (e) => {
+        e.target.select();
+    };
+
+    const getVisibleColumns = () => columns.filter((col) => col.tabIndex !== -1);
+
+    const handleFieldKeyDown = (e, index, colKey) => {
+        if (e.key !== 'Tab') return;
+
+        const visibleColumns = getVisibleColumns();
+        const lastVisibleColumn = visibleColumns[visibleColumns.length - 1];
+        if (!lastVisibleColumn || lastVisibleColumn.key !== colKey) return;
+        if (index !== items.length - 1) return;
+
+        e.preventDefault();
+        addRow?.();
+
+        setTimeout(() => {
+            const field = inputRefs.current[`${items.length}-${visibleColumns[0].key}`];
+            field?.focus?.();
+        }, 0);
     };
 
     const handleCurrencyBlur = (index, key, rawValue) => {
@@ -116,6 +139,9 @@ export default function LineItemsTable({
                                         <div className="w-full h-full">
                                             {col.options ? (
                                                 <SearchableSelect
+                                                    ref={(node) => {
+                                                        inputRefs.current[`${index}-${col.key}`] = node;
+                                                    }}
                                                     value={item[col.key] || ""}
                                                     onChange={(val) => handleItemChange(index, col.key, val)}
                                                     options={col.options}
@@ -125,9 +151,14 @@ export default function LineItemsTable({
                                                     onAddNew={col.onAddNew ? () => col.onAddNew(index) : null}
                                                     onSearch={col.onSearch}
                                                     hideChevron={col.hideChevron}
+                                                    tabIndex={col.tabIndex ?? 0}
+                                                    onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
                                                 />
                                             ) : (
                                                 <CommonInput
+                                                    ref={(node) => {
+                                                        inputRefs.current[`${index}-${col.key}`] = node;
+                                                    }}
                                                     type={col.type === 'currency' ? 'text' : (col.type || "text")}
                                                     variant="table"
                                                     size="sm"
@@ -136,13 +167,16 @@ export default function LineItemsTable({
                                                         ? handleCurrencyChange(index, col.key, e.target.value)
                                                         : handleItemChange(index, col.key, e.target.value)
                                                     }
-                                                    onFocus={col.type === 'currency' ? handleCurrencyFocus : undefined}
+                                                    onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
+                                                    onFocus={col.type === 'currency' ? handleCurrencyFocus : (col.key === 'description' ? handleDescriptionFocus : undefined)}
+                                                    onClick={col.key === 'description' ? (e) => e.currentTarget.select() : undefined}
                                                     onBlur={col.type === 'currency'
                                                         ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
                                                         : undefined
                                                     }
                                                     placeholder={col.placeholder || ""}
                                                     className={col.inputClass || ''}
+                                                    tabIndex={col.tabIndex ?? 0}
                                                 />
                                             )}
                                         </div>

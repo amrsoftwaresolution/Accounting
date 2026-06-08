@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Accounting;
 
+use App\Models\ChartOfAcc;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UpdateChartOfAccRequest extends FormRequest
@@ -28,7 +30,22 @@ class UpdateChartOfAccRequest extends FormRequest
                         return $query->where('company_id', session('active_company_id'));
                     })
             ],
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($chartOfAccountId) {
+                    $companyId = session('active_company_id');
+                    $exists = ChartOfAcc::query()->where('company_id', '=', $companyId)
+                        ->where('id', '!=', $chartOfAccountId)
+                        ->whereRaw('LOWER(name) = ?', [Str::lower($value)])
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('An account with this name already exists.');
+                    }
+                },
+            ],
             'account_type' => 'required|in:asset,liability,equity,income,expense',
             'sub_type' => 'nullable|string|max:255',
             'description' => 'nullable|string',

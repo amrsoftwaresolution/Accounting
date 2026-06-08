@@ -102,6 +102,7 @@ export default function RecentTransactionHistory({ historyType = 'invoice', dirt
             <button
                 type="button"
                 onClick={handleToggle}
+                tabIndex={-1}
                 className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 shadow-sm transition hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700"
                 aria-label="Recent transaction history"
             >

@@ -2,11 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import RecentTransactionHistory from '@/Components/RecentTransactionHistory';
 
-<<<<<<< HEAD
-export default function TransactionHeader({ title, amount, historyType = null, dirty = false }) {
-=======
-export default function TransactionHeader({ title, amount, onClose }) {
->>>>>>> 6d0d435a033b9d4ac792157d5af0b462f7470bca
+export default function TransactionHeader({ title, amount, historyType = null, dirty = false, onClose }) {
     const { auth } = usePage().props;
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
