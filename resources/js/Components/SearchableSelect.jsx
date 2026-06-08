@@ -96,6 +96,10 @@ const SearchableSelect = forwardRef(function SearchableSelect({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const restoreFocus = () => {
+        requestAnimationFrame(() => containerRef.current?.focus());
+    };
+
     const handleKeyDown = (e) => {
         if (!isOpen) {
             if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
@@ -107,7 +111,11 @@ const SearchableSelect = forwardRef(function SearchableSelect({
 
         if (e.key === 'Escape') {
             setIsOpen(false);
-            containerRef.current?.focus();
+            setSearch("");
+            restoreFocus();
+        } else if (e.key === 'Tab') {
+            setIsOpen(false);
+            setSearch("");
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             setActiveIndex(prev => (prev < displayOptions.length - 1 ? prev + 1 : prev));
@@ -119,7 +127,7 @@ const SearchableSelect = forwardRef(function SearchableSelect({
             const selected = displayOptions[activeIndex];
             onChange(selected.value);
             setIsOpen(false);
-            containerRef.current?.focus();
+            restoreFocus();
         }
     };
 
@@ -208,9 +216,11 @@ const SearchableSelect = forwardRef(function SearchableSelect({
                     <div className="max-h-48 overflow-y-auto custom-scrollbar">
                         {onAddNew && (
                             <div
+                                onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => {
                                     onAddNew();
                                     setIsOpen(false);
+                                    restoreFocus();
                                 }}
                                 className="px-3 py-1.5 text-xs text-primary-600 font-bold border-b border-slate-100 hover:bg-primary-50 cursor-pointer flex items-center gap-2"
                             >
@@ -222,10 +232,12 @@ const SearchableSelect = forwardRef(function SearchableSelect({
                             displayOptions.map((opt, idx) => (
                                 <div
                                     key={opt.value}
+                                    onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
                                         onChange(opt.value);
                                         setIsOpen(false);
                                         setSearch("");
+                                        restoreFocus();
                                     }}
                                     className={`px-3 py-1.5 text-xs cursor-pointer transition-colors flex justify-between items-center ${idx === activeIndex ? 'bg-slate-100' : ''
                                         } ${String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'

@@ -64,20 +64,39 @@ export default function LineItemsTable({
     const getVisibleColumns = () => columns.filter((col) => col.tabIndex !== -1);
 
     const handleFieldKeyDown = (e, index, colKey) => {
-        if (e.key !== 'Tab') return;
+        if (e.key !== 'Tab' || e.shiftKey) return;
 
         const visibleColumns = getVisibleColumns();
-        const lastVisibleColumn = visibleColumns[visibleColumns.length - 1];
-        if (!lastVisibleColumn || lastVisibleColumn.key !== colKey) return;
-        if (index !== items.length - 1) return;
+        const currentColumnIndex = visibleColumns.findIndex((column) => column.key === colKey);
+        const nextColumn = visibleColumns[currentColumnIndex + 1];
+
+        if (nextColumn) {
+            const nextField = inputRefs.current[`${index}-${nextColumn.key}`];
+            if (nextField?.open) {
+                setTimeout(() => nextField.open?.(), 0);
+            }
+            return;
+        }
+
+        if (index !== items.length - 1) {
+            const nextRowField = inputRefs.current[`${index + 1}-${visibleColumns[0].key}`];
+            if (nextRowField?.open) {
+                setTimeout(() => nextRowField.open?.(), 0);
+            }
+            return;
+        }
 
         e.preventDefault();
         addRow?.();
 
-        setTimeout(() => {
-            const field = inputRefs.current[`${items.length}-${visibleColumns[0].key}`];
+        requestAnimationFrame(() => {
+            const nextIndex = items.length;
+            const field = inputRefs.current[`${nextIndex}-${visibleColumns[0].key}`];
             field?.focus?.();
-        }, 0);
+            if (field?.open) {
+                setTimeout(() => field.open?.(), 0);
+            }
+        });
     };
 
     const handleCurrencyBlur = (index, key, rawValue) => {
@@ -110,7 +129,7 @@ export default function LineItemsTable({
                     <tbody className="divide-y divide-slate-100">
                         {items.map((item, index) => (
                             <tr
-                                key={index}
+                                key={item.id ?? index}
                                 draggable
                                 onDragStart={(e) => onDragStart(e, index)}
                                 onDragOver={(e) => onDragOver(e, index)}
@@ -188,6 +207,7 @@ export default function LineItemsTable({
                                     <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             type="button"
+                                            tabIndex={-1}
                                             onClick={() => duplicateRow?.(index)}
                                             className="p-1 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded transition-all"
                                             title="Duplicate Row"
@@ -198,6 +218,7 @@ export default function LineItemsTable({
                                         </button>
                                         <button
                                             type="button"
+                                            tabIndex={-1}
                                             onClick={() => removeRow(index)}
                                             className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
                                             title="Remove Row"

@@ -52,7 +52,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             onAddNew: () => setIsPayeeModalOpen(true),
             placeholder: "Select name",
             className: "w-[25%]",
-            tabIndex: -1
+            tabIndex: 0
         },
     ];
 
@@ -69,7 +69,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         memo: journalEntry?.description || "",
     });
 
-    const createBlankLine = (description = "") => ({
+    const createBlankLine = (description = "", rowId = null) => ({
+        id: rowId ?? `journal-row-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         account_id: "",
         debit: "",
         credit: "",
@@ -98,6 +99,10 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
     // Helper to strip commas and parse
     const parseCurrency = (val) => parseFloat(String(val || 0).replace(/,/g, '')) || 0;
+    const formatCurrencyValue = (val) => {
+        const numeric = parseFloat(String(val ?? 0).replace(/,/g, ''));
+        return Number.isFinite(numeric) ? numeric.toFixed(2) : '0.00';
+    };
 
     const totals = items.reduce(
         (acc, item) => {
@@ -123,28 +128,52 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             : { debit: Math.abs(difference).toFixed(2) };
     };
 
-    const addJournalLine = () => {
-        const lastDescription = items[items.length - 1]?.description || "";
-        const suggestion = getSuggestedBalance(items);
+    const getBalanceTargetIndex = (updatedRows, currentIndex, changedField) => {
+        const oppositeField = changedField === "debit" ? "credit" : "debit";
 
+        for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
+            if (parseCurrency(updatedRows[i][oppositeField]) === 0) {
+                return i;
+            }
+        }
+
+        return -1;
+    };
+
+    const addJournalLine = () => {
         setItems((prev) => {
+            const lastDescription = [...prev].reverse().find(row => String(row.description || "").trim())?.description || "";
+            const suggestion = getSuggestedBalance(prev);
             const nextLine = createBlankLine(lastDescription);
-            if (suggestion?.credit !== undefined) nextLine.credit = suggestion.credit;
-            if (suggestion?.debit !== undefined) nextLine.debit = suggestion.debit;
+
+            if (suggestion?.credit !== undefined) nextLine.credit = formatCurrencyValue(suggestion.credit);
+            if (suggestion?.debit !== undefined) nextLine.debit = formatCurrencyValue(suggestion.debit);
+
             return [...prev, nextLine];
         });
         setIsDirty(true);
     };
 
     const handleItemChange = (index, field, value) => {
-        const updated = [...items];
-        updated[index][field] = value;
+        setItems((prev) => {
+            const updated = prev.map((row, rowIndex) =>
+                rowIndex === index ? { ...row, [field]: value } : row
+            );
 
-        const numVal = parseCurrency(value);
-        if (field === "debit" && numVal > 0) updated[index].credit = "";
-        if (field === "credit" && numVal > 0) updated[index].debit = "";
+            const numVal = parseCurrency(value);
+            if (field === "debit" && numVal > 0) updated[index].credit = "";
+            if (field === "credit" && numVal > 0) updated[index].debit = "";
 
-        setItems(updated);
+            const suggestion = getSuggestedBalance(updated);
+            const targetIndex = getBalanceTargetIndex(updated, index, field);
+
+            if (suggestion && targetIndex >= 0) {
+                const oppositeField = field === "debit" ? "credit" : "debit";
+                updated[targetIndex][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
+            }
+
+            return updated;
+        });
         setIsDirty(true);
     };
 
@@ -243,7 +272,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                 handleItemChange={handleItemChange}
                 addRow={addJournalLine}
                 removeRow={(index) =>
-                    setItems(items.filter((_, i) => i !== index))
+                    setItems((prev) => prev.filter((_, i) => i !== index))
                 }
                 totals={{
                     Debits: totals.debit.toLocaleString('en-US', { minimumFractionDigits: 2 }),
