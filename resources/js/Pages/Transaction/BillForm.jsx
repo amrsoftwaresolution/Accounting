@@ -31,6 +31,7 @@ export default function BillForm({
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('expense');
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
+    const [currentAction, setCurrentAction] = useState('save');
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
