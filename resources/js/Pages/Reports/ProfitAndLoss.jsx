@@ -17,8 +17,8 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     const income = reportData.income || [];
     const expense = reportData.expense || [];
 
-    const totalIncome = income.reduce((sum, item) => sum + item.balance, 0);
-    const totalExpense = expense.reduce((sum, item) => sum + item.balance, 0);
+    const totalIncome = income.reduce((sum, item) => sum + item.total_balance, 0);
+    const totalExpense = expense.reduce((sum, item) => sum + item.total_balance, 0);
     const netIncome = totalIncome - totalExpense;
 
     const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR';
@@ -29,6 +29,18 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
             {value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
     );
+
+    const flattenAccounts = (accounts, prefix = "") => {
+        let flattened = [];
+        accounts.forEach(acc => {
+            flattened.push({ name: prefix + acc.name, balance: acc.balance });
+            if (acc.children && acc.children.length > 0) {
+                flattened = flattened.concat(flattenAccounts(acc.children, prefix + "  "));
+                flattened.push({ name: prefix + "Total " + acc.name, balance: acc.total_balance });
+            }
+        });
+        return flattened;
+    };
 
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'GrowDigitec';
@@ -47,14 +59,16 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         
         // Income
         csvContent += `"INCOME"\n`;
-        income.forEach(item => {
+        const flatIncome = flattenAccounts(income);
+        flatIncome.forEach(item => {
             csvContent += `,"${item.name}",${item.balance}\n`;
         });
         csvContent += `,"Total Income",${totalIncome}\n\n`;
         
         // Expenses
         csvContent += `"EXPENSES"\n`;
-        expense.forEach(item => {
+        const flatExpense = flattenAccounts(expense);
+        flatExpense.forEach(item => {
             csvContent += `,"${item.name}",${item.balance}\n`;
         });
         csvContent += `,"Total Expenses",${totalExpense}\n\n`;
@@ -102,6 +116,41 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         </div>
     );
 
+    const AccountRow = ({ item, depth = 0 }) => {
+        const hasChildren = item.children && item.children.length > 0;
+        const paddingLeft = `${2 + depth * 1.5}rem`;
+
+        return (
+            <React.Fragment>
+                <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="py-2 px-3 text-gray-900" style={{ paddingLeft }}>
+                        {item.name}
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums">
+                        {hasChildren && item.balance === 0 ? null : (
+                            <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                <Currency value={item.balance} />
+                            </Link>
+                        )}
+                    </td>
+                </tr>
+                {hasChildren && item.children.map(child => (
+                    <AccountRow key={child.id} item={child} depth={depth + 1} />
+                ))}
+                {hasChildren && (
+                    <tr className="hover:bg-gray-50 transition-colors font-medium border-t border-gray-100">
+                        <td className="py-2 px-3 text-gray-700" style={{ paddingLeft }}>
+                            Total {item.name}
+                        </td>
+                        <td className="py-2 px-3 text-right tabular-nums">
+                            <Currency value={item.total_balance} />
+                        </td>
+                    </tr>
+                )}
+            </React.Fragment>
+        );
+    };
+
     return (
         <ReportLayout
             title="Profit and Loss"
@@ -137,15 +186,8 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                                 <span className="inline-block mr-1 text-[10px]">▼</span> Income
                             </td>
                         </tr>
-                        {income.map((item, index) => (
-                            <tr key={`inc-${index}`} className="hover:bg-gray-50 transition-colors">
-                                <td className="py-2 px-3 pl-8 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums">
-                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                        <Currency value={item.balance} />
-                                    </Link>
-                                </td>
-                            </tr>
+                        {income.map((item) => (
+                            <AccountRow key={item.id} item={item} />
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
                             <td className="py-2 px-3 pl-8 text-gray-900">Total Income</td>
@@ -158,15 +200,8 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                                 <span className="inline-block mr-1 text-[10px]">▼</span> Expenses
                             </td>
                         </tr>
-                        {expense.map((item, index) => (
-                            <tr key={`exp-${index}`} className="hover:bg-gray-50 transition-colors">
-                                <td className="py-2 px-3 pl-8 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums">
-                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                        <Currency value={item.balance} />
-                                    </Link>
-                                </td>
-                            </tr>
+                        {expense.map((item) => (
+                            <AccountRow key={item.id} item={item} />
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
                             <td className="py-2 px-3 pl-8 text-gray-900">Total Expenses</td>

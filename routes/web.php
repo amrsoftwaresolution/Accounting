@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'create'])->name('transfer');
     Route::post('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'store'])->name('transfer.store');
+    Route::get('/transfer/{journalEntry}/edit', [\App\Http\Controllers\Accounting\TransferController::class, 'edit'])->name('transfer.edit');
+    Route::patch('/transfer/{journalEntry}', [\App\Http\Controllers\Accounting\TransferController::class, 'update'])->name('transfer.update');
 
     Route::get('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'create'])->name('invoice');
     Route::post('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'store'])->name('invoice.store');

@@ -389,7 +389,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                         </td>
                                         <td className="px-4 py-2.5 text-[11px] font-bold text-slate-800 text-right">
                                             {['asset', 'equity', 'liability'].includes(account.account_type) ? (
-                                                `${account.currency || company?.home_currency} ${parseFloat(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                                `${account.currency || company?.home_currency_prefix || company?.home_currency || ''} ${parseFloat(account.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                             ) : (
                                                 ''
                                             )}

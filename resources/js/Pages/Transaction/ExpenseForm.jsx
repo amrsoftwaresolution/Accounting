@@ -224,6 +224,7 @@ export default function ExpenseForm({
                 if (action === 'new') {
                     reset();
                     clearErrors();
+                    fetchAccounts();
                     const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                     setData({
                         payee: "", account: "", date: cachedDate, method: "", ref: "", memo: "",
