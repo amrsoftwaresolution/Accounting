@@ -4,11 +4,30 @@ import NavLink from '@/Components/NavLink';
 import { usePage, Link, router } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
 import QuickActionMenu from '@/Components/QuickActionMenu';
+import MoreOptionsMenu from '@/Components/MoreOptionsMenu';
 import ToastNotification from '@/Components/ToastNotification';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
-    const activeCompany = usePage().props.auth.company;
+    const page = usePage();
+    const user = page.props.auth.user;
+    const activeCompany = page.props.auth.company;
+    const currentPath = page.url || window.location.pathname;
+
+    const moreOptions = (() => {
+        if (currentPath.startsWith('/customers/')) {
+            return { copyRoute: 'customers.create', deleteRoute: 'customers.destroy', recordId: page.props.customer?.id, listRoute: 'customers.index' };
+        }
+        if (currentPath.startsWith('/suppliers/')) {
+            return { copyRoute: 'suppliers.create', deleteRoute: 'suppliers.destroy', recordId: page.props.supplier?.id, listRoute: 'suppliers.index' };
+        }
+        if (currentPath.startsWith('/items/')) {
+            return { copyRoute: 'items.create', deleteRoute: 'items.destroy', recordId: page.props.item?.id, listRoute: 'items.index' };
+        }
+        if (currentPath.startsWith('/chart-of-account/')) {
+            return { copyRoute: 'chart-of-account.create', deleteRoute: 'chart-of-account.destroy', recordId: page.props.chartOfAccount?.id, listRoute: 'chart-of-account.index' };
+        }
+        return null;
+    })();
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -100,6 +119,15 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {moreOptions && (
+                            <MoreOptionsMenu
+                                copyRoute={moreOptions.copyRoute}
+                                deleteRoute={moreOptions.deleteRoute}
+                                recordId={moreOptions.recordId}
+                                listRoute={moreOptions.listRoute}
+                            />
+                        )}
+
                         {/* Company Switcher */}
                         {user.role !== 'super_admin' && usePage().props.auth.company && (
                             <Dropdown>

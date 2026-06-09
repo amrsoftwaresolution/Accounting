@@ -30,7 +30,7 @@ class JournalEntryController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $accounts = ChartOfAcc::orderBy('account_code')->get();
 
@@ -41,6 +41,33 @@ class JournalEntryController extends Controller
             ->first();
 
         $nextJournalNo = ($lastRef && is_numeric($lastRef->reference)) ? (int)$lastRef->reference + 1 : 1;
+
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $journalEntry->load('lines');
+
+            $copiedJournalEntry = [
+                'id' => null,
+                'date' => $journalEntry->date,
+                'reference' => (string) $nextJournalNo,
+                'description' => $journalEntry->description,
+                'lines' => $journalEntry->lines->map(function ($line) {
+                    return [
+                        'id' => null,
+                        'chart_of_acc_id' => $line->chart_of_acc_id,
+                        'payee_id' => $line->payee_id,
+                        'debit' => (float) $line->debit,
+                        'credit' => (float) $line->credit,
+                        'memo' => $line->memo,
+                    ];
+                })->values()->toArray(),
+            ];
+
+            return Inertia::render('Transaction/JournalEntryForm', [
+                'nextJournalNo' => (string)$nextJournalNo,
+                'journalEntry' => $copiedJournalEntry,
+            ]);
+        }
 
         return Inertia::render('Transaction/JournalEntryForm', [
             'nextJournalNo' => (string)$nextJournalNo
@@ -250,7 +277,9 @@ class JournalEntryController extends Controller
         return DB::transaction(function () use ($journalEntry) {
             $journalEntry->lines->each->delete();
             $journalEntry->delete();
-            return response()->json(['message' => 'Journal Entry Deleted Successfully']);
+
+            return redirect()->back()
+                ->with('success', 'Journal Entry deleted successfully.');
         });
     }
 }

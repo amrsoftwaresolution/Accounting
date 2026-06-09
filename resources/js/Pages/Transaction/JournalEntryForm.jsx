@@ -8,6 +8,7 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import { Head, usePage } from "@inertiajs/react";
 
 export default function JournalEntryForm({ journalEntry = null, nextJournalNo = "" }) {
+    const isEditing = Boolean(journalEntry?.id);
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
 
@@ -197,7 +198,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                     }))
             };
 
-            if (journalEntry) {
+            if (isEditing) {
                 await axios.patch(`/journal-entries/${journalEntry.id}`, payload);
                 setIsDirty(false);
                 if (type === 'close') window.history.back();
@@ -219,7 +220,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
     return (
         <TransactionLayout
             historyType="journal entry"
-            title={`Journal Entry #${form.journalNo}`}
+            title={isEditing ? `Edit Journal Entry #${form.journalNo || journalEntry?.reference || ''}` : `New Journal Entry`}
             amount={totals.debit.toFixed(2)}
             dirty={isDirty}
             onSave={() => handleSave('save')}
