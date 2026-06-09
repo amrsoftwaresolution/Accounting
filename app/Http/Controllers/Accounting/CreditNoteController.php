@@ -19,8 +19,43 @@ use Illuminate\Support\Facades\Auth;
 
 class CreditNoteController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $creditNote = CreditNote::find($journalEntry->transactionable_id);
+
+            if (!$creditNote) {
+                abort(404, 'Sales Return not found');
+            }
+
+            $creditNote->load('items');
+
+            $creditNoteData = [
+                'id' => null,
+                'customer' => $creditNote->customer_id,
+                'email' => $creditNote->email,
+                'creditNoteDate' => $creditNote->credit_note_date,
+                'creditNoteNo' => $this->getNextNo(),
+                'memo' => $creditNote->memo,
+                'statementMessage' => $creditNote->statement_message,
+                'items' => $creditNote->items->map(function ($item) {
+                    return [
+                        'product' => $item->item_id,
+                        'description' => $item->description,
+                        'qty' => $item->quantity,
+                        'rate' => number_format($item->rate, 2, '.', ''),
+                        'amount' => number_format($item->amount, 2, '.', ''),
+                    ];
+                })->toArray(),
+            ];
+
+            return Inertia::render('Transaction/CreditNoteForm', [
+                'creditNote' => $creditNoteData,
+                'nextCreditNoteNo' => $this->getNextNo(),
+            ]);
+        }
+
         return Inertia::render('Transaction/CreditNoteForm', [
             'nextCreditNoteNo' => $this->getNextNo()
         ]);
@@ -234,6 +269,23 @@ class CreditNoteController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $creditNote = CreditNote::find($journalEntry->transactionable_id);
+
+            if ($creditNote) {
+                $creditNote->items()->delete();
+                $creditNote->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Sales Return deleted successfully.');
     }
 
     private function getNextNo()

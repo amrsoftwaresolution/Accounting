@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Accounting;
 
 use App\Models\ChartOfAcc;
+use App\Models\Company;
+use App\Models\Currency;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -49,7 +51,23 @@ class UpdateChartOfAccRequest extends FormRequest
             'account_type' => 'required|in:asset,liability,equity,income,expense',
             'sub_type' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'currency' => 'nullable|string|max:3',
+            'currency' => [
+                'nullable',
+                'string',
+                'max:10',
+                function ($attribute, $value, $fail) {
+                    $company = Company::find(session('active_company_id'));
+                    $validCurrencies = Currency::query()->pluck('code')->map(fn ($code) => strtoupper((string) $code))->all();
+
+                    if (!blank($value) && !in_array(strtoupper((string) $value), $validCurrencies, true)) {
+                        $fail('Please select a valid currency.');
+                    }
+
+                    if ($company?->multicurrency && blank($value)) {
+                        $fail('Currency is required when multi-currency is enabled.');
+                    }
+                },
+            ],
             'parent_id' => [
                 'nullable',
                 'uuid',

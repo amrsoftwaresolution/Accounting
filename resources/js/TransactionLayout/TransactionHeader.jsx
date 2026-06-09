@@ -1,8 +1,9 @@
 import { router, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import MoreOptionsMenu from '@/Components/MoreOptionsMenu';
 import RecentTransactionHistory from '@/Components/RecentTransactionHistory';
 
-export default function TransactionHeader({ title, amount, historyType = null, dirty = false, onClose }) {
+export default function TransactionHeader({ title, amount, historyType = null, dirty = false, onClose, moreOptions = null }) {
     const { auth } = usePage().props;
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
@@ -24,6 +25,15 @@ export default function TransactionHeader({ title, amount, historyType = null, d
 
             {/* RIGHT SIDE */}
             <div className="flex items-center gap-6">
+                {moreOptions && (
+                    <MoreOptionsMenu
+                        copyRoute={moreOptions.copyRoute}
+                        deleteRoute={moreOptions.deleteRoute}
+                        recordId={moreOptions.recordId}
+                        listRoute={moreOptions.listRoute}
+                    />
+                )}
+
                 {/* Icons */}
                 <div className="flex items-center gap-4 text-gray-500 text-sm">
                     <button

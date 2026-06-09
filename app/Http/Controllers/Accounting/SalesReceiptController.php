@@ -20,8 +20,77 @@ use App\Http\Requests\Accounting\UpdateSalesReceiptRequest;
 
 class SalesReceiptController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $receipt = SalesReceipt::find($journalEntry->transactionable_id);
+
+            if (!$receipt) {
+                abort(404, 'Sales receipt not found');
+            }
+
+            $receipt->load('customer.addresses');
+            $customer = $receipt->customer;
+            $billingAddress = '';
+            if ($customer) {
+                $billingAddressModel = $customer->addresses->where('type', 'billing')->first();
+                if ($billingAddressModel) {
+                    $parts = array_filter([
+                        $billingAddressModel->address_line_1,
+                        $billingAddressModel->address_line_2,
+                        $billingAddressModel->city,
+                        $billingAddressModel->province,
+                        $billingAddressModel->postal_code,
+                        $billingAddressModel->country,
+                    ]);
+                    $billingAddress = implode(', ', $parts);
+                }
+            }
+
+            $receiptData = [
+                'id' => null,
+                'receipt_id' => null,
+                'customer' => $receipt->customer_id,
+                'email' => $receipt->email,
+                'billingAddress' => $billingAddress,
+                'receiptDate' => $receipt->receipt_date,
+                'receiptNo' => $this->getNextReceiptNo(),
+                'paymentMethod' => $receipt->payment_method_id,
+                'depositTo' => $receipt->deposit_to_account_id,
+                'memo' => $receipt->memo,
+                'statementMessage' => $receipt->statement_message,
+                'items' => $receipt->items->map(function ($item) {
+                    return [
+                        'product' => $item->item_id,
+                        'serviceDate' => $item->service_date,
+                        'description' => $item->description,
+                        'qty' => $item->quantity,
+                        'rate' => number_format($item->rate, 2, '.', ''),
+                        'amount' => number_format($item->amount, 2, '.', ''),
+                    ];
+                })->toArray(),
+            ];
+
+            $companyId = session('active_company_id');
+            $paymentMethods = PaymentMethod::withoutGlobalScopes()
+                ->where('is_active', true)
+                ->where(function ($query) use ($companyId) {
+                    $query->whereNull('company_id');
+                    if ($companyId) {
+                        $query->orWhere('company_id', $companyId);
+                    }
+                })
+                ->orderBy('name')
+                ->get();
+
+            return Inertia::render('Transaction/SalesReceiptForm', [
+                'receipt' => $receiptData,
+                'paymentMethods' => $paymentMethods,
+                'nextReceiptNo' => $this->getNextReceiptNo(),
+            ]);
+        }
+
         $companyId = session('active_company_id');
 
         $paymentMethods = PaymentMethod::withoutGlobalScopes()
@@ -223,7 +292,7 @@ class SalesReceiptController extends Controller
     public function update(UpdateSalesReceiptRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();
-        
+
         try {
             DB::transaction(function() use ($request, $journalEntry) {
                 // Filter out empty items
@@ -319,6 +388,23 @@ class SalesReceiptController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $receipt = SalesReceipt::find($journalEntry->transactionable_id);
+
+            if ($receipt) {
+                $receipt->items()->delete();
+                $receipt->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Sales receipt deleted successfully.');
     }
 
    private function getNextReceiptNo()

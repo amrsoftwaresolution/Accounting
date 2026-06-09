@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
         $lastRef = JournalEntry::where('transaction_type', 'invoice')
             ->whereNotNull('reference')
@@ -24,9 +24,45 @@ class InvoiceController extends Controller
             ->first();
 
         $nextInvoiceNo = ($lastRef && is_numeric($lastRef->reference)) ? (int) $lastRef->reference + 1 : 1001;
+        $nextInvoiceNoLabel = (string) str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT);
+
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $journalEntry->load('lines');
+            $invoice = \App\Models\Invoice::find($journalEntry->transactionable_id);
+
+            $invoiceData = [
+                'id' => null,
+                'customer' => $journalEntry->payee_id,
+                'email' => $invoice?->email ?? '',
+                'billingAddress' => $invoice?->billing_address ?? '',
+                'terms' => $invoice?->terms ?? 'Net 30',
+                'invoiceNo' => $nextInvoiceNoLabel,
+                'invoiceDate' => $journalEntry->date,
+                'dueDate' => $journalEntry->due_date,
+                'memo' => $journalEntry->description,
+                'statementMessage' => $invoice?->statement_message ?? '',
+                'items' => $journalEntry->lines->where('credit', '>', 0)->map(function ($line) {
+                    $item = \App\Models\Item::where('income_account_id', $line->chart_of_acc_id)->first();
+                    return [
+                        'product' => $item?->id,
+                        'description' => $line->memo,
+                        'serviceDate' => $line->service_date,
+                        'amount' => $line->credit,
+                        'qty' => 1,
+                        'rate' => $line->credit,
+                    ];
+                })->values()->toArray(),
+            ];
+
+            return Inertia::render('Transaction/InvoiceForm', [
+                'nextInvoiceNo' => $nextInvoiceNoLabel,
+                'invoice' => $invoiceData,
+            ]);
+        }
 
         return Inertia::render('Transaction/InvoiceForm', [
-            'nextInvoiceNo' => (string) str_pad($nextInvoiceNo, 4, '0', STR_PAD_LEFT)
+            'nextInvoiceNo' => $nextInvoiceNoLabel
         ]);
     }
 
@@ -227,5 +263,22 @@ class InvoiceController extends Controller
         });
 
         return redirect()->back()->with('success', 'Invoice updated successfully.');
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $invoice = \App\Models\Invoice::find($journalEntry->transactionable_id);
+
+            if ($invoice) {
+                $invoice->items()->delete();
+                $invoice->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Invoice deleted successfully.');
     }
 }

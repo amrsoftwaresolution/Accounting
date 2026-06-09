@@ -32,8 +32,48 @@ class SupplierCreditController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $creditNote = SupplierCreditNote::find($journalEntry->transactionable_id);
+
+            if (!$creditNote) {
+                abort(404, 'Supplier Return not found');
+            }
+
+            $creditNote->load('items');
+
+            $creditNoteData = [
+                'id' => null,
+                'supplier' => $creditNote->supplier_id,
+                'creditDate' => $creditNote->credit_date,
+                'creditNo' => (string)$this->getNextNo(),
+                'memo' => $creditNote->memo,
+                'items' => $creditNote->items->whereNull('item_id')->map(function ($item) {
+                    return [
+                        'category' => $item->chart_of_acc_id,
+                        'description' => $item->description,
+                        'amount' => number_format($item->amount, 2, '.', ''),
+                    ];
+                })->values()->toArray(),
+                'itemDetails' => $creditNote->items->whereNotNull('item_id')->map(function ($item) {
+                    return [
+                        'product' => $item->item_id,
+                        'description' => $item->description,
+                        'qty' => $item->quantity,
+                        'rate' => number_format($item->rate, 2, '.', ''),
+                        'amount' => number_format($item->amount, 2, '.', ''),
+                    ];
+                })->values()->toArray(),
+            ];
+
+            return Inertia::render('Transaction/SupplierCreditForm', [
+                'creditNote' => $creditNoteData,
+                'nextCreditNo' => (string)$this->getNextNo(),
+            ]);
+        }
+
         return Inertia::render('Transaction/SupplierCreditForm', [
             'nextCreditNo' => (string)$this->getNextNo()
         ]);
@@ -50,7 +90,7 @@ class SupplierCreditController extends Controller
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
-                
+
                 $productItems = collect($request->itemDetails)->filter(function($item) {
                     return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -90,10 +130,10 @@ class SupplierCreditController extends Controller
                 // Create Credit Note Items (Products)
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                     }
@@ -150,10 +190,10 @@ class SupplierCreditController extends Controller
                 // Credit Expense/Inventory - Products
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                     }
@@ -166,7 +206,7 @@ class SupplierCreditController extends Controller
                         'memo' => $productItem['description'] ?? $request->memo,
                     ]);
                 }
-                
+
                 return $journalEntry;
             });
 
@@ -228,7 +268,7 @@ class SupplierCreditController extends Controller
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
-                
+
                 $productItems = collect($request->itemDetails)->filter(function($item) {
                     return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -270,10 +310,10 @@ class SupplierCreditController extends Controller
                 // Create Credit Note Items (Products)
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                     }
@@ -325,10 +365,10 @@ class SupplierCreditController extends Controller
                 // Credit Expense/Inventory - Products
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                     }
@@ -347,6 +387,23 @@ class SupplierCreditController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $creditNote = SupplierCreditNote::find($journalEntry->transactionable_id);
+
+            if ($creditNote) {
+                $creditNote->items()->delete();
+                $creditNote->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Supplier Return deleted successfully.');
     }
 
     private function getNextNo()

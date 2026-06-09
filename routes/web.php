@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
     Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
     Route::patch('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'update'])->name('expense.update');
+    Route::delete('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'destroy'])->name('expense.destroy');
 
     // API Lookups
     Route::get('/api/payees', [\App\Http\Controllers\Api\LookupController::class, 'payees'])->name('api.payees');
@@ -56,21 +57,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'store'])->name('invoice.store');
     Route::get('/invoice/{journalEntry}/edit', [\App\Http\Controllers\Accounting\InvoiceController::class, 'edit'])->name('invoice.edit');
     Route::patch('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'update'])->name('invoice.update');
+    Route::delete('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'destroy'])->name('invoice.destroy');
 
     Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill');
     Route::post('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'store'])->name('bill.store');
     Route::get('/bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\BillController::class, 'edit'])->name('bill.edit');
     Route::patch('/bill/{journalEntry}', [\App\Http\Controllers\Accounting\BillController::class, 'update'])->name('bill.update');
+    Route::delete('/bill/{journalEntry}', [\App\Http\Controllers\Accounting\BillController::class, 'destroy'])->name('bill.destroy');
 
     Route::get('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'create'])->name('payment');
     Route::post('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'store'])->name('payment.store');
     Route::get('/payment/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'edit'])->name('payment.edit');
     Route::patch('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'update'])->name('payment.update');
+    Route::delete('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'destroy'])->name('payment.destroy');
 
     Route::get('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
     Route::post('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
     Route::get('/receipt/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'edit'])->name('receipt.edit');
     Route::patch('/receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'update'])->name('receipt.update');
+    Route::delete('/receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'destroy'])->name('receipt.destroy');
 
     // Bank Deposit
     Route::get('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'create'])->name('deposit');
@@ -80,11 +85,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
     Route::get('/credit-note/{journalEntry}/edit', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'edit'])->name('credit-note.edit');
     Route::patch('/credit-note/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'update'])->name('credit-note.update');
+    Route::delete('/credit-note/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'destroy'])->name('credit-note.destroy');
 
     Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('supplier-credit');
     Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('supplier-credit.store');
     Route::get('/SupplierCredit/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
     Route::patch('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
+    Route::delete('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
 
     // Inventory Routes
     Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);

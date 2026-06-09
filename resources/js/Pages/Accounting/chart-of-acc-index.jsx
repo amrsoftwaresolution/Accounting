@@ -33,9 +33,19 @@ const Toggle = ({ checked, onChange, label, description, disabled }) => (
     </label>
 );
 
-export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpeningBalanceDate }) {
+export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpeningBalanceDate, currencies = [] }) {
     const company = auth.company;
     const multicurrencyEnabled = !!company?.multicurrency;
+    const defaultCurrency = company?.home_currency || 'LKR';
+    const currencyOptions = currencies.length
+        ? currencies
+        : [
+            { id: 'LKR', code: 'LKR', name: 'Sri Lankan Rupee' },
+            { id: 'USD', code: 'USD', name: 'US Dollar' },
+            { id: 'EUR', code: 'EUR', name: 'Euro' },
+            { id: 'GBP', code: 'GBP', name: 'British Pound' },
+            { id: 'INR', code: 'INR', name: 'Indian Rupee' },
+        ];
 
     // ... (rest of subtypeOptions remains same)
     const subtypeOptions = {
@@ -79,7 +89,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
         opening_balance_date: initialDate,
         description: '',
         is_active: true,
-        currency: company?.home_currency || 'LKR',
+        currency: defaultCurrency,
         is_subaccount: false,
         parent_id: '',
         is_locked: false,
@@ -144,7 +154,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
             opening_balance_date: account.opening_balance_date || new Date().toISOString().split('T')[0],
             description: account.description || '',
             is_active: !!account.is_active,
-            currency: account.currency || company?.home_currency || 'LKR',
+            currency: account.currency || defaultCurrency,
             is_subaccount: !!account.parent_id,
             parent_id: account.parent_id || '',
             is_locked: !!account.is_locked,
@@ -601,11 +611,12 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 error={errors.currency}
                                 disabled={data.is_locked || data.is_system}
                             >
-                                <option value="LKR">Sri Lankan Rupee (LKR)</option>
-                                <option value="USD">United States Dollar (USD)</option>
-                                <option value="EUR">Euro (EUR)</option>
-                                <option value="GBP">British Pound (GBP)</option>
-                                <option value="AUD">Australian Dollar (AUD)</option>
+                                <option value="">Select Currency</option>
+                                {currencyOptions.map((currency) => (
+                                    <option key={currency.id || currency.code} value={currency.code || currency.id}>
+                                        {currency.code || currency.id} - {currency.name || currency.code}
+                                    </option>
+                                ))}
                             </CommonInput>
                             <p className="mt-1.5 text-[10px] text-slate-400 font-medium italic">All transactions for this account will be recorded in this currency.</p>
                         </div>

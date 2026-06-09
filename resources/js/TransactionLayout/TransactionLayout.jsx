@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import TransactionHeader from "./TransactionHeader";
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import SplitSaveButton from "@/Components/SplitSaveButton";
 import ToastNotification from "@/Components/ToastNotification";
 
@@ -16,9 +16,42 @@ export default function TransactionLayout({
     processing = false,
     dirty = false,
     historyType = null,
-    lastAction = 'save'
+    lastAction = 'save',
+    moreOptions = null
 }) {
+    const { props } = usePage();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(dirty);
+
+    const resolvedMoreOptions = moreOptions ?? (() => {
+        const currentPath = window.location.pathname;
+
+        if (currentPath.startsWith('/journal-entries/')) {
+            return { copyRoute: 'journal-entries.create', deleteRoute: 'journal-entries.destroy', recordId: props.journalEntry?.id ?? props.journalEntry?.journalEntry?.id, listRoute: 'journal-entries.index' };
+        }
+        if (currentPath.startsWith('/invoice/')) {
+            return { copyRoute: 'invoice', deleteRoute: 'invoice.destroy', recordId: props.invoice?.id, listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/bill/')) {
+            return { copyRoute: 'bill', deleteRoute: 'bill.destroy', recordId: props.bill?.id, listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/expense/')) {
+            return { copyRoute: 'expense', deleteRoute: 'expense.destroy', recordId: props.expense?.id, listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/payment/')) {
+            return { copyRoute: 'payment', deleteRoute: 'payment.destroy', recordId: props.payment?.id, listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/receipt/')) {
+            return { copyRoute: 'receipt', deleteRoute: 'receipt.destroy', recordId: props.receipt?.id, listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/credit-note/')) {
+            return { copyRoute: 'credit-note', deleteRoute: 'credit-note.destroy', recordId: props.creditNote?.id, listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/SupplierCredit/')) {
+            return { copyRoute: 'supplier-credit', deleteRoute: 'supplier-credit.destroy', recordId: props.credit?.id, listRoute: 'dashboard' };
+        }
+
+        return null;
+    })();
 
     useEffect(() => {
         setHasUnsavedChanges(dirty);
@@ -55,6 +88,7 @@ export default function TransactionLayout({
                 historyType={historyType}
                 dirty={hasUnsavedChanges}
                 onClose={handleClose}
+                moreOptions={resolvedMoreOptions}
             />
 
             {/* CONTENT */}

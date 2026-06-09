@@ -19,8 +19,58 @@ use Illuminate\Support\Facades\Auth;
 
 class ExpenseController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $journalEntry->load('lines');
+            $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
+
+            $expenseData = [
+                'id' => null,
+                'payee' => $journalEntry->payee_id,
+                'payeeType' => $expense?->payee_type ?? ($journalEntry->payee_type == Customer::class ? 'customer' : 'supplier'),
+                'paymentAccount' => $expense?->payment_account_id ?? $journalEntry->lines->where('credit', '>', 0)->first()?->chart_of_acc_id,
+                'paymentDate' => $journalEntry->date,
+                'paymentMethod' => $expense?->payment_method_id ?? '',
+                'referenceNo' => '',
+                'memo' => $journalEntry->description,
+                'items' => $expense ? $expense->items->whereNull('item_id')->map(function ($item) {
+                    return [
+                        'category' => $item->chart_of_acc_id,
+                        'description' => $item->description,
+                        'amount' => $item->amount,
+                    ];
+                })->values()->toArray() : [],
+                'itemDetails' => $expense ? $expense->items->whereNotNull('item_id')->map(function ($item) {
+                    return [
+                        'product' => $item->item_id,
+                        'description' => $item->description,
+                        'qty' => $item->quantity ?? 1,
+                        'rate' => $item->rate ?? $item->amount,
+                        'amount' => $item->amount,
+                    ];
+                })->values()->toArray() : [],
+            ];
+
+            $companyId = session('active_company_id');
+            $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
+                ->where('is_active', true)
+                ->where(function ($query) use ($companyId) {
+                    $query->whereNull('company_id');
+                    if ($companyId) {
+                        $query->orWhere('company_id', $companyId);
+                    }
+                })
+                ->orderBy('name')
+                ->get();
+
+            return Inertia::render('Transaction/ExpenseForm', [
+                'expense' => $expenseData,
+                'paymentMethods' => $paymentMethods,
+            ]);
+        }
+
         return Inertia::render('Transaction/ExpenseForm');
     }
 
@@ -40,7 +90,7 @@ class ExpenseController extends Controller
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
-                
+
                 $productItems = collect($request->itemDetails)->filter(function($item) {
                     return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -84,10 +134,10 @@ class ExpenseController extends Controller
                 // Products
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                     }
@@ -133,10 +183,10 @@ class ExpenseController extends Controller
                 // Debits (Expenses/Assets) - Products
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
                         : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
                     }
@@ -251,7 +301,7 @@ class ExpenseController extends Controller
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
-                
+
                 $productItems = collect($request->itemDetails)->filter(function($item) {
                     return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -281,7 +331,7 @@ class ExpenseController extends Controller
                     ]);
 
                     $expense->items()->delete();
-                    
+
                     // Categories
                     foreach ($categoryItems as $lineItem) {
                         \App\Models\ExpenseItem::create([
@@ -297,10 +347,10 @@ class ExpenseController extends Controller
                     // Products
                     foreach ($productItems as $productItem) {
                         $itemModel = \App\Models\Item::find($productItem['product']);
-                        $chartOfAccId = $itemModel?->type === 'inventory' 
+                        $chartOfAccId = $itemModel?->type === 'inventory'
                             ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                             : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
-                        
+
                         if (!$chartOfAccId) {
                             $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
                         }
@@ -343,10 +393,10 @@ class ExpenseController extends Controller
                 // Debits (Expenses/Assets) - Products
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
-                    $chartOfAccId = $itemModel?->type === 'inventory' 
+                    $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
                         : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
-                    
+
                     if (!$chartOfAccId) {
                         $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
                     }
@@ -382,5 +432,22 @@ class ExpenseController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
+
+            if ($expense) {
+                $expense->items()->delete();
+                $expense->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Expense deleted successfully.');
     }
 }

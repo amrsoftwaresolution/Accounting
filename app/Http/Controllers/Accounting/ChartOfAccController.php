@@ -19,9 +19,11 @@ class ChartOfAccController extends Controller
     public function index()
     {
         $chartOfAccounts = ChartOfAcc::orderBy('account_type')->orderBy('account_code')->get();
+        $currencies = \App\Models\Currency::orderBy('code')->get();
 
         return Inertia::render('Accounting/chart-of-acc-index', [
             'chartOfAccounts' => $chartOfAccounts,
+            'currencies' => $currencies,
             'lastOpeningBalanceDate' => session('last_opening_balance_date', date('Y-m-d')),
         ]);
     }
@@ -33,6 +35,14 @@ class ChartOfAccController extends Controller
             $request->merge([
                 'opening_balance' => str_replace(',', '', $request->input('opening_balance'))
             ]);
+        }
+
+        $company = \App\Models\Company::findOrFail(session('active_company_id'));
+
+        if ($company->multicurrency && blank($request->input('currency'))) {
+            return redirect()->back()
+                ->withErrors(['currency' => 'Currency is required when multi-currency is enabled.'])
+                ->withInput();
         }
 
         $request->validated();
@@ -92,17 +102,17 @@ class ChartOfAccController extends Controller
             // Asset and Expense: Debit increases, Credit decreases
             // Liability, Equity, Income: Credit increases, Debit decreases
             $isDebitSide = in_array($account->account_type, ['asset', 'expense']);
-            
+
             if ($openingBalance > 0) {
                 $accountDebit = $isDebitSide ? $openingBalance : 0;
                 $accountCredit = $isDebitSide ? 0 : $openingBalance;
-                
+
                 $equityDebit = $isDebitSide ? 0 : $openingBalance;
                 $equityCredit = $isDebitSide ? $openingBalance : 0;
             } else {
                 $accountDebit = $isDebitSide ? 0 : abs($openingBalance);
                 $accountCredit = $isDebitSide ? abs($openingBalance) : 0;
-                
+
                 $equityDebit = $isDebitSide ? abs($openingBalance) : 0;
                 $equityCredit = $isDebitSide ? 0 : abs($openingBalance);
             }
@@ -178,6 +188,14 @@ class ChartOfAccController extends Controller
             ]);
             $statusText = $chartOfAccount->is_locked ? 'locked' : 'unlocked';
             return redirect()->route('chart-of-account.index')->with('success', "Account {$statusText} successfully.");
+        }
+
+        $company = \App\Models\Company::findOrFail(session('active_company_id'));
+
+        if ($company->multicurrency && blank($request->input('currency'))) {
+            return redirect()->back()
+                ->withErrors(['currency' => 'Currency is required when multi-currency is enabled.'])
+                ->withInput();
         }
 
         $request->validated();

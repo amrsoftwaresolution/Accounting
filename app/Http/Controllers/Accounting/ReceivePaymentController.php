@@ -17,8 +17,47 @@ use App\Http\Requests\Accounting\UpdateReceivePaymentRequest;
 
 class ReceivePaymentController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+
+            if (!$payment) {
+                abort(404, 'Payment not found');
+            }
+
+            $paymentData = [
+                'id' => null,
+                'payment_id' => null,
+                'customer' => $payment->customer_id,
+                'email' => $payment->customer->email ?? '',
+                'amountReceived' => number_format($payment->amount, 2, '.', ''),
+                'paymentDate' => $payment->payment_date,
+                'paymentMethod' => $payment->payment_method_id,
+                'depositTo' => $payment->deposit_to_account_id,
+                'referenceNo' => '',
+                'memo' => $payment->memo,
+            ];
+
+            $companyId = session('active_company_id');
+            $paymentMethods = PaymentMethod::withoutGlobalScopes()
+                ->where('is_active', true)
+                ->where(function ($query) use ($companyId) {
+                    $query->whereNull('company_id');
+                    if ($companyId) {
+                        $query->orWhere('company_id', $companyId);
+                    }
+                })
+                ->orderBy('name')
+                ->get();
+
+            return Inertia::render('Transaction/ReceivePaymentForm', [
+                'payment' => $paymentData,
+                'paymentMethods' => $paymentMethods,
+            ]);
+        }
+
         $companyId = session('active_company_id');
 
         $paymentMethods = PaymentMethod::withoutGlobalScopes()
@@ -250,5 +289,22 @@ class ReceivePaymentController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+
+            if ($payment) {
+                $payment->allocations()->delete();
+                $payment->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('dashboard')->with('success', 'Payment deleted successfully.');
     }
 }

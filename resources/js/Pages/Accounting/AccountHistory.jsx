@@ -163,15 +163,15 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
     const handleDeleteTx = (journalEntryId) => {
         if (confirm("Are you sure you want to delete this transaction? This will delete the entire journal entry and cannot be undone.")) {
-            axios.delete(route('journal-entries.destroy', journalEntryId))
-                .then(res => {
+            router.delete(route('journal-entries.destroy', journalEntryId), {
+                onSuccess: () => {
                     setEditingTxId(null);
-                    router.reload();
-                })
-                .catch(err => {
-                    console.error("Failed to delete transaction:", err);
-                    alert("Failed to delete: " + (err.response?.data?.message || err.message));
-                });
+                },
+                onError: (errors) => {
+                    console.error("Failed to delete transaction:", errors);
+                    alert("Failed to delete the transaction.");
+                },
+            });
         }
     };
 
