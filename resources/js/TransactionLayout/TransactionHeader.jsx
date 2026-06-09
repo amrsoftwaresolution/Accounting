@@ -14,9 +14,14 @@ export default function TransactionHeader({ title, amount, historyType = null, d
             {/* LEFT SIDE */}
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                    <ApplicationLogo className="h-7 w-auto" />
+                    {historyType ? (
+                        <RecentTransactionHistory historyType={historyType} dirty={dirty}>
+                            <ApplicationLogo className="h-7 w-auto hover:opacity-80 transition-opacity" />
+                        </RecentTransactionHistory>
+                    ) : (
+                        <ApplicationLogo className="h-7 w-auto" />
+                    )}
                     <div className="h-6 w-px bg-slate-200 mx-1" />
-                    {historyType && <RecentTransactionHistory historyType={historyType} dirty={dirty} />}
                     <h1 className="text-lg font-semibold text-gray-800">
                         {title}
                     </h1>

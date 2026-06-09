@@ -73,18 +73,19 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
 
     const filterElements = (
         <div className="flex items-end gap-4">
-            <div className="w-[160px]">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Period</label>
-                <select 
+            <div className="w-[160px] pb-[1px]">
+                <CommonInput 
+                    type="select"
+                    label="Date Period"
                     value={datePreset}
                     onChange={handlePresetChange}
-                    className="w-full h-9 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-colors"
+                    size="sm"
                 >
                     <option value="all">All Dates</option>
                     <option value="this_year">Current Year</option>
                     <option value="last_year">Last Year</option>
                     <option value="custom">Customize</option>
-                </select>
+                </CommonInput>
             </div>
             {datePreset === 'custom' && (
                 <>
@@ -108,7 +109,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
                     </div>
                     <button 
                         onClick={() => handleRunReport()}
-                        className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
+                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
                     >
                         Run Report
                     </button>

@@ -36,27 +36,30 @@ class TransactionHistoryController extends Controller
             ->limit($limit)
             ->get()
             ->map(function (JournalEntry $entry) {
+                $memo = $entry->description
+                    ?: $entry->transactionable?->memo
+                    ?: $entry->transactionable?->description
+                    ?: '—';
+
+                if (mb_strlen($memo) > 100) {
+                    $memo = mb_substr($memo, 0, 97) . '...';
+                }
+
+                $amount = $entry->total_amount
+                    ?: $entry->transactionable?->total_amount
+                    ?: $entry->transactionable?->amount
+                    ?: 0;
+
                 return [
                     'id' => $entry->id,
-                    'number' => $entry->reference
-                        ?: $entry->transactionable?->invoice_no
-                        ?: $entry->transactionable?->bill_no
-                        ?: $entry->transactionable?->receipt_no
-                        ?: $entry->transactionable?->reference_no
-                        ?: $entry->transactionable?->payment_no
-                        ?: $entry->transactionable?->number
-                        ?: $entry->id,
                     'date' => $entry->date
                         ?: $entry->transactionable?->invoice_date
                         ?: $entry->transactionable?->bill_date
                         ?: $entry->transactionable?->receipt_date
                         ?: $entry->transactionable?->payment_date
                         ?: $entry->created_at?->toDateString(),
-                    'name' => $entry->payee?->display_name
-                        ?: $entry->payee?->name
-                        ?: $entry->payee?->supplier_name
-                        ?: $entry->payee?->customer_name
-                        ?: '—',
+                    'memo' => $memo,
+                    'amount' => $amount,
                 ];
             })
             ->values()
