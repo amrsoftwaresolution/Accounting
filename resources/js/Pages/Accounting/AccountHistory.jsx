@@ -211,32 +211,38 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         >
             <Head title={`History - ${account.name}`} />
 
-            <div className="mb-6 flex items-center justify-between">
-                <div className="flex flex-col">
-                    <h2 className="font-bold text-lg text-slate-800 tracking-tight">Account History: {account.name}</h2>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{account.account_code} • {account.account_type}</span>
+            <div className="text-center mb-8 font-serif relative">
+                <div className="absolute left-0 top-0">
+                    <Link href={route('chart-of-account.index')} className="text-xs text-blue-600 hover:underline font-sans">
+                        &larr; Back to Chart of Accounts
+                    </Link>
                 </div>
-                <Link href={route('chart-of-account.index')}>
-                    <CommonButton variant="ghost">Back to Chart of Accounts</CommonButton>
-                </Link>
+                <h2 className="text-xl font-bold text-gray-900">Account History: {account.name}</h2>
+                <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
+                <p className="text-[13px] text-gray-500 mt-1">
+                    {account.account_code} • {account.account_type}
+                </p>
+                {filters.start_date && filters.end_date && (
+                    <p className="text-[13px] text-gray-500 mt-1">
+                        {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                )}
             </div>
 
-            <div className="w-full">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse table-fixed">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[12%]">Date</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[10%]">Ref No.</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[28%]">Payee / Account</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[20%]">Memo / Description</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right w-[10%]">{col1Label}</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right w-[10%]">{col2Label}</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right w-[10%]">Balance</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center w-[10%]">Action</th>
-                                </tr>
-                            </thead>
+            <div className="w-full overflow-x-auto pb-10">
+                <table className="w-full text-[13px] text-left border-collapse table-fixed">
+                    <thead>
+                        <tr className="border-y-2 border-gray-300">
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Date</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Ref No.</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[18%]">Payee / Account</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[20%]">Memo</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Debit</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Credit</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Balance</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-center w-[5%]"></th>
+                        </tr>
+                    </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {transactions.map((tx) => {
                                     const isEditing = editingTxId === tx.id;
@@ -454,8 +460,6 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                                 )}
                             </tbody>
                         </table>
-                    </div>
-                </div>
             </div>
         </ReportLayout>
     );
