@@ -124,8 +124,6 @@ class ReportController extends Controller
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', session('active_company_id'))
             ->where('journal_entries.date', '<=', $endDate)
-            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -155,15 +153,15 @@ class ReportController extends Controller
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entries.company_id', session('active_company_id'))
-            ->where('journal_entry_lines.payee_type', Customer::class)
+            ->where('journal_entries.payee_type', Customer::class)
             ->where('chart_of_accs.sub_type', 'accounts-receivable')
             ->where('journal_entries.date', '<=', $endDate)
             ->select(
-                'journal_entry_lines.payee_id',
+                'journal_entries.payee_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             )
-            ->groupBy('journal_entry_lines.payee_id')
+            ->groupBy('journal_entries.payee_id')
             ->get()
             ->keyBy('payee_id');
 
@@ -202,15 +200,15 @@ class ReportController extends Controller
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entries.company_id', session('active_company_id'))
-            ->where('journal_entry_lines.payee_type', Supplier::class)
+            ->where('journal_entries.payee_type', Supplier::class)
             ->where('chart_of_accs.sub_type', 'accounts-payable')
             ->where('journal_entries.date', '<=', $endDate)
             ->select(
-                'journal_entry_lines.payee_id',
+                'journal_entries.payee_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             )
-            ->groupBy('journal_entry_lines.payee_id')
+            ->groupBy('journal_entries.payee_id')
             ->get()
             ->keyBy('payee_id');
 
