@@ -120,11 +120,12 @@ class ReportController extends Controller
     public function balanceSheet(Request $request)
     {
         $endDate = $request->query('end_date', now()->toDateString());
-
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', session('active_company_id'))
             ->where('journal_entries.date', '<=', $endDate)
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -195,7 +196,6 @@ class ReportController extends Controller
     public function supplierBalance(Request $request)
     {
         $endDate = $request->query('end_date', now()->toDateString());
-
         $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
 
         $lines = JournalEntryLine::query()
