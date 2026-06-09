@@ -220,6 +220,10 @@ class ChartOfAccController extends Controller
             'account' => $chartOfAccount,
             'lines' => $lines,
             'accounts' => $accounts,
+            'filters' => [
+                'start_date' => $request->start_date ?? date('Y-01-01'),
+                'end_date' => $request->end_date ?? date('Y-m-d')
+            ]
         ]);
     }
 

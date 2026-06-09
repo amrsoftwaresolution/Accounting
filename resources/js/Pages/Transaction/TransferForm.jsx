@@ -6,17 +6,18 @@ import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import axios from "axios";
 
-export default function TransferForm() {
+export default function TransferForm({ transfer = null }) {
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
 
-    const { data, setData, post, processing, errors, reset, transform } = useForm({
-        transfer_from: "",
-        transfer_to: "",
-        amount: "",
-        date: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-        memo: ""
+    const { data, setData, post, patch, processing, errors, reset, transform } = useForm({
+        transfer_from: transfer?.transfer_from || "",
+        transfer_to: transfer?.transfer_to || "",
+        amount: transfer?.amount ? parseFloat(transfer.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
+        date: transfer?.date || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+        memo: transfer?.memo || "",
+        referenceNo: transfer?.referenceNo || ""
     });
 
     const fetchAccounts = (search = "") => {
@@ -59,7 +60,10 @@ export default function TransferForm() {
     }, [data.amount, transform]);
 
     const handleSave = (type = 'save') => {
-        post(route('transfer.store'), {
+        const url = transfer?.id ? route('transfer.update', transfer.id) : route('transfer.store');
+        const method = transfer?.id ? patch : post;
+
+        method(url, {
             onSuccess: () => {
                 if (type === 'new') reset();
             },
@@ -69,7 +73,7 @@ export default function TransferForm() {
     return (
         <TransactionLayout
             historyType="transfer"
-            title="Transfer Funds"
+            title={transfer?.id ? `Edit Transfer no.${data.referenceNo || transfer.id}` : "Transfer Funds"}
             amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}

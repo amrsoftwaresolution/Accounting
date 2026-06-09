@@ -1,10 +1,23 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import ReportLayout from '@/Layouts/ReportLayout';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState, useEffect, Fragment } from 'react';
 import CommonButton from '@/Components/CommonButton';
+import CommonInput from '@/Components/CommonInput';
 import axios from 'axios';
 
-export default function AccountHistory({ account, lines = [], accounts = [] }) {
+export default function AccountHistory({ account, lines = [], accounts = [], filters = {} }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = account.currency || auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
+
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+
+    const handleRunReport = () => {
+        router.get(route('chart-of-account.history', account.id), { start_date: startDate, end_date: endDate }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
     // Calculate running balance
     const transactions = useMemo(() => {
         let currentBalance = 0;
@@ -105,6 +118,9 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
         if (type === 'sales_receipt') {
             return route('receipt.edit', tx.journal_entry_id);
         }
+        if (type === 'transfer') {
+            return route('transfer.edit', tx.journal_entry_id);
+        }
         return route('journal-entries.edit', tx.journal_entry_id);
     };
 
@@ -159,38 +175,74 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
         }
     };
 
+    const filterElements = (
+        <div className="flex items-end gap-4">
+            <div className="w-[140px]">
+                <CommonInput 
+                    type="date"
+                    label="From"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    size="sm"
+                />
+            </div>
+            <div className="w-[140px]">
+                <CommonInput 
+                    type="date"
+                    label="To"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    size="sm"
+                />
+            </div>
+            <button 
+                onClick={handleRunReport}
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
+            >
+                Run Report
+            </button>
+        </div>
+    );
+
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                        <h2 className="font-bold text-lg text-slate-800 tracking-tight">Account History: {account.name}</h2>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{account.account_code} • {account.account_type}</span>
-                    </div>
-                    <Link href={route('chart-of-account.index')}>
-                        <CommonButton variant="ghost">Back to Chart of Accounts</CommonButton>
-                    </Link>
-                </div>
-            }
+        <ReportLayout
+            title={`Account History: ${account.name}`}
+            filters={filterElements}
         >
             <Head title={`History - ${account.name}`} />
 
-            <div className="p-6">
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse table-fixed">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[12%]">Date</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[10%]">Ref No.</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[28%]">Payee / Account</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[20%]">Memo / Description</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right w-[10%]">{col1Label}</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right w-[10%]">{col2Label}</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right w-[10%]">Balance</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center w-[10%]">Action</th>
-                                </tr>
-                            </thead>
+            <div className="text-center mb-8 font-serif relative">
+                <div className="absolute left-0 top-0">
+                    <Link href={route('chart-of-account.index')} className="text-xs text-blue-600 hover:underline font-sans">
+                        &larr; Back to Chart of Accounts
+                    </Link>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Account History: {account.name}</h2>
+                <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
+                <p className="text-[13px] text-gray-500 mt-1">
+                    {account.account_code} • {account.account_type}
+                </p>
+                {filters.start_date && filters.end_date && (
+                    <p className="text-[13px] text-gray-500 mt-1">
+                        {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                )}
+            </div>
+
+            <div className="w-full overflow-x-auto pb-10">
+                <table className="w-full text-[13px] text-left border-collapse table-fixed">
+                    <thead>
+                        <tr className="border-y-2 border-gray-300">
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Date</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Ref No.</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[18%]">Payee / Account</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[20%]">Memo</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Debit</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Credit</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Balance</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-center w-[5%]"></th>
+                        </tr>
+                    </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {transactions.map((tx) => {
                                     const isEditing = editingTxId === tx.id;
@@ -384,7 +436,7 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
                                             </td>
                                             {/* Balance */}
                                             <td className="px-4 py-3 text-[11px] font-bold text-primary-600 text-right font-mono">
-                                                LKR {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                {currencyPrefix} {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
                                             {/* Action */}
                                             <td className="px-4 py-3 text-center">
@@ -408,9 +460,7 @@ export default function AccountHistory({ account, lines = [], accounts = [] }) {
                                 )}
                             </tbody>
                         </table>
-                    </div>
-                </div>
             </div>
-        </AuthenticatedLayout>
+        </ReportLayout>
     );
 }

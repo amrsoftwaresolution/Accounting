@@ -77,4 +77,80 @@ class TransferController extends Controller
             return response()->json(['message' => 'Database error: ' . $e->getMessage()], 500);
         }
     }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        // Load the lines and the related Transfer model
+        $journalEntry->load(['lines', 'transactionable']);
+        
+        $transfer = $journalEntry->transactionable;
+
+        return Inertia::render('Transaction/TransferForm', [
+            'transfer' => [
+                'id' => $journalEntry->id,
+                'transfer_from' => $transfer->from_account_id,
+                'transfer_to' => $transfer->to_account_id,
+                'amount' => $transfer->amount,
+                'date' => $transfer->date,
+                'memo' => $transfer->memo,
+                'referenceNo' => $transfer->reference_no,
+            ]
+        ]);
+    }
+
+    public function update(StoreTransferRequest $request, JournalEntry $journalEntry)
+    {
+        $validated = $request->validated();
+
+        try {
+            DB::transaction(function() use ($request, $journalEntry) {
+                $amount = (float) $request->amount;
+
+                // 1. Update Business Document (Transfer)
+                $transfer = $journalEntry->transactionable;
+                $transfer->update([
+                    'from_account_id' => $request->transfer_from,
+                    'to_account_id'   => $request->transfer_to,
+                    'amount'          => $amount,
+                    'date'            => $request->date,
+                    'memo'            => $request->memo,
+                    'reference_no'    => $request->referenceNo ?? $transfer->reference_no,
+                ]);
+
+                // 2. Update Financial Truth (Journal Entry)
+                $journalEntry->update([
+                    'date'                => $request->date,
+                    'reference'           => $transfer->reference_no,
+                    'description'         => $request->memo,
+                    'total_amount'        => $amount,
+                ]);
+
+                // Clear existing lines
+                $journalEntry->lines()->delete();
+
+                // From Account (Credit - Money leaving Asset)
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id'  => $request->transfer_from,
+                    'debit'            => 0,
+                    'credit'           => $amount,
+                    'memo'             => $request->memo,
+                ]);
+
+                // To Account (Debit - Money entering Asset)
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id'  => $request->transfer_to,
+                    'debit'            => $amount,
+                    'credit'           => 0,
+                    'memo'             => $request->memo,
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Transfer updated successfully.');
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Database error: ' . $e->getMessage()], 500);
+        }
+    }
 }

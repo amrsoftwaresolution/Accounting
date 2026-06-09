@@ -133,7 +133,7 @@ export default function ItemList({ items: initialItems }) {
                                     <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 overflow-hidden border border-slate-200 group-hover:border-primary-200 transition-colors relative">
+                                                <div className="h-10 w-10 bg-slate-100 flex items-center justify-center text-slate-300 overflow-hidden border border-slate-200 group-hover:border-primary-200 transition-colors relative">
                                                     {item.image ? (
                                                         <img src={item.image} alt="" className="h-full w-full object-cover" />
                                                     ) : (

@@ -4,11 +4,10 @@ import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function BalanceSheet({ reportData, filters, auth }) {
-    const [startDate, setStartDate] = useState(filters.start_date);
     const [endDate, setEndDate] = useState(filters.end_date);
 
     const handleRunReport = () => {
-        router.get(route('reports.balance-sheet'), { start_date: startDate, end_date: endDate }, {
+        router.get(route('reports.balance-sheet'), { end_date: endDate }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -18,9 +17,9 @@ export default function BalanceSheet({ reportData, filters, auth }) {
     const liability = reportData.liability || [];
     const equity = reportData.equity || [];
 
-    const totalAsset = asset.reduce((sum, item) => sum + item.balance, 0);
-    const totalLiability = liability.reduce((sum, item) => sum + item.balance, 0);
-    const totalEquity = equity.reduce((sum, item) => sum + item.balance, 0);
+    const totalAsset = asset.reduce((sum, item) => sum + item.total_balance, 0);
+    const totalLiability = liability.reduce((sum, item) => sum + item.total_balance, 0);
+    const totalEquity = equity.reduce((sum, item) => sum + item.total_balance, 0);
     const totalLiabilityEquity = totalLiability + totalEquity;
 
     const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR';
@@ -32,9 +31,20 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         </span>
     );
 
+    const flattenAccounts = (accounts, prefix = "") => {
+        let flattened = [];
+        accounts.forEach(acc => {
+            flattened.push({ name: prefix + acc.name, balance: acc.balance });
+            if (acc.children && acc.children.length > 0) {
+                flattened = flattened.concat(flattenAccounts(acc.children, prefix + "  "));
+                flattened.push({ name: prefix + "Total " + acc.name, balance: acc.total_balance });
+            }
+        });
+        return flattened;
+    };
+
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'GrowDigitec';
-        const startDate = filters.start_date;
         const endDate = filters.end_date;
         
         let csvContent = "";
@@ -42,14 +52,15 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         // Add Title Header
         csvContent += `"${companyName}"\n`;
         csvContent += `"Balance Sheet"\n`;
-        csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        csvContent += `"As of ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
         
         // Headers
         csvContent += `"Category","Account Name","Balance (${homeCurrency})"\n`;
         
         // Assets
         csvContent += `"ASSETS"\n`;
-        asset.forEach(item => {
+        const flatAsset = flattenAccounts(asset);
+        flatAsset.forEach(item => {
             csvContent += `,"${item.name}",${item.balance}\n`;
         });
         csvContent += `,"Total Assets",${totalAsset}\n\n`;
@@ -57,13 +68,15 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         // Liabilities & Equity
         csvContent += `"LIABILITIES AND EQUITY"\n`;
         csvContent += `"Liabilities"\n`;
-        liability.forEach(item => {
+        const flatLiability = flattenAccounts(liability);
+        flatLiability.forEach(item => {
             csvContent += `,"${item.name}",${item.balance}\n`;
         });
         csvContent += `,"Total Liabilities",${totalLiability}\n\n`;
         
         csvContent += `"Equity"\n`;
-        equity.forEach(item => {
+        const flatEquity = flattenAccounts(equity);
+        flatEquity.forEach(item => {
             csvContent += `,"${item.name}",${item.balance}\n`;
         });
         csvContent += `,"Total Equity",${totalEquity}\n\n`;
@@ -75,7 +88,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `${companyName.replace(/[^a-z0-9]/gi, '_')}_Balance_Sheet_${startDate}_to_${endDate}.csv`);
+        link.setAttribute("download", `${companyName.replace(/[^a-z0-9]/gi, '_')}_Balance_Sheet_As_Of_${endDate}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -86,16 +99,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
             <div className="w-[140px]">
                 <CommonInput 
                     type="date"
-                    label="From"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    size="sm"
-                />
-            </div>
-            <div className="w-[140px]">
-                <CommonInput 
-                    type="date"
-                    label="To"
+                    label="As of Date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     size="sm"
@@ -110,6 +114,41 @@ export default function BalanceSheet({ reportData, filters, auth }) {
         </div>
     );
 
+    const AccountRow = ({ item, depth = 0 }) => {
+        const hasChildren = item.children && item.children.length > 0;
+        const paddingLeft = depth === 0 ? '2rem' : `${2 + depth * 1.5}rem`;
+
+        return (
+            <React.Fragment>
+                <tr className="hover:bg-gray-50 transition-colors">
+                    <td className="py-2 px-3 text-gray-900" style={{ paddingLeft }}>
+                        {item.name}
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums">
+                        {hasChildren && item.balance === 0 ? null : (
+                            <Link href={route('chart-of-account.history', item.id) + '?end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                <Currency value={item.balance} />
+                            </Link>
+                        )}
+                    </td>
+                </tr>
+                {hasChildren && item.children.map(child => (
+                    <AccountRow key={child.id} item={child} depth={depth + 1} />
+                ))}
+                {hasChildren && (
+                    <tr className="hover:bg-gray-50 transition-colors font-medium border-t border-gray-100">
+                        <td className="py-2 px-3 text-gray-700" style={{ paddingLeft }}>
+                            Total {item.name}
+                        </td>
+                        <td className="py-2 px-3 text-right tabular-nums">
+                            <Currency value={item.total_balance} />
+                        </td>
+                    </tr>
+                )}
+            </React.Fragment>
+        );
+    };
+
     return (
         <ReportLayout
             title="Balance Sheet"
@@ -122,7 +161,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
                 <h2 className="text-xl font-bold text-gray-900">Balance Sheet</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <p className="text-[13px] text-gray-500 mt-1">
-                    {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    As of {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
             </div>
 
@@ -145,15 +184,8 @@ export default function BalanceSheet({ reportData, filters, auth }) {
                                 <span className="inline-block mr-1 text-[10px]">▼</span> ASSETS
                             </td>
                         </tr>
-                        {asset.map((item, index) => (
-                            <tr key={`asset-${index}`} className="hover:bg-gray-50 transition-colors">
-                                <td className="py-2 px-3 pl-8 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums">
-                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                        <Currency value={item.balance} />
-                                    </Link>
-                                </td>
-                            </tr>
+                        {asset.map((item) => (
+                            <AccountRow key={item.id} item={item} />
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
                             <td className="py-2 px-3 pl-8 text-gray-900">Total Assets</td>
@@ -173,18 +205,11 @@ export default function BalanceSheet({ reportData, filters, auth }) {
                                 Liabilities
                             </td>
                         </tr>
-                        {liability.map((item, index) => (
-                            <tr key={`liab-${index}`} className="hover:bg-gray-50 transition-colors">
-                                <td className="py-2 px-3 pl-10 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums">
-                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                        <Currency value={item.balance} />
-                                    </Link>
-                                </td>
-                            </tr>
+                        {liability.map((item) => (
+                            <AccountRow key={item.id} item={item} />
                         ))}
                         <tr className="border-t border-gray-200 bg-white font-medium">
-                            <td className="py-2 px-3 pl-10 text-gray-900">Total Liabilities</td>
+                            <td className="py-2 px-3 pl-8 text-gray-900">Total Liabilities</td>
                             <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalLiability} /></td>
                         </tr>
 
@@ -194,18 +219,11 @@ export default function BalanceSheet({ reportData, filters, auth }) {
                                 Equity
                             </td>
                         </tr>
-                        {equity.map((item, index) => (
-                            <tr key={`eq-${index}`} className="hover:bg-gray-50 transition-colors">
-                                <td className="py-2 px-3 pl-10 text-gray-900">{item.name}</td>
-                                <td className="py-2 px-3 text-right tabular-nums">
-                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                        <Currency value={item.balance} />
-                                    </Link>
-                                </td>
-                            </tr>
+                        {equity.map((item) => (
+                            <AccountRow key={item.id} item={item} />
                         ))}
                         <tr className="border-t border-gray-200 bg-white font-medium">
-                            <td className="py-2 px-3 pl-10 text-gray-900">Total Equity</td>
+                            <td className="py-2 px-3 pl-8 text-gray-900">Total Equity</td>
                             <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalEquity} /></td>
                         </tr>
 

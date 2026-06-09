@@ -4,11 +4,10 @@ import { Head, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function SupplierBalance({ reportData, filters, auth }) {
-    const [startDate, setStartDate] = useState(filters.start_date);
     const [endDate, setEndDate] = useState(filters.end_date);
 
     const handleRunReport = () => {
-        router.get(route('reports.supplier-balance'), { start_date: startDate, end_date: endDate }, {
+        router.get(route('reports.supplier-balance'), { end_date: endDate }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -28,7 +27,6 @@ export default function SupplierBalance({ reportData, filters, auth }) {
 
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'GrowDigitec';
-        const startDate = filters.start_date;
         const endDate = filters.end_date;
         
         let csvContent = "";
@@ -36,7 +34,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
         // Add Title Header
         csvContent += `"${companyName}"\n`;
         csvContent += `"Supplier Report"\n`;
-        csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        csvContent += `"As of ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
         
         // Headers
         csvContent += `"Supplier Name","Email","Phone","Balance (${homeCurrency})"\n`;
@@ -65,16 +63,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
             <div className="w-[140px]">
                 <CommonInput 
                     type="date"
-                    label="From"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    size="sm"
-                />
-            </div>
-            <div className="w-[140px]">
-                <CommonInput 
-                    type="date"
-                    label="To"
+                    label="As of Date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     size="sm"
@@ -101,7 +90,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
                 <h2 className="text-xl font-bold text-gray-900">Supplier Balance Summary</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <p className="text-[13px] text-gray-500 mt-1">
-                    {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    As of {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
             </div>
 

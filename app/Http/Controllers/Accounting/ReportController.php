@@ -14,51 +14,99 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    private function currentCompanyId(Request $request): ?string
+    private function buildAccountTree($types, $lines, $isBalanceSheet = false)
     {
-        return $request->session()->get('active_company_id')
-            ?? auth()->user()?->currentCompany?->id
-            ?? auth()->user()?->companies()->value('companies.id');
+        $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
+            ->whereIn('account_type', $types)
+            ->get();
+
+        $accountBalances = [];
+        foreach ($allAccounts as $account) {
+            $line = $lines->get($account->id);
+            $total_debit = $line ? $line->total_debit : 0;
+            $total_credit = $line ? $line->total_credit : 0;
+            
+            $type = strtolower($account->account_type);
+            if ($type === 'income' || $type === 'liability' || $type === 'equity') {
+                $balance = $total_credit - $total_debit;
+            } else if ($type === 'expense' || $type === 'asset') {
+                $balance = $total_debit - $total_credit;
+            } else {
+                $balance = 0;
+            }
+
+            $accountBalances[$account->id] = [
+                'id' => $account->id,
+                'name' => $account->name,
+                'account_type' => $type,
+                'sub_type' => $account->sub_type,
+                'parent_id' => $account->parent_id,
+                'balance' => (float) $balance,
+                'total_balance' => (float) $balance,
+                'children' => []
+            ];
+        }
+
+        $tree = [];
+        // First pass, assign to parents
+        foreach ($accountBalances as $id => &$node) {
+            if ($node['parent_id'] && isset($accountBalances[$node['parent_id']])) {
+                $accountBalances[$node['parent_id']]['children'][] = &$node;
+            } else {
+                $tree[] = &$node;
+            }
+        }
+        
+        // Helper to roll up balances
+        $rollup = function(&$node) use (&$rollup) {
+            $total = $node['balance'];
+            foreach ($node['children'] as &$child) {
+                $total += $rollup($child);
+            }
+            $node['total_balance'] = $total;
+            return $total;
+        };
+
+        foreach ($tree as &$node) {
+            $rollup($node);
+        }
+
+        // Filter out nodes with 0 total_balance to keep report clean
+        $filterZero = function($nodes) use (&$filterZero) {
+            $result = [];
+            foreach ($nodes as $node) {
+                $node['children'] = $filterZero($node['children']);
+                if ($node['total_balance'] != 0 || count($node['children']) > 0) {
+                    $result[] = $node;
+                }
+            }
+            return $result;
+        };
+
+        $tree = $filterZero($tree);
+
+        return collect($tree)->groupBy('account_type');
     }
 
     public function profitAndLoss(Request $request)
     {
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
-        $companyId = $this->currentCompanyId($request);
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->when($companyId, function ($query) use ($companyId) {
-                $query->where('journal_entries.company_id', $companyId)
-                    ->where('chart_of_accs.company_id', $companyId);
-            })
+            ->where('journal_entries.company_id', session('active_company_id'))
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
-                'chart_of_accs.id',
-                'chart_of_accs.name as account_name',
-                'chart_of_accs.account_type',
-                'chart_of_accs.sub_type',
+                'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             )
-            ->groupBy('chart_of_accs.id', 'chart_of_accs.name', 'chart_of_accs.account_type', 'chart_of_accs.sub_type')
-            ->get();
+            ->groupBy('journal_entry_lines.chart_of_acc_id')
+            ->get()
+            ->keyBy('chart_of_acc_id');
 
-        $reportData = $lines->groupBy('account_type')->map(function ($group, $type) {
-            return $group->map(function ($item) use ($type) {
-                // Income: Credit - Debit
-                // Expense: Debit - Credit
-                $balance = ($type === 'income') ? ($item->total_credit - $item->total_debit) : ($item->total_debit - $item->total_credit);
-                return [
-                    'id' => $item->id,
-                    'name' => $item->account_name,
-                    'sub_type' => $item->sub_type,
-                    'balance' => (float) $balance
-                ];
-            });
-        });
+        $reportData = $this->buildAccountTree(['income', 'expense'], $lines);
 
         return Inertia::render('Reports/ProfitAndLoss', [
             'reportData' => $reportData,
@@ -71,47 +119,25 @@ class ReportController extends Controller
 
     public function balanceSheet(Request $request)
     {
-        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
-        $companyId = $this->currentCompanyId($request);
-
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->when($companyId, function ($query) use ($companyId) {
-                $query->where('journal_entries.company_id', $companyId)
-                    ->where('chart_of_accs.company_id', $companyId);
-            })
-            ->whereBetween('journal_entries.date', [$startDate, $endDate])
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.date', '<=', $endDate)
             ->select(
-                'chart_of_accs.id',
-                'chart_of_accs.name as account_name',
-                'chart_of_accs.account_type',
-                'chart_of_accs.sub_type',
+                'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             )
-            ->groupBy('chart_of_accs.id', 'chart_of_accs.name', 'chart_of_accs.account_type', 'chart_of_accs.sub_type')
-            ->get();
+            ->groupBy('journal_entry_lines.chart_of_acc_id')
+            ->get()
+            ->keyBy('chart_of_acc_id');
 
-        $reportData = $lines->groupBy('account_type')->map(function ($group, $type) {
-            return $group->map(function ($item) use ($type) {
-                // Asset: Debit - Credit
-                // Liability/Equity: Credit - Debit
-                $balance = ($type === 'asset') ? ($item->total_debit - $item->total_credit) : ($item->total_credit - $item->total_debit);
-                return [
-                    'id' => $item->id,
-                    'name' => $item->account_name,
-                    'sub_type' => $item->sub_type,
-                    'balance' => (float) $balance
-                ];
-            });
-        });
+        $reportData = $this->buildAccountTree(['asset', 'liability', 'equity'], $lines, true);
 
         return Inertia::render('Reports/BalanceSheet', [
             'reportData' => $reportData,
             'filters' => [
-                'start_date' => $startDate,
                 'end_date' => $endDate
             ]
         ]);
@@ -119,30 +145,23 @@ class ReportController extends Controller
 
     public function customerBalance(Request $request)
     {
-        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
-        $companyId = $this->currentCompanyId($request);
 
-        $customers = Customer::query()
-            ->when($companyId, fn ($query) => $query->where('company_id', $companyId))
-            ->get();
+        $customers = Customer::where('company_id', session('active_company_id'))->get();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entry_lines.payee_type', Customer::class)
-            ->where('chart_of_accs.sub_type', 'accounts_receivable')
-            ->when($companyId, function ($query) use ($companyId) {
-                $query->where('journal_entries.company_id', $companyId)
-                    ->where('chart_of_accs.company_id', $companyId);
-            })
-            ->whereBetween('journal_entries.date', [$startDate, $endDate])
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Customer::class)
+            ->where('chart_of_accs.sub_type', 'accounts-receivable')
+            ->where('journal_entries.date', '<=', $endDate)
             ->select(
-                'journal_entry_lines.payee_id',
+                'journal_entries.payee_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             )
-            ->groupBy('journal_entry_lines.payee_id')
+            ->groupBy('journal_entries.payee_id')
             ->get()
             ->keyBy('payee_id');
 
@@ -167,7 +186,6 @@ class ReportController extends Controller
         return Inertia::render('Reports/CustomerBalance', [
             'reportData' => $reportData,
             'filters' => [
-                'start_date' => $startDate,
                 'end_date' => $endDate
             ]
         ]);
@@ -175,30 +193,22 @@ class ReportController extends Controller
 
     public function supplierBalance(Request $request)
     {
-        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
-        $companyId = $this->currentCompanyId($request);
-
-        $suppliers = Supplier::query()
-            ->when($companyId, fn ($query) => $query->where('company_id', $companyId))
-            ->get();
+        $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entry_lines.payee_type', Supplier::class)
-            ->where('chart_of_accs.sub_type', 'accounts_payable')
-            ->when($companyId, function ($query) use ($companyId) {
-                $query->where('journal_entries.company_id', $companyId)
-                    ->where('chart_of_accs.company_id', $companyId);
-            })
-            ->whereBetween('journal_entries.date', [$startDate, $endDate])
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Supplier::class)
+            ->where('chart_of_accs.sub_type', 'accounts-payable')
+            ->where('journal_entries.date', '<=', $endDate)
             ->select(
-                'journal_entry_lines.payee_id',
+                'journal_entries.payee_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             )
-            ->groupBy('journal_entry_lines.payee_id')
+            ->groupBy('journal_entries.payee_id')
             ->get()
             ->keyBy('payee_id');
 
@@ -224,7 +234,6 @@ class ReportController extends Controller
         return Inertia::render('Reports/SupplierBalance', [
             'reportData' => $reportData,
             'filters' => [
-                'start_date' => $startDate,
                 'end_date' => $endDate
             ]
         ]);
