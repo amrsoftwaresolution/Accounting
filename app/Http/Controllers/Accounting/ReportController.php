@@ -14,14 +14,26 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    private function currentCompanyId(Request $request): ?string
+    {
+        return $request->session()->get('active_company_id')
+            ?? auth()->user()?->currentCompany?->id
+            ?? auth()->user()?->companies()->value('companies.id');
+    }
+
     public function profitAndLoss(Request $request)
     {
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
+        $companyId = $this->currentCompanyId($request);
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->when($companyId, function ($query) use ($companyId) {
+                $query->where('journal_entries.company_id', $companyId)
+                    ->where('chart_of_accs.company_id', $companyId);
+            })
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'chart_of_accs.id',
@@ -61,10 +73,15 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
+        $companyId = $this->currentCompanyId($request);
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->when($companyId, function ($query) use ($companyId) {
+                $query->where('journal_entries.company_id', $companyId)
+                    ->where('chart_of_accs.company_id', $companyId);
+            })
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'chart_of_accs.id',
@@ -104,14 +121,21 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
+        $companyId = $this->currentCompanyId($request);
 
-        $customers = Customer::all();
+        $customers = Customer::query()
+            ->when($companyId, fn ($query) => $query->where('company_id', $companyId))
+            ->get();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entry_lines.payee_type', Customer::class)
             ->where('chart_of_accs.sub_type', 'accounts_receivable')
+            ->when($companyId, function ($query) use ($companyId) {
+                $query->where('journal_entries.company_id', $companyId)
+                    ->where('chart_of_accs.company_id', $companyId);
+            })
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.payee_id',
@@ -153,14 +177,21 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
+        $companyId = $this->currentCompanyId($request);
 
-        $suppliers = Supplier::all();
+        $suppliers = Supplier::query()
+            ->when($companyId, fn ($query) => $query->where('company_id', $companyId))
+            ->get();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entry_lines.payee_type', Supplier::class)
             ->where('chart_of_accs.sub_type', 'accounts_payable')
+            ->when($companyId, function ($query) use ($companyId) {
+                $query->where('journal_entries.company_id', $companyId)
+                    ->where('chart_of_accs.company_id', $companyId);
+            })
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.payee_id',
