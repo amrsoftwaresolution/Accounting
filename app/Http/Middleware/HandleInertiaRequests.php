@@ -4,9 +4,23 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Closure;
 
 class HandleInertiaRequests extends Middleware
 {
+    /**
+     * Prevent browser from caching Inertia JSON responses which causes the raw JSON bug on Back button.
+     */
+    public function handle(Request $request, Closure $next)
+    {
+        $response = parent::handle($request, $next);
+        
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+        
+        return $response;
+    }
     /**
      * The root template that is loaded on the first page visit.
      *

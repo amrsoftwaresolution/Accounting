@@ -4,14 +4,43 @@ import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function ProfitAndLoss({ reportData, filters, auth }) {
-    const [startDate, setStartDate] = useState(filters.start_date);
-    const [endDate, setEndDate] = useState(filters.end_date);
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [datePreset, setDatePreset] = useState('custom');
 
-    const handleRunReport = () => {
-        router.get(route('reports.profit-loss'), { start_date: startDate, end_date: endDate }, {
+    const handleRunReport = (overrideStart, overrideEnd) => {
+        const s = overrideStart !== undefined ? overrideStart : startDate;
+        const e = overrideEnd !== undefined ? overrideEnd : endDate;
+        router.get(route('reports.profit-loss'), { start_date: s, end_date: e }, {
             preserveState: true,
             preserveScroll: true,
         });
+    };
+
+    const handlePresetChange = (e) => {
+        const val = e.target.value;
+        setDatePreset(val);
+        
+        let newStart = startDate;
+        let newEnd = endDate;
+        const currentYear = new Date().getFullYear();
+
+        if (val === 'all') {
+            newStart = '';
+            newEnd = '';
+        } else if (val === 'this_year') {
+            newStart = `${currentYear}-01-01`;
+            newEnd = `${currentYear}-12-31`;
+        } else if (val === 'last_year') {
+            newStart = `${currentYear - 1}-01-01`;
+            newEnd = `${currentYear - 1}-12-31`;
+        }
+
+        if (val !== 'custom') {
+            setStartDate(newStart);
+            setEndDate(newEnd);
+            handleRunReport(newStart, newEnd);
+        }
     };
 
     const income = reportData.income || [];
@@ -89,30 +118,47 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
 
     const filterElements = (
         <div className="flex items-end gap-4">
-            <div className="w-[140px]">
-                <CommonInput 
-                    type="date"
-                    label="From"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    size="sm"
-                />
+            <div className="w-[160px]">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date Period</label>
+                <select 
+                    value={datePreset}
+                    onChange={handlePresetChange}
+                    className="w-full h-9 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-colors"
+                >
+                    <option value="all">All Dates</option>
+                    <option value="this_year">Current Year</option>
+                    <option value="last_year">Last Year</option>
+                    <option value="custom">Customize</option>
+                </select>
             </div>
-            <div className="w-[140px]">
-                <CommonInput 
-                    type="date"
-                    label="To"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    size="sm"
-                />
-            </div>
-            <button 
-                onClick={handleRunReport}
-                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
-            >
-                Run Report
-            </button>
+            {datePreset === 'custom' && (
+                <>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="From"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="To"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => handleRunReport()}
+                        className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
+                    >
+                        Run Report
+                    </button>
+                </>
+            )}
         </div>
     );
 
