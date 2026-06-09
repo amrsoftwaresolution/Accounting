@@ -168,62 +168,19 @@ export default function BankDepositForm({ auth, nextDepositNo = "" }) {
 
                 <div className="grid gap-6 lg:grid-cols-[1fr_auto] mt-8">
                     <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <h3 className="text-sm font-bold text-slate-900">Other funds</h3>
-                        <div className="grid gap-4 lg:grid-cols-3">
-                            <div className="lg:col-span-1">
-                                <SearchableSelect
-                                    label="Cash back goes to"
-                                    options={accountOptions}
-                                    value={data.cashBackAccount}
-                                    onChange={(val) => setData('cashBackAccount', val)}
-                                    onSearch={fetchAccounts}
-                                    onAddNew={() => openAccountModal('cashBackAccount')}
-                                    placeholder="Select account"
-                                    size="sm"
-                                    error={errors.cashBackAccount}
-                                />
-                            </div>
-                            <div className="lg:col-span-1">
-                                <CommonInput
-                                    label="Cash back memo"
-                                    value={data.cashBackMemo}
-                                    onChange={(e) => setData('cashBackMemo', e.target.value)}
-                                    placeholder="Enter memo"
-                                    size="sm"
-                                    error={errors.cashBackMemo}
-                                />
-                            </div>
-                            <div className="lg:col-span-1">
-                                <CommonInput
-                                    label="Cash back amount"
-                                    value={data.cashBackAmount}
-                                    onChange={(e) => {
-                                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                                        setData('cashBackAmount', value);
-                                    }}
-                                    onBlur={(e) => {
-                                        const value = parseFloat(e.target.value || 0);
-                                        setData('cashBackAmount', value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                                    }}
-                                    onFocus={(e) => setData('cashBackAmount', e.target.value.replace(/,/g, ''))}
-                                    placeholder="0.00"
-                                    size="sm"
-                                    inputClass="text-right"
-                                    error={errors.cashBackAmount}
-                                />
-                            </div>
-                        </div>
+                        <CommonInput
+                            type="textarea"
+                            label="Memo"
+                            placeholder="Add a note for this deposit..."
+                            value={data.memo}
+                            onChange={(e) => setData('memo', e.target.value)}
+                            size="sm"
+                            className="h-24"
+                        />
                     </div>
 
-                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 flex flex-col justify-between">
-                        <div>
-                            <p className="text-[10px] font-bold uppercase tracking-[.3em] text-slate-500">Other funds total</p>
-                            <p className="mt-3 text-3xl font-black text-slate-900 tracking-tight">
-                                <span className="text-sm font-medium text-slate-400 mr-1">{currencyPrefix}</span>
-                                {parseFloat(otherFundsTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </p>
-                        </div>
-                        <div className="mt-8 border-t border-slate-200 pt-5">
+                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 flex flex-col justify-end">
+                        <div className="border-t border-slate-200 pt-5 mt-auto w-64">
                             <div className="flex items-center justify-between text-sm font-bold text-slate-700 mb-3">
                                 <span>Total</span>
                                 <span>{currencyPrefix}{parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
@@ -234,18 +191,6 @@ export default function BankDepositForm({ auth, nextDepositNo = "" }) {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div className="mt-8">
-                    <CommonInput
-                        type="textarea"
-                        label="Memo"
-                        placeholder="Add a note for this deposit..."
-                        value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
-                        size="sm"
-                        className="h-24"
-                    />
                 </div>
             </div>
 

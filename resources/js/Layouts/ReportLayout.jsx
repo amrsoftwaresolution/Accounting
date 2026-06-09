@@ -58,7 +58,7 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
         <AuthenticatedLayout
             header={title}
         >
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen bg-[#f4f5f8]">
                 {/* Report Controls - QuickBooks Style */}
                 <div className="bg-[#f4f5f8] border-b border-gray-200 px-6 py-4 flex flex-wrap items-center justify-between gap-6 print:hidden">
                     <div className="flex items-center gap-4">
@@ -124,8 +124,8 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                 </div>
 
                 {/* Report Content */}
-                <div id="report-content" className="p-8 max-w-6xl mx-auto print:p-0 print:max-w-none">
-                    <div className="bg-white">
+                <div id="report-content" className="p-8 max-w-[1200px] mx-auto print:p-0 print:max-w-none">
+                    <div className="bg-white border border-gray-200 shadow-sm p-10 pt-12 min-h-[800px]">
                         {children}
                     </div>
                 </div>

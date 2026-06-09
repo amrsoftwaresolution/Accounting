@@ -175,6 +175,54 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         }
     };
 
+    const handleExportExcel = () => {
+        const companyName = auth.company?.company_name || 'GrowDigitec';
+        
+        let csvContent = "";
+        
+        // Add Title Header
+        csvContent += `"${companyName}"\n`;
+        csvContent += `"Account History: ${account.name}"\n`;
+        if (filters.start_date && filters.end_date) {
+            csvContent += `"${new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        } else {
+            csvContent += `"All Dates"\n\n`;
+        }
+        
+        // Headers
+        csvContent += `"Date","Ref No.","Payee / Account","Memo","Debit","Credit","Balance"\n`;
+        
+        // Transactions
+        transactions.forEach(tx => {
+            const date = tx.journal_entry?.date || '';
+            const ref = tx.journal_entry?.reference || '';
+            
+            const payeeLabel = getPayeeLabel(tx.payee_id || tx.journal_entry?.payee_id);
+            const offsetAccount = getOffsetAccount(tx);
+            const payeeAccountStr = `${payeeLabel !== '-' ? payeeLabel + ' / ' : ''}${offsetAccount}`;
+            
+            const desc = tx.journal_entry?.description || '';
+            const memo = tx.memo ? ` - ${tx.memo}` : '';
+            const memoStr = `${desc}${memo}`;
+            
+            const debit = parseFloat(tx.debit) > 0 ? parseFloat(tx.debit).toFixed(2) : '';
+            const credit = parseFloat(tx.credit) > 0 ? parseFloat(tx.credit).toFixed(2) : '';
+            const balance = parseFloat(tx.running_balance).toFixed(2);
+            
+            csvContent += `"${date}","${ref}","${payeeAccountStr.replace(/"/g, '""')}","${memoStr.replace(/"/g, '""')}",${debit},${credit},${balance}\n`;
+        });
+        
+        // Create download blob
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${companyName.replace(/[^a-z0-9]/gi, '_')}_Account_History_${account.name.replace(/[^a-z0-9]/gi, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const filterElements = (
         <div className="flex items-end gap-4">
             <div className="w-[140px]">
@@ -208,6 +256,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         <ReportLayout
             title={`Account History: ${account.name}`}
             filters={filterElements}
+            onExportExcel={handleExportExcel}
         >
             <Head title={`History - ${account.name}`} />
 

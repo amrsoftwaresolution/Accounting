@@ -238,4 +238,74 @@ class ReportController extends Controller
             ]
         ]);
     }
+
+    public function customerDetail(Request $request, Customer $customer)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $query = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Customer::class)
+            ->where('journal_entries.payee_id', $customer->id)
+            ->where('chart_of_accs.sub_type', 'accounts-receivable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date')
+            ->get();
+
+        return Inertia::render('Reports/ContactBalanceDetail', [
+            'contact' => $customer,
+            'contactType' => 'Customer',
+            'lines' => $lines,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate
+            ]
+        ]);
+    }
+
+    public function supplierDetail(Request $request, Supplier $supplier)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $query = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Supplier::class)
+            ->where('journal_entries.payee_id', $supplier->id)
+            ->where('chart_of_accs.sub_type', 'accounts-payable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date')
+            ->get();
+
+        return Inertia::render('Reports/ContactBalanceDetail', [
+            'contact' => $supplier,
+            'contactType' => 'Supplier',
+            'lines' => $lines,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate
+            ]
+        ]);
+    }
 }

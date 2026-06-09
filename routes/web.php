@@ -124,7 +124,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
     Route::get('/reports/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
     Route::get('/reports/customer-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalance'])->name('reports.customer-balance');
+    Route::get('/reports/customer-balance/{customer}', [\App\Http\Controllers\Accounting\ReportController::class, 'customerDetail'])->name('reports.customer-detail');
     Route::get('/reports/supplier-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalance'])->name('reports.supplier-balance');
+    Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
 
     // Companies
     Route::resource('companies', \App\Http\Controllers\CompanyController::class);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function SupplierBalance({ reportData, filters, auth }) {
@@ -123,7 +123,9 @@ export default function SupplierBalance({ reportData, filters, auth }) {
                                         )}
                                     </td>
                                     <td className="py-2 px-3 text-right tabular-nums">
-                                        <Currency value={item.balance} />
+                                        <Link href={route('reports.supplier-detail', item.id) + '?end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                            <Currency value={item.balance} />
+                                        </Link>
                                     </td>
                                 </tr>
                             ))
