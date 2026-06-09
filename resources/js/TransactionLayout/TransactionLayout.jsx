@@ -3,6 +3,7 @@ import TransactionHeader from "./TransactionHeader";
 import { router, usePage } from '@inertiajs/react';
 import SplitSaveButton from "@/Components/SplitSaveButton";
 import ToastNotification from "@/Components/ToastNotification";
+import MoreOptionsMenu from "@/Components/MoreOptionsMenu";
 
 export default function TransactionLayout({
     title,
@@ -128,6 +129,18 @@ export default function TransactionLayout({
                         >
                             Clear all lines
                         </button>
+                    )}
+                </div>
+
+                {/* Middle - More Options */}
+                <div className="flex items-center justify-center">
+                    {resolvedMoreOptions && (
+                        <MoreOptionsMenu
+                            copyRoute={resolvedMoreOptions.copyRoute}
+                            deleteRoute={resolvedMoreOptions.deleteRoute}
+                            recordId={resolvedMoreOptions.recordId}
+                            listRoute={resolvedMoreOptions.listRoute}
+                        />
                     )}
                 </div>
 
