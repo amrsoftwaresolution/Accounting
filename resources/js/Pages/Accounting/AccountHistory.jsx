@@ -150,6 +150,15 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'transfer') {
             return route('transfer.edit', tx.journal_entry_id);
         }
+        if (type === 'bank_deposit') {
+            return route('deposit.edit', tx.journal_entry_id);
+        }
+        if (type === 'credit_note') {
+            return route('credit-note.edit', tx.journal_entry_id);
+        }
+        if (type === 'supplier_credit') {
+            return route('supplier-credit.edit', tx.journal_entry_id);
+        }
         return route('journal-entries.edit', tx.journal_entry_id);
     };
 
