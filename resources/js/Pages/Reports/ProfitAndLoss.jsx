@@ -9,8 +9,8 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     const [datePreset, setDatePreset] = useState('custom');
 
     const handleRunReport = (overrideStart, overrideEnd) => {
-        const s = overrideStart !== undefined ? overrideStart : startDate;
-        const e = overrideEnd !== undefined ? overrideEnd : endDate;
+        const s = typeof overrideStart === 'string' ? overrideStart : startDate;
+        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
         router.get(route('reports.profit-loss'), { start_date: s, end_date: e }, {
             preserveState: true,
             preserveScroll: true,

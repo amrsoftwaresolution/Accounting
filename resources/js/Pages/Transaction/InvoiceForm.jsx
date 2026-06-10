@@ -141,7 +141,11 @@ export default function InvoiceForm({
         dueDate: initialDueDate,
         invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
         memo: invoice?.memo || "",
-        items: invoice?.items || [
+        items: invoice?.items ? invoice.items.map(i => ({
+            ...i,
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ]
@@ -172,7 +176,11 @@ export default function InvoiceForm({
                 dueDate: invoice.dueDate || "",
                 invoiceNo: invoice.invoiceNo || "",
                 memo: invoice.memo || "",
-                items: invoice.items || [
+                items: invoice.items ? invoice.items.map(i => ({
+                    ...i,
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ]

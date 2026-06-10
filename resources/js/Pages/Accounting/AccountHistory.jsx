@@ -14,8 +14,8 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
     const [datePreset, setDatePreset] = useState('custom');
 
     const handleRunReport = (overrideStart, overrideEnd) => {
-        const s = overrideStart !== undefined ? overrideStart : startDate;
-        const e = overrideEnd !== undefined ? overrideEnd : endDate;
+        const s = typeof overrideStart === 'string' ? overrideStart : startDate;
+        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
         router.get(route('chart-of-account.history', account.id), { start_date: s, end_date: e }, {
             preserveState: true,
             preserveScroll: true,
@@ -309,9 +309,9 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
             <div className="text-center mb-8 font-serif relative">
                 <div className="absolute left-0 top-0">
-                    <Link href={route('chart-of-account.index')} className="text-xs text-blue-600 hover:underline font-sans">
-                        &larr; Back to Chart of Accounts
-                    </Link>
+                    <button onClick={() => window.history.back()} className="text-xs text-blue-600 hover:underline font-sans bg-transparent border-none cursor-pointer">
+                        &larr; Back
+                    </button>
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">Account History: {account.name}</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>

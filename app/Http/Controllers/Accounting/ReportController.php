@@ -90,8 +90,11 @@ class ReportController extends Controller
 
     public function profitAndLoss(Request $request)
     {
-        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        
+        $startDate = $startDate !== null && $startDate !== '' ? $startDate : now()->startOfMonth()->toDateString();
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->endOfMonth()->toDateString();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
@@ -119,7 +122,9 @@ class ReportController extends Controller
 
     public function balanceSheet(Request $request)
     {
-        $endDate = $request->query('end_date', now()->toDateString());
+        $endDate = $request->query('end_date');
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
+
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', session('active_company_id'))
@@ -145,7 +150,8 @@ class ReportController extends Controller
 
     public function customerBalance(Request $request)
     {
-        $endDate = $request->query('end_date', now()->toDateString());
+        $endDate = $request->query('end_date');
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
 
         $customers = Customer::where('company_id', session('active_company_id'))->get();
 
@@ -193,7 +199,8 @@ class ReportController extends Controller
 
     public function supplierBalance(Request $request)
     {
-        $endDate = $request->query('end_date', now()->toDateString());
+        $endDate = $request->query('end_date');
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
         $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
 
         $lines = JournalEntryLine::query()

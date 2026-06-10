@@ -134,11 +134,19 @@ export default function BillForm({
         dueDate: initialDueDate,
         billNo: bill?.billNo || nextBillNo || "",
         memo: bill?.memo || "",
-        items: bill?.items && bill.items.length > 0 ? bill.items : [
+        items: bill?.items && bill.items.length > 0 ? bill.items.map(i => ({
+            ...i,
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { category: "", description: "", amount: "0.00" },
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: bill?.itemDetails && bill.itemDetails.length > 0 ? bill.itemDetails : [
+        itemDetails: bill?.itemDetails && bill.itemDetails.length > 0 ? bill.itemDetails.map(i => ({
+            ...i,
+            qty: parseFloat(i.qty || 0).toLocaleString('en-US'),
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -155,11 +163,19 @@ export default function BillForm({
                 dueDate: bill.dueDate || "",
                 billNo: bill.billNo || "",
                 memo: bill.memo || "",
-                items: bill.items && bill.items.length > 0 ? bill.items : [
+                items: bill.items && bill.items.length > 0 ? bill.items.map(i => ({
+                    ...i,
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [
                     { category: "", description: "", amount: "0.00" },
                     { category: "", description: "", amount: "0.00" },
                 ],
-                itemDetails: bill.itemDetails && bill.itemDetails.length > 0 ? bill.itemDetails : [
+                itemDetails: bill.itemDetails && bill.itemDetails.length > 0 ? bill.itemDetails.map(i => ({
+                    ...i,
+                    qty: parseFloat(i.qty || 0).toLocaleString('en-US'),
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ],

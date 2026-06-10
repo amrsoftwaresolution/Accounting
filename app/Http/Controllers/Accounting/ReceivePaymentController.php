@@ -19,6 +19,14 @@ class ReceivePaymentController extends Controller
 {
     public function create(Request $request)
     {
+        $lastRef = JournalEntry::where('transaction_type', 'payment')
+            ->whereNotNull('reference')
+            ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
+            ->first();
+
+        $nextPaymentNo = ($lastRef && is_numeric($lastRef->reference)) ? (int) $lastRef->reference + 1 : 1001;
+        $nextPaymentNoLabel = (string) str_pad($nextPaymentNo, 4, '0', STR_PAD_LEFT);
+
         if ($copyId = $request->query('copy')) {
             $journalEntry = JournalEntry::findOrFail($copyId);
             $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
@@ -36,7 +44,7 @@ class ReceivePaymentController extends Controller
                 'paymentDate' => $payment->payment_date,
                 'paymentMethod' => $payment->payment_method_id,
                 'depositTo' => $payment->deposit_to_account_id,
-                'referenceNo' => '',
+                'referenceNo' => $nextPaymentNoLabel,
                 'memo' => $payment->memo,
             ];
 
@@ -55,6 +63,7 @@ class ReceivePaymentController extends Controller
             return Inertia::render('Transaction/ReceivePaymentForm', [
                 'payment' => $paymentData,
                 'paymentMethods' => $paymentMethods,
+                'nextPaymentNo' => $nextPaymentNoLabel,
             ]);
         }
 
@@ -73,7 +82,8 @@ class ReceivePaymentController extends Controller
             ->get();
 
         return Inertia::render('Transaction/ReceivePaymentForm', [
-            'paymentMethods' => $paymentMethods
+            'paymentMethods' => $paymentMethods,
+            'nextPaymentNo' => $nextPaymentNoLabel,
         ]);
     }
 

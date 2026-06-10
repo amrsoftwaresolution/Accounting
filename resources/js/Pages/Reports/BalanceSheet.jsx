@@ -8,7 +8,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
     const [datePreset, setDatePreset] = useState('custom');
 
     const handleRunReport = (overrideEnd) => {
-        const e = overrideEnd !== undefined ? overrideEnd : endDate;
+        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
         router.get(route('reports.balance-sheet'), { end_date: e }, {
             preserveState: true,
             preserveScroll: true,
