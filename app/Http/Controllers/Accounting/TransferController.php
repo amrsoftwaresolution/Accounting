@@ -126,7 +126,7 @@ class TransferController extends Controller
                 ]);
 
                 // Clear existing lines
-                $journalEntry->lines()->delete();
+                $journalEntry->lines->each->delete();
 
                 // From Account (Credit - Money leaving Asset)
                 JournalEntryLine::create([

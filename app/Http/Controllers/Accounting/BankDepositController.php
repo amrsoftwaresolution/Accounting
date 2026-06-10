@@ -112,7 +112,7 @@ class BankDepositController extends Controller
         
         return Inertia::render('Transaction/BankDepositForm', [
             'deposit' => [
-                'id' => $deposit->id,
+                'id' => $journalEntry->id,
                 'depositTo' => $deposit->deposit_to_account_id,
                 'depositDate' => $deposit->deposit_date,
                 'depositNo' => $deposit->deposit_no,
@@ -177,7 +177,7 @@ class BankDepositController extends Controller
                 'total_amount' => $total,
             ]);
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
 
             // Debit deposit account (bank)
             JournalEntryLine::create([
@@ -222,7 +222,7 @@ class BankDepositController extends Controller
                 $deposit->items()->delete();
                 $deposit->delete();
             }
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
 

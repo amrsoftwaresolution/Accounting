@@ -275,7 +275,7 @@ class InvoiceController extends Controller
                 $invoice->delete();
             }
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
 

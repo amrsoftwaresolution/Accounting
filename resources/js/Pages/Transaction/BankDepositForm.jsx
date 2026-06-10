@@ -14,6 +14,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
+    const [depositAccountOptions, setDepositAccountOptions] = useState([]);
     const [paymentMethodOptions, setPaymentMethodOptions] = useState([]);
 
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
@@ -29,6 +30,10 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
         axios.get(route('api.accounts', { search })).then(res => setAccountOptions(res.data));
     };
 
+    const fetchDepositAccounts = (search = "") => {
+        axios.get(route('api.accounts', { search, type: 'asset' })).then(res => setDepositAccountOptions(res.data));
+    };
+
     const fetchPaymentMethods = () => {
         axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
     };
@@ -42,6 +47,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
+        fetchDepositAccounts();
         fetchPaymentMethods();
     }, []);
 
@@ -127,6 +133,11 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
+            onDelete={deposit?.id ? () => {
+                if (confirm('Are you sure you want to delete this deposit?')) {
+                    router.delete(route('deposit.destroy', deposit.id));
+                }
+            } : undefined}
             onAddLine={() => setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }])}
             onClearRows={() => setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }])}
         >
@@ -138,12 +149,11 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                         <div className="w-[320px]">
                             <SearchableSelect
                                 label="Account"
-                                options={accountOptions}
+                                options={depositAccountOptions}
                                 value={data.depositTo}
                                 onChange={(val) => setData('depositTo', val)}
-                                onSearch={fetchAccounts}
+                                onSearch={fetchDepositAccounts}
                                 onAddNew={() => openAccountModal('depositTo')}
-                                placeholder="Select account"
                                 size="sm"
                                 error={errors.depositTo}
                             />
@@ -194,8 +204,8 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                     currencyPrefix={currencyPrefix}
                 />
 
-                <div className="grid gap-6 lg:grid-cols-[1fr_auto] mt-8">
-                    <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="mt-8 grid grid-cols-12 gap-8 pb-12">
+                    <div className="col-span-4">
                         <CommonInput
                             type="textarea"
                             label="Memo"
@@ -204,19 +214,17 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                             onChange={(e) => setData('memo', e.target.value)}
                             size="sm"
                             className="h-24"
+                            error={errors.memo}
                         />
                     </div>
 
-                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 flex flex-col justify-end">
-                        <div className="border-t border-slate-200 pt-5 mt-auto w-64">
-                            <div className="flex items-center justify-between text-sm font-bold text-slate-700 mb-3">
-                                <span>Total</span>
-                                <span>{currencyPrefix}{parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm font-bold text-slate-900">
-                                <span>Total (LKR)</span>
-                                <span>{currencyPrefix}{parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                            </div>
+                    <div className="col-span-8 flex flex-col justify-end items-end pb-2">
+                        <div className="text-right flex items-center gap-6">
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Grand Total</span>
+                            <span className="text-3xl font-black tracking-tighter text-slate-900 leading-none">
+                                <span className="text-slate-400 text-sm font-bold mr-2">{currencyPrefix}</span>
+                                {parseFloat(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </span>
                         </div>
                     </div>
                 </div>

@@ -460,7 +460,7 @@ class ExpenseController extends Controller
                 $expense->delete();
             }
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
 

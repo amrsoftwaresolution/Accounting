@@ -311,7 +311,7 @@ class ReceivePaymentController extends Controller
                 $payment->delete();
             }
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
 

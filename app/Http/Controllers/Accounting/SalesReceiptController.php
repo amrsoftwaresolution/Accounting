@@ -400,7 +400,7 @@ class SalesReceiptController extends Controller
                 $receipt->delete();
             }
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
 
