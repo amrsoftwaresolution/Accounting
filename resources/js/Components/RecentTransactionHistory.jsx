@@ -37,6 +37,8 @@ const getEditRoute = (type) => {
             return 'expense.edit';
         case 'payment':
             return 'payment.edit';
+        case 'bank_deposit':
+            return 'deposit.edit';
         default:
             return 'journal-entries.edit';
     }

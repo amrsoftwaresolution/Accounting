@@ -80,6 +80,9 @@ Route::middleware('auth')->group(function () {
     // Bank Deposit
     Route::get('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'create'])->name('deposit');
     Route::post('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'store'])->name('deposit.store');
+    Route::get('/deposit/{journalEntry}/edit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'edit'])->name('deposit.edit');
+    Route::patch('/deposit/{journalEntry}', [\App\Http\Controllers\Accounting\BankDepositController::class, 'update'])->name('deposit.update');
+    Route::delete('/deposit/{journalEntry}', [\App\Http\Controllers\Accounting\BankDepositController::class, 'destroy'])->name('deposit.destroy');
 
     Route::get('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
     Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');

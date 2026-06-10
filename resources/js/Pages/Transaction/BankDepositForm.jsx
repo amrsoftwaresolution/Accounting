@@ -8,7 +8,7 @@ import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 
-export default function BankDepositForm({ auth, nextDepositNo = "" }) {
+export default function BankDepositForm({ auth, nextDepositNo = "", deposit = null }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
 
@@ -54,19 +54,44 @@ export default function BankDepositForm({ auth, nextDepositNo = "" }) {
         { key: "amount", label: "Amount", type: "currency", className: "text-right", inputClass: "text-right" },
     ];
 
-    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm({
-        depositTo: "",
-        depositDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-        depositNo: nextDepositNo || "1001",
-        items: [
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
+        depositTo: deposit?.depositTo || "",
+        depositDate: deposit?.depositDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+        depositNo: deposit?.depositNo || nextDepositNo || "1001",
+        items: deposit?.items && deposit.items.length > 0 ? deposit.items.map(i => ({
+            ...i,
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }
         ],
-        cashBackAccount: "",
-        cashBackMemo: "",
-        cashBackAmount: "0.00",
-        memo: "",
+        cashBackAccount: deposit?.cashBackAccount || "",
+        cashBackMemo: deposit?.cashBackMemo || "",
+        cashBackAmount: deposit?.cashBackAmount ? parseFloat(deposit.cashBackAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
+        memo: deposit?.memo || "",
         action: 'save'
     });
+
+    useEffect(() => {
+        if (deposit) {
+            setData({
+                depositTo: deposit.depositTo || "",
+                depositDate: deposit.depositDate || "",
+                depositNo: deposit.depositNo || "",
+                items: deposit.items && deposit.items.length > 0 ? deposit.items.map(i => ({
+                    ...i,
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [
+                    { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }
+                ],
+                cashBackAccount: deposit.cashBackAccount || "",
+                cashBackMemo: deposit.cashBackMemo || "",
+                cashBackAmount: deposit.cashBackAmount ? parseFloat(deposit.cashBackAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
+                memo: deposit.memo || "",
+                action: 'save'
+            });
+        }
+        clearErrors();
+    }, [deposit]);
 
     const totalAmount = data.items.reduce((sum, it) => sum + (parseFloat(String(it.amount).replace(/,/g, '')) || 0), 0).toFixed(2);
     const cashBackAmount = parseFloat(String(data.cashBackAmount).replace(/,/g, '')) || 0;
@@ -80,9 +105,12 @@ export default function BankDepositForm({ auth, nextDepositNo = "" }) {
 
     const handleSave = (action = 'save') => {
         transform((d) => ({ ...d, action }));
-        post(route('deposit.store'), {
+        const url = deposit?.id ? route('deposit.update', deposit.id) : route('deposit.store');
+        const method = deposit?.id ? patch : post;
+
+        method(url, {
             onSuccess: () => {
-                if (action === 'new') {
+                if (action === 'new' && !deposit?.id) {
                     reset();
                     clearErrors();
                 }
@@ -93,7 +121,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "" }) {
     return (
         <TransactionLayout
             historyType="bank deposit"
-            title={`Bank Deposit #${data.depositNo}`}
+            title={deposit?.id ? `Edit Bank Deposit #${data.depositNo}` : `Bank Deposit #${data.depositNo}`}
             amount={parseFloat(totalAmount)}
             processing={processing}
             onSave={() => handleSave('save')}
