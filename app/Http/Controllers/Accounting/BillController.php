@@ -421,7 +421,7 @@ class BillController extends Controller
                 $bill->delete();
             }
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
 

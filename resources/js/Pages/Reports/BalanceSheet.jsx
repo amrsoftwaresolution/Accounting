@@ -4,13 +4,36 @@ import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function BalanceSheet({ reportData, filters, auth }) {
-    const [endDate, setEndDate] = useState(filters.end_date);
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [datePreset, setDatePreset] = useState('custom');
 
-    const handleRunReport = () => {
-        router.get(route('reports.balance-sheet'), { end_date: endDate }, {
+    const handleRunReport = (overrideEnd) => {
+        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
+        router.get(route('reports.balance-sheet'), { end_date: e }, {
             preserveState: true,
             preserveScroll: true,
         });
+    };
+
+    const handlePresetChange = (e) => {
+        const val = e.target.value;
+        setDatePreset(val);
+        
+        let newEnd = endDate;
+        const currentYear = new Date().getFullYear();
+
+        if (val === 'all') {
+            newEnd = ''; // Defaults to today in backend
+        } else if (val === 'this_year') {
+            newEnd = `${currentYear}-12-31`;
+        } else if (val === 'last_year') {
+            newEnd = `${currentYear - 1}-12-31`;
+        }
+
+        if (val !== 'custom') {
+            setEndDate(newEnd);
+            handleRunReport(newEnd);
+        }
     };
 
     const asset = reportData.asset || [];
@@ -96,21 +119,39 @@ export default function BalanceSheet({ reportData, filters, auth }) {
 
     const filterElements = (
         <div className="flex items-end gap-4">
-            <div className="w-[140px]">
+            <div className="w-[160px] pb-[1px]">
                 <CommonInput 
-                    type="date"
-                    label="As of Date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    type="select"
+                    label="Date Period"
+                    value={datePreset}
+                    onChange={handlePresetChange}
                     size="sm"
-                />
+                >
+                    <option value="all">All Dates</option>
+                    <option value="this_year">Current Year</option>
+                    <option value="last_year">Last Year</option>
+                    <option value="custom">Customize</option>
+                </CommonInput>
             </div>
-            <button 
-                onClick={handleRunReport}
-                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
-            >
-                Run Report
-            </button>
+            {datePreset === 'custom' && (
+                <>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="As of Date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => handleRunReport()}
+                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
+                    >
+                        Run Report
+                    </button>
+                </>
+            )}
         </div>
     );
 

@@ -3,6 +3,7 @@ import TransactionHeader from "./TransactionHeader";
 import { router, usePage } from '@inertiajs/react';
 import SplitSaveButton from "@/Components/SplitSaveButton";
 import ToastNotification from "@/Components/ToastNotification";
+import MoreOptionsMenu from "@/Components/MoreOptionsMenu";
 
 export default function TransactionLayout({
     title,
@@ -49,8 +50,13 @@ export default function TransactionLayout({
         if (currentPath.startsWith('/SupplierCredit/')) {
             return { copyRoute: 'supplier-credit', deleteRoute: 'supplier-credit.destroy', recordId: props.credit?.id, listRoute: 'dashboard' };
         }
+<<<<<<< HEAD
         if (currentPath.startsWith('/transfer/')) {
             return { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: props.transfer?.id, listRoute: 'dashboard' };
+=======
+        if (currentPath.startsWith('/deposit/')) {
+            return { copyRoute: 'deposit', deleteRoute: 'deposit.destroy', recordId: props.deposit?.id, listRoute: 'dashboard' };
+>>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
         }
 
         return null;
@@ -131,6 +137,18 @@ export default function TransactionLayout({
                         >
                             Clear all lines
                         </button>
+                    )}
+                </div>
+
+                {/* Middle - More Options */}
+                <div className="flex items-center justify-center">
+                    {resolvedMoreOptions && (
+                        <MoreOptionsMenu
+                            copyRoute={resolvedMoreOptions.copyRoute}
+                            deleteRoute={resolvedMoreOptions.deleteRoute}
+                            recordId={resolvedMoreOptions.recordId}
+                            listRoute={resolvedMoreOptions.listRoute}
+                        />
                     )}
                 </div>
 

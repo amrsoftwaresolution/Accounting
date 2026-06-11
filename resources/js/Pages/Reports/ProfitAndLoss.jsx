@@ -4,14 +4,45 @@ import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 
 export default function ProfitAndLoss({ reportData, filters, auth }) {
-    const [startDate, setStartDate] = useState(filters.start_date);
-    const [endDate, setEndDate] = useState(filters.end_date);
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [datePreset, setDatePreset] = useState('custom');
+    const [displayBy, setDisplayBy] = useState(filters.display_by || 'total');
 
-    const handleRunReport = () => {
-        router.get(route('reports.profit-loss'), { start_date: startDate, end_date: endDate }, {
+    const handleRunReport = (overrideStart, overrideEnd, overrideDisplayBy) => {
+        const s = typeof overrideStart === 'string' ? overrideStart : startDate;
+        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
+        const d = typeof overrideDisplayBy === 'string' ? overrideDisplayBy : displayBy;
+        router.get(route('reports.profit-loss'), { start_date: s, end_date: e, display_by: d }, {
             preserveState: true,
             preserveScroll: true,
         });
+    };
+
+    const handlePresetChange = (e) => {
+        const val = e.target.value;
+        setDatePreset(val);
+        
+        let newStart = startDate;
+        let newEnd = endDate;
+        const currentYear = new Date().getFullYear();
+
+        if (val === 'all') {
+            newStart = '';
+            newEnd = '';
+        } else if (val === 'this_year') {
+            newStart = `${currentYear}-01-01`;
+            newEnd = `${currentYear}-12-31`;
+        } else if (val === 'last_year') {
+            newStart = `${currentYear - 1}-01-01`;
+            newEnd = `${currentYear - 1}-12-31`;
+        }
+
+        if (val !== 'custom') {
+            setStartDate(newStart);
+            setEndDate(newEnd);
+            handleRunReport(newStart, newEnd);
+        }
     };
 
     const income = reportData.income || [];
@@ -30,13 +61,41 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         </span>
     );
 
+    const isMonthWise = filters.display_by === 'month';
+    const monthCols = filters.months || [];
+    const formatMonth = (ym) => {
+        const [y, m] = ym.split('-');
+        const d = new Date(y, parseInt(m) - 1, 1);
+        return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(d);
+    };
+
+    const totalIncomeMonthly = {};
+    const totalExpenseMonthly = {};
+    const netIncomeMonthly = {};
+
+    if (isMonthWise) {
+        monthCols.forEach(ym => {
+            totalIncomeMonthly[ym] = income.reduce((sum, item) => sum + (item.total_monthly_balances?.[ym] || 0), 0);
+            totalExpenseMonthly[ym] = expense.reduce((sum, item) => sum + (item.total_monthly_balances?.[ym] || 0), 0);
+            netIncomeMonthly[ym] = totalIncomeMonthly[ym] - totalExpenseMonthly[ym];
+        });
+    }
+
     const flattenAccounts = (accounts, prefix = "") => {
         let flattened = [];
         accounts.forEach(acc => {
-            flattened.push({ name: prefix + acc.name, balance: acc.balance });
+            flattened.push({ 
+                name: prefix + acc.name, 
+                balance: acc.balance,
+                monthly_balances: acc.monthly_balances
+            });
             if (acc.children && acc.children.length > 0) {
                 flattened = flattened.concat(flattenAccounts(acc.children, prefix + "  "));
-                flattened.push({ name: prefix + "Total " + acc.name, balance: acc.total_balance });
+                flattened.push({ 
+                    name: prefix + "Total " + acc.name, 
+                    balance: acc.total_balance,
+                    monthly_balances: acc.total_monthly_balances
+                });
             }
         });
         return flattened;
@@ -55,26 +114,57 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
         
         // Headers
-        csvContent += `"Category","Account Name","Balance (${homeCurrency})"\n`;
+        csvContent += `"Category","Account Name"`;
+        if (isMonthWise) {
+            monthCols.forEach(ym => {
+                csvContent += `,"${formatMonth(ym)}"`;
+            });
+        }
+        csvContent += `,"Balance (${homeCurrency})"\n`;
         
         // Income
         csvContent += `"INCOME"\n`;
         const flatIncome = flattenAccounts(income);
         flatIncome.forEach(item => {
-            csvContent += `,"${item.name}",${item.balance}\n`;
+            let row = `,"${item.name}"`;
+            if (isMonthWise) {
+                monthCols.forEach(ym => row += `,${item.monthly_balances?.[ym] || 0}`);
+            }
+            row += `,${item.balance}\n`;
+            csvContent += row;
         });
-        csvContent += `,"Total Income",${totalIncome}\n\n`;
+        let incomeTotalRow = `,"Total Income"`;
+        if (isMonthWise) {
+            monthCols.forEach(ym => incomeTotalRow += `,${totalIncomeMonthly[ym] || 0}`);
+        }
+        incomeTotalRow += `,${totalIncome}\n\n`;
+        csvContent += incomeTotalRow;
         
         // Expenses
         csvContent += `"EXPENSES"\n`;
         const flatExpense = flattenAccounts(expense);
         flatExpense.forEach(item => {
-            csvContent += `,"${item.name}",${item.balance}\n`;
+            let row = `,"${item.name}"`;
+            if (isMonthWise) {
+                monthCols.forEach(ym => row += `,${item.monthly_balances?.[ym] || 0}`);
+            }
+            row += `,${item.balance}\n`;
+            csvContent += row;
         });
-        csvContent += `,"Total Expenses",${totalExpense}\n\n`;
+        let expenseTotalRow = `,"Total Expenses"`;
+        if (isMonthWise) {
+            monthCols.forEach(ym => expenseTotalRow += `,${totalExpenseMonthly[ym] || 0}`);
+        }
+        expenseTotalRow += `,${totalExpense}\n\n`;
+        csvContent += expenseTotalRow;
         
         // Net Income
-        csvContent += `,"Net Income",${netIncome}\n`;
+        let netIncomeRow = `,"Net Income"`;
+        if (isMonthWise) {
+            monthCols.forEach(ym => netIncomeRow += `,${netIncomeMonthly[ym] || 0}`);
+        }
+        netIncomeRow += `,${netIncome}\n`;
+        csvContent += netIncomeRow;
         
         // Create download blob
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -89,30 +179,62 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
 
     const filterElements = (
         <div className="flex items-end gap-4">
-            <div className="w-[140px]">
+            <div className="w-[160px] pb-[1px]">
                 <CommonInput 
-                    type="date"
-                    label="From"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    type="select"
+                    label="Date Period"
+                    value={datePreset}
+                    onChange={handlePresetChange}
                     size="sm"
-                />
+                >
+                    <option value="all">All Dates</option>
+                    <option value="this_year">Current Year</option>
+                    <option value="last_year">Last Year</option>
+                    <option value="custom">Customize</option>
+                </CommonInput>
             </div>
-            <div className="w-[140px]">
+            <div className="w-[160px] pb-[1px]">
                 <CommonInput 
-                    type="date"
-                    label="To"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    type="select"
+                    label="Display columns by"
+                    value={displayBy}
+                    onChange={(e) => {
+                        setDisplayBy(e.target.value);
+                    }}
                     size="sm"
-                />
+                >
+                    <option value="total">Total Only</option>
+                    <option value="month">Months</option>
+                </CommonInput>
             </div>
-            <button 
-                onClick={handleRunReport}
-                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
-            >
-                Run Report
-            </button>
+            {datePreset === 'custom' && (
+                <>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="From"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="To"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => handleRunReport()}
+                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
+                    >
+                        Run Report
+                    </button>
+                </>
+            )}
         </div>
     );
 
@@ -126,6 +248,13 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                     <td className="py-2 px-3 text-gray-900" style={{ paddingLeft }}>
                         {item.name}
                     </td>
+                    {isMonthWise && monthCols.map(ym => (
+                        <td key={ym} className="py-2 px-3 text-right tabular-nums">
+                            {hasChildren && (item.monthly_balances?.[ym] || 0) === 0 ? null : (
+                                <Currency value={item.monthly_balances?.[ym] || 0} />
+                            )}
+                        </td>
+                    ))}
                     <td className="py-2 px-3 text-right tabular-nums">
                         {hasChildren && item.balance === 0 ? null : (
                             <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
@@ -142,6 +271,11 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         <td className="py-2 px-3 text-gray-700" style={{ paddingLeft }}>
                             Total {item.name}
                         </td>
+                        {isMonthWise && monthCols.map(ym => (
+                            <td key={ym} className="py-2 px-3 text-right tabular-nums">
+                                <Currency value={item.total_monthly_balances?.[ym] || 0} />
+                            </td>
+                        ))}
                         <td className="py-2 px-3 text-right tabular-nums">
                             <Currency value={item.total_balance} />
                         </td>
@@ -171,10 +305,15 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                 <table className="w-full text-[13px] text-left border-collapse">
                     <thead>
                         <tr className="border-y-2 border-gray-300">
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-3/4">
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-2/5">
                                 Account
                             </th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">
+                            {isMonthWise && monthCols.map(ym => (
+                                <th key={ym} className="py-2.5 px-3 font-semibold text-gray-900 text-right w-32 whitespace-nowrap">
+                                    {formatMonth(ym)}
+                                </th>
+                            ))}
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-32 whitespace-nowrap">
                                 Total <span className="inline-block ml-1 text-gray-400 text-[10px]">↕</span>
                             </th>
                         </tr>
@@ -182,7 +321,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                     <tbody className="divide-y divide-gray-200">
                         {/* Income Section */}
                         <tr className="bg-gray-50 border-y border-gray-300">
-                            <td colSpan="2" className="py-2 px-3 font-bold text-gray-900">
+                            <td colSpan={isMonthWise ? monthCols.length + 2 : 2} className="py-2 px-3 font-bold text-gray-900">
                                 <span className="inline-block mr-1 text-[10px]">▼</span> Income
                             </td>
                         </tr>
@@ -191,12 +330,15 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
                             <td className="py-2 px-3 pl-8 text-gray-900">Total Income</td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncomeMonthly[ym] || 0} /></td>
+                            ))}
                             <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncome} /></td>
                         </tr>
 
                         {/* Expense Section */}
                         <tr className="bg-gray-50 border-y border-gray-300">
-                            <td colSpan="2" className="py-2 px-3 font-bold text-gray-900 mt-4">
+                            <td colSpan={isMonthWise ? monthCols.length + 2 : 2} className="py-2 px-3 font-bold text-gray-900 mt-4">
                                 <span className="inline-block mr-1 text-[10px]">▼</span> Expenses
                             </td>
                         </tr>
@@ -205,12 +347,18 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         ))}
                         <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
                             <td className="py-2 px-3 pl-8 text-gray-900">Total Expenses</td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalExpenseMonthly[ym] || 0} /></td>
+                            ))}
                             <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalExpense} /></td>
                         </tr>
 
                         {/* Net Income */}
                         <tr className="border-t-2 border-b-4 border-gray-400 font-bold bg-white text-[14px]">
                             <td className="py-3 px-3 text-gray-900">NET INCOME</td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-3 px-3 text-right tabular-nums text-gray-900"><Currency value={netIncomeMonthly[ym] || 0} /></td>
+                            ))}
                             <td className="py-3 px-3 text-right tabular-nums text-gray-900"><Currency value={netIncome} /></td>
                         </tr>
                     </tbody>

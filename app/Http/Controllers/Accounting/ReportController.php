@@ -88,12 +88,117 @@ class ReportController extends Controller
         return collect($tree)->groupBy('account_type');
     }
 
+    private function buildPnLTree($types, $lines, $displayBy, $months)
+    {
+        $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
+            ->whereIn('account_type', $types)
+            ->get();
+
+        $accountBalances = [];
+        foreach ($allAccounts as $account) {
+            $accountLines = $lines->where('chart_of_acc_id', $account->id);
+            $type = strtolower($account->account_type);
+
+            $monthly_balances = [];
+            $total_balance = 0;
+
+            if ($displayBy === 'month') {
+                foreach ($months as $month) {
+                    $monthLine = $accountLines->firstWhere('month', $month);
+                    $debit = $monthLine ? $monthLine->total_debit : 0;
+                    $credit = $monthLine ? $monthLine->total_credit : 0;
+                    
+                    if ($type === 'income') {
+                        $balance = $credit - $debit;
+                    } else {
+                        $balance = $debit - $credit;
+                    }
+                    $monthly_balances[$month] = (float) $balance;
+                    $total_balance += $balance;
+                }
+            } else {
+                $line = $accountLines->first();
+                $debit = $line ? $line->total_debit : 0;
+                $credit = $line ? $line->total_credit : 0;
+                if ($type === 'income') {
+                    $total_balance = $credit - $debit;
+                } else {
+                    $total_balance = $debit - $credit;
+                }
+            }
+
+            $accountBalances[$account->id] = [
+                'id' => $account->id,
+                'name' => $account->name,
+                'account_type' => $type,
+                'sub_type' => $account->sub_type,
+                'parent_id' => $account->parent_id,
+                'balance' => (float) $total_balance,
+                'total_balance' => (float) $total_balance,
+                'monthly_balances' => $monthly_balances,
+                'total_monthly_balances' => $monthly_balances,
+                'children' => []
+            ];
+        }
+
+        $tree = [];
+        foreach ($accountBalances as $id => &$node) {
+            if ($node['parent_id'] && isset($accountBalances[$node['parent_id']])) {
+                $accountBalances[$node['parent_id']]['children'][] = &$node;
+            } else {
+                $tree[] = &$node;
+            }
+        }
+        
+        $rollup = function(&$node) use (&$rollup, $displayBy, $months) {
+            $total = $node['balance'];
+            $monthly = $node['monthly_balances'];
+
+            foreach ($node['children'] as &$child) {
+                $total += $rollup($child);
+                if ($displayBy === 'month') {
+                    foreach ($months as $m) {
+                        $monthly[$m] = ($monthly[$m] ?? 0) + ($child['total_monthly_balances'][$m] ?? 0);
+                    }
+                }
+            }
+            $node['total_balance'] = $total;
+            if ($displayBy === 'month') {
+                $node['total_monthly_balances'] = $monthly;
+            }
+            return $total;
+        };
+
+        foreach ($tree as &$node) {
+            $rollup($node);
+        }
+
+        $filterZero = function($nodes) use (&$filterZero) {
+            $result = [];
+            foreach ($nodes as $node) {
+                $node['children'] = $filterZero($node['children']);
+                if ($node['total_balance'] != 0 || count($node['children']) > 0) {
+                    $result[] = $node;
+                }
+            }
+            return $result;
+        };
+
+        $tree = $filterZero($tree);
+
+        return collect($tree)->groupBy('account_type');
+    }
+
     public function profitAndLoss(Request $request)
     {
-        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $displayBy = $request->query('display_by', 'total');
+        
+        $startDate = $startDate !== null && $startDate !== '' ? $startDate : now()->startOfMonth()->toDateString();
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->endOfMonth()->toDateString();
 
-        $lines = JournalEntryLine::query()
+        $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', session('active_company_id'))
             ->whereBetween('journal_entries.date', [$startDate, $endDate])
@@ -101,25 +206,45 @@ class ReportController extends Controller
                 'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
-            )
-            ->groupBy('journal_entry_lines.chart_of_acc_id')
-            ->get()
-            ->keyBy('chart_of_acc_id');
+            );
 
-        $reportData = $this->buildAccountTree(['income', 'expense'], $lines);
+        if ($displayBy === 'month') {
+            $query->addSelect(DB::raw('DATE_FORMAT(journal_entries.date, "%Y-%m") as month'))
+                  ->groupBy('journal_entry_lines.chart_of_acc_id', 'month');
+        } else {
+            $query->groupBy('journal_entry_lines.chart_of_acc_id');
+        }
+
+        $lines = $query->get();
+
+        $months = [];
+        if ($displayBy === 'month') {
+            $start = \Carbon\Carbon::parse($startDate)->startOfMonth();
+            $end = \Carbon\Carbon::parse($endDate)->startOfMonth();
+            while ($start->lte($end)) {
+                $months[] = $start->format('Y-m');
+                $start->addMonth();
+            }
+        }
+
+        $reportData = $this->buildPnLTree(['income', 'expense'], $lines, $displayBy, $months);
 
         return Inertia::render('Reports/ProfitAndLoss', [
             'reportData' => $reportData,
             'filters' => [
                 'start_date' => $startDate,
-                'end_date' => $endDate
+                'end_date' => $endDate,
+                'display_by' => $displayBy,
+                'months' => $months
             ]
         ]);
     }
 
     public function balanceSheet(Request $request)
     {
-        $endDate = $request->query('end_date', now()->toDateString());
+        $endDate = $request->query('end_date');
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
+
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', session('active_company_id'))
@@ -135,6 +260,76 @@ class ReportController extends Controller
 
         $reportData = $this->buildAccountTree(['asset', 'liability', 'equity'], $lines, true);
 
+        $fiscalYearStart = \Carbon\Carbon::parse($endDate)->startOfYear()->toDateString();
+
+        // 1. Prior Years Net Income (Retained Earnings)
+        $priorNetIncomeResult = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.date', '<', $fiscalYearStart)
+            ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
+            ->select(
+                DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as retained_earnings')
+            )->first();
+            
+        $retainedEarningsAmount = $priorNetIncomeResult ? (float) $priorNetIncomeResult->retained_earnings : 0;
+
+        // 2. Current Year Net Income
+        $currentNetIncomeResult = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->whereBetween('journal_entries.date', [$fiscalYearStart, $endDate])
+            ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
+            ->select(
+                DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as net_income')
+            )->first();
+            
+        $netIncomeAmount = $currentNetIncomeResult ? (float) $currentNetIncomeResult->net_income : 0;
+
+        $equity = $reportData->get('equity', collect());
+        
+        if ($retainedEarningsAmount != 0) {
+            // Find existing retained earnings if any
+            $existingReIdx = $equity->search(function ($item) {
+                return strtolower($item['name']) === 'retained earnings';
+            });
+            
+            if ($existingReIdx !== false) {
+                $item = $equity->get($existingReIdx);
+                $item['balance'] += $retainedEarningsAmount;
+                $item['total_balance'] += $retainedEarningsAmount;
+                $equity->put($existingReIdx, $item);
+            } else {
+                $equity->push([
+                    'id' => 'retained_earnings_computed',
+                    'name' => 'Retained Earnings',
+                    'account_type' => 'equity',
+                    'sub_type' => '',
+                    'parent_id' => null,
+                    'balance' => $retainedEarningsAmount,
+                    'total_balance' => $retainedEarningsAmount,
+                    'children' => []
+                ]);
+            }
+        }
+        
+        if ($netIncomeAmount != 0) {
+            $equity->push([
+                'id' => 'net_income_computed',
+                'name' => 'Net Income',
+                'account_type' => 'equity',
+                'sub_type' => '',
+                'parent_id' => null,
+                'balance' => $netIncomeAmount,
+                'total_balance' => $netIncomeAmount,
+                'children' => []
+            ]);
+        }
+
+        $reportData->put('equity', $equity);
+
         return Inertia::render('Reports/BalanceSheet', [
             'reportData' => $reportData,
             'filters' => [
@@ -145,7 +340,8 @@ class ReportController extends Controller
 
     public function customerBalance(Request $request)
     {
-        $endDate = $request->query('end_date', now()->toDateString());
+        $endDate = $request->query('end_date');
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
 
         $customers = Customer::where('company_id', session('active_company_id'))->get();
 
@@ -193,7 +389,8 @@ class ReportController extends Controller
 
     public function supplierBalance(Request $request)
     {
-        $endDate = $request->query('end_date', now()->toDateString());
+        $endDate = $request->query('end_date');
+        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
         $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
 
         $lines = JournalEntryLine::query()
@@ -234,6 +431,76 @@ class ReportController extends Controller
         return Inertia::render('Reports/SupplierBalance', [
             'reportData' => $reportData,
             'filters' => [
+                'end_date' => $endDate
+            ]
+        ]);
+    }
+
+    public function customerDetail(Request $request, Customer $customer)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $query = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Customer::class)
+            ->where('journal_entries.payee_id', $customer->id)
+            ->where('chart_of_accs.sub_type', 'accounts-receivable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date')
+            ->get();
+
+        return Inertia::render('Reports/ContactBalanceDetail', [
+            'contact' => $customer,
+            'contactType' => 'Customer',
+            'lines' => $lines,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate
+            ]
+        ]);
+    }
+
+    public function supplierDetail(Request $request, Supplier $supplier)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $query = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Supplier::class)
+            ->where('journal_entries.payee_id', $supplier->id)
+            ->where('chart_of_accs.sub_type', 'accounts-payable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date')
+            ->get();
+
+        return Inertia::render('Reports/ContactBalanceDetail', [
+            'contact' => $supplier,
+            'contactType' => 'Supplier',
+            'lines' => $lines,
+            'filters' => [
+                'start_date' => $startDate ?? '',
                 'end_date' => $endDate
             ]
         ]);

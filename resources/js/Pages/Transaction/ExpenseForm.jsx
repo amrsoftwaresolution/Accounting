@@ -13,7 +13,8 @@ import axios from "axios";
 
 export default function ExpenseForm({
     auth,
-    expense = null
+    expense = null,
+    nextExpenseNo = ""
 }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
@@ -91,7 +92,7 @@ export default function ExpenseForm({
         account: expense?.paymentAccount || expense?.account || expense?.payment_account_id || "",
         date: expense?.paymentDate || expense?.date || initialPaymentDate,
         method: expense?.paymentMethod || expense?.method || expense?.payment_method_id || "",
-        ref: expense?.referenceNo || expense?.ref || expense?.reference_no || "",
+        ref: expense?.referenceNo || expense?.ref || expense?.reference_no || nextExpenseNo || "",
         memo: expense?.memo || "",
         items: expense?.items && expense.items.length > 0 ? expense.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
             { category: "", description: "", amount: "0.00" },
@@ -145,7 +146,7 @@ export default function ExpenseForm({
                 account: "",
                 date: cachedDate,
                 method: "",
-                ref: "",
+                ref: nextExpenseNo || "",
                 memo: "",
                 items: [
                     { category: "", description: "", amount: "0.00" },

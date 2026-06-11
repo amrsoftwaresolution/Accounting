@@ -11,12 +11,41 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
+    const [datePreset, setDatePreset] = useState('custom');
 
-    const handleRunReport = () => {
-        router.get(route('chart-of-account.history', account.id), { start_date: startDate, end_date: endDate }, {
+    const handleRunReport = (overrideStart, overrideEnd) => {
+        const s = typeof overrideStart === 'string' ? overrideStart : startDate;
+        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
+        router.get(route('chart-of-account.history', account.id), { start_date: s, end_date: e }, {
             preserveState: true,
             preserveScroll: true,
         });
+    };
+
+    const handlePresetChange = (e) => {
+        const val = e.target.value;
+        setDatePreset(val);
+        
+        let newStart = startDate;
+        let newEnd = endDate;
+        const currentYear = new Date().getFullYear();
+
+        if (val === 'all') {
+            newStart = '';
+            newEnd = '';
+        } else if (val === 'this_year') {
+            newStart = `${currentYear}-01-01`;
+            newEnd = `${currentYear}-12-31`;
+        } else if (val === 'last_year') {
+            newStart = `${currentYear - 1}-01-01`;
+            newEnd = `${currentYear - 1}-12-31`;
+        }
+
+        if (val !== 'custom') {
+            setStartDate(newStart);
+            setEndDate(newEnd);
+            handleRunReport(newStart, newEnd);
+        }
     };
     // Calculate running balance
     const transactions = useMemo(() => {
@@ -121,6 +150,15 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'transfer') {
             return route('transfer.edit', tx.journal_entry_id);
         }
+        if (type === 'bank_deposit') {
+            return route('deposit.edit', tx.journal_entry_id);
+        }
+        if (type === 'credit_note') {
+            return route('credit-note.edit', tx.journal_entry_id);
+        }
+        if (type === 'supplier_credit') {
+            return route('supplier-credit.edit', tx.journal_entry_id);
+        }
         return route('journal-entries.edit', tx.journal_entry_id);
     };
 
@@ -175,32 +213,98 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         }
     };
 
+    const handleExportExcel = () => {
+        const companyName = auth.company?.company_name || 'GrowDigitec';
+        
+        let csvContent = "";
+        
+        // Add Title Header
+        csvContent += `"${companyName}"\n`;
+        csvContent += `"Account History: ${account.name}"\n`;
+        if (filters.start_date && filters.end_date) {
+            csvContent += `"${new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+        } else {
+            csvContent += `"All Dates"\n\n`;
+        }
+        
+        // Headers
+        csvContent += `"Date","Ref No.","Payee / Account","Memo","Debit","Credit","Balance"\n`;
+        
+        // Transactions
+        transactions.forEach(tx => {
+            const date = tx.journal_entry?.date || '';
+            const ref = tx.journal_entry?.reference || '';
+            
+            const payeeLabel = getPayeeLabel(tx.payee_id || tx.journal_entry?.payee_id);
+            const offsetAccount = getOffsetAccount(tx);
+            const payeeAccountStr = `${payeeLabel !== '-' ? payeeLabel + ' / ' : ''}${offsetAccount}`;
+            
+            const desc = tx.journal_entry?.description || '';
+            const memo = tx.memo ? ` - ${tx.memo}` : '';
+            const memoStr = `${desc}${memo}`;
+            
+            const debit = parseFloat(tx.debit) > 0 ? parseFloat(tx.debit).toFixed(2) : '';
+            const credit = parseFloat(tx.credit) > 0 ? parseFloat(tx.credit).toFixed(2) : '';
+            const balance = parseFloat(tx.running_balance).toFixed(2);
+            
+            csvContent += `"${date}","${ref}","${payeeAccountStr.replace(/"/g, '""')}","${memoStr.replace(/"/g, '""')}",${debit},${credit},${balance}\n`;
+        });
+        
+        // Create download blob
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${companyName.replace(/[^a-z0-9]/gi, '_')}_Account_History_${account.name.replace(/[^a-z0-9]/gi, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const filterElements = (
         <div className="flex items-end gap-4">
-            <div className="w-[140px]">
+            <div className="w-[160px] pb-[1px]">
                 <CommonInput 
-                    type="date"
-                    label="From"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    type="select"
+                    label="Date Period"
+                    value={datePreset}
+                    onChange={handlePresetChange}
                     size="sm"
-                />
+                >
+                    <option value="all">All Dates</option>
+                    <option value="this_year">Current Year</option>
+                    <option value="last_year">Last Year</option>
+                    <option value="custom">Customize</option>
+                </CommonInput>
             </div>
-            <div className="w-[140px]">
-                <CommonInput 
-                    type="date"
-                    label="To"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    size="sm"
-                />
-            </div>
-            <button 
-                onClick={handleRunReport}
-                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider h-[38px] mb-[1px]"
-            >
-                Run Report
-            </button>
+            {datePreset === 'custom' && (
+                <>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="From"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <div className="w-[140px]">
+                        <CommonInput 
+                            type="date"
+                            label="To"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            size="sm"
+                        />
+                    </div>
+                    <button 
+                        onClick={() => handleRunReport()}
+                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
+                    >
+                        Run Report
+                    </button>
+                </>
+            )}
         </div>
     );
 
@@ -208,14 +312,15 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         <ReportLayout
             title={`Account History: ${account.name}`}
             filters={filterElements}
+            onExportExcel={handleExportExcel}
         >
             <Head title={`History - ${account.name}`} />
 
             <div className="text-center mb-8 font-serif relative">
                 <div className="absolute left-0 top-0">
-                    <Link href={route('chart-of-account.index')} className="text-xs text-blue-600 hover:underline font-sans">
-                        &larr; Back to Chart of Accounts
-                    </Link>
+                    <button onClick={() => window.history.back()} className="text-xs text-blue-600 hover:underline font-sans bg-transparent border-none cursor-pointer">
+                        &larr; Back
+                    </button>
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">Account History: {account.name}</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>

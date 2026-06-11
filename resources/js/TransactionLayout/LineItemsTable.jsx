@@ -47,6 +47,18 @@ export default function LineItemsTable({
         return parts.join(".");
     };
 
+    const evaluateMathExpression = (expr) => {
+        try {
+            const cleanExpr = String(expr).replace(/,/g, '').replace(/[^0-9+\-*/.]/g, '');
+            if (!cleanExpr) return 0;
+            // eslint-disable-next-line no-new-func
+            const result = new Function(`return ${cleanExpr}`)();
+            return isNaN(result) || !isFinite(result) ? 0 : result;
+        } catch {
+            return parseFloat(String(expr).replace(/,/g, '')) || 0;
+        }
+    };
+
     const handleCurrencyChange = (index, key, rawValue) => {
         // Strip commas and store raw typed value (allows free typing without appending)
         const stripped = String(rawValue).replace(/,/g, "");
@@ -100,8 +112,8 @@ export default function LineItemsTable({
     };
 
     const handleCurrencyBlur = (index, key, rawValue) => {
-        // On blur, format to exactly 2 decimal places
-        const num = parseFloat(String(rawValue).replace(/,/g, "")) || 0;
+        // On blur, evaluate math expression and format to exactly 2 decimal places
+        const num = evaluateMathExpression(rawValue);
         const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         handleItemChange(index, key, formatted);
     };

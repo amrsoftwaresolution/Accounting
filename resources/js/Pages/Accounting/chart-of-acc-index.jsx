@@ -351,7 +351,9 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filteredAccounts.map((account) => (
+                                {filteredAccounts.map((account, index) => {
+                                    const isLastItems = index >= filteredAccounts.length - 2 && filteredAccounts.length > 3;
+                                    return (
                                     <tr key={account.id} className="hover:bg-slate-50/50 transition-colors group">
                                         <td className="px-4 py-2.5" style={{ paddingLeft: account.parent_id ? '28px' : '16px' }}>
                                             <div className="flex flex-col">
@@ -414,7 +416,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                                             </svg>
                                                         </button>
                                                     </Dropdown.Trigger>
-                                                    <Dropdown.Content align="right" width="48" contentClasses="py-1 bg-white ring-1 ring-black ring-opacity-5 rounded-md shadow-lg overflow-hidden mt-2">
+                                                    <Dropdown.Content align={isLastItems ? 'top-right' : 'right'} width="48" contentClasses="py-1 bg-white ring-1 ring-black ring-opacity-5 rounded-md shadow-lg overflow-hidden">
                                                         <button
                                                             onClick={() => handleOpenEdit(account)}
                                                             className="block w-full px-4 py-2 text-start text-xs leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-slate-100 focus:bg-slate-100 focus:outline-none font-bold"
@@ -448,7 +450,8 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [], lastOpenin
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                                 {filteredAccounts.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">

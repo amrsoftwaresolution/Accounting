@@ -35,12 +35,16 @@ const getEditRoute = (type) => {
             return 'bill.edit';
         case 'expense':
             return 'expense.edit';
+        case 'payment':
+            return 'payment.edit';
+        case 'bank_deposit':
+            return 'deposit.edit';
         default:
             return 'journal-entries.edit';
     }
 };
 
-export default function RecentTransactionHistory({ historyType = 'invoice', dirty = false }) {
+export default function RecentTransactionHistory({ historyType = 'invoice', dirty = false, children }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [cache, setCache] = useState({});
@@ -99,17 +103,23 @@ export default function RecentTransactionHistory({ historyType = 'invoice', dirt
 
     return (
         <div className="relative">
-            <button
-                type="button"
-                onClick={handleToggle}
-                tabIndex={-1}
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 shadow-sm transition hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700"
-                aria-label="Recent transaction history"
-            >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </button>
+            {children ? (
+                <div onClick={handleToggle} className="cursor-pointer" aria-label="Recent transaction history">
+                    {children}
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    onClick={handleToggle}
+                    tabIndex={-1}
+                    className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 shadow-sm transition hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700"
+                    aria-label="Recent transaction history"
+                >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+            )}
 
             {open && (
                 <div className="absolute left-0 top-11 z-50 w-[340px] rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
@@ -143,13 +153,15 @@ export default function RecentTransactionHistory({ historyType = 'invoice', dirt
                                         onClick={() => handleOpenRecord(record)}
                                         className="mb-1 block w-full rounded-md px-2 py-1.5 text-left text-[11px] text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:bg-slate-100"
                                     >
-                                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                                            <span className="font-semibold text-slate-800">{record.number || record.id}</span>
-                                            <span className="text-slate-400">•</span>
-                                            <span className="text-slate-500">{record.date || '—'}</span>
-                                            <span className="text-slate-400">•</span>
-                                            <span className="text-slate-700">{record.name || '—'}</span>
-                                        </span>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex flex-col overflow-hidden">
+                                                <span className="font-semibold text-slate-800">{record.date || '—'}</span>
+                                                <span className="text-slate-500 truncate" title={record.memo}>{record.memo || '—'}</span>
+                                            </div>
+                                            <span className="font-bold text-slate-700 whitespace-nowrap">
+                                                {parseFloat(record.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
                                     </button>
                                 ))}
                                 <div className="mt-2 border-t border-slate-100 pt-2 text-center">

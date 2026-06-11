@@ -416,7 +416,7 @@ class SupplierCreditController extends Controller
                 $creditNote->delete();
             }
 
-            $journalEntry->lines()->delete();
+            $journalEntry->lines->each->delete();
             $journalEntry->delete();
         });
         if ($chartOfAccountId) {

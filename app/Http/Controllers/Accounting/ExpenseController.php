@@ -71,7 +71,23 @@ class ExpenseController extends Controller
             ]);
         }
 
-        return Inertia::render('Transaction/ExpenseForm');
+        return Inertia::render('Transaction/ExpenseForm', [
+            'nextExpenseNo' => $this->getNextExpenseNo()
+        ]);
+    }
+
+    private function getNextExpenseNo()
+    {
+        $last = JournalEntry::where('company_id', session('active_company_id'))
+            ->where('transaction_type', 'expense')
+            ->orderByRaw('CAST(REGEXP_REPLACE(reference, "[^0-9]", "") AS UNSIGNED) DESC')
+            ->first();
+
+        if ($last) {
+            $num = (int) preg_replace('/[^0-9]/', '', $last->reference);
+            return 'EXP-' . str_pad($num + 1, 4, '0', STR_PAD_LEFT);
+        }
+        return 'EXP-0001';
     }
 
     public function store(StoreExpenseRequest $request)
@@ -449,10 +465,16 @@ class ExpenseController extends Controller
     DB::transaction(function () use ($journalEntry) {
         $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
 
+<<<<<<< HEAD
         if ($expense) {
             $expense->items()->delete();
             $expense->delete();
         }
+=======
+            $journalEntry->lines->each->delete();
+            $journalEntry->delete();
+        });
+>>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
 
         $journalEntry->lines()->delete();
         $journalEntry->delete();

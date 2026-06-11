@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
+import axios from 'axios';
 
 export default function MoreOptionsMenu({
     copyRoute = null,
@@ -44,12 +45,23 @@ export default function MoreOptionsMenu({
 
         setOpen(false);
 
+<<<<<<< HEAD
         router.delete(route(deleteRoute, recordId), {
             onError: (errors) => {
                 const message = Object.values(errors || {}).find(Boolean) || 'This record cannot be deleted right now.';
+=======
+        // We use axios so it doesn't follow the backend redirect to dashboard.
+        // This allows us to simply close the modal (window.history.back())
+        // The backend will redirect to dashboard, but axios will just swallow the response.
+        axios.delete(route(deleteRoute, recordId))
+            .then(() => {
+                window.history.back();
+            })
+            .catch((err) => {
+                const message = err.response?.data?.message || 'This record cannot be deleted right now.';
+>>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
                 window.alert(message);
-            },
-        });
+            });
     };
 
     if (!recordId || (!copyRoute && !deleteRoute)) {
@@ -61,21 +73,18 @@ export default function MoreOptionsMenu({
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600 shadow-sm transition hover:border-[#00713D] hover:text-[#00713D] focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium text-slate-300 hover:text-white transition focus:outline-none"
             >
                 {label}
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
             </button>
 
             {open && (
-                <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-2xl ring-1 ring-black/5">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-48 rounded-xl border border-slate-700 bg-slate-800 p-1 shadow-2xl">
                     {copyRoute && (
                         <button
                             type="button"
                             onClick={handleCopy}
-                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-700"
                         >
                             Copy
                             <span className="text-[10px] uppercase tracking-[0.25em] text-slate-400">New</span>
@@ -85,10 +94,9 @@ export default function MoreOptionsMenu({
                         <button
                             type="button"
                             onClick={handleDelete}
-                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-rose-600 transition hover:bg-rose-50"
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-rose-400 transition hover:bg-slate-700"
                         >
                             Delete
-                            <span className="text-[10px] uppercase tracking-[0.25em] text-rose-400">Confirm</span>
                         </button>
                     )}
                 </div>

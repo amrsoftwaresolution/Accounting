@@ -89,8 +89,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         if (journalEntry && journalEntry.lines) {
             setItems(journalEntry.lines.map(line => ({
                 account_id: line.chart_of_acc_id,
-                debit: line.debit ? line.debit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : "",
-                credit: line.credit ? line.credit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : "",
+                debit: line.debit ? parseFloat(line.debit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
+                credit: line.credit ? parseFloat(line.credit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
                 description: line.memo || "",
                 payee_id: line.payee_id || ""
             })));

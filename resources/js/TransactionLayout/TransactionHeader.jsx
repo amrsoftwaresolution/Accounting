@@ -14,9 +14,14 @@ export default function TransactionHeader({ title, amount, historyType = null, d
             {/* LEFT SIDE */}
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                    <ApplicationLogo className="h-7 w-auto" />
+                    {historyType ? (
+                        <RecentTransactionHistory historyType={historyType} dirty={dirty}>
+                            <ApplicationLogo className="h-7 w-auto hover:opacity-80 transition-opacity" />
+                        </RecentTransactionHistory>
+                    ) : (
+                        <ApplicationLogo className="h-7 w-auto" />
+                    )}
                     <div className="h-6 w-px bg-slate-200 mx-1" />
-                    {historyType && <RecentTransactionHistory historyType={historyType} dirty={dirty} />}
                     <h1 className="text-lg font-semibold text-gray-800">
                         {title}
                     </h1>
@@ -25,6 +30,7 @@ export default function TransactionHeader({ title, amount, historyType = null, d
 
             {/* RIGHT SIDE */}
             <div className="flex items-center gap-6">
+<<<<<<< HEAD
                 {moreOptions && (
                     <MoreOptionsMenu
                         copyRoute={moreOptions.copyRoute}
@@ -35,6 +41,8 @@ export default function TransactionHeader({ title, amount, historyType = null, d
                     />
                 )}
 
+=======
+>>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
                 {/* Icons */}
                 <div className="flex items-center gap-4 text-gray-500 text-sm">
                     <button

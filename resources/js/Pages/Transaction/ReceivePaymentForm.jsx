@@ -9,7 +9,7 @@ import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 
-export default function ReceivePaymentForm({ paymentMethods = [], payment = null }) {
+export default function ReceivePaymentForm({ paymentMethods = [], payment = null, nextPaymentNo = "" }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || 'LKR';
 
@@ -30,9 +30,9 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         email: payment?.email || "",
         paymentDate: payment?.paymentDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         paymentMethod: payment?.paymentMethod || "",
-        referenceNo: payment?.referenceNo || "",
+        referenceNo: payment?.referenceNo || nextPaymentNo || "",
         depositTo: payment?.depositTo || "",
-        amountReceived: payment?.amountReceived || "0.00",
+        amountReceived: payment?.amountReceived ? parseFloat(payment.amountReceived).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
         memo: payment?.memo || "",
         action: 'save',
     });
@@ -223,7 +223,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 email: "",
                 paymentDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                 paymentMethod: "",
-                referenceNo: "",
+                referenceNo: nextPaymentNo || "",
                 depositTo: "",
                 amountReceived: "0.00",
                 memo: "",
@@ -377,13 +377,19 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                             placeholder="0.00"
                             value={data.amountReceived}
                             onChange={(e) => {
-                                // Allow only numbers and decimal point
-                                const val = e.target.value.replace(/[^0-9.]/g, '');
+                                // Allow numbers, decimal point, and math operators
+                                const val = e.target.value.replace(/[^0-9.+\-*/]/g, '');
                                 setData("amountReceived", val);
                             }}
                             onBlur={(e) => {
-                                const val = parseFloat(e.target.value || 0);
-                                setData("amountReceived", val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                let num = 0;
+                                try {
+                                    const cleanExpr = e.target.value.replace(/,/g, '').replace(/[^0-9+\-*/.]/g, '');
+                                    num = cleanExpr ? (new Function(`return ${cleanExpr}`)() || 0) : 0;
+                                } catch {
+                                    num = parseFloat(e.target.value.replace(/,/g, '')) || 0;
+                                }
+                                setData("amountReceived", num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                             }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
