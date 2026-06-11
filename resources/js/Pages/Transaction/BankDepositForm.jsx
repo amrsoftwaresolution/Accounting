@@ -22,6 +22,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalTarget, setAccountModalTarget] = useState(null);
     const [accountModalRowIndex, setAccountModalRowIndex] = useState(null);
+    const [savedOnce, setSavedOnce] = useState(!!deposit?.id);
 
     const fetchPayees = (search = "") => {
         axios.get(route('api.payees', { search })).then(res => setPayeeOptions(res.data));
@@ -117,12 +118,10 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
 
         method(url, {
             onSuccess: () => {
-<<<<<<< HEAD
                 showToast('success', 'Record saved successfully.');
+                setSavedOnce(true);
                 if (action === 'new') {
-=======
-                if (action === 'new' && !deposit?.id) {
->>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
+                    setSavedOnce(false);
                     reset();
                     clearErrors();
                 }
@@ -136,6 +135,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
             title={deposit?.id ? `Edit Bank Deposit #${data.depositNo}` : `Bank Deposit #${data.depositNo}`}
             amount={parseFloat(totalAmount)}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}

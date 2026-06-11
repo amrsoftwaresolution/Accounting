@@ -211,17 +211,15 @@ class BillController extends Controller
             $action = $request->input('action', 'save');
 
             if ($action === 'close') {
-                return redirect()->back()->with('success', 'Bill saved successfully.');
+                return redirect()->route('dashboard')->with('success', 'Bill saved successfully.');
             }
 
             if ($action === 'new') {
                 return redirect()->route('bill')->with('success', 'Bill saved successfully.');
             }
 
-            return response()->json([
-                'message' => 'Bill saved successfully.',
-                'id' => $journalEntry->id,
-            ]);
+            return redirect()->route('bill.edit', $journalEntry->id)
+                ->with('success', 'Bill saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -400,11 +398,14 @@ class BillController extends Controller
                 return redirect()->route('dashboard')->with('success', 'Bill updated successfully.');
             }
 
-            return redirect()->back()->with('success', 'Bill updated successfully.');
+            if ($action === 'new') {
+                return redirect()->route('bill')->with('success', 'Bill updated successfully.');
+            }
 
+            return redirect()->back()->with('success', 'Bill updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
-        }
+        }   
     }
 
     public function destroy(JournalEntry $journalEntry)

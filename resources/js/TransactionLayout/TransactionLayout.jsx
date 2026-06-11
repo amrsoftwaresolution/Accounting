@@ -18,7 +18,8 @@ export default function TransactionLayout({
     dirty = false,
     historyType = null,
     lastAction = 'save',
-    moreOptions = null
+    moreOptions = null,
+    resetDirty = null,
 }) {
     const { props } = usePage();
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(dirty);
@@ -27,36 +28,80 @@ export default function TransactionLayout({
         const currentPath = window.location.pathname;
 
         if (currentPath.startsWith('/journal-entries/')) {
-            return { copyRoute: 'journal-entries.create', deleteRoute: 'journal-entries.destroy', recordId: props.journalEntry?.id ?? props.journalEntry?.journalEntry?.id, listRoute: 'journal-entries.index' };
+            return { 
+                copyRoute: 'journal-entries.create', 
+                deleteRoute: 'journal-entries.destroy', 
+                recordId: props.journalEntry?.id ?? props.journalEntry?.journalEntry?.id, 
+                listRoute: 'journal-entries.index'
+             };
         }
         if (currentPath.startsWith('/invoice/')) {
-            return { copyRoute: 'invoice', deleteRoute: 'invoice.destroy', recordId: props.invoice?.id, listRoute: 'dashboard' };
+            return { 
+                copyRoute: 'invoice', 
+                deleteRoute: 'invoice.destroy', 
+                recordId: props.invoice?.id, 
+                listRoute: 'dashboard' };
         }
         if (currentPath.startsWith('/bill/')) {
-            return { copyRoute: 'bill', deleteRoute: 'bill.destroy', recordId: props.bill?.id, listRoute: 'dashboard' };
+            return { 
+                copyRoute: 'bill', 
+                deleteRoute: 'bill.destroy', 
+                recordId: props.bill?.id, 
+                listRoute: 'dashboard' };
+        }
+        if (currentPath.startsWith('/chart-of-account/') && currentPath.includes('/history')) {
+            const parts = currentPath.split('/');
+            const coaid = parts[2] || null;
+            return {
+                copyRoute: null,
+                deleteRoute: 'chart-of-account.destroy',
+                recordId: coaid,
+                listRoute: 'chart-of-account.index'
+            };
         }
         if (currentPath.startsWith('/expense/')) {
-            return { copyRoute: 'expense', deleteRoute: 'expense.destroy', recordId: props.expense?.id, listRoute: 'dashboard' };
+            const expenseId = currentPath.split('/')[2];
+            return {
+                copyRoute: 'expense',
+                deleteRoute: 'expense.destroy',
+                recordId: expenseId,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/payment/')) {
-            return { copyRoute: 'payment', deleteRoute: 'payment.destroy', recordId: props.payment?.id, listRoute: 'dashboard' };
+            return { 
+                copyRoute: 'payment', 
+                deleteRoute: 'payment.destroy', 
+                recordId: props.payment?.id, 
+                listRoute: 'dashboard' };
         }
         if (currentPath.startsWith('/receipt/')) {
-            return { copyRoute: 'receipt', deleteRoute: 'receipt.destroy', recordId: props.receipt?.id, listRoute: 'dashboard' };
+            return { 
+                copyRoute: 'receipt', 
+                deleteRoute: 'receipt.destroy', 
+                recordId: props.receipt?.id, 
+                listRoute: 'dashboard' };
         }
         if (currentPath.startsWith('/credit-note/')) {
-            return { copyRoute: 'credit-note', deleteRoute: 'credit-note.destroy', recordId: props.creditNote?.id, listRoute: 'dashboard' };
+            return { 
+                copyRoute: 'credit-note', 
+                deleteRoute: 'credit-note.destroy', 
+                recordId: props.creditNote?.id, 
+                listRoute: 'dashboard' };
         }
         if (currentPath.startsWith('/SupplierCredit/')) {
-            return { copyRoute: 'supplier-credit', deleteRoute: 'supplier-credit.destroy', recordId: props.credit?.id, listRoute: 'dashboard' };
+            return { 
+                copyRoute: 'supplier-credit', 
+                deleteRoute: 'supplier-credit.destroy', 
+                recordId: props.credit?.id, 
+                listRoute: 'dashboard' };
         }
-<<<<<<< HEAD
-        if (currentPath.startsWith('/transfer/')) {
-            return { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: props.transfer?.id, listRoute: 'dashboard' };
-=======
         if (currentPath.startsWith('/deposit/')) {
-            return { copyRoute: 'deposit', deleteRoute: 'deposit.destroy', recordId: props.deposit?.id, listRoute: 'dashboard' };
->>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
+            return { 
+                copyRoute: 'deposit', 
+                deleteRoute: 'deposit.destroy', 
+                recordId: props.deposit?.id, 
+                listRoute: 'dashboard' };
         }
 
         return null;

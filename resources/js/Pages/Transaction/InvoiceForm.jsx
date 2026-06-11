@@ -27,6 +27,8 @@ export default function InvoiceForm({
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
+    const [savedOnce, setSavedOnce] = useState(!!invoice?.id);
+
 
     const fetchPayees = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
@@ -133,7 +135,7 @@ export default function InvoiceForm({
         { label: "Due on receipt", value: "Due on receipt" }
     ]);
 
-    const [currentAction, setCurrentAction] = useState('save');
+    const actionRef = useRef('save');
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: invoice?.customer || "",
@@ -144,34 +146,30 @@ export default function InvoiceForm({
         dueDate: initialDueDate,
         invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
         memo: invoice?.memo || "",
-<<<<<<< HEAD
         action: 'save',
-        items: invoice?.items || [
-=======
         items: invoice?.items ? invoice.items.map(i => ({
             ...i,
             rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         })) : [
->>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ]
     });
 
     useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: currentAction,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [currentAction, transform]);
+    transform((data) => ({
+        ...data,
+        action: actionRef.current,
+        items: data.items
+            .filter(item => item.product)
+            .map(item => ({
+                ...item,
+                rate: String(item.rate).replace(/,/g, ''),
+                amount: String(item.amount).replace(/,/g, '')
+            }))
+    }));
+}, [transform]);
 
     useEffect(() => {
         if (invoice) {
@@ -258,22 +256,24 @@ export default function InvoiceForm({
     };
 
     const handleSave = (action = 'save') => {
-        setCurrentAction(action);
+    actionRef.current = action; // SET BEFORE calling method
 
-        const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
-        const method = invoice?.id ? patch : post;
+    const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
+    const method = invoice?.id ? patch : post;
 
-        method(url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showToast('success', 'Record saved successfully.');
-                if (action === 'new') {
-                    reset();
-                    clearErrors();
-                }
+    method(url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showToast('success', 'Record saved successfully.');
+            setSavedOnce(true);
+            if (action === 'new') {
+                setSavedOnce(false);
+                reset();
+                clearErrors();
             }
-        });
-    };
+        }
+    });
+};
 
     return (
         <TransactionLayout
@@ -281,6 +281,7 @@ export default function InvoiceForm({
             title={`Invoice ${data.invoiceNo}`}
             amount={totalAmount}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}

@@ -66,7 +66,8 @@ export default function ExpenseForm({
     const fetchPaymentMethods = () => {
         axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
     };
-
+    const [savedOnce, setSavedOnce] = useState(!!expense?.id);
+    
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
@@ -216,30 +217,31 @@ export default function ExpenseForm({
     };
 
     const handleSave = (action = 'save') => {
-        actionRef.current = action;
-        const url = expense?.id ? route('expense.update', expense.id) : route('expense.store');
-        const method = expense?.id ? patch : post;
+    actionRef.current = action;
+    const url = expense?.id ? route('expense.update', expense.id) : route('expense.store');
+    const method = expense?.id ? patch : post;
 
-        method(url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showToast('success', 'Record saved successfully.');
-                if (action === 'new') {
-                    reset();
-                    clearErrors();
-                    fetchAccounts();
-                    const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
-                    setData({
-                        payee: "", account: "", date: cachedDate, method: "", ref: "", memo: "",
-                        items: [{ category: "", description: "", amount: "0.00" }],
-                        itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
-                        action: 'save'
-                    });
-                }
+    method(url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showToast('success', 'Record saved successfully.');
+            setSavedOnce(true);
+            
+            if (action === 'new') {
+                reset();
+                clearErrors();
+                fetchAccounts();
+                const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                setData({
+                    payee: "", account: "", date: cachedDate, method: "", ref: nextExpenseNo || "", memo: "",
+                    items: [{ category: "", description: "", amount: "0.00" }],
+                    itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                    action: 'save'
+                });
             }
-        });
-    };
-
+        }
+    });
+};
     const EXPENSE_COLUMNS = [
         {
             key: "category",
@@ -290,6 +292,7 @@ export default function ExpenseForm({
             title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"}
             amount={totalAmount}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}

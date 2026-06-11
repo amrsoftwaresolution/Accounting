@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, Head } from "@inertiajs/react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
@@ -65,7 +65,8 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
         return new Date().toISOString().split('T')[0];
     };
 
-    const [currentAction, setCurrentAction] = useState('save');
+const actionRef = useRef('save');
+    const [savedOnce, setSavedOnce] = useState(!!creditNote?.id);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: creditNote?.customer || "",
@@ -116,18 +117,18 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     }, [creditNote?.id, nextCreditNoteNo]);
 
     useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: currentAction,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [currentAction, transform]);
+    transform((data) => ({
+        ...data,
+        action: actionRef.current,
+        items: data.items
+            .filter(item => item.product)
+            .map(item => ({
+                ...item,
+                rate: String(item.rate).replace(/,/g, ''),
+                amount: String(item.amount).replace(/,/g, '')
+            }))
+    }));
+}, [transform]);
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -161,29 +162,31 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     };
 
     const handleSave = (action = 'save') => {
-        setCurrentAction(action);
+    actionRef.current = action; // SET BEFORE calling method
 
-        const url = creditNote?.id ? route('credit-note.update', creditNote.id) : route('credit-note.store');
-        const method = creditNote?.id ? patch : post;
+    const url = creditNote?.id ? route('credit-note.update', creditNote.id) : route('credit-note.store');
+    const method = creditNote?.id ? patch : post;
 
-        method(url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showToast('success', 'Record saved successfully.');
-                if (action === 'new') {
-                    reset();
-                    clearErrors();
-                }
+    method(url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showToast('success', 'Record saved successfully.');
+            setSavedOnce(true);
+            if (action === 'new') {
+                setSavedOnce(false);
+                reset();
+                clearErrors();
             }
-        });
-    };
-
+        }
+    });
+};
     return (
         <TransactionLayout
             historyType="sales return"
             title={`Refund Receipt #${data.creditNoteNo}`}
             amount={totalAmount}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}

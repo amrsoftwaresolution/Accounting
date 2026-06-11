@@ -138,17 +138,15 @@ class CreditNoteController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->back()->with('success', 'Sales Return saved successfully.');
+                return redirect()->route('dashboard')->with('success', 'Sales Return saved successfully.');
             }
 
             if ($action === 'new') {
                 return redirect()->route('credit-note')->with('success', 'Sales Return saved successfully.');
             }
 
-            return response()->json([
-                'message' => 'Sales Return saved successfully.',
-                'id' => $journalEntry->id,
-            ]);
+            return redirect()->route('credit-note.edit', $journalEntry->id)
+                ->with('success', 'Sales Return saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

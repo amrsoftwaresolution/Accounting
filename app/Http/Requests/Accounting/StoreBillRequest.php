@@ -14,11 +14,18 @@ class StoreBillRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'supplier' => 'required',
+            'supplier' => 'required|exists:suppliers,id',
             'billDate' => 'required|date',
             'billNo' => 'required',
             'items' => 'nullable|array',
             'itemDetails' => 'nullable|array',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'supplier.exists' => 'The selected supplier does not exist. Please select a valid supplier.',
         ];
     }
 }

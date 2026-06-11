@@ -206,17 +206,15 @@ class SalesReceiptController extends Controller
 
         $action = $request->input('action', 'save');
         if ($action === 'close') {
-            return redirect()->back()->with('success', 'Cash sale saved successfully.');
+            return redirect()->route('dashboard')->with('success', 'Cash sale saved successfully.');
         }
 
         if ($action === 'new') {
             return redirect()->route('receipt')->with('success', 'Cash sale saved successfully.');
         }
 
-        return response()->json([
-            'message' => 'Cash sale saved successfully.',
-            'id' => $journalEntry->id,
-        ]);
+        return redirect()->route('receipt.edit', $journalEntry->id)
+            ->with('success', 'Cash sale saved successfully.');
 
     }
 

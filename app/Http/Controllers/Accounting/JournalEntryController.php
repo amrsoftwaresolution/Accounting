@@ -128,10 +128,15 @@ class JournalEntryController extends Controller
 
         $entry->update(['total_amount' => $totalDebit]);
 
-        return response()->json([
-            'message' => 'Journal Entry Created',
-            'id' => $entry->id
-        ]);
+        $action = $request->input('action', 'save');
+        if ($action === 'close') {
+            return redirect()->route('dashboard')->with('success', 'Journal Entry saved successfully.');
+        }
+        if ($action === 'new') {
+            return redirect()->route('journal-entries.create')->with('success', 'Journal Entry saved successfully.');
+        }
+        return redirect()->route('journal-entries.edit', $entry->id)
+            ->with('success', 'Journal Entry saved successfully.');
     });
 }
 
@@ -187,7 +192,15 @@ class JournalEntryController extends Controller
 
             $journalEntry->update(['total_amount' => $totalDebit]);
 
-            return response()->json(['message' => 'Journal Entry Updated']);
+            $action = $request->input('action', 'save');
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Journal Entry updated successfully.');
+            }
+            if ($action === 'new') {
+                return redirect()->route('journal-entries.create')->with('success', 'Journal Entry updated successfully.');
+            }
+            return redirect()->route('journal-entries.edit', $journalEntry->id)
+                ->with('success', 'Journal Entry updated successfully.');
         });
     }
 

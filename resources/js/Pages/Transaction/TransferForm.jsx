@@ -11,6 +11,7 @@ export default function TransferForm({ transfer = null }) {
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
+    const [savedOnce, setSavedOnce] = useState(!!transfer?.id);
 
     const { data, setData, post, patch, processing, errors, reset, transform } = useForm({
         transfer_from: transfer?.transfer_from || "",
@@ -56,18 +57,28 @@ export default function TransferForm({ transfer = null }) {
     useEffect(() => {
         transform((data) => ({
             ...data,
-            amount: String(data.amount).replace(/,/g, '')
+            amount: String(data.amount).replace(/,/g, ''),
+            action: currentAction
         }));
-    }, [data.amount, transform]);
+    }, [data.amount, transform, currentAction]);
+
+    const [currentAction, setCurrentAction] = useState('save');
 
     const handleSave = (type = 'save') => {
+        setCurrentAction(type);
         const url = transfer?.id ? route('transfer.update', transfer.id) : route('transfer.store');
         const method = transfer?.id ? patch : post;
 
         method(url, {
+            preserveScroll: true,
+            preserveState: type === 'save',
             onSuccess: () => {
                 showToast('success', 'Record saved successfully.');
-                if (type === 'new') reset();
+                setSavedOnce(true);
+                if (type === 'new') {
+                    setSavedOnce(false);
+                    reset();
+                }
             },
         });
     };
@@ -81,6 +92,7 @@ export default function TransferForm({ transfer = null }) {
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             processing={processing}
+            dirty={!savedOnce}
             moreOptions={transfer?.id ? { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: transfer.id, listRoute: 'dashboard' } : null}
         >
             <Head title="Transfer Funds" />

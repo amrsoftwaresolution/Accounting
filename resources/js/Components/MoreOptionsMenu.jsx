@@ -45,23 +45,14 @@ export default function MoreOptionsMenu({
 
         setOpen(false);
 
-<<<<<<< HEAD
+        // Use Inertia router for delete — the backend redirect determines where to go next
         router.delete(route(deleteRoute, recordId), {
-            onError: (errors) => {
-                const message = Object.values(errors || {}).find(Boolean) || 'This record cannot be deleted right now.';
-=======
-        // We use axios so it doesn't follow the backend redirect to dashboard.
-        // This allows us to simply close the modal (window.history.back())
-        // The backend will redirect to dashboard, but axios will just swallow the response.
-        axios.delete(route(deleteRoute, recordId))
-            .then(() => {
-                window.history.back();
-            })
-            .catch((err) => {
-                const message = err.response?.data?.message || 'This record cannot be deleted right now.';
->>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
+            preserveScroll: false,
+            onError: (err) => {
+                const message = err?.response?.data?.message || 'This record cannot be deleted right now.';
                 window.alert(message);
-            });
+            }
+        });
     };
 
     if (!recordId || (!copyRoute && !deleteRoute)) {

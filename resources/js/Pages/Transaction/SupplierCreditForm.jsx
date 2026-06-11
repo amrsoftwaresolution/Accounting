@@ -26,6 +26,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('expense');
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
+    const [savedOnce, setSavedOnce] = useState(!!credit?.id);
 
     const fetchSuppliers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Supplier' })).then(res => setSupplierOptions(res.data));
@@ -182,7 +183,12 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         method(url, {
             preserveScroll: true,
             onSuccess: () => {
-                if (actionType === 'new') reset();
+                showToast('success', 'Record saved successfully.');
+                setSavedOnce(true);
+                if (actionType === 'new') {
+                    setSavedOnce(false);
+                    reset();
+                }
             }
         });
     };
@@ -239,6 +245,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
             amount={totalAmount}
             currencyPrefix={currencyPrefix}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndNew={() => handleSave('new')}
         >

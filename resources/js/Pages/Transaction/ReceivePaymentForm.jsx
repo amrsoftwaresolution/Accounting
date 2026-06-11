@@ -23,7 +23,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-    const [currentAction, setCurrentAction] = useState('save');
+    const [savedOnce, setSavedOnce] = useState(!!payment?.id);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: payment?.customer || "",
@@ -237,38 +237,58 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
 
 
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            amountReceived: String(data.amountReceived).replace(/,/g, ''),
-            action: currentAction,
-            invoices: invoices
-                .filter(inv => inv.applied > 0)
-                .map(inv => ({
-                    id: inv.id,
-                    amount: String(inv.applied)
-                }))
-        }));
-    }, [currentAction, data.amountReceived, invoices]);
+useEffect(() => {
+    transform((data) => ({
+        ...data,
+        amountReceived: String(data.amountReceived).replace(/,/g, ''),
+        invoices: invoices
+            .filter(inv => inv.applied > 0)
+            .map(inv => ({
+                id: inv.id,
+                amount: String(inv.applied)
+            }))
+    }));
+}, [data.amountReceived, invoices]);
 
-    const submit = (action = 'save') => {
-        setCurrentAction(action);
+const submit = (action = 'save') => {
+    const url = payment?.id ? route('payment.update', payment.id) : route('payment.store');
+    const submitMethod = payment?.id ? patch : post;
 
-        const url = payment?.id ? route('payment.update', payment.id) : route('payment.store');
-        const submitMethod = payment?.id ? patch : post;
+    // Manually inject action into the request
+    const originalTransform = (d) => ({
+        ...d,
+        action: action,
+        amountReceived: String(d.amountReceived).replace(/,/g, ''),
+        invoices: invoices
+            .filter(inv => inv.applied > 0)
+            .map(inv => ({
+                id: inv.id,
+                amount: String(inv.applied)
+            }))
+    });
 
-        submitMethod(url, {
-            preserveScroll: true,
-            preserveState: action === 'save',
-            onSuccess: () => {
-                showToast('success', 'Record saved successfully.');
-                if (action === 'new') {
-                    reset();
-                    clearErrors();
-                }
+    transform(originalTransform);
+
+    submitMethod(url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showToast('success', 'Record saved successfully.');
+            setSavedOnce(true);
+            if (action === 'new') {
+                setSavedOnce(false);
+                reset();
+                clearErrors();
+                setInvoices([]);
+                const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                setData({
+                    customer: "", email: "", paymentDate: cachedDate,
+                    paymentMethod: "", referenceNo: nextPaymentNo || "",
+                    depositTo: "", amountReceived: "0.00", memo: "", action: 'save'
+                });
             }
-        });
-    };
+        }
+    });
+};
 
     return (
         <TransactionLayout
@@ -279,7 +299,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
             onSaveAndClose={() => submit('close')}
             onSaveAndNew={() => submit('new')}
             processing={processing}
-            dirty={Object.keys(data).some((key) => key !== 'action' && String(data[key]) !== "")}
+            dirty={!savedOnce}
         >
             <Head title="Receive Payment" />
 

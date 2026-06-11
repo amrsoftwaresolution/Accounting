@@ -30,19 +30,6 @@ export default function TransactionHeader({ title, amount, historyType = null, d
 
             {/* RIGHT SIDE */}
             <div className="flex items-center gap-6">
-<<<<<<< HEAD
-                {moreOptions && (
-                    <MoreOptionsMenu
-                        copyRoute={moreOptions.copyRoute}
-                        deleteRoute={moreOptions.deleteRoute}
-                        recordId={moreOptions.recordId}
-                        listRoute={moreOptions.listRoute}
-                        listRouteParams={moreOptions.listRouteParams}
-                    />
-                )}
-
-=======
->>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
                 {/* Icons */}
                 <div className="flex items-center gap-4 text-gray-500 text-sm">
                     <button

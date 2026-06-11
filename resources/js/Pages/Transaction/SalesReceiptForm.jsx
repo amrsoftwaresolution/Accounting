@@ -26,6 +26,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
+    const [savedOnce, setSavedOnce] = useState(!!receipt?.id);
 
     const fetchCustomers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => setCustomerOptions(res.data));
@@ -169,7 +170,9 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             preserveState: actionType === 'save',
             onSuccess: () => {
                 showToast('success', 'Record saved successfully.');
+                setSavedOnce(true);
                 if (actionType === 'new') {
+                    setSavedOnce(false);
                     reset();
                     clearErrors();
                 }
@@ -183,6 +186,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             title={`Sales Receipt #${data.receiptNo}`}
             amount={totalAmount}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}

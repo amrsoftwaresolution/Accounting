@@ -6,7 +6,7 @@ import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
-import { Head, usePage } from "@inertiajs/react";
+import { Head, usePage, router } from "@inertiajs/react";
 
 export default function JournalEntryForm({ journalEntry = null, nextJournalNo = "" }) {
     const isEditing = Boolean(journalEntry?.id);
@@ -179,63 +179,46 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         setIsDirty(true);
     };
 
-    const handleSave = async (type = 'save') => {
-        try {
-            if (Math.abs(totals.debit - totals.credit) > 0.001) {
-                alert("Debits and Credits must balance to save this entry.");
-                return;
-            }
+    const handleSave = (type = 'save') => {
+        if (Math.abs(totals.debit - totals.credit) > 0.001) {
+            alert("Debits and Credits must balance to save this entry.");
+            return;
+        }
 
-            const payload = {
-                date: form.date,
-                reference_no: form.journalNo,
-                description: form.memo,
-                lines: items
-                    .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
-                    .map(i => ({
-                        ...i,
-                        debit: parseCurrency(i.debit),
-                        credit: parseCurrency(i.credit)
-                    }))
-            };
+        const payload = {
+            action: type,
+            date: form.date,
+            reference_no: form.journalNo,
+            description: form.memo,
+            lines: items
+                .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
+                .map(i => ({
+                    ...i,
+                    debit: parseCurrency(i.debit),
+                    credit: parseCurrency(i.credit)
+                }))
+        };
 
-            if (isEditing) {
-                await axios.patch(`/journal-entries/${journalEntry.id}`, payload);
+        const method = isEditing ? 'patch' : 'post';
+        const url = isEditing ? `/journal-entries/${journalEntry.id}` : "/journal-entries";
+
+        router[method](url, payload, {
+            onSuccess: () => {
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
-
-                if (type === 'close') {
-                    window.history.back();
-                    return;
-                }
-
                 if (type === 'new') {
-                    window.location.href = "/journal-entries/create";
-                    return;
+                    setItems([createBlankLine(), createBlankLine()]);
+                    setForm({
+                        date: getInitialDate(),
+                        journalNo: nextJournalNo || "",
+                        memo: ""
+                    });
                 }
-
-                return;
+            },
+            onError: (errors) => {
+                alert(Object.values(errors).join('\n') || "Error saving entry ❌");
             }
-
-            await axios.post("/journal-entries", payload);
-            showToast('success', 'Record saved successfully.');
-            setIsDirty(false);
-
-            if (type === 'close') {
-                window.history.back();
-                return;
-            }
-
-            if (type === 'new') {
-                window.location.href = "/journal-entries/create";
-                return;
-            }
-
-            return;
-        } catch (error) {
-            console.error(error.response?.data || error);
-            alert(error.response?.data?.message || "Error saving entry ❌");
-        }
+        });
     };
 
     return (

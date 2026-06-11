@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef} from "react";
 import { useForm, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import { showToast } from "@/Components/ToastNotification";
@@ -24,6 +24,7 @@ export default function BillForm({
     // Accordion States (Expanded by default)
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
     const [isItemsExpanded, setIsItemsExpanded] = useState(true);
+    const [savedOnce, setSavedOnce] = useState(!!bill?.id);
 
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
@@ -32,15 +33,14 @@ export default function BillForm({
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('expense');
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
-    const [currentAction, setCurrentAction] = useState('save');
-
+    const actionRef = useRef('save');
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
 
     const fetchPayees = async (search = '') => {
         try {
-            const response = await axios.get(route('api.payees', { search }));
+            const response = await axios.get(route('api.payees', { search, type: 'Supplier' }));
             setPayeeOptions(response.data);
         } catch (error) {
             console.error("Failed to fetch payees:", error);
@@ -186,26 +186,26 @@ export default function BillForm({
         clearErrors();
     }, [bill]);
 
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: currentAction,
-            items: data.items
-                .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
-                .map(item => ({
-                    ...item,
-                    amount: String(item.amount).replace(/,/g, '')
-                })),
-            itemDetails: data.itemDetails
-                .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
-                .map(item => ({
-                    ...item,
-                    qty: String(item.qty).replace(/,/g, ''),
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [currentAction, transform]);
+useEffect(() => {
+    transform((data) => ({
+        ...data,
+        action: actionRef.current,  // ADD THIS LINE
+        items: data.items
+            .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+            .map(item => ({
+                ...item,
+                amount: String(item.amount).replace(/,/g, '')
+            })),
+        itemDetails: data.itemDetails
+            .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+            .map(item => ({
+                ...item,
+                qty: String(item.qty).replace(/,/g, ''),
+                rate: String(item.rate).replace(/,/g, ''),
+                amount: String(item.amount).replace(/,/g, '')
+            }))
+    }));
+}, [transform]);;
 
     const totalAmount = (
         data.items.reduce(
@@ -268,7 +268,7 @@ export default function BillForm({
     };
 
     const handleSave = (action = 'save') => {
-        setCurrentAction(action);
+        actionRef.current = action;
         const url = bill?.id ? route('bill.update', bill.id) : route('bill.store');
         const method = bill?.id ? patch : post;
 
@@ -276,7 +276,9 @@ export default function BillForm({
             preserveScroll: true,
             onSuccess: () => {
                 showToast('success', 'Record saved successfully.');
+                setSavedOnce(true);
                 if (action === 'new') {
+                    setSavedOnce(false);
                     reset();
                     clearErrors();
                 }
@@ -334,6 +336,7 @@ export default function BillForm({
             title={`Bill #${data.billNo}`}
             amount={totalAmount}
             processing={processing}
+            dirty={!savedOnce}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}

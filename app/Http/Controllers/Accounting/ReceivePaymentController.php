@@ -159,17 +159,15 @@ class ReceivePaymentController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->back()->with('success', 'Payment received successfully.');
+                return redirect()->route('dashboard')->with('success', 'Payment received successfully.');
             }
 
             if ($action === 'new') {
                 return redirect()->route('payment')->with('success', 'Payment received successfully.');
             }
 
-            return response()->json([
-                'message' => 'Payment received successfully.',
-                'id' => $journalEntry->id,
-            ]);
+            return redirect()->route('payment.edit', $journalEntry->id)
+                ->with('success', 'Payment received successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

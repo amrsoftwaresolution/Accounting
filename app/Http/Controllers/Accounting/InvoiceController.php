@@ -150,17 +150,15 @@ class InvoiceController extends Controller
         $action = $request->input('action', 'save');
 
         if ($action === 'close') {
-            return redirect()->back()->with('success', 'credit Sale saved successfully.');
+            return redirect()->route('dashboard')->with('success', 'credit Sale saved successfully.');
         }
 
         if ($action === 'new') {
             return redirect()->route('invoice')->with('success', 'credit Sale saved successfully.');
         }
 
-        return response()->json([
-            'message' => 'credit Sale saved successfully.',
-            'id' => $journalEntry->id,
-        ]);
+        return redirect()->route('invoice.edit', $journalEntry->id)
+            ->with('success', 'credit Sale saved successfully.');
     }
 
     public function edit(JournalEntry $journalEntry)
@@ -275,6 +273,13 @@ class InvoiceController extends Controller
             ]);
         });
 
+        $action = $request->input('action', 'save');
+        if ($action === 'close') {
+            return redirect()->route('dashboard')->with('success', 'Invoice updated successfully.');
+        }
+        if ($action === 'new') {
+            return redirect()->route('invoice')->with('success', 'Invoice updated successfully.');
+        }
         return redirect()->back()->with('success', 'Invoice updated successfully.');
     }
 

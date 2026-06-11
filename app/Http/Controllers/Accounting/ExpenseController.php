@@ -233,17 +233,16 @@ class ExpenseController extends Controller
             // No session saving needed
 
             if ($action === 'close') {
-                return redirect()->back()->with('success', 'Payment saved successfully.');
+                return redirect()->route('dashboard')->with('success', 'Payment saved successfully.');
             }
 
             if ($action === 'new') {
                 return redirect()->route('expense')->with('success', 'Payment saved successfully.');
             }
 
-            return response()->json([
-                'message' => 'Payment saved successfully.',
-                'id' => $journalEntry->id,
-            ]);
+            return redirect()->route('expense.edit', $journalEntry->id)
+            ->with('success', 'Payment saved successfully.');
+
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -465,16 +464,10 @@ class ExpenseController extends Controller
     DB::transaction(function () use ($journalEntry) {
         $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
 
-<<<<<<< HEAD
         if ($expense) {
             $expense->items()->delete();
             $expense->delete();
         }
-=======
-            $journalEntry->lines->each->delete();
-            $journalEntry->delete();
-        });
->>>>>>> 0d6160479e90249b767c1c8388a9b071cf1812fa
 
         $journalEntry->lines()->delete();
         $journalEntry->delete();
