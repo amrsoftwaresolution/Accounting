@@ -7,6 +7,7 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
+import { showToast } from "@/Components/ToastNotification";
 
 export default function BankDepositForm({ auth, nextDepositNo = "" }) {
     const company = auth.company;
@@ -82,6 +83,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "" }) {
         transform((d) => ({ ...d, action }));
         post(route('deposit.store'), {
             onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 if (action === 'new') {
                     reset();
                     clearErrors();

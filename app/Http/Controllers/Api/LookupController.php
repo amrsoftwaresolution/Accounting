@@ -233,6 +233,68 @@ class LookupController extends Controller
         return response()->json($invoices);
     }
 
+    public function supplierInfo(Supplier $supplier)
+    {
+        $supplier->load('addresses');
+        $billingAddress = $supplier->addresses->where('type', 'billing')->first();
+        
+        $addressString = '';
+        if ($billingAddress) {
+            $parts = array_filter([
+                $billingAddress->address_line_1,
+                $billingAddress->address_line_2,
+                $billingAddress->city,
+                $billingAddress->province,
+                $billingAddress->postal_code,
+                $billingAddress->country
+            ]);
+            $addressString = implode(", ", $parts);
+        }
+
+        return response()->json([
+            'email' => $supplier->email,
+            'billing_address' => $addressString
+        ]);
+    }
+
+    public function supplierBills(Supplier $supplier, Request $request)
+    {
+        $paymentId = $request->query('payment_id');
+        $bills = \App\Models\Bill::where('supplier_id', $supplier->id)
+            ->where('status', 'posted')
+            ->where('company_id', session('active_company_id'))
+            ->get()
+            ->map(function($bill) use ($paymentId) {
+                $query = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id);
+                if ($paymentId) {
+                    $query->where('bill_payment_id', '!=', $paymentId);
+                }
+                $allocatedAmount = $query->sum('amount_applied');
+                $openBalance = $bill->total_amount - $allocatedAmount;
+                
+                $applied = 0;
+                if ($paymentId) {
+                    $applied = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id)
+                        ->where('bill_payment_id', $paymentId)
+                        ->sum('amount_applied');
+                }
+                
+                return [
+                    'id' => $bill->id,
+                    'bill_no' => $bill->bill_no,
+                    'bill_date' => $bill->bill_date,
+                    'due_date' => $bill->due_date,
+                    'total_amount' => $bill->total_amount,
+                    'open_balance' => $openBalance,
+                    'applied' => (float)$applied
+                ];
+            })
+            ->filter(fn($b) => $b['open_balance'] > 0.01 || $b['applied'] > 0.01)
+            ->values();
+
+        return response()->json($bills);
+    }
+
     public function itemCreateOptions()
     {
         $categories = \App\Models\ItemCategory::orderBy('name')->get();

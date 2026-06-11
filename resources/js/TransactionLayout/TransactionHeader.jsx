@@ -31,6 +31,7 @@ export default function TransactionHeader({ title, amount, historyType = null, d
                         deleteRoute={moreOptions.deleteRoute}
                         recordId={moreOptions.recordId}
                         listRoute={moreOptions.listRoute}
+                        listRouteParams={moreOptions.listRouteParams}
                     />
                 )}
 

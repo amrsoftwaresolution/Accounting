@@ -49,6 +49,9 @@ export default function TransactionLayout({
         if (currentPath.startsWith('/SupplierCredit/')) {
             return { copyRoute: 'supplier-credit', deleteRoute: 'supplier-credit.destroy', recordId: props.credit?.id, listRoute: 'dashboard' };
         }
+        if (currentPath.startsWith('/transfer/')) {
+            return { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: props.transfer?.id, listRoute: 'dashboard' };
+        }
 
         return null;
     })();

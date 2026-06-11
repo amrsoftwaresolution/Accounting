@@ -153,4 +153,30 @@ class TransferController extends Controller
             return response()->json(['message' => 'Database error: ' . $e->getMessage()], 500);
         }
     }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
+        DB::transaction(function () use ($journalEntry) {
+            $transfer = Transfer::find($journalEntry->transactionable_id);
+
+            if ($transfer) {
+                $transfer->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Transfer deleted successfully.');
+        }
+
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Transfer deleted successfully.');
+    }
 }

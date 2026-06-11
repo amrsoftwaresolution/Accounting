@@ -138,12 +138,17 @@ class CreditNoteController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Sales Return saved successfully.');
-            } elseif ($action === 'new') {
+                return redirect()->back()->with('success', 'Sales Return saved successfully.');
+            }
+
+            if ($action === 'new') {
                 return redirect()->route('credit-note')->with('success', 'Sales Return saved successfully.');
             }
 
-            return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return saved successfully.');
+            return response()->json([
+                'message' => 'Sales Return saved successfully.',
+                'id' => $journalEntry->id,
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -273,6 +278,10 @@ class CreditNoteController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
         DB::transaction(function () use ($journalEntry) {
             $creditNote = CreditNote::find($journalEntry->transactionable_id);
 
@@ -284,8 +293,13 @@ class CreditNoteController extends Controller
             $journalEntry->lines()->delete();
             $journalEntry->delete();
         });
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Sales Return deleted successfully.');
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Sales Return deleted successfully.');
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Sales Return deleted successfully.');
     }
 
     private function getNextNo()

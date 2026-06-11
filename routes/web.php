@@ -26,6 +26,9 @@ Route::middleware('auth')->group(function () {
     // Accounting Routes
     Route::get('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'create'])->name('expense');
     Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
+    Route::get('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'create'])->name('pay-bill');
+    Route::post('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'store'])->name('pay-bill.store');
+    Route::delete('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'destroy'])->name('pay-bill.destroy');
     Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
     Route::patch('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'update'])->name('expense.update');
     Route::delete('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'destroy'])->name('expense.destroy');
@@ -39,6 +42,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/items/create-options', [\App\Http\Controllers\Api\LookupController::class, 'itemCreateOptions'])->name('api.items.create-options');
     Route::get('/api/customers/{customer}', [\App\Http\Controllers\Api\LookupController::class, 'customerInfo'])->name('api.customers.info');
     Route::get('/api/customers/{customer}/invoices', [\App\Http\Controllers\Api\LookupController::class, 'customerInvoices'])->name('api.customers.invoices');
+    Route::get('/api/suppliers/{supplier}', [\App\Http\Controllers\Api\LookupController::class, 'supplierInfo'])->name('api.suppliers.info');
+    Route::get('/api/suppliers/{supplier}/bills', [\App\Http\Controllers\Api\LookupController::class, 'supplierBills'])->name('api.suppliers.bills');
     Route::get('/api/categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('api.categories');
     Route::get('/api/payment-methods', [\App\Http\Controllers\Api\LookupController::class, 'paymentMethods'])->name('api.payment-methods');
     Route::get('/api/history/{transactionType}', [\App\Http\Controllers\Api\TransactionHistoryController::class, 'index'])->name('api.history');
@@ -52,6 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'store'])->name('transfer.store');
     Route::get('/transfer/{journalEntry}/edit', [\App\Http\Controllers\Accounting\TransferController::class, 'edit'])->name('transfer.edit');
     Route::patch('/transfer/{journalEntry}', [\App\Http\Controllers\Accounting\TransferController::class, 'update'])->name('transfer.update');
+    Route::delete('/transfer/{journalEntry}', [\App\Http\Controllers\Accounting\TransferController::class, 'destroy'])->name('transfer.destroy');
 
     Route::get('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'create'])->name('invoice');
     Route::post('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'store'])->name('invoice.store');

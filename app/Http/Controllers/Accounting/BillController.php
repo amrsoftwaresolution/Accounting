@@ -208,7 +208,20 @@ class BillController extends Controller
                 return $journalEntry;
             });
 
-            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill saved successfully.');
+            $action = $request->input('action', 'save');
+
+            if ($action === 'close') {
+                return redirect()->back()->with('success', 'Bill saved successfully.');
+            }
+
+            if ($action === 'new') {
+                return redirect()->route('bill')->with('success', 'Bill saved successfully.');
+            }
+
+            return response()->json([
+                'message' => 'Bill saved successfully.',
+                'id' => $journalEntry->id,
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -396,6 +409,10 @@ class BillController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
         DB::transaction(function () use ($journalEntry) {
             $bill = Bill::find($journalEntry->transactionable_id);
 
@@ -408,6 +425,13 @@ class BillController extends Controller
             $journalEntry->delete();
         });
 
-        return redirect()->route('dashboard')->with('success', 'Bill deleted successfully.');
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Bill deleted successfully.');
+        }
+
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Bill deleted successfully.');
     }
 }
+

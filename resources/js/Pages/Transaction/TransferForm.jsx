@@ -4,6 +4,7 @@ import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
+import { showToast } from "@/Components/ToastNotification";
 import axios from "axios";
 
 export default function TransferForm({ transfer = null }) {
@@ -65,6 +66,7 @@ export default function TransferForm({ transfer = null }) {
 
         method(url, {
             onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 if (type === 'new') reset();
             },
         });
@@ -79,6 +81,7 @@ export default function TransferForm({ transfer = null }) {
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             processing={processing}
+            moreOptions={transfer?.id ? { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: transfer.id, listRoute: 'dashboard' } : null}
         >
             <Head title="Transfer Funds" />
 

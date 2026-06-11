@@ -1,28 +1,50 @@
 import { useState, useEffect } from "react";
 import { usePage } from "@inertiajs/react";
 
+export function showToast(type = 'success', message = 'Record saved successfully.') {
+    if (typeof window === 'undefined') return;
+
+    window.dispatchEvent(new CustomEvent('app:toast', {
+        detail: { type, message },
+    }));
+}
+
 export default function ToastNotification() {
     const { flash } = usePage().props;
     const [toast, setToast] = useState(null);
 
     useEffect(() => {
+        let timeoutId;
+
         if (flash?.success) {
             setToast({ type: 'success', message: flash.success });
-            const timer = setTimeout(() => setToast(null), 5000);
-            return () => clearTimeout(timer);
+            timeoutId = setTimeout(() => setToast(null), 5000);
         } else if (flash?.error) {
             setToast({ type: 'error', message: flash.error });
-            const timer = setTimeout(() => setToast(null), 7000);
-            return () => clearTimeout(timer);
+            timeoutId = setTimeout(() => setToast(null), 7000);
         } else if (flash?.warning) {
             setToast({ type: 'warning', message: flash.warning });
-            const timer = setTimeout(() => setToast(null), 5000);
-            return () => clearTimeout(timer);
+            timeoutId = setTimeout(() => setToast(null), 5000);
         } else if (flash?.info) {
             setToast({ type: 'info', message: flash.info });
-            const timer = setTimeout(() => setToast(null), 5000);
-            return () => clearTimeout(timer);
+            timeoutId = setTimeout(() => setToast(null), 5000);
         }
+
+        const handleCustomToast = (event) => {
+            const { type = 'info', message } = event.detail || {};
+            if (!message) return;
+
+            setToast({ type, message });
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => setToast(null), type === 'error' ? 7000 : 5000);
+        };
+
+        window.addEventListener('app:toast', handleCustomToast);
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            window.removeEventListener('app:toast', handleCustomToast);
+        };
     }, [flash]);
 
     if (!toast) return null;

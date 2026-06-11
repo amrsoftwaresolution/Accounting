@@ -33,7 +33,6 @@ export default function MoreOptionsMenu({
 
         window.alert('Copy is not available for this record type yet.');
     };
-
     const handleDelete = () => {
         if (!deleteRoute || !recordId) {
             window.alert('Delete is not available for this record type yet.');
@@ -46,12 +45,6 @@ export default function MoreOptionsMenu({
         setOpen(false);
 
         router.delete(route(deleteRoute, recordId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                if (listRoute) {
-                    router.get(route(listRoute));
-                }
-            },
             onError: (errors) => {
                 const message = Object.values(errors || {}).find(Boolean) || 'This record cannot be deleted right now.';
                 window.alert(message);

@@ -4,6 +4,7 @@ import CommonInput from './CommonInput';
 import CommonButton from './CommonButton';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getDetailTypeOptions } from '@/Utils/accountDetailTypeOptions';
 
 const Toggle = ({ checked, onChange, label, description, disabled }) => (
     <label className={`flex items-start gap-3 select-none group ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
@@ -45,28 +46,6 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
             { id: 'INR', code: 'INR', name: 'Indian Rupee' },
         ];
 
-    const subtypeOptions = {
-        asset: [
-            { value: 'cash-and-cash-equivalents', label: 'Cash and cash equivalents' },
-            { value: 'accounts-receivable', label: 'Accounts receivable (A/R)' },
-            { value: 'current-assets', label: 'Current assets' },
-            { value: 'fixed-assets', label: 'Fixed assets' },
-            { value: 'non-current-assets', label: 'Non-current assets' },
-        ],
-        subtype: [], // placeholder or fallback
-        liability: [
-            { value: 'credit-card', label: 'Credit card' },
-            { value: 'accounts-payable', label: 'Accounts payable (A/P)' },
-            { value: 'current-liabilities', label: 'Current liabilities' },
-            { value: 'non-current-liabilities', label: 'Non-current liabilities' },
-        ],
-        equity: [{ value: 'owners-equity', label: "Owner's equity" }],
-        income: [
-            { value: 'income', label: 'Income' },
-            { value: 'other-income', label: 'Other income' },
-        ],
-        expense: [{ value: 'expense', label: 'Expense' }],
-    };
 
     const [parentAccounts, setParentAccounts] = useState([]);
     const [nameDuplicateError, setNameDuplicateError] = useState('');
@@ -77,7 +56,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         account_code: '',
         name: '',
         account_type: defaultType,
-        sub_type: subtypeOptions[defaultType]?.[0]?.value || '',
+        sub_type: getDetailTypeOptions(defaultType)?.[0]?.value || '',
         opening_balance: '0.00',
         opening_balance_date: initialDate,
         description: '',
@@ -94,10 +73,12 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
     };
 
     const handleTypeChange = (value) => {
+        const detailOptions = getDetailTypeOptions(value);
+
         setData(prev => ({
             ...prev,
             account_type: value,
-            sub_type: subtypeOptions[value]?.[0]?.value || ''
+            sub_type: detailOptions?.[0]?.value || ''
         }));
     };
 
@@ -228,7 +209,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         onChange={e => setData('sub_type', e.target.value)}
                         error={errors.sub_type}
                         required
-                        options={subtypeOptions[data.account_type]}
+                        options={getDetailTypeOptions(data.account_type)}
                         disabled={data.is_locked}
                     />
                 </div>

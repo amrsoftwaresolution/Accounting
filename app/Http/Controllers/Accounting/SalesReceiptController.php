@@ -206,14 +206,17 @@ class SalesReceiptController extends Controller
 
         $action = $request->input('action', 'save');
         if ($action === 'close') {
-            return redirect()->route('chart-of-account.index')->with('success', 'Cash sale saved successfully.');
+            return redirect()->back()->with('success', 'Cash sale saved successfully.');
         }
 
         if ($action === 'new') {
             return redirect()->route('receipt')->with('success', 'Cash sale saved successfully.');
         }
 
-        return redirect()->route('receipt.edit', $journalEntry->id)->with('success', 'Cash sale saved successfully.');
+        return response()->json([
+            'message' => 'Cash sale saved successfully.',
+            'id' => $journalEntry->id,
+        ]);
 
     }
 
@@ -392,6 +395,10 @@ class SalesReceiptController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
         DB::transaction(function () use ($journalEntry) {
             $receipt = SalesReceipt::find($journalEntry->transactionable_id);
 
@@ -403,8 +410,13 @@ class SalesReceiptController extends Controller
             $journalEntry->lines()->delete();
             $journalEntry->delete();
         });
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Sales receipt deleted successfully.');
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Sales receipt deleted successfully.');
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Sales receipt deleted successfully.');
     }
 
    private function getNextReceiptNo()

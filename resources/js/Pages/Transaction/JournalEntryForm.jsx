@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
+import { showToast } from "@/Components/ToastNotification";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
@@ -200,17 +201,37 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
             if (isEditing) {
                 await axios.patch(`/journal-entries/${journalEntry.id}`, payload);
+                showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
-                if (type === 'close') window.history.back();
-                else if (type === 'new') window.location.href = "/journal-entries/create";
-                else window.location.reload();
-            } else {
-                const res = await axios.post("/journal-entries", payload);
-                setIsDirty(false);
-                if (type === 'close') window.history.back();
-                else if (type === 'new') window.location.reload();
-                else window.location.href = "/journal-entries/" + res.data.id + "/edit";
+
+                if (type === 'close') {
+                    window.history.back();
+                    return;
+                }
+
+                if (type === 'new') {
+                    window.location.href = "/journal-entries/create";
+                    return;
+                }
+
+                return;
             }
+
+            await axios.post("/journal-entries", payload);
+            showToast('success', 'Record saved successfully.');
+            setIsDirty(false);
+
+            if (type === 'close') {
+                window.history.back();
+                return;
+            }
+
+            if (type === 'new') {
+                window.location.href = "/journal-entries/create";
+                return;
+            }
+
+            return;
         } catch (error) {
             console.error(error.response?.data || error);
             alert(error.response?.data?.message || "Error saving entry ❌");

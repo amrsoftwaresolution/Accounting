@@ -147,7 +147,20 @@ class InvoiceController extends Controller
             return $journalEntry;
         });
 
-        return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'credit Sale saved successfully.');
+        $action = $request->input('action', 'save');
+
+        if ($action === 'close') {
+            return redirect()->back()->with('success', 'credit Sale saved successfully.');
+        }
+
+        if ($action === 'new') {
+            return redirect()->route('invoice')->with('success', 'credit Sale saved successfully.');
+        }
+
+        return response()->json([
+            'message' => 'credit Sale saved successfully.',
+            'id' => $journalEntry->id,
+        ]);
     }
 
     public function edit(JournalEntry $journalEntry)
@@ -267,6 +280,10 @@ class InvoiceController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
         DB::transaction(function () use ($journalEntry) {
             $invoice = \App\Models\Invoice::find($journalEntry->transactionable_id);
 
@@ -278,7 +295,12 @@ class InvoiceController extends Controller
             $journalEntry->lines()->delete();
             $journalEntry->delete();
         });
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Invoice deleted successfully.');
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Invoice deleted successfully.');
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Invoice deleted successfully.');
     }
 }

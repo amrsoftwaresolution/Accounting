@@ -272,14 +272,22 @@ class JournalEntryController extends Controller
     /**
      * Delete a JournalEntry.
      */
-    public function destroy(JournalEntry $journalEntry)
-    {
-        return DB::transaction(function () use ($journalEntry) {
-            $journalEntry->lines->each->delete();
-            $journalEntry->delete();
+public function destroy(JournalEntry $journalEntry)
+{
+   
+    $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+        ?? $journalEntry->lines->first()?->chart_of_account_id 
+        ?? $journalEntry->lines->first()?->account_id;
 
-            return redirect()->back()
-                ->with('success', 'Journal Entry deleted successfully.');
-        });
+    $journalEntry->lines->each->delete();
+    $journalEntry->delete();
+
+    if ($chartOfAccountId) {
+        return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+            ->with('success', 'Journal Entry deleted successfully.');
     }
+
+    return redirect()->route('chart-of-account.index')
+        ->with('success', 'Journal Entry deleted successfully.');
+}
 }

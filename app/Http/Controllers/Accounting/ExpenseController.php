@@ -217,12 +217,17 @@ class ExpenseController extends Controller
             // No session saving needed
 
             if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Payment saved successfully.');
-            } elseif ($action === 'new') {
+                return redirect()->back()->with('success', 'Payment saved successfully.');
+            }
+
+            if ($action === 'new') {
                 return redirect()->route('expense')->with('success', 'Payment saved successfully.');
             }
 
-            return redirect()->route('expense.edit', $journalEntry->id)->with('success', 'Payment saved successfully.');
+            return response()->json([
+                'message' => 'Payment saved successfully.',
+                'id' => $journalEntry->id,
+            ]);
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -435,19 +440,25 @@ class ExpenseController extends Controller
     }
 
     public function destroy(JournalEntry $journalEntry)
-    {
-        DB::transaction(function () use ($journalEntry) {
-            $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
+{
+    // Must grab this BEFORE the transaction deletes the lines
+    $paymentAccountId = $journalEntry->lines()
+        ->where('credit', '>', 0)
+        ->value('chart_of_acc_id');
 
-            if ($expense) {
-                $expense->items()->delete();
-                $expense->delete();
-            }
+    DB::transaction(function () use ($journalEntry) {
+        $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
 
-            $journalEntry->lines()->delete();
-            $journalEntry->delete();
-        });
+        if ($expense) {
+            $expense->items()->delete();
+            $expense->delete();
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Expense deleted successfully.');
-    }
+        $journalEntry->lines()->delete();
+        $journalEntry->delete();
+    });
+
+    return redirect()->route('chart-of-account.history', ['chart_of_account' => $paymentAccountId])
+        ->with('success', 'Expense deleted successfully.');
+}
 }

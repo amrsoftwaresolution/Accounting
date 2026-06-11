@@ -9,6 +9,7 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
+import { showToast } from "@/Components/ToastNotification";
 
 export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceiptNo = "", receipt = null }) {
     const company = auth.company;
@@ -167,6 +168,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             preserveScroll: true,
             preserveState: actionType === 'save',
             onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 if (actionType === 'new') {
                     reset();
                     clearErrors();
@@ -192,7 +194,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             }}
         >
             <Head title="Cash sale" />
-            
+
             {/* Error Banner */}
             {errors.error && (
                 <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">

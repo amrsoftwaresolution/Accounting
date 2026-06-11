@@ -6,6 +6,7 @@ import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
+import { showToast } from "@/Components/ToastNotification";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 
 export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote = null }) {
@@ -64,6 +65,8 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
         return new Date().toISOString().split('T')[0];
     };
 
+    const [currentAction, setCurrentAction] = useState('save');
+
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: creditNote?.customer || "",
         email: creditNote?.email || "",
@@ -71,6 +74,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
         creditNoteNo: creditNote?.creditNoteNo || nextCreditNoteNo || "1001",
         memo: creditNote?.memo || "",
         statementMessage: creditNote?.statementMessage || "",
+        action: 'save',
         items: creditNote?.items || [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
@@ -114,6 +118,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     useEffect(() => {
         transform((data) => ({
             ...data,
+            action: currentAction,
             items: data.items
                 .filter(item => item.product)
                 .map(item => ({
@@ -122,7 +127,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
                     amount: String(item.amount).replace(/,/g, '')
                 }))
         }));
-    }, []);
+    }, [currentAction, transform]);
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -156,12 +161,15 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     };
 
     const handleSave = (action = 'save') => {
+        setCurrentAction(action);
+
         const url = creditNote?.id ? route('credit-note.update', creditNote.id) : route('credit-note.store');
         const method = creditNote?.id ? patch : post;
 
         method(url, {
             preserveScroll: true,
             onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 if (action === 'new') {
                     reset();
                     clearErrors();

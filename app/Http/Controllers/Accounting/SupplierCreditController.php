@@ -210,7 +210,20 @@ class SupplierCreditController extends Controller
                 return $journalEntry;
             });
 
-            return redirect()->route('supplier-credit.edit', $journalEntry->id)->with('success', 'Supplier Return saved successfully.');
+            $action = $request->input('action', 'save');
+
+            if ($action === 'close') {
+                return redirect()->back()->with('success', 'Supplier Return saved successfully.');
+            }
+
+            if ($action === 'new') {
+                return redirect()->route('supplier-credit')->with('success', 'Supplier Return saved successfully.');
+            }
+
+            return response()->json([
+                'message' => 'Supplier Return saved successfully.',
+                'id' => $journalEntry->id,
+            ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -391,6 +404,10 @@ class SupplierCreditController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
         DB::transaction(function () use ($journalEntry) {
             $creditNote = SupplierCreditNote::find($journalEntry->transactionable_id);
 
@@ -402,8 +419,13 @@ class SupplierCreditController extends Controller
             $journalEntry->lines()->delete();
             $journalEntry->delete();
         });
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Supplier Return deleted successfully.');
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Supplier Return deleted successfully.');
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Supplier Return deleted successfully.');
     }
 
     private function getNextNo()

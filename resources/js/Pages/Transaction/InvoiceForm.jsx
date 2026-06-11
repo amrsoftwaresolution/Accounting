@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm, usePage } from "@inertiajs/react";
+import { showToast } from "@/Components/ToastNotification";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
@@ -132,6 +133,8 @@ export default function InvoiceForm({
         { label: "Due on receipt", value: "Due on receipt" }
     ]);
 
+    const [currentAction, setCurrentAction] = useState('save');
+
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: invoice?.customer || "",
         email: invoice?.email || "",
@@ -141,6 +144,7 @@ export default function InvoiceForm({
         dueDate: initialDueDate,
         invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
         memo: invoice?.memo || "",
+        action: 'save',
         items: invoice?.items || [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
@@ -150,6 +154,7 @@ export default function InvoiceForm({
     useEffect(() => {
         transform((data) => ({
             ...data,
+            action: currentAction,
             items: data.items
                 .filter(item => item.product)
                 .map(item => ({
@@ -158,7 +163,7 @@ export default function InvoiceForm({
                     amount: String(item.amount).replace(/,/g, '')
                 }))
         }));
-    }, [transform]);
+    }, [currentAction, transform]);
 
     useEffect(() => {
         if (invoice) {
@@ -241,12 +246,15 @@ export default function InvoiceForm({
     };
 
     const handleSave = (action = 'save') => {
+        setCurrentAction(action);
+
         const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
         const method = invoice?.id ? patch : post;
 
         method(url, {
             preserveScroll: true,
             onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 if (action === 'new') {
                     reset();
                     clearErrors();

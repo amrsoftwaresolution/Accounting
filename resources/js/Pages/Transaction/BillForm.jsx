@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
+import { showToast } from "@/Components/ToastNotification";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
@@ -256,7 +257,14 @@ export default function BillForm({
         const method = bill?.id ? patch : post;
 
         method(url, {
-            preserveScroll: true
+            preserveScroll: true,
+            onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
+                if (action === 'new') {
+                    reset();
+                    clearErrors();
+                }
+            }
         });
     };
 

@@ -8,6 +8,7 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
+import { showToast } from "@/Components/ToastNotification";
 import axios from "axios";
 
 export default function ExpenseForm({
@@ -221,6 +222,7 @@ export default function ExpenseForm({
         method(url, {
             preserveScroll: true,
             onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 if (action === 'new') {
                     reset();
                     clearErrors();

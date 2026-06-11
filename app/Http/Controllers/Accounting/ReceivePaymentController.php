@@ -149,14 +149,17 @@ class ReceivePaymentController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Payment received successfully.');
+                return redirect()->back()->with('success', 'Payment received successfully.');
             }
 
             if ($action === 'new') {
                 return redirect()->route('payment')->with('success', 'Payment received successfully.');
             }
 
-            return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment received successfully.');
+            return response()->json([
+                'message' => 'Payment received successfully.',
+                'id' => $journalEntry->id,
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -293,6 +296,10 @@ class ReceivePaymentController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
+            ?? $journalEntry->lines->first()?->chart_of_account_id 
+            ?? $journalEntry->lines->first()?->account_id;
+
         DB::transaction(function () use ($journalEntry) {
             $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
 
@@ -305,6 +312,12 @@ class ReceivePaymentController extends Controller
             $journalEntry->delete();
         });
 
-        return redirect()->route('dashboard')->with('success', 'Payment deleted successfully.');
+        if ($chartOfAccountId) {
+            return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
+                ->with('success', 'Payment deleted successfully.');
+        }
+
+        return redirect()->route('chart-of-account.index')
+            ->with('success', 'Payment deleted successfully.');
     }
 }

@@ -9,13 +9,13 @@ import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 
-export default function ReceivePaymentForm({ paymentMethods = [], payment = null }) {
+export default function PayBill({ paymentMethods = [], payment = null }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || 'LKR';
+    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || '$';
 
-    const [customerOptions, setCustomerOptions] = useState([]);
+    const [supplierOptions, setSupplierOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
-    const [invoices, setInvoices] = useState([]);
+    const [bills, setBills] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
 
     // Modal States
@@ -26,128 +26,120 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     const [currentAction, setCurrentAction] = useState('save');
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
-        customer: payment?.customer || "",
-        email: payment?.email || "",
+        supplier: payment?.supplier || "",
         paymentDate: payment?.paymentDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         paymentMethod: payment?.paymentMethod || "",
         referenceNo: payment?.referenceNo || "",
-        depositTo: payment?.depositTo || "",
-        amountReceived: payment?.amountReceived || "0.00",
+        paymentAccount: payment?.paymentAccount || "",
+        amount: payment?.amount || "0.00",
         memo: payment?.memo || "",
         action: 'save',
     });
 
-
-    const handleCustomerChange = (val) => {
-        setData(prev => ({ ...prev, customer: val }));
+    const handleSupplierChange = (val) => {
+        setData(prev => ({ ...prev, supplier: val }));
         if (val) {
-            axios.get(route('api.customers.info', val)).then(res => {
-                if (res.data && res.data.email) {
-                    setData(prev => ({ ...prev, customer: val, email: res.data.email }));
-                }
-            }).catch(err => console.error("Failed to fetch customer info:", err));
-
-            // Fetch outstanding invoices
+            // Fetch outstanding bills
             const url = payment?.payment_id
-                ? route('api.customers.invoices', val) + '?payment_id=' + payment.payment_id
-                : route('api.customers.invoices', val);
+                ? route('api.suppliers.bills', val) + '?payment_id=' + payment.payment_id
+                : route('api.suppliers.bills', val);
             axios.get(url).then(res => {
-                setInvoices(res.data.map(inv => ({
-                    ...inv,
-                    applied: inv.applied || 0,
-                    checked: inv.applied > 0
+                setBills(res.data.map(bill => ({
+                    ...bill,
+                    applied: bill.applied || 0,
+                    checked: bill.applied > 0
                 })));
-            }).catch(err => console.error("Failed to fetch customer invoices:", err));
+            }).catch(err => console.error("Failed to fetch supplier bills:", err));
         } else {
-            setInvoices([]);
-            setData(prev => ({ ...prev, customer: "", email: "" }));
+            setBills([]);
+            setData(prev => ({ ...prev, supplier: "" }));
         }
     };
 
-    const handleInvoiceCheckToggle = (originalIdx, isChecked) => {
-        setInvoices(prev => {
+    const handleBillCheckToggle = (originalIdx, isChecked) => {
+        setBills(prev => {
             const updated = [...prev];
-            const inv = updated[originalIdx];
-            inv.checked = isChecked;
+            const bill = updated[originalIdx];
+            bill.checked = isChecked;
 
-            const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
+            const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
 
             if (isChecked) {
-                if (amountReceivedVal === 0) {
-                    inv.applied = inv.open_balance;
+                if (amountVal === 0) {
+                    bill.applied = bill.open_balance;
                 } else {
                     const otherApplied = updated.reduce((sum, item, idx) => {
                         if (idx === originalIdx) return sum;
                         return sum + (parseFloat(item.applied) || 0);
                     }, 0);
-                    const remaining = Math.max(0, amountReceivedVal - otherApplied);
-                    inv.applied = Math.min(inv.open_balance, remaining);
+                    const remaining = Math.max(0, amountVal - otherApplied);
+                    bill.applied = Math.min(bill.open_balance, remaining);
                 }
             } else {
-                inv.applied = 0;
+                bill.applied = 0;
             }
 
             const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            if (amountReceivedVal === 0 || totalApplied > amountReceivedVal) {
-                setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            if (amountVal === 0 || totalApplied > amountVal) {
+                setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
             return updated;
         });
     };
 
-    const handleInvoicePaymentChange = (originalIdx, value) => {
+    const handleBillPaymentChange = (originalIdx, value) => {
         const cleanVal = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
 
-        setInvoices(prev => {
+        setBills(prev => {
             const updated = [...prev];
-            const inv = updated[originalIdx];
-            inv.applied = Math.min(inv.open_balance, cleanVal);
-            inv.checked = inv.applied > 0;
+            const bill = updated[originalIdx];
+            bill.applied = Math.min(bill.open_balance, cleanVal);
+            bill.checked = bill.applied > 0;
 
             const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
-            if (amountReceivedVal === 0 || totalApplied > amountReceivedVal) {
-                setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
+            if (amountVal === 0 || totalApplied > amountVal) {
+                setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
             return updated;
         });
     };
 
-    const filteredInvoices = invoices.filter(inv => {
+    const filteredBills = bills.filter(bill => {
         if (!searchQuery) return true;
-        return inv.invoice_no.toLowerCase().includes(searchQuery.toLowerCase());
+        return bill.bill_no.toLowerCase().includes(searchQuery.toLowerCase());
     });
 
     const handleSelectAllToggle = (isChecked) => {
-        setInvoices(prev => {
-            const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
-            let currentUnapplied = amountReceivedVal;
+        setBills(prev => {
+            const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
+            let currentUnapplied = amountVal;
 
-            const updated = prev.map(inv => {
-                const isFiltered = filteredInvoices.some(f => f.id === inv.id);
-                if (!isFiltered) return inv;
+            const updated = prev.map(bill => {
+                const isFiltered = filteredBills.some(f => f.id === bill.id);
+                if (!isFiltered) return bill;
 
                 if (isChecked) {
-                    if (amountReceivedVal === 0) {
+                    if (amountVal === 0) {
                         return {
-                            ...inv,
+                            ...bill,
                             checked: true,
-                            applied: inv.open_balance
+                            applied: bill.open_balance
                         };
                     } else {
-                        const apply = Math.min(inv.open_balance, currentUnapplied);
+                        const apply = Math.min(bill.open_balance, currentUnapplied);
                         currentUnapplied = Math.max(0, currentUnapplied - apply);
                         return {
-                            ...inv,
+                            ...bill,
                             checked: apply > 0,
                             applied: apply
                         };
                     }
                 } else {
                     return {
-                        ...inv,
+                        ...bill,
                         checked: false,
                         applied: 0
                     };
@@ -155,8 +147,8 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
             });
 
             const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            if (amountReceivedVal === 0 || totalApplied > amountReceivedVal) {
-                setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            if (amountVal === 0 || totalApplied > amountVal) {
+                setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
             }
 
             return updated;
@@ -164,97 +156,95 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     };
 
     const handleClearPayment = () => {
-        setInvoices(prev => prev.map(inv => ({
-            ...inv,
+        setBills(prev => prev.map(bill => ({
+            ...bill,
             applied: 0,
             checked: false
         })));
-        setData("amountReceived", "0.00");
+        setData("amount", "0.00");
     };
 
-    const amountToApply = invoices.reduce((sum, inv) => sum + (parseFloat(inv.applied) || 0), 0);
-    const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
-    const amountToCredit = Math.max(0, amountReceivedVal - amountToApply);
+    const amountToApply = bills.reduce((sum, bill) => sum + (parseFloat(bill.applied) || 0), 0);
+    const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
+    const amountToCredit = Math.max(0, amountVal - amountToApply);
 
-    const fetchCustomers = (search = "") => {
-        axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
-            setCustomerOptions(res.data);
+    const fetchSuppliers = (search = "") => {
+        axios.get(route('api.payees', { search, type: 'Supplier' })).then(res => {
+            setSupplierOptions(res.data);
         });
     };
 
     const fetchAccounts = (search = "") => {
         axios.get(route('api.accounts', { search })).then(res => {
+            // Usually we only pay from Banks, Cash, Credit Cards. But we'll leave it open like Receive Payment.
             setAccountOptions(res.data);
         });
     };
 
     useEffect(() => {
-        fetchCustomers();
+        fetchSuppliers();
         fetchAccounts();
     }, []);
 
     useEffect(() => {
         if (payment) {
             setData({
-                customer: payment.customer || "",
-                email: payment.email || "",
+                supplier: payment.supplier || "",
                 paymentDate: payment.paymentDate || "",
                 paymentMethod: payment.paymentMethod || "",
                 referenceNo: payment.referenceNo || "",
-                depositTo: payment.depositTo || "",
-                amountReceived: payment.amountReceived || "0.00",
+                paymentAccount: payment.paymentAccount || "",
+                amount: payment.amount || "0.00",
                 memo: payment.memo || "",
                 action: 'save'
             });
-            if (payment.customer) {
-                axios.get(route('api.customers.invoices', payment.customer) + '?payment_id=' + payment.payment_id)
+            if (payment.supplier) {
+                axios.get(route('api.suppliers.bills', payment.supplier) + '?payment_id=' + payment.payment_id)
                     .then(res => {
-                        setInvoices(res.data.map(inv => ({
-                            ...inv,
-                            applied: inv.applied || 0,
-                            checked: inv.applied > 0
+                        setBills(res.data.map(bill => ({
+                            ...bill,
+                            applied: bill.applied || 0,
+                            checked: bill.applied > 0
                         })));
                     })
-                    .catch(err => console.error("Failed to fetch customer invoices:", err));
+                    .catch(err => console.error("Failed to fetch supplier bills:", err));
             }
         } else {
             setData({
-                customer: "",
-                email: "",
+                supplier: "",
                 paymentDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                 paymentMethod: "",
                 referenceNo: "",
-                depositTo: "",
-                amountReceived: "0.00",
+                paymentAccount: "",
+                amount: "0.00",
                 memo: "",
                 action: 'save'
             });
-            setInvoices([]);
+            setBills([]);
         }
         clearErrors();
     }, [payment?.id]);
 
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
 
-
     useEffect(() => {
         transform((data) => ({
             ...data,
-            amountReceived: String(data.amountReceived).replace(/,/g, ''),
+            amount: String(data.amount).replace(/,/g, ''),
             action: currentAction,
-            invoices: invoices
-                .filter(inv => inv.applied > 0)
-                .map(inv => ({
-                    id: inv.id,
-                    amount: String(inv.applied)
+            bills: bills
+                .filter(bill => bill.applied > 0)
+                .map(bill => ({
+                    id: bill.id,
+                    amount: String(bill.applied)
                 }))
         }));
-    }, [currentAction, data.amountReceived, invoices]);
+    }, [currentAction, data.amount, bills]);
 
     const submit = (action = 'save') => {
         setCurrentAction(action);
 
-        const url = payment?.id ? route('payment.update', payment.id) : route('payment.store');
+        const url = payment?.id ? route('pay-bill.update', payment.id) : route('pay-bill.store');
         const submitMethod = payment?.id ? patch : post;
 
         submitMethod(url, {
@@ -272,16 +262,16 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
 
     return (
         <TransactionLayout
-            historyType="recivepayment"
-            title={payment?.id ? `Edit Payment no.${data.referenceNo}` : "Receive Payment"}
-            amount={parseFloat(data.amountReceived || 0).toFixed(2)}
+            historyType="pay_bill"
+            title={payment?.id ? `Edit Bill Payment no.${data.referenceNo}` : "Pay Bill"}
+            amount={parseFloat(data.amount || 0).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
             onSaveAndNew={() => submit('new')}
             processing={processing}
             dirty={Object.keys(data).some((key) => key !== 'action' && String(data[key]) !== "")}
         >
-            <Head title="Receive Payment" />
+            <Head title="Pay Bill" />
 
             {/* Error Banner */}
             {errors.error && (
@@ -291,30 +281,30 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
             )}
 
             <div className="py-6 space-y-8">
-                {/* ROW 1: Customer & Summaries */}
+                {/* ROW 1: Supplier & Summaries */}
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
                         <div className="w-[380px]">
                             <SearchableSelect
-                                label="Customer"
-                                options={customerOptions}
-                                value={data.customer}
-                                onSearch={fetchCustomers}
+                                label="Supplier"
+                                options={supplierOptions}
+                                value={data.supplier}
+                                onSearch={fetchSuppliers}
                                 onAddNew={() => setIsPayeeModalOpen(true)}
-                                onChange={handleCustomerChange}
-                                placeholder="Choose a customer"
+                                onChange={handleSupplierChange}
+                                placeholder="Choose a supplier"
                                 size="sm"
-                                error={errors.customer}
+                                error={errors.supplier}
                             />
                         </div>
                     </div>
 
                     {/* Amount Summary */}
                     <div className="text-right flex flex-col items-end">
-                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Amount Received</p>
+                        <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Amount Paid</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
                             <span className="text-slate-400 text-[10px] font-medium mr-1">{currencyPrefix}</span>
-                            {parseFloat(data.amountReceived || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {parseFloat(data.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                     </div>
                 </div>
@@ -359,39 +349,38 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                     </div>
                     <div className="w-[220px]">
                         <SearchableSelect
-                            label="Deposit To"
+                            label="Payment Account"
                             options={accountOptions}
                             onSearch={fetchAccounts}
                             onAddNew={() => setIsAccountModalOpen(true)}
-                            value={data.depositTo}
-                            onChange={(val) => setData("depositTo", val)}
+                            value={data.paymentAccount}
+                            onChange={(val) => setData("paymentAccount", val)}
                             placeholder="Select Account"
                             size="sm"
-                            error={errors.depositTo}
+                            error={errors.paymentAccount}
                         />
                     </div>
                     <div className="w-[180px]">
                         <CommonInput
                             type="text"
-                            label="Amount Received"
+                            label="Amount Paid"
                             placeholder="0.00"
-                            value={data.amountReceived}
+                            value={data.amount}
                             onChange={(e) => {
-                                // Allow only numbers and decimal point
                                 const val = e.target.value.replace(/[^0-9.]/g, '');
-                                setData("amountReceived", val);
+                                setData("amount", val);
                             }}
                             onBlur={(e) => {
                                 const val = parseFloat(e.target.value || 0);
-                                setData("amountReceived", val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                setData("amount", val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
                             }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
-                                setData("amountReceived", val);
+                                setData("amount", val);
                             }}
                             size="sm"
                             inputClass="text-right font-semibold"
-                            error={errors.amountReceived}
+                            error={errors.amount}
                         />
                     </div>
                 </div>
@@ -411,15 +400,15 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 </div>
 
                 {/* Outstanding Transactions Section */}
-                {data.customer && (
+                {data.supplier && (
                     <div className="pt-6 border-t border-slate-100 space-y-4 animate-in fade-in duration-300">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Outstanding Transactions</h3>
+                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Outstanding Bills</h3>
                             <div className="flex items-center gap-3">
                                 <div className="relative w-48">
                                     <input
                                         type="text"
-                                        placeholder="Find Credit Sale No."
+                                        placeholder="Find Bill No."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="w-full pl-3 pr-8 h-[30px] bg-white border border-slate-350 rounded-md text-xs focus:border-green-600 focus:ring-0 focus:outline-hidden"
@@ -434,19 +423,6 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                                         </button>
                                     )}
                                 </div>
-                                <button
-                                    type="button"
-                                    className="px-3 h-[30px] rounded-md border border-green-650 text-green-655 font-bold text-[10px] uppercase tracking-wider hover:bg-green-50 transition-all flex items-center justify-center gap-1"
-                                >
-                                    Filter <span className="text-[9px] font-bold">&gt;</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setSearchQuery("")}
-                                    className="text-slate-505 hover:text-slate-850 text-[10px] uppercase tracking-wider font-bold"
-                                >
-                                    All
-                                </button>
                             </div>
                         </div>
 
@@ -457,7 +433,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                                         <th className="p-3 w-10 text-center">
                                             <input
                                                 type="checkbox"
-                                                checked={filteredInvoices.length > 0 && filteredInvoices.every(inv => inv.checked)}
+                                                checked={filteredBills.length > 0 && filteredBills.every(bill => bill.checked)}
                                                 onChange={(e) => handleSelectAllToggle(e.target.checked)}
                                                 className="rounded-sm border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                             />
@@ -470,46 +446,46 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                    {filteredInvoices.map((inv) => {
-                                        const originalIdx = invoices.findIndex(i => i.id === inv.id);
+                                    {filteredBills.map((bill) => {
+                                        const originalIdx = bills.findIndex(b => b.id === bill.id);
                                         return (
-                                            <tr key={inv.id} className={`hover:bg-slate-50/20 transition-colors ${inv.checked ? 'bg-green-50/10' : ''}`}>
+                                            <tr key={bill.id} className={`hover:bg-slate-50/20 transition-colors ${bill.checked ? 'bg-green-50/10' : ''}`}>
                                                 <td className="p-3 text-center">
                                                     <input
                                                         type="checkbox"
-                                                        checked={inv.checked}
-                                                        onChange={(e) => handleInvoiceCheckToggle(originalIdx, e.target.checked)}
+                                                        checked={bill.checked}
+                                                        onChange={(e) => handleBillCheckToggle(originalIdx, e.target.checked)}
                                                         className="rounded-sm border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-blue-600 font-bold hover:underline cursor-pointer">
-                                                    Credit Sale # {inv.invoice_no} ({new Date(inv.invoice_date).toLocaleDateString('en-GB')})
+                                                    Bill # {bill.bill_no} ({new Date(bill.bill_date).toLocaleDateString('en-GB')})
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-medium">
-                                                    {new Date(inv.due_date).toLocaleDateString('en-GB')}
+                                                    {new Date(bill.due_date).toLocaleDateString('en-GB')}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-mono text-right">
-                                                    {currencyPrefix} {parseFloat(inv.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    {currencyPrefix} {parseFloat(bill.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-mono text-right">
-                                                    {currencyPrefix} {parseFloat(inv.open_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    {currencyPrefix} {parseFloat(bill.open_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <input
                                                         type="text"
                                                         placeholder="0.00"
-                                                        value={inv.applied || ""}
-                                                        onChange={(e) => handleInvoicePaymentChange(originalIdx, e.target.value)}
+                                                        value={bill.applied || ""}
+                                                        onChange={(e) => handleBillPaymentChange(originalIdx, e.target.value)}
                                                         className="w-full px-2.5 h-[30px] border border-slate-300 rounded-sm text-xs font-mono text-slate-800 text-right focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-white"
                                                     />
                                                 </td>
                                             </tr>
                                         );
                                     })}
-                                    {filteredInvoices.length === 0 && (
+                                    {filteredBills.length === 0 && (
                                         <tr>
                                             <td colSpan="6" className="px-4 py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-widest">
-                                                No outstanding credit sales found
+                                                No outstanding bills found
                                             </td>
                                         </tr>
                                     )}
@@ -517,7 +493,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                             </table>
                         </div>
 
-                        {invoices.length > 0 && (
+                        {bills.length > 0 && (
                             <div className="flex justify-between items-start pt-4">
                                 <button
                                     type="button"
@@ -551,11 +527,11 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 onClose={() => setIsPayeeModalOpen(false)}
                 onSuccess={(newPayee) => {
                     if (newPayee) {
-                        fetchCustomers();
-                        setData("customer", newPayee.value);
+                        fetchSuppliers();
+                        setData("supplier", newPayee.value);
                     }
                 }}
-                initialType="customer"
+                initialType="supplier"
             />
 
             <QuickAddAccount
@@ -564,7 +540,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 onSuccess={(newAccount) => {
                     fetchAccounts();
                     if (newAccount) {
-                        setData("depositTo", newAccount.value);
+                        setData("paymentAccount", newAccount.value);
                     }
                 }}
             />
