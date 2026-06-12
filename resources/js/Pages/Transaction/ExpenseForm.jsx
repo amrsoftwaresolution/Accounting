@@ -228,12 +228,16 @@ export default function ExpenseForm({
             setSavedOnce(true);
             
             if (action === 'new') {
+                const currentRef = data.ref || nextExpenseNo || 'EXP-0001';
+                const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 0;
+                const nextRef = 'EXP-' + String(num + 1).padStart(4, '0');
+
                 reset();
                 clearErrors();
                 fetchAccounts();
                 const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                 setData({
-                    payee: "", account: "", date: cachedDate, method: "", ref: nextExpenseNo || "", memo: "",
+                    payee: "", account: "", date: cachedDate, method: "", ref: nextRef, memo: "",
                     items: [{ category: "", description: "", amount: "0.00" }],
                     itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
                     action: 'save'
