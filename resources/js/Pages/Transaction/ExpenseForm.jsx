@@ -216,6 +216,15 @@ export default function ExpenseForm({
         setData("date", dateVal);
     };
 
+    const handleAccountChange = (val) => {
+        setData("account", val);
+        if (!expense?.id && val) {
+            axios.get(route('api.expenses.next-ref', { account_id: val })).then(res => {
+                setData("ref", res.data.next_ref);
+            });
+        }
+    };
+
     const handleSave = (action = 'save') => {
     actionRef.current = action;
     const url = expense?.id ? route('expense.update', expense.id) : route('expense.store');
@@ -327,7 +336,7 @@ export default function ExpenseForm({
                                     label="Payment account"
                                     placeholder="Select account"
                                     value={data.account}
-                                    onChange={(val) => setData("account", val)}
+                                    onChange={handleAccountChange}
                                     options={accountOptions}
                                     size="sm"
                                     error={errors.account}

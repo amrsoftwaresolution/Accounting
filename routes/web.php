@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/payees', [\App\Http\Controllers\Api\LookupController::class, 'payees'])->name('api.payees');
     Route::get('/api/accounts', [\App\Http\Controllers\Api\LookupController::class, 'accounts'])->name('api.accounts');
     Route::get('/api/accounts/next-code', [\App\Http\Controllers\Api\LookupController::class, 'nextCode'])->name('api.accounts.next-code');
+    Route::get('/api/expenses/next-ref', [\App\Http\Controllers\Api\LookupController::class, 'nextExpenseRef'])->name('api.expenses.next-ref');
     Route::post('/api/accounts/save-date', [\App\Http\Controllers\Api\LookupController::class, 'saveOpeningBalanceDate'])->name('api.accounts.save-date');
     Route::get('/api/items', [\App\Http\Controllers\Api\LookupController::class, 'items'])->name('api.items');
     Route::get('/api/items/create-options', [\App\Http\Controllers\Api\LookupController::class, 'itemCreateOptions'])->name('api.items.create-options');
