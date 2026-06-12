@@ -131,15 +131,24 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
     };
 
     const getBalanceTargetIndex = (updatedRows, currentIndex, changedField) => {
-        const oppositeField = changedField === "debit" ? "credit" : "debit";
+    const oppositeField = changedField === "debit" ? "credit" : "debit";
+    const sameField = changedField;
 
-        for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
-            if (parseCurrency(updatedRows[i][oppositeField]) === 0) {
-                return i;
-            }
+    // First pass: find empty row after current
+    for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
+        if (!updatedRows[i][oppositeField] || parseCurrency(updatedRows[i][oppositeField]) === 0) {
+            return i;
         }
+    }
 
-        return -1;
+    // Second pass: find any row after current with no same-field value
+    for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
+        if (!updatedRows[i][sameField] || parseCurrency(updatedRows[i][sameField]) === 0) {
+            return i;
+        }
+    }
+
+    return -1;
     };
 
     const addJournalLine = () => {
@@ -156,28 +165,49 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         setIsDirty(true);
     };
 
-    const handleItemChange = (index, field, value) => {
-        setItems((prev) => {
-            const updated = prev.map((row, rowIndex) =>
-                rowIndex === index ? { ...row, [field]: value } : row
-            );
+// Handles live typing - NO auto-balance
+const handleItemChangeRaw = (index, field, value) => {
+    setItems((prev) => {
+        const updated = prev.map((row, rowIndex) =>
+            rowIndex === index ? { ...row, [field]: value } : row
+        );
+        const numVal = parseCurrency(value);
+        if (field === "debit" && numVal > 0) updated[index].credit = "";
+        if (field === "credit" && numVal > 0) updated[index].debit = "";
+        return updated;
+    });
+    setIsDirty(true);
+};
 
-            const numVal = parseCurrency(value);
-            if (field === "debit" && numVal > 0) updated[index].credit = "";
-            if (field === "credit" && numVal > 0) updated[index].debit = "";
+// Handles blur (after formatting) - WITH auto-balance
+const handleItemChange = (index, field, value) => {
+    setItems((prev) => {
+        const updated = prev.map((row, rowIndex) =>
+            rowIndex === index ? { ...row, [field]: value } : row
+        );
 
-            const suggestion = getSuggestedBalance(updated);
-            const targetIndex = getBalanceTargetIndex(updated, index, field);
+        const numVal = parseCurrency(value);
+        if (field === "debit" && numVal > 0) updated[index].credit = "";
+        if (field === "credit" && numVal > 0) updated[index].debit = "";
 
-            if (suggestion && targetIndex >= 0) {
-                const oppositeField = field === "debit" ? "credit" : "debit";
-                updated[targetIndex][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
+        const suggestion = getSuggestedBalance(updated);
+        const targetIndex = getBalanceTargetIndex(updated, index, field);
+
+        if (index === 0 && prev.length === 2) {
+            const oppositeField = field === "debit" ? "credit" : "debit";
+            if (suggestion) {
+                updated[1][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
+                updated[1][field] = "";
             }
+        } else if (suggestion && targetIndex >= 0) {
+            const oppositeField = field === "debit" ? "credit" : "debit";
+            updated[targetIndex][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
+        }
 
-            return updated;
-        });
-        setIsDirty(true);
-    };
+        return updated;
+    });
+    setIsDirty(true);
+};
 
     const handleSave = (type = 'save') => {
         if (Math.abs(totals.debit - totals.credit) > 0.001) {
@@ -208,9 +238,12 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                 setIsDirty(false);
                 if (type === 'new') {
                     setItems([createBlankLine(), createBlankLine()]);
+                    const currentNo = form.journalNo || nextJournalNo || '1';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 0;
+                    const nextNo = String(num + 1);
                     setForm({
                         date: getInitialDate(),
-                        journalNo: nextJournalNo || "",
+                        journalNo: nextNo,
                         memo: ""
                     });
                 }
@@ -274,7 +307,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             <LineItemsTable
                 columns={JOURNAL_COLUMNS}
                 items={items}
-                handleItemChange={handleItemChange}
+                handleItemChange={handleItemChangeRaw}
+                onCurrencyBlur={handleItemChange}
                 addRow={addJournalLine}
                 removeRow={(index) =>
                     setItems((prev) => prev.filter((_, i) => i !== index))

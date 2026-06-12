@@ -276,13 +276,18 @@ const submit = (action = 'save') => {
             setSavedOnce(true);
             if (action === 'new') {
                 setSavedOnce(false);
+                //increass ref number by clicking sav and new
+                const currentRef = data.referenceNo || nextPaymentNo || '1001';
+                const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
+                const nextRef = String(num + 1).padStart(4, '0');
+
                 reset();
                 clearErrors();
                 setInvoices([]);
                 const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                 setData({
                     customer: "", email: "", paymentDate: cachedDate,
-                    paymentMethod: "", referenceNo: nextPaymentNo || "",
+                    paymentMethod: "", referenceNo: nextRef || "",
                     depositTo: "", amountReceived: "0.00", memo: "", action: 'save'
                 });
             }
@@ -294,7 +299,7 @@ const submit = (action = 'save') => {
         <TransactionLayout
             historyType="recivepayment"
             title={payment?.id ? `Edit Payment no.${data.referenceNo}` : "Receive Payment"}
-            amount={parseFloat(data.amountReceived || 0).toFixed(2)}
+            amount={parseFloat(String(data.amountReceived || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
             onSaveAndNew={() => submit('new')}
@@ -334,7 +339,7 @@ const submit = (action = 'save') => {
                         <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Amount Received</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
                             <span className="text-slate-400 text-[10px] font-medium mr-1">{currencyPrefix}</span>
-                            {parseFloat(data.amountReceived || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {parseFloat(String(data.amountReceived || 0).replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                     </div>
                 </div>
@@ -414,6 +419,7 @@ const submit = (action = 'save') => {
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData("amountReceived", val);
+                                setTimeout(() => e.target.select(), 0);
                             }}
                             size="sm"
                             inputClass="text-right font-semibold"

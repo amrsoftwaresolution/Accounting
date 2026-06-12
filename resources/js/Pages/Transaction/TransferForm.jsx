@@ -12,6 +12,8 @@ export default function TransferForm({ transfer = null }) {
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
     const [savedOnce, setSavedOnce] = useState(!!transfer?.id);
+    const [currentAction, setCurrentAction] = useState('save');
+
 
     const { data, setData, post, patch, processing, errors, reset, transform } = useForm({
         transfer_from: transfer?.transfer_from || "",
@@ -61,8 +63,6 @@ export default function TransferForm({ transfer = null }) {
             action: currentAction
         }));
     }, [data.amount, transform, currentAction]);
-
-    const [currentAction, setCurrentAction] = useState('save');
 
     const handleSave = (type = 'save') => {
         setCurrentAction(type);
