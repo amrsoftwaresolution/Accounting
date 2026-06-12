@@ -28,7 +28,7 @@ export default function MoreOptionsMenu({
 
         if (copyRoute) {
             const params = recordId ? { copy: recordId } : {};
-            router.get(route(copyRoute, params));
+            router.get(route(copyRoute, params), {}, { replace: true });
             return;
         }
 

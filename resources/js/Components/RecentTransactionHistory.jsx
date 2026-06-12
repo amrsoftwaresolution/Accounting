@@ -89,13 +89,13 @@ export default function RecentTransactionHistory({ historyType = 'invoice', dirt
             return;
         }
 
-        router.visit(target);
+        router.visit(target, { replace: true });
         setOpen(false);
     };
 
     const confirmNavigation = () => {
         if (pendingTarget) {
-            router.visit(pendingTarget);
+            router.visit(pendingTarget, { replace: true });
         }
         setConfirmOpen(false);
         setOpen(false);

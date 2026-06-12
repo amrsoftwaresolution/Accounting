@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from 'react';
 import QuickActionMenu from '@/Components/QuickActionMenu';
 import MoreOptionsMenu from '@/Components/MoreOptionsMenu';
 import ToastNotification from '@/Components/ToastNotification';
+import QuickAddPayee from '@/Components/QuickAddPayee';
+import QuickAddAccount from '@/Components/QuickAddAccount';
 
 export default function AuthenticatedLayout({ header, children }) {
     const page = usePage();
@@ -32,6 +34,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
+    const [quickAddType, setQuickAddType] = useState(null);
 
     const navigation = user.role === 'super_admin' ? [
         { name: 'Packages', href: route('packages.index'), icon: 'inventory' },
@@ -226,7 +229,23 @@ export default function AuthenticatedLayout({ header, children }) {
             <QuickActionMenu
                 isOpen={isQuickMenuOpen}
                 onClose={() => setIsQuickMenuOpen(false)}
+                onOpenQuickAdd={(type) => {
+                    setIsQuickMenuOpen(false);
+                    setQuickAddType(type);
+                }}
             />
+
+            <QuickAddPayee
+                isOpen={quickAddType === 'customer' || quickAddType === 'supplier'}
+                onClose={() => setQuickAddType(null)}
+                initialType={quickAddType === 'customer' ? 'customer' : 'supplier'}
+            />
+
+            <QuickAddAccount
+                isOpen={quickAddType === 'account'}
+                onClose={() => setQuickAddType(null)}
+            />
+
             <ToastNotification />
         </div>
     );

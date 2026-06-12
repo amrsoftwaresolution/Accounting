@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 /**
  * A QuickBooks-style categorized mega-menu for quick global actions.
  */
-export default function QuickActionMenu({ isOpen, onClose }) {
+export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
     const menuRef = useRef(null);
 
     // Close when clicking outside
@@ -32,7 +32,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                 { name: "Receive Payment", href: "/payment" },
                 { name: "Cash Sale", href: "/receipt" },
                 { name: "Sales Return", href: "/credit-note" },
-                { name: "Add Customer", href: route('customers.create'), isSolid: true },
+                { name: "Add Customer", action: 'customer', isSolid: true },
             ]
         },
         {
@@ -44,7 +44,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                { name: "Pay Bill", href: route('pay-bill') },
                 // { name: "Purchase order", href: "#" },
                 { name: "Supplier Return", href: "/SupplierCredit" },
-                { name: "Add Supplier", href: route('suppliers.create'), isSolid: true },
+                { name: "Add Supplier", action: 'supplier', isSolid: true },
             ]
         },
         {
@@ -54,7 +54,7 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                 { name: "Transfer", href: "/transfer" },
                 { name: "Journal entry", href: "/journal" },
                 { name: "Inventory Qty Adj", href: "/inventory-adjustment" },
-                { name: "Add Account", href: route('chart-of-account.create'), isSolid: true },
+                { name: "Add Account", action: 'account', isSolid: true },
             ]
         }
     ];
@@ -94,18 +94,39 @@ export default function QuickActionMenu({ isOpen, onClose }) {
                             </h3>
                             <div className="flex flex-col space-y-1">
                                 {cat.links.map((link, lIdx) => (
-                                    <Link
-                                        key={lIdx}
-                                        href={link.href}
-                                        onClick={onClose}
-                                        className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all group ${link.isSolid
-                                            ? 'text-primary hover:bg-primary/5 mt-2'
-                                            : 'text-slate-600 hover:text-primary hover:bg-primary/5'
-                                            }`}
-                                    >
-                                        {link.isSolid && <span className="mr-1.5">+</span>}
-                                        {link.name}
-                                    </Link>
+                                    link.href ? (
+                                        <Link
+                                            key={lIdx}
+                                            href={link.href}
+                                            onClick={onClose}
+                                            className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all group ${link.isSolid
+                                                ? 'text-primary hover:bg-primary/5 mt-2'
+                                                : 'text-slate-600 hover:text-primary hover:bg-primary/5'
+                                                }`}
+                                        >
+                                            {link.isSolid && <span className="mr-1.5">+</span>}
+                                            {link.name}
+                                        </Link>
+                                    ) : (
+                                        <button
+                                            key={lIdx}
+                                            type="button"
+                                            onClick={() => {
+                                                if (link.action && onOpenQuickAdd) {
+                                                    onOpenQuickAdd(link.action);
+                                                } else {
+                                                    onClose();
+                                                }
+                                            }}
+                                            className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-left group ${link.isSolid
+                                                ? 'text-primary hover:bg-primary/5 mt-2'
+                                                : 'text-slate-600 hover:text-primary hover:bg-primary/5'
+                                                }`}
+                                        >
+                                            {link.isSolid && <span className="mr-1.5">+</span>}
+                                            {link.name}
+                                        </button>
+                                    )
                                 ))}
                             </div>
                         </div>

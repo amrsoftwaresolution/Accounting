@@ -156,6 +156,31 @@ class LookupController extends Controller
     }
 
     /**
+     * Endpoint to get the next expense reference number by payment account
+     */
+    public function nextExpenseRef(Request $request)
+    {
+        $accountId = $request->query('account_id');
+        if (!$accountId) {
+            return response()->json(['next_ref' => '1']);
+        }
+
+        $last = \App\Models\Expense::where('company_id', session('active_company_id'))
+            ->where('payment_account_id', $accountId)
+            ->whereNotNull('reference_no')
+            ->whereRaw('reference_no REGEXP "^[0-9]+$"')
+            ->orderByRaw('CAST(reference_no AS UNSIGNED) DESC')
+            ->first();
+
+        if ($last) {
+            $num = (int) $last->reference_no;
+            return response()->json(['next_ref' => (string)($num + 1)]);
+        }
+
+        return response()->json(['next_ref' => '1']);
+    }
+
+    /**
      * Save the last opening balance date to the session.
      */
     public function saveOpeningBalanceDate(Request $request)
