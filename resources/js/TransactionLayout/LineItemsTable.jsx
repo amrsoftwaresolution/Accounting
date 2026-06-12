@@ -14,6 +14,7 @@ export default function LineItemsTable({
     clearRows,
     totals,
     currencyPrefix = "$",
+    onCurrencyBlur = null,
     hideActions = false
 }) {
     const [draggedIndex, setDraggedIndex] = useState(null);
@@ -112,11 +113,15 @@ export default function LineItemsTable({
     };
 
     const handleCurrencyBlur = (index, key, rawValue) => {
-        // On blur, evaluate math expression and format to exactly 2 decimal places
-        const num = evaluateMathExpression(rawValue);
-        const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const num = evaluateMathExpression(rawValue);
+    const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Use onCurrencyBlur if provided, otherwise fall back to handleItemChange
+    if (onCurrencyBlur) {
+        onCurrencyBlur(index, key, formatted);
+    } else {
         handleItemChange(index, key, formatted);
-    };
+    }
+};
 
     return (
         <div className="mt-6 bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
