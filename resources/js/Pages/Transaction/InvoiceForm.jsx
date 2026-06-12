@@ -268,8 +268,12 @@ export default function InvoiceForm({
             setSavedOnce(true);
             if (action === 'new') {
                 setSavedOnce(false);
+                const currentNo = data.invoiceNo || '1001';
+                const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                const nextNo = String(num + 1).padStart(4, '0');
                 reset();
                 clearErrors();
+                setData('invoiceNo', nextNo);
             }
         }
     });
@@ -393,6 +397,16 @@ export default function InvoiceForm({
                             label="Credit Sale no."
                             value={data.invoiceNo}
                             onChange={(e) => setData('invoiceNo', e.target.value)}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('invoiceNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('invoiceNo', val);
+                            }}      
                             size="sm"
                             inputClass="font-mono text-right"
                         />

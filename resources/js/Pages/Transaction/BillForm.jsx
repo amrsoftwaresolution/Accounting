@@ -279,8 +279,12 @@ useEffect(() => {
                 setSavedOnce(true);
                 if (action === 'new') {
                     setSavedOnce(false);
+                    const currentNo = data.billNo || '1001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                    const nextNo = String(num + 1).padStart(4, '0');
                     reset();
                     clearErrors();
+                    setData('billNo', nextNo);
                 }
             }
         });
@@ -419,6 +423,16 @@ useEffect(() => {
                         <CommonInput
                             label="Bill no."
                             value={data.billNo}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('billNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('billNo', val);
+                            }}  
                             onChange={(e) => setData('billNo', e.target.value)}
                             size="sm"
                         />

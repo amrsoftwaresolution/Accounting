@@ -277,7 +277,7 @@ const submit = (action = 'save') => {
             if (action === 'new') {
                 setSavedOnce(false);
                 //increass ref number by clicking sav and new
-                const currentRef = data.referenceNo || nextPaymentNo || '1001';
+                const currentRef = data.referenceNo || nextPaymentNo || '0001';
                 const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
                 const nextRef = String(num + 1).padStart(4, '0');
 
@@ -377,6 +377,13 @@ const submit = (action = 'save') => {
                             label="Reference no."
                             value={data.referenceNo}
                             onChange={(e) => setData("referenceNo", e.target.value)}
+
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData("referenceNo", val);
+                                // Select all after state update
+                                setTimeout(() => e.target.select(), 0);
+                            }}
                             size="sm"
                             inputClass="font-mono"
                             error={errors.referenceNo}

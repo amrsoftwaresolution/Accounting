@@ -187,7 +187,16 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                 setSavedOnce(true);
                 if (actionType === 'new') {
                     setSavedOnce(false);
+                    const currentNo = data.creditNo || nextCreditNo || '1001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                    const nextNo = String(num + 1).padStart(4, '0');
+                    setData({
+                        ...data,
+                        creditNo: nextNo,
+                        action: 'save'
+                    });
                     reset();
+                    clearErrors();
                 }
             }
         });
@@ -290,6 +299,16 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                             label="Supplier Return no."
                             value={data.creditNo}
                             onChange={(e) => setData('creditNo', e.target.value)}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('creditNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('creditNo', val);
+                            }}          
                             error={errors.creditNo}
                             size="sm"
                             inputClass="font-mono text-right"

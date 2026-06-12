@@ -72,7 +72,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                 email: "",
                 billingAddress: "",
                 receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-                receiptNo: nextReceiptNo || "1001",
+                receiptNo: nextReceiptNo ? String(parseInt(nextReceiptNo)).padStart(4, '0') : "1001",
                 paymentMethod: "",
                 depositTo: "",
                 memo: "",
@@ -112,7 +112,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
         email: receipt?.email || "",
         billingAddress: receipt?.billingAddress || "",
         receiptDate: receipt?.receiptDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-        receiptNo: receipt?.receiptNo || nextReceiptNo || "1001",
+receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)).padStart(4, '0') : "1001"),
         paymentMethod: receipt?.paymentMethod || "",
         depositTo: receipt?.depositTo || "",
         memo: receipt?.memo || "",
@@ -173,6 +173,10 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                 setSavedOnce(true);
                 if (actionType === 'new') {
                     setSavedOnce(false);
+                    const currentNo = data.receiptNo || nextReceiptNo || '1001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                    const nextNo = String(num + 1).padStart(4, '0');
+                    setData('receiptNo', nextNo);
                     reset();
                     clearErrors();
                 }
@@ -224,6 +228,19 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                                         email: customer?.email || d.email,
                                         billingAddress: customer?.billing_address || d.billingAddress
                                     }));
+
+                                    // ADD THIS - fetch full customer info including email
+                                    if (val) {
+                                        axios.get(route('api.customers.info', val)).then(res => {
+                                            if (res.data) {
+                                                setData(d => ({
+                                                    ...d,
+                                                    email: res.data.email || d.email,
+                                                    billingAddress: res.data.billing_address || d.billingAddress
+                                                }));
+                                            }
+                                        }).catch(err => console.error("Failed to fetch customer info:", err));
+                                    }
                                 }}
                                 options={customerOptions}
                                 size="sm"
@@ -306,6 +323,16 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                             label="Receipt no."
                             value={data.receiptNo}
                             onChange={(e) => setData('receiptNo', e.target.value)}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('receiptNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('receiptNo', val);
+                            }}              
                             size="sm"
                             inputClass="font-mono text-right"
                             error={errors.receiptNo}

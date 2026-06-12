@@ -67,7 +67,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
     const [form, setForm] = useState({
         date: getInitialDate(),
-        journalNo: journalEntry?.reference || nextJournalNo || "",
+        journalNo: journalEntry?.reference || (nextJournalNo ? String(parseInt(nextJournalNo)).padStart(4, '0') : "0001"),
         memo: journalEntry?.description || "",
     });
 
@@ -240,7 +240,7 @@ const handleItemChange = (index, field, value) => {
                     setItems([createBlankLine(), createBlankLine()]);
                     const currentNo = form.journalNo || nextJournalNo || '1';
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 0;
-                    const nextNo = String(num + 1);
+                    const nextNo = String(num + 1).padStart(4, '0');
                     setForm({
                         date: getInitialDate(),
                         journalNo: nextNo,
@@ -297,6 +297,10 @@ const handleItemChange = (index, field, value) => {
                         onChange={(e) => {
                             setForm({ ...form, journalNo: e.target.value });
                             setIsDirty(true);
+                        }}
+
+                        onFocus={(e) => {
+                        setTimeout(() => e.target.select(), 0);
                         }}
                         size="sm"
                         inputClass="font-mono"

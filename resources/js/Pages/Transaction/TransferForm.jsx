@@ -78,6 +78,7 @@ export default function TransferForm({ transfer = null }) {
                 if (type === 'new') {
                     setSavedOnce(false);
                     reset();
+                    clearErrors();
                 }
             },
         });

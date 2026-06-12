@@ -72,7 +72,7 @@ const actionRef = useRef('save');
         customer: creditNote?.customer || "",
         email: creditNote?.email || "",
         creditNoteDate: getInitialDate(),
-        creditNoteNo: creditNote?.creditNoteNo || nextCreditNoteNo || "1001",
+        creditNoteNo: creditNote?.creditNoteNo || (nextCreditNoteNo ? String(parseInt(nextCreditNoteNo)).padStart(4, '0') : "1001"),
         memo: creditNote?.memo || "",
         statementMessage: creditNote?.statementMessage || "",
         action: 'save',
@@ -104,7 +104,7 @@ const actionRef = useRef('save');
                 customer: "",
                 email: "",
                 creditNoteDate: cachedDate,
-                creditNoteNo: nextCreditNoteNo || "1001",
+                creditNoteNo: nextCreditNoteNo ? String(parseInt(nextCreditNoteNo)).padStart(4, '0') : "1001",
                 memo: "",
                 statementMessage: "",
                 items: [
@@ -174,8 +174,12 @@ const actionRef = useRef('save');
             setSavedOnce(true);
             if (action === 'new') {
                 setSavedOnce(false);
+                const currentNo = data.creditNoteNo || '1001';
+                const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                const nextNo = String(num + 1).padStart(4, '0');
                 reset();
                 clearErrors();
+                setData('creditNoteNo', nextNo);
             }
         }
     });
@@ -209,12 +213,26 @@ const actionRef = useRef('save');
                                 onSearch={fetchCustomers}
                                 onAddNew={() => setIsPayeeModalOpen(true)}
                                 onChange={(val) => {
-                                    const customer = customerOptions.find(c => c.value === val);
+                                const customer = customerOptions.find(c => c.value === val);
                                     setData(d => ({
                                         ...d,
                                         customer: val,
                                         email: customer?.email || d.email,
+                                        billingAddress: customer?.billing_address || d.billingAddress
                                     }));
+
+                                    // ADD THIS - fetch full customer info including email
+                                    if (val) {
+                                        axios.get(route('api.customers.info', val)).then(res => {
+                                            if (res.data) {
+                                                setData(d => ({
+                                                    ...d,
+                                                    email: res.data.email || d.email,
+                                                    billingAddress: res.data.billing_address || d.billingAddress
+                                                }));
+                                            }
+                                        }).catch(err => console.error("Failed to fetch customer info:", err));
+                                    }
                                 }}
                                 options={customerOptions}
                                 size="sm"
@@ -262,6 +280,16 @@ const actionRef = useRef('save');
                             label="Refund Receipt no."
                             value={data.creditNoteNo}
                             onChange={(e) => setData('creditNoteNo', e.target.value)}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('creditNoteNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('creditNoteNo', val);
+                            }}      
                             size="sm"
                             inputClass="font-mono text-right"
                             error={errors.creditNoteNo}

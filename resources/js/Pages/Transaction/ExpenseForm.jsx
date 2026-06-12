@@ -386,6 +386,13 @@ export default function ExpenseForm({
                             placeholder=""
                             value={data.ref}
                             onChange={(e) => setData("ref", e.target.value)}
+                                
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData("ref", val);
+                                // Select all after state update
+                                setTimeout(() => e.target.select(), 0);
+                            }}
                             size="sm"
                             error={errors.ref}
                         />

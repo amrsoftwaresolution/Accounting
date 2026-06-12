@@ -122,7 +122,11 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                 setSavedOnce(true);
                 if (action === 'new') {
                     setSavedOnce(false);
+                    const currentRef = data.depositNo || nextDepositNo || '1001';
+                    const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
+                    const nextRef = String(num + 1).padStart(4, '0');
                     reset();
+                    setData('depositNo', nextRef);
                     clearErrors();
                 }
             }
@@ -192,6 +196,18 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                                 label="Deposit no."
                                 value={data.depositNo}
                                 onChange={(e) => setData('depositNo', e.target.value)}
+
+                                onFocus={(e) => {
+                                    const val = e.target.value.replace(/,/g, '');
+                                    setData('depositNo', val);
+                                    setTimeout(() => e.target.select(), 0);
+                                }}
+
+                                onBlur={(e) => {
+                                    const val = e.target.value.replace(/,/g, '');
+                                    setData('depositNo', val);
+                                }}
+
                                 size="sm"
                                 inputClass="font-mono text-right"
                             />
