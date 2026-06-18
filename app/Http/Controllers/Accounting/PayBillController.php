@@ -139,7 +139,7 @@ class PayBillController extends Controller
                 return redirect()->route('dashboard')->with('success', 'Bill payment recorded successfully.');
             }
 
-            return redirect()->route('pay-bill')->with('success', 'Bill payment recorded successfully.');
+                return redirect()->route('pay-bill')->with('success', 'Bill payment recorded successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

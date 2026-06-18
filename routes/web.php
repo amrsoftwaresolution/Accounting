@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
     Route::get('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'create'])->name('pay-bill');
     Route::post('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'store'])->name('pay-bill.store');
+    Route::get('/pay-bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\PayBillController::class, 'edit'])->name('pay-bill.edit');
+    Route::patch('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'update'])->name('pay-bill.update');
     Route::delete('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'destroy'])->name('pay-bill.destroy');
     Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
     Route::patch('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'update'])->name('expense.update');

@@ -66,7 +66,8 @@ export default function ExpenseForm({
     const fetchPaymentMethods = () => {
         axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
     };
-    const [savedOnce, setSavedOnce] = useState(!!expense?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(expense?.id || null);
     
     useEffect(() => {
         fetchPayees();
@@ -186,6 +187,7 @@ export default function ExpenseForm({
         const updatedItems = [...data.items];
         updatedItems[index][field] = value;
         setData("items", updatedItems);
+        setIsDirty(true);
     };
 
     const handleProductItemChange = (index, field, value) => {
@@ -209,15 +211,18 @@ export default function ExpenseForm({
             updated[index].amount = formatCurrencyValue(q * r);
         }
         setData("itemDetails", updated);
+        setIsDirty(true);
     };
 
     const handlePaymentDateChange = (dateVal) => {
         localStorage.setItem('last_transaction_date', dateVal);
         setData("date", dateVal);
+        setIsDirty(true);
     };
 
     const handleAccountChange = (val) => {
         setData("account", val);
+        setIsDirty(true);
         if (!expense?.id && val) {
             axios.get(route('api.expenses.next-ref', { account_id: val })).then(res => {
                 setData("ref", res.data.next_ref);
@@ -226,35 +231,48 @@ export default function ExpenseForm({
     };
 
     const handleSave = (action = 'save') => {
-    actionRef.current = action;
-    const url = expense?.id ? route('expense.update', expense.id) : route('expense.store');
-    const method = expense?.id ? patch : post;
+        actionRef.current = action;
+        const currentRef = data.ref;
 
-    method(url, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showToast('success', 'Record saved successfully.');
-            setSavedOnce(true);
-            
-            if (action === 'new') {
-                const currentRef = data.ref || nextExpenseNo || 'EXP-0001';
-                const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 0;
-                const nextRef = 'EXP-' + String(num + 1).padStart(4, '0');
+        const currentId = savedEntryId || expense?.id;
+        const url = currentId ? route('expense.update', currentId) : route('expense.store');
+        const method = currentId ? patch : post;
 
-                reset();
-                clearErrors();
-                fetchAccounts();
-                const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
-                setData({
-                    payee: "", account: "", date: cachedDate, method: "", ref: nextRef, memo: "",
-                    items: [{ category: "", description: "", amount: "0.00" }],
-                    itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
-                    action: 'save'
-                });
+        method(url, {
+            preserveScroll: true,
+            preserveState: action === 'save',
+            onSuccess: (page) => {
+                showToast('success', 'Record saved successfully.');
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.expense?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+                
+                if (action === 'new') {
+                    setSavedEntryId(null);
+                    const currentNo = data.ref || nextExpenseNo || 'EXP-0001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 0;
+                    const nextRef = 'EXP-' + String(num + 1).padStart(4, '0');
+
+                    reset();
+                    clearErrors();
+                    fetchAccounts();
+                    const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                    setData({
+                        payee: "", account: "", date: cachedDate, method: "", ref: nextRef, memo: "",
+                        items: [{ category: "", description: "", amount: "0.00" }],
+                        itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                        action: 'save'
+                    });
+                    setIsDirty(false);
+                }
             }
-        }
-    });
-};
+        });
+    };
     const EXPENSE_COLUMNS = [
         {
             key: "category",
@@ -305,7 +323,7 @@ export default function ExpenseForm({
             title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"}
             amount={totalAmount}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
@@ -327,7 +345,7 @@ export default function ExpenseForm({
                                 label="Payee"
                                 placeholder="Who did you pay?"
                                 value={data.payee}
-                                onChange={(val) => setData("payee", val)}
+                                onChange={(val) => { setData("payee", val); setIsDirty(true); }}
                                 options={payeeOptions}
                                 size="sm"
                                 error={errors.payee}
@@ -382,7 +400,7 @@ export default function ExpenseForm({
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.method}
-                            onChange={(val) => setData("method", val)}
+                            onChange={(val) => { setData("method", val); setIsDirty(true); }}
                             options={paymentMethodOptions}
                             onAddNew={() => setIsPaymentMethodModalOpen(true)}
                             size="sm"
@@ -394,7 +412,7 @@ export default function ExpenseForm({
                             label="Ref no."
                             placeholder=""
                             value={data.ref}
-                            onChange={(e) => setData("ref", e.target.value)}
+                            onChange={(e) => { setData("ref", e.target.value); setIsDirty(true); }}
                                 
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
@@ -435,12 +453,13 @@ export default function ExpenseForm({
                             columns={EXPENSE_COLUMNS}
                             items={data.items}
                             handleItemChange={handleItemChange}
-                            addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
+                            addRow={() => { setData("items", [...data.items, { category: "", description: "", amount: "0.00" }]); setIsDirty(true); }}
                             removeRow={(index) => {
                                 const remaining = data.items.filter((_, i) => i !== index);
                                 setData("items", remaining.length > 0 ? remaining : [{ category: "", description: "", amount: "0.00" }]);
+                                setIsDirty(true);
                             }}
-                            clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
+                            clearRows={() => { setData("items", [{ category: "", description: "", amount: "0.00" }]); setIsDirty(true); }}
                             currencyPrefix={currencyPrefix}
                             hideActions={true}
                         />
@@ -474,12 +493,13 @@ export default function ExpenseForm({
                             columns={ITEM_COLUMNS}
                             items={data.itemDetails}
                             handleItemChange={handleProductItemChange}
-                            addRow={() => setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            addRow={() => { setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]); setIsDirty(true); }}
                             removeRow={(index) => {
                                 const remaining = data.itemDetails.filter((_, i) => i !== index);
                                 setData("itemDetails", remaining.length > 0 ? remaining : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                                setIsDirty(true);
                             }}
-                            clearRows={() => setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            clearRows={() => { setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]); setIsDirty(true); }}
                             currencyPrefix={currencyPrefix}
                             hideActions={true}
                         />
@@ -494,7 +514,7 @@ export default function ExpenseForm({
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData("memo", e.target.value)}
+                        onChange={(e) => { setData("memo", e.target.value); setIsDirty(true); }}
                         className="h-24"
                         size="sm"
                         error={errors.memo}

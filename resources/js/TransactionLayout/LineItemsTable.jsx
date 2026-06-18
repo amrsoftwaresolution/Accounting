@@ -111,15 +111,22 @@ export default function LineItemsTable({
             }
         });
     };
-
-    const handleCurrencyBlur = (index, key, rawValue) => {
+const handleCurrencyBlur = (index, key, rawValue) => {
     const num = evaluateMathExpression(rawValue);
     const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     // Use onCurrencyBlur if provided, otherwise fall back to handleItemChange
-    if (onCurrencyBlur) {
-        onCurrencyBlur(index, key, formatted);
-    } else {
-        handleItemChange(index, key, formatted);
+    const updateFn = onCurrencyBlur || handleItemChange;
+    updateFn(index, key, formatted);
+
+    // ADD THIS - if amount is edited directly, back-calculate qty from rate
+    if (key === 'amount') {
+        const item = items[index];
+        const rate = parseFloat(String(item.rate || 0).replace(/,/g, '')) || 0;
+        if (rate > 0) {
+            const newQty = num / rate;
+            updateFn(index, 'qty', String(newQty));
+        }
     }
 };
 

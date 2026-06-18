@@ -26,7 +26,8 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
-    const [savedOnce, setSavedOnce] = useState(!!receipt?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(receipt?.id || null);
 
     const fetchCustomers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => setCustomerOptions(res.data));
@@ -153,32 +154,59 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
             updated[index].amount = formatCurrencyValue(q * r);
         }
         setData("items", updated);
+        setIsDirty(true);
     };
 
     const handleSave = (actionType = 'save') => {
+
+        const currentNo = data.receiptNo;
+
         transform((data) => ({
             ...data,
             action: actionType,
             items: data.items.filter(item => item.product && item.product !== "")
         }));
 
-        const url = receipt?.id ? route('receipt.update', receipt.id) : route('receipt.store');
-        const submitMethod = receipt?.id ? patch : post;
+        const currentId = savedEntryId || receipt?.id;
+        const url = currentId ? route('receipt.update', currentId) : route('receipt.store');
+        const submitMethod = currentId ? patch : post;
 
         submitMethod(url, {
             preserveScroll: true,
             preserveState: actionType === 'save',
-            onSuccess: () => {
+            onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
-                setSavedOnce(true);
+                setIsDirty(false);
+                
+                setSavedOnce(false);
+                setTimeout(() => setSavedOnce(true), 0);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.receipt?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
                 if (actionType === 'new') {
                     setSavedOnce(false);
+                    setSavedEntryId(null);
                     const currentNo = data.receiptNo || nextReceiptNo || '1001';
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
                     const nextNo = String(num + 1).padStart(4, '0');
-                    setData('receiptNo', nextNo);
+                    setData({
+                        customer: "", email: "", billingAddress: "",
+                        receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                        receiptNo: nextNo, paymentMethod: "", depositTo: "", memo: "", statementMessage: "",
+                        items: [
+                            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                        ],
+                        action: 'save'
+                    });
                     reset();
                     clearErrors();
+                    setIsDirty(false);
                 }
             }
         });
@@ -190,7 +218,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
             title={`Sales Receipt #${data.receiptNo}`}
             amount={totalAmount}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
@@ -228,7 +256,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                                         email: customer?.email || d.email,
                                         billingAddress: customer?.billing_address || d.billingAddress
                                     }));
-
+                                    setIsDirty(true);
                                     // ADD THIS - fetch full customer info including email
                                     if (val) {
                                         axios.get(route('api.customers.info', val)).then(res => {
@@ -252,7 +280,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                                 label="Customer email"
                                 placeholder="Separate emails with a comma"
                                 value={data.email}
-                                onChange={(e) => setData("email", e.target.value)}
+                                onChange={(e) => { setData("email", e.target.value); setIsDirty(true); }}
                                 size="sm"
                                 error={errors.email}
                             />
@@ -274,7 +302,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                             type="textarea"
                             label="Billing address"
                             value={data.billingAddress}
-                            onChange={(e) => setData("billingAddress", e.target.value)}
+                            onChange={(e) => { setData("billingAddress", e.target.value); setIsDirty(true); }}
                             className="h-[74px]"
                             size="sm"
                             error={errors.billingAddress}
@@ -289,6 +317,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData('receiptDate', newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.receiptDate}
@@ -298,7 +327,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                         <SearchableSelect
                             label="Payment method"
                             value={data.paymentMethod}
-                            onChange={(val) => setData('paymentMethod', val)}
+                            onChange={(val) => { setData('paymentMethod', val); setIsDirty(true); }}
                             options={paymentMethodOptions}
                             onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
@@ -312,7 +341,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                             value={data.depositTo}
                             onSearch={fetchAccounts}
                             onAddNew={() => setIsAccountModalOpen(true)}
-                            onChange={(val) => setData('depositTo', val)}
+                            onChange={(val) => { setData('depositTo', val); setIsDirty(true); }}
                             options={accountOptions}
                             size="sm"
                             error={errors.depositTo}
@@ -322,7 +351,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                         <CommonInput
                             label="Receipt no."
                             value={data.receiptNo}
-                            onChange={(e) => setData('receiptNo', e.target.value)}
+                            onChange={(e) => { setData('receiptNo', e.target.value); setIsDirty(true); }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('receiptNo', val);
@@ -361,7 +390,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                         label="Memo"
                         placeholder="This will show up on the Cash Sale."
                         value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
+                        onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                         error={errors.memo}

@@ -240,8 +240,28 @@ class ExpenseController extends Controller
                 return redirect()->route('expense')->with('success', 'Payment saved successfully.');
             }
 
-            return redirect()->route('expense.edit', $journalEntry->id)
-            ->with('success', 'Payment saved successfully.');
+            session()->flash('success', 'Payment saved successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/ExpenseForm', [
+                'nextExpenseNo' => $referenceNo,
+                'expense' => [
+                    'id' => $journalEntry->id,
+                    'payee' => $request->payee,
+                    'payeeType' => $request->payeeType,
+                    'paymentAccount' => $paymentAccount,
+                    'paymentDate' => $paymentDate,
+                    'paymentMethod' => $paymentMethod,
+                    'referenceNo' => $referenceNo,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -447,7 +467,28 @@ class ExpenseController extends Controller
                 return redirect()->route('expense')->with('success', 'Expense updated successfully.');
             }
 
-            return redirect()->back()->with('success', 'Expense updated successfully.');
+            session()->flash('success', 'Expense updated successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/ExpenseForm', [
+                'nextExpenseNo' => $referenceNo,
+                'expense' => [
+                    'id' => $journalEntry->id,
+                    'payee' => $request->payee,
+                    'payeeType' => $request->payeeType,
+                    'paymentAccount' => $paymentAccount,
+                    'paymentDate' => $paymentDate,
+                    'paymentMethod' => $paymentMethod,
+                    'referenceNo' => $referenceNo,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

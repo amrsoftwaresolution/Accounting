@@ -111,27 +111,27 @@ export default function TransactionLayout({
         setHasUnsavedChanges(dirty);
     }, [dirty]);
 
-    useEffect(() => {
-        const markDirty = () => setHasUnsavedChanges(true);
+    // useEffect(() => {
+    //     const markDirty = () => setHasUnsavedChanges(true);
 
-        document.addEventListener('input', markDirty, true);
-        document.addEventListener('change', markDirty, true);
+    //     document.addEventListener('input', markDirty, true);
+    //     document.addEventListener('change', markDirty, true);
 
-        return () => {
-            document.removeEventListener('input', markDirty, true);
-            document.removeEventListener('change', markDirty, true);
-        };
-    }, []);
+    //     return () => {
+    //         document.removeEventListener('input', markDirty, true);
+    //         document.removeEventListener('change', markDirty, true);
+    //     };
+    // }, []);
 
-    const handleClose = () => {
-        if (hasUnsavedChanges) {
-            if (confirm('You have unsaved changes. Are you sure you want to close?')) {
-                window.history.back();
-            }
-        } else {
-            window.history.back();
+   const handleClose = () => {
+    if (hasUnsavedChanges) {
+        if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+            router.get(route('dashboard'));
         }
-    };
+    } else {
+        router.get(route('dashboard'));
+    }
+};
 
     return (
         <div className="flex flex-col h-screen bg-slate-50">

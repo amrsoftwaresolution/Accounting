@@ -66,7 +66,8 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
     };
 
 const actionRef = useRef('save');
-    const [savedOnce, setSavedOnce] = useState(!!creditNote?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(creditNote?.id || null);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: creditNote?.customer || "",
@@ -159,46 +160,68 @@ const actionRef = useRef('save');
             updated[index].amount = formatCurrencyValue(q * r);
         }
         setData("items", updated);
+        setIsDirty(true);
     };
 
     const handleSave = (action = 'save') => {
-    actionRef.current = action; // SET BEFORE calling method
+        actionRef.current = action;
 
-    const url = creditNote?.id ? route('credit-note.update', creditNote.id) : route('credit-note.store');
-    const method = creditNote?.id ? patch : post;
+        const currentId = savedEntryId || creditNote?.id;
+        const url = currentId ? route('credit-note.update', currentId) : route('credit-note.store');
+        const method = currentId ? patch : post;
 
-    method(url, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showToast('success', 'Record saved successfully.');
-            setSavedOnce(true);
-            if (action === 'new') {
-                setSavedOnce(false);
-                const currentNo = data.creditNoteNo || '1001';
-                const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
-                const nextNo = String(num + 1).padStart(4, '0');
-                reset();
-                clearErrors();
-                setData('creditNoteNo', nextNo);
+        method(url, {
+            preserveScroll: true,
+            preserveState: action === 'save',
+            onSuccess: (page) => {
+                showToast('success', 'Record saved successfully.');
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.creditNote?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
+                if (action === 'new') {
+                    setSavedEntryId(null);
+                    const currentNo = data.creditNoteNo || '1001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                    const nextNo = String(num + 1).padStart(4, '0');
+                    setData({
+                        customer: "", email: "",
+                        creditNoteDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                        creditNoteNo: nextNo, memo: "", statementMessage: "", action: 'save',
+                        items: [
+                            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                        ]
+                    });
+                    reset();
+                    clearErrors();
+                    setIsDirty(false);
+                }
             }
-        }
-    });
-};
+        });
+    };
     return (
         <TransactionLayout
             historyType="sales return"
             title={`Refund Receipt #${data.creditNoteNo}`}
             amount={totalAmount}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
                 setData("items", [...data.items, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setIsDirty(true);
             }}
             onClearRows={() => {
                 setData("items", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setIsDirty(true);
             }}
         >
             <Head title="Sales Return" />
@@ -220,6 +243,7 @@ const actionRef = useRef('save');
                                         email: customer?.email || d.email,
                                         billingAddress: customer?.billing_address || d.billingAddress
                                     }));
+                                    setIsDirty(true);
 
                                     // ADD THIS - fetch full customer info including email
                                     if (val) {
@@ -244,7 +268,7 @@ const actionRef = useRef('save');
                                 label="Customer email"
                                 placeholder="Separate emails with a comma"
                                 value={data.email}
-                                onChange={(e) => setData("email", e.target.value)}
+                                onChange={(e) => { setData("email", e.target.value); setIsDirty(true); }}
                                 size="sm"
                                 error={errors.email}
                             />
@@ -270,6 +294,7 @@ const actionRef = useRef('save');
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData('creditNoteDate', newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.creditNoteDate}
@@ -279,7 +304,7 @@ const actionRef = useRef('save');
                         <CommonInput
                             label="Refund Receipt no."
                             value={data.creditNoteNo}
-                            onChange={(e) => setData('creditNoteNo', e.target.value)}
+                            onChange={(e) => { setData('creditNoteNo', e.target.value); setIsDirty(true); }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('creditNoteNo', val);
@@ -302,9 +327,18 @@ const actionRef = useRef('save');
                 columns={COLUMNS}
                 items={data.items}
                 handleItemChange={handleItemChange}
-                addRow={() => setData("items", [...data.items, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
-                removeRow={(index) => setData("items", data.items.filter((_, i) => i !== index))}
-                clearRows={() => setData("items", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                addRow={() => {
+                    setData("items", [...data.items, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                    setIsDirty(true);
+                }}
+                removeRow={(index) => {
+                    setData("items", data.items.filter((_, i) => i !== index));
+                    setIsDirty(true);
+                }}
+                clearRows={() => {
+                    setData("items", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                    setIsDirty(true);
+                }}
                 totals={{ "Total": totalAmount }}
                 currencyPrefix={currencyPrefix}
                 hideActions={true}
@@ -319,7 +353,7 @@ const actionRef = useRef('save');
                             label="Message displayed on sales return"
                             placeholder="Enter message"
                             value={data.memo}
-                            onChange={(e) => setData('memo', e.target.value)}
+                            onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                             size="sm"
                             className="h-20"
                             error={errors.memo}
@@ -331,7 +365,7 @@ const actionRef = useRef('save');
                             label="Message displayed on statement"
                             placeholder="Enter message"
                             value={data.statementMessage}
-                            onChange={(e) => setData('statementMessage', e.target.value)}
+                            onChange={(e) => { setData('statementMessage', e.target.value); setIsDirty(true); }}
                             size="sm"
                             className="h-20"
                             error={errors.statementMessage}

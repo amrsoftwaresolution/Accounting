@@ -23,7 +23,8 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-    const [savedOnce, setSavedOnce] = useState(!!payment?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(payment?.id || null);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: payment?.customer || "",
@@ -40,6 +41,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
 
     const handleCustomerChange = (val) => {
         setData(prev => ({ ...prev, customer: val }));
+        setIsDirty(true);
         if (val) {
             axios.get(route('api.customers.info', val)).then(res => {
                 if (res.data && res.data.email) {
@@ -95,7 +97,23 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
             return updated;
         });
     };
-
+    const autoApplyAmount = (totalAmount) => {
+    setInvoices(prev => {
+        let remaining = totalAmount;
+        return prev.map(inv => {
+            if (remaining <= 0) {
+                return { ...inv, checked: false, applied: 0 };
+            }
+            const applyAmount = Math.min(inv.open_balance, remaining);
+            remaining -= applyAmount;
+            return {
+                ...inv,
+                checked: applyAmount > 0,
+                applied: applyAmount
+            };
+        });
+    });
+    };
     const handleInvoicePaymentChange = (originalIdx, value) => {
         const cleanVal = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
 
@@ -251,11 +269,13 @@ useEffect(() => {
 }, [data.amountReceived, invoices]);
 
 const submit = (action = 'save') => {
-    const url = payment?.id ? route('payment.update', payment.id) : route('payment.store');
-    const submitMethod = payment?.id ? patch : post;
+    const currentId = savedEntryId || payment?.id;
+    const url = currentId ? route('payment.update', currentId) : route('payment.store');
+    const submitMethod = currentId ? patch : post;
 
-    // Manually inject action into the request
-    const originalTransform = (d) => ({
+    const currentRef = data.referenceNo || nextPaymentNo || '0001'; // capture BEFORE reset
+
+    transform((d) => ({
         ...d,
         action: action,
         amountReceived: String(d.amountReceived).replace(/,/g, ''),
@@ -265,19 +285,23 @@ const submit = (action = 'save') => {
                 id: inv.id,
                 amount: String(inv.applied)
             }))
-    });
-
-    transform(originalTransform);
+    }));
 
     submitMethod(url, {
         preserveScroll: true,
-        onSuccess: () => {
+        preserveState: action === 'save',
+        onSuccess: (page) => {
             showToast('success', 'Record saved successfully.');
-            setSavedOnce(true);
+            setIsDirty(false);
+
+            const newId = page.props?.flash?.journal_entry_id
+                       || page.props?.payment?.id;
+            if (newId && !savedEntryId) {
+                setSavedEntryId(newId);
+            }
+
             if (action === 'new') {
-                setSavedOnce(false);
-                //increass ref number by clicking sav and new
-                const currentRef = data.referenceNo || nextPaymentNo || '0001';
+                setSavedEntryId(null);
                 const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
                 const nextRef = String(num + 1).padStart(4, '0');
 
@@ -287,9 +311,10 @@ const submit = (action = 'save') => {
                 const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                 setData({
                     customer: "", email: "", paymentDate: cachedDate,
-                    paymentMethod: "", referenceNo: nextRef || "",
+                    paymentMethod: "", referenceNo: nextRef,
                     depositTo: "", amountReceived: "0.00", memo: "", action: 'save'
                 });
+                setIsDirty(false);
             }
         }
     });
@@ -304,7 +329,7 @@ const submit = (action = 'save') => {
             onSaveAndClose={() => submit('close')}
             onSaveAndNew={() => submit('new')}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
         >
             <Head title="Receive Payment" />
 
@@ -355,6 +380,7 @@ const submit = (action = 'save') => {
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData("paymentDate", newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.paymentDate}
@@ -365,7 +391,7 @@ const submit = (action = 'save') => {
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
-                            onChange={(val) => setData("paymentMethod", val)}
+                            onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}
                             options={methodOptions}
                             onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
@@ -376,7 +402,11 @@ const submit = (action = 'save') => {
                         <CommonInput
                             label="Reference no."
                             value={data.referenceNo}
-                            onChange={(e) => setData("referenceNo", e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                                setData("referenceNo", val);
+                                setIsDirty(true);
+                            }}
 
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
@@ -396,7 +426,7 @@ const submit = (action = 'save') => {
                             onSearch={fetchAccounts}
                             onAddNew={() => setIsAccountModalOpen(true)}
                             value={data.depositTo}
-                            onChange={(val) => setData("depositTo", val)}
+                            onChange={(val) => { setData("depositTo", val); setIsDirty(true); }}
                             placeholder="Select Account"
                             size="sm"
                             error={errors.depositTo}
@@ -409,10 +439,10 @@ const submit = (action = 'save') => {
                             placeholder="0.00"
                             value={data.amountReceived}
                             onChange={(e) => {
-                                // Allow numbers, decimal point, and math operators
-                                const val = e.target.value.replace(/[^0-9.+\-*/]/g, '');
-                                setData("amountReceived", val);
-                            }}
+                        const val = e.target.value.replace(/[^0-9.+\-*/]/g, '');
+                            setData("amountReceived", val);
+                            setIsDirty(true);
+                        }}
                             onBlur={(e) => {
                                 let num = 0;
                                 try {
@@ -422,6 +452,7 @@ const submit = (action = 'save') => {
                                     num = parseFloat(e.target.value.replace(/,/g, '')) || 0;
                                 }
                                 setData("amountReceived", num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                autoApplyAmount(num); // ADD THIS - auto-distribute across invoices
                             }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
@@ -442,7 +473,7 @@ const submit = (action = 'save') => {
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData("memo", e.target.value)}
+                        onChange={(e) => { setData("memo", e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                         error={errors.memo}

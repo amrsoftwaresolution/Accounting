@@ -166,8 +166,36 @@ class ReceivePaymentController extends Controller
                 return redirect()->route('payment')->with('success', 'Payment received successfully.');
             }
 
-            return redirect()->route('payment.edit', $journalEntry->id)
-                ->with('success', 'Payment received successfully.');
+            $companyId = session('active_company_id');
+            $paymentMethods = PaymentMethod::withoutGlobalScopes()
+                ->where('is_active', true)
+                ->where(function ($query) use ($companyId) {
+                    $query->whereNull('company_id');
+                    if ($companyId) {
+                        $query->orWhere('company_id', $companyId);
+                    }
+                })
+                ->orderBy('name')
+                ->get();
+
+            session()->flash('success', 'Payment received successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/ReceivePaymentForm', [
+                'paymentMethods' => $paymentMethods,
+                'nextPaymentNo' => $request->referenceNo,
+                'payment' => [
+                    'id' => $journalEntry->id,
+                    'customer' => $request->customer,
+                    'email' => $request->email,
+                    'paymentDate' => $request->paymentDate,
+                    'paymentMethod' => $request->paymentMethod,
+                    'depositTo' => $request->depositTo,
+                    'referenceNo' => $request->referenceNo,
+                    'amountReceived' => $request->amountReceived,
+                    'memo' => $request->memo,
+                ],
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -295,7 +323,35 @@ class ReceivePaymentController extends Controller
                 return redirect()->route('payment')->with('success', 'Payment updated successfully.');
             }
 
-            return redirect()->back()->with('success', 'Payment updated successfully.');
+            $companyId = session('active_company_id');
+            $paymentMethods = PaymentMethod::withoutGlobalScopes()
+                ->where('is_active', true)
+                ->where(function ($query) use ($companyId) {
+                    $query->whereNull('company_id');
+                    if ($companyId) {
+                        $query->orWhere('company_id', $companyId);
+                    }
+                })
+                ->orderBy('name')
+                ->get();
+
+            session()->flash('success', 'Payment updated successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/ReceivePaymentForm', [
+                'paymentMethods' => $paymentMethods,
+                'payment' => [
+                    'id' => $journalEntry->id,
+                    'customer' => $request->customer,
+                    'email' => $request->email,
+                    'paymentDate' => $request->paymentDate,
+                    'paymentMethod' => $request->paymentMethod,
+                    'depositTo' => $request->depositTo,
+                    'referenceNo' => $request->referenceNo,
+                    'amountReceived' => $request->amountReceived,
+                    'memo' => $request->memo,
+                ],
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

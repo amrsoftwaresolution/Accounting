@@ -24,7 +24,8 @@ export default function BillForm({
     // Accordion States (Expanded by default)
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
     const [isItemsExpanded, setIsItemsExpanded] = useState(true);
-    const [savedOnce, setSavedOnce] = useState(!!bill?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(bill?.id || null);
 
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
@@ -186,6 +187,13 @@ export default function BillForm({
         clearErrors();
     }, [bill]);
 
+    useEffect(() => {
+        if (errors.error) {
+            showToast('error', errors.error);
+            clearErrors('error');
+        }
+    }, [errors.error]);
+
 useEffect(() => {
     transform((data) => ({
         ...data,
@@ -225,6 +233,7 @@ useEffect(() => {
         const updated = [...data.items];
         updated[index][field] = value;
         setData("items", updated);
+        setIsDirty(true);
     };
 
     const handleProductItemChange = (index, field, value) => {
@@ -248,6 +257,7 @@ useEffect(() => {
             updated[index].amount = formatCurrencyValue(q * r);
         }
         setData("itemDetails", updated);
+        setIsDirty(true);
     };
 
     const handleBillDateChange = (dateVal) => {
@@ -257,6 +267,7 @@ useEffect(() => {
             billDate: dateVal,
             dueDate: calculateDueDate(dateVal, prev.terms)
         }));
+        setIsDirty(true);
     };
 
     const handleTermsChange = (termsVal) => {
@@ -265,26 +276,59 @@ useEffect(() => {
             terms: termsVal,
             dueDate: calculateDueDate(data.billDate, termsVal)
         }));
+        setIsDirty(true);
     };
 
     const handleSave = (action = 'save') => {
+        if (parseFloat(totalAmount) > 9999999999999.99) {
+            showToast('error', 'Total amount is too large. Please enter a smaller value.');
+            return;
+        }
+
         actionRef.current = action;
-        const url = bill?.id ? route('bill.update', bill.id) : route('bill.store');
-        const method = bill?.id ? patch : post;
+        const currentNo = data.billNo;
+
+        const currentId = savedEntryId || bill?.id;
+        const url = currentId ? route('bill.update', currentId) : route('bill.store');
+        const method = currentId ? patch : post;
 
         method(url, {
             preserveScroll: true,
-            onSuccess: () => {
+            preserveState: action === 'save',
+            onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
-                setSavedOnce(true);
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.bill?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
                 if (action === 'new') {
-                    setSavedOnce(false);
+                    setSavedEntryId(null);
                     const currentNo = data.billNo || '1001';
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
                     const nextNo = String(num + 1).padStart(4, '0');
-                    reset();
+                    setData({
+                        supplier: "", mailingAddress: "",
+                        terms: "Net 30",
+                        billDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                        dueDate: "",
+                        billNo: nextNo,
+                        memo: "", action: 'save',
+                        items: [
+                            { category: "", description: "", amount: "0.00" },
+                            { category: "", description: "", amount: "0.00" },
+                        ],
+                        itemDetails: [
+                            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                        ]
+                    });
                     clearErrors();
-                    setData('billNo', nextNo);
+                    setIsDirty(false);
                 }
             }
         });
@@ -340,19 +384,12 @@ useEffect(() => {
             title={`Bill #${data.billNo}`}
             amount={totalAmount}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
         >
             <div className="py-6 px-1 space-y-8">
-                {/* Error Banner */}
-                {errors.error && (
-                    <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
-                        {errors.error}
-                    </div>
-                )}
-
                 {/* ROW 1: Supplier & Address */}
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
@@ -363,6 +400,7 @@ useEffect(() => {
                                 value={data.supplier}
                                 onChange={(val) => {
                                     setData('supplier', val);
+                                    setIsDirty(true);
                                     const payee = payeeOptions.find(p => p.value === val);
                                     if (payee && payee.billing_address) {
                                         setData("mailingAddress", payee.billing_address);
@@ -380,7 +418,7 @@ useEffect(() => {
                                 type="textarea"
                                 label="Mailing address"
                                 value={data.mailingAddress}
-                                onChange={(e) => setData("mailingAddress", e.target.value)}
+                                onChange={(e) => { setData("mailingAddress", e.target.value); setIsDirty(true); }}
                                 className="h-[74px]"
                                 size="sm"
                             />
@@ -414,7 +452,7 @@ useEffect(() => {
                             type="date"
                             label="Due date"
                             value={data.dueDate}
-                            onChange={(e) => setData('dueDate', e.target.value)}
+                            onChange={(e) => { setData('dueDate', e.target.value); setIsDirty(true); }}
                             size="sm"
                         />
                     </div>
@@ -433,7 +471,7 @@ useEffect(() => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('billNo', val);
                             }}  
-                            onChange={(e) => setData('billNo', e.target.value)}
+                            onChange={(e) => { setData('billNo', e.target.value); setIsDirty(true); }}
                             size="sm"
                         />
                     </div>
@@ -466,12 +504,19 @@ useEffect(() => {
                             columns={BILL_COLUMNS}
                             items={data.items}
                             handleItemChange={handleItemChange}
-                            addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
+                            addRow={() => {
+                                setData("items", [...data.items, { category: "", description: "", amount: "0.00" }]);
+                                setIsDirty(true);
+                            }}
                             removeRow={(index) => {
                                 const remaining = data.items.filter((_, i) => i !== index);
                                 setData("items", remaining.length > 0 ? remaining : [{ category: "", description: "", amount: "0.00" }]);
+                                setIsDirty(true);
                             }}
-                            clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
+                            clearRows={() => {
+                                setData("items", [{ category: "", description: "", amount: "0.00" }]);
+                                setIsDirty(true);
+                            }}
                             currencyPrefix={currencyPrefix}
                             hideActions={true}
                         />
@@ -505,12 +550,19 @@ useEffect(() => {
                             columns={ITEM_COLUMNS}
                             items={data.itemDetails}
                             handleItemChange={handleProductItemChange}
-                            addRow={() => setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            addRow={() => {
+                                setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                                setIsDirty(true);
+                            }}
                             removeRow={(index) => {
                                 const remaining = data.itemDetails.filter((_, i) => i !== index);
                                 setData("itemDetails", remaining.length > 0 ? remaining : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                                setIsDirty(true);
                             }}
-                            clearRows={() => setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            clearRows={() => {
+                                setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                                setIsDirty(true);
+                            }}
                             currencyPrefix={currencyPrefix}
                             hideActions={true}
                         />
@@ -525,7 +577,7 @@ useEffect(() => {
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
+                        onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                     />

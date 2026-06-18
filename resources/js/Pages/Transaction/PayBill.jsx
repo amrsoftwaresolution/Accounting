@@ -23,6 +23,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const actionRef = useRef('save');
+    const [isDirty, setIsDirty] = useState(false);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         supplier: payment?.supplier || "",
@@ -37,6 +38,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
 
     const handleSupplierChange = (val) => {
         setData(prev => ({ ...prev, supplier: val }));
+        setIsDirty(true);
         if (val) {
             // Fetch outstanding bills
             const url = payment?.payment_id
@@ -85,6 +87,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
 
             return updated;
         });
+        setIsDirty(true);
     };
 
     const handleBillPaymentChange = (originalIdx, value) => {
@@ -104,6 +107,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
 
             return updated;
         });
+        setIsDirty(true);
     };
 
     const filteredBills = bills.filter(bill => {
@@ -252,6 +256,7 @@ const submit = (action = 'save') => {
         preserveState: action === 'save',
         onSuccess: () => {
             showToast('success', 'Record saved successfully.');
+            setIsDirty(false);
             if (action === 'new') {
                 const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
                 const nextNo = String(num + 1).padStart(4, '0');
@@ -264,6 +269,7 @@ const submit = (action = 'save') => {
                     referenceNo: nextNo, paymentAccount: "", amount: "0.00",
                     memo: "", action: 'save'
                 });
+                setIsDirty(false);
             }
         }
     });
@@ -278,7 +284,7 @@ const submit = (action = 'save') => {
             onSaveAndClose={() => submit('close')}
             onSaveAndNew={() => submit('new')}
             processing={processing}
-            dirty={Object.keys(data).some((key) => key !== 'action' && String(data[key]) !== "")}
+            dirty={isDirty}
         >
             <Head title="Pay Bill" />
 
@@ -329,6 +335,7 @@ const submit = (action = 'save') => {
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData("paymentDate", newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.paymentDate}
@@ -339,7 +346,7 @@ const submit = (action = 'save') => {
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
-                            onChange={(val) => setData("paymentMethod", val)}
+                            onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}
                             options={methodOptions}
                             onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
@@ -350,7 +357,7 @@ const submit = (action = 'save') => {
                         <CommonInput
                             label="Reference no."
                             value={data.referenceNo}
-                            onChange={(e) => setData("referenceNo", e.target.value)}
+                            onChange={(e) => { setData("referenceNo", e.target.value); setIsDirty(true); }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('referenceNo', val);
@@ -372,7 +379,7 @@ const submit = (action = 'save') => {
                             onSearch={fetchAccounts}
                             onAddNew={() => setIsAccountModalOpen(true)}
                             value={data.paymentAccount}
-                            onChange={(val) => setData("paymentAccount", val)}
+                            onChange={(val) => { setData("paymentAccount", val); setIsDirty(true); }}
                             placeholder="Select Account"
                             size="sm"
                             error={errors.paymentAccount}
@@ -387,6 +394,7 @@ const submit = (action = 'save') => {
                             onChange={(e) => {
                                 const val = e.target.value.replace(/[^0-9.]/g, '');
                                 setData("amount", val);
+                                setIsDirty(true);
                             }}
                             onBlur={(e) => {
                                 const val = parseFloat(e.target.value || 0);
@@ -411,7 +419,7 @@ const submit = (action = 'save') => {
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData("memo", e.target.value)}
+                        onChange={(e) => { setData("memo", e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                         error={errors.memo}

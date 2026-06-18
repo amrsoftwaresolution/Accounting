@@ -11,7 +11,8 @@ export default function TransferForm({ transfer = null }) {
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
-    const [savedOnce, setSavedOnce] = useState(!!transfer?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(transfer?.id || null);
     const [currentAction, setCurrentAction] = useState('save');
 
 
@@ -48,6 +49,7 @@ export default function TransferForm({ transfer = null }) {
         const parts = val.split('.');
         if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
         setData('amount', val);
+        setIsDirty(true);
     };
 
     const handleAmountBlur = () => {
@@ -72,13 +74,22 @@ export default function TransferForm({ transfer = null }) {
         method(url, {
             preserveScroll: true,
             preserveState: type === 'save',
-            onSuccess: () => {
+            onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
-                setSavedOnce(true);
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.transfer?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
                 if (type === 'new') {
-                    setSavedOnce(false);
+                    setSavedEntryId(null);
                     reset();
                     clearErrors();
+                    setIsDirty(false);
                 }
             },
         });
@@ -93,7 +104,7 @@ export default function TransferForm({ transfer = null }) {
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             moreOptions={transfer?.id ? { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: transfer.id, listRoute: 'dashboard' } : null}
         >
             <Head title="Transfer Funds" />
@@ -108,7 +119,7 @@ export default function TransferForm({ transfer = null }) {
                                 options={accountOptions}
                                 onSearch={fetchAccounts}
                                 value={data.transfer_from}
-                                onChange={(val) => setData('transfer_from', val)}
+                                onChange={(val) => { setData('transfer_from', val); setIsDirty(true); }}
                                 placeholder="Select Source Account"
                                 size="sm"
                                 error={errors.transfer_from}
@@ -132,7 +143,7 @@ export default function TransferForm({ transfer = null }) {
                                 options={accountOptions}
                                 onSearch={fetchAccounts}
                                 value={data.transfer_to}
-                                onChange={(val) => setData('transfer_to', val)}
+                                onChange={(val) => { setData('transfer_to', val); setIsDirty(true); }}
                                 placeholder="Select Destination Account"
                                 size="sm"
                                 error={errors.transfer_to}
@@ -169,6 +180,7 @@ export default function TransferForm({ transfer = null }) {
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData('date', newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.date}
@@ -194,7 +206,7 @@ export default function TransferForm({ transfer = null }) {
                         label="Memo"
                         placeholder="Why are you transferring these funds?"
                         value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
+                        onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                         error={errors.memo}
