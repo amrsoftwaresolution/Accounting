@@ -61,25 +61,15 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     };
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
-        supplier: credit?.supplier_id || "",
-        creditDate: getInitialDate(),
-        creditNo: credit?.credit_no || nextCreditNo || "1001",
+        supplier: credit?.supplier || credit?.supplier_id || "",
+        creditDate: credit?.creditDate || credit?.credit_date || getInitialDate(),
+        creditNo: credit?.creditNo || credit?.credit_no || nextCreditNo || "1001",
         memo: credit?.memo || "",
-        items: credit?.items?.filter(i => !i.item_id).map(i => ({
-            category: i.chart_of_acc_id,
-            description: i.description,
-            amount: i.amount
-        })) || [
+        items: credit?.items?.length > 0 ? credit.items : [
             { category: "", description: "", amount: "0.00" },
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: credit?.items?.filter(i => i.item_id).map(i => ({
-            product: i.item_id,
-            description: i.description,
-            qty: i.quantity,
-            rate: i.rate,
-            amount: i.amount
-        })) || [
+        itemDetails: credit?.itemDetails?.length > 0 ? credit.itemDetails : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -88,22 +78,12 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     useEffect(() => {
         if (credit) {
             setData({
-                supplier: credit.supplier_id || "",
-                creditDate: credit.credit_date || "",
-                creditNo: credit.credit_no || "",
+                supplier: credit.supplier || credit.supplier_id || "",
+                creditDate: credit.creditDate || credit.credit_date || "",
+                creditNo: credit.creditNo || credit.credit_no || "",
                 memo: credit.memo || "",
-                items: credit.items?.filter(i => !i.item_id).map(i => ({
-                    category: i.chart_of_acc_id,
-                    description: i.description,
-                    amount: i.amount
-                })) || [{ category: "", description: "", amount: "0.00" }],
-                itemDetails: credit.items?.filter(i => i.item_id).map(i => ({
-                    product: i.item_id,
-                    description: i.description,
-                    qty: i.quantity,
-                    rate: i.rate,
-                    amount: i.amount
-                })) || [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                items: credit.items?.length > 0 ? credit.items : [{ category: "", description: "", amount: "0.00" }],
+                itemDetails: credit.itemDetails?.length > 0 ? credit.itemDetails : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
             });
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -166,6 +146,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     const handleSave = (actionType) => {
         transform((data) => ({
             ...data,
+            action: actionType,
             items: data.items
                 .filter(item => item.category && parseCurrency(item.amount) > 0)
                 .map(item => ({

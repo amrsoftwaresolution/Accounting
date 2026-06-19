@@ -69,7 +69,7 @@ class SupplierCreditController extends Controller
             ];
 
             return Inertia::render('Transaction/SupplierCreditForm', [
-                'creditNote' => $creditNoteData,
+                'credit' => $creditNoteData,
                 'nextCreditNo' => (string)$this->getNextNo(),
             ]);
         }
@@ -224,7 +224,7 @@ class SupplierCreditController extends Controller
             session()->flash('journal_entry_id', $journalEntry->id);
 
             return Inertia::render('Transaction/SupplierCreditForm', [
-                'creditNote' => [
+                'credit' => [
                     'id' => $journalEntry->id,
                     'supplier' => $request->supplier,
                     'creditDate' => $request->creditDate,
@@ -280,7 +280,7 @@ class SupplierCreditController extends Controller
         ];
 
         return Inertia::render('Transaction/SupplierCreditForm', [
-            'creditNote' => $creditNoteData,
+            'credit' => $creditNoteData,
             'nextCreditNo' => $this->getNextNo()
         ]);
     }
@@ -425,7 +425,7 @@ class SupplierCreditController extends Controller
             session()->flash('journal_entry_id', $journalEntry->id);
 
             return Inertia::render('Transaction/SupplierCreditForm', [
-                'creditNote' => [
+                'credit' => [
                     'id' => $journalEntry->id,
                     'supplier' => $request->supplier,
                     'creditDate' => $request->creditDate,
