@@ -41,7 +41,11 @@ export default function ChequeForm({
 
     const fetchCustomers = () => {
         axios.get(route('api.payees')).then(res => {
-            setCustomerOptions(res.data.filter(p => p.type === 'customer'));
+            setCustomerOptions(
+                res.data
+                    .filter(p => p.type === 'Customer')
+                    .map(p => ({ value: p.value, label: p.label }))
+            );
         });
     };
 
