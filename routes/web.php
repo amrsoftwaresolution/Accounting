@@ -105,6 +105,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
     Route::delete('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
 
+    Route::get('/cheque/list', [\App\Http\Controllers\Accounting\ChequeController::class, 'index'])->name('cheque.index');
+    Route::get('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'create'])->name('cheque');
+    Route::post('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'store'])->name('cheque.store');
+    Route::get('/cheque/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ChequeController::class, 'edit'])->name('cheque.edit');
+    Route::patch('/cheque/{journalEntry}', [\App\Http\Controllers\Accounting\ChequeController::class, 'update'])->name('cheque.update');
+    Route::delete('/cheque/{journalEntry}', [\App\Http\Controllers\Accounting\ChequeController::class, 'destroy'])->name('cheque.destroy');
+
     // Inventory Routes
     Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);
     Route::resource('item-categories', \App\Http\Controllers\Inventory\ItemCategoryController::class);

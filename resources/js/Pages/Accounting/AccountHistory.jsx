@@ -159,6 +159,9 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'supplier_credit') {
             return route('supplier-credit.edit', tx.journal_entry_id);
         }
+        if (type === 'cheque') {
+            return route('cheque.edit', tx.journal_entry_id);
+        }
         return route('journal-entries.edit', tx.journal_entry_id);
     };
 

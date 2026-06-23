@@ -68,6 +68,15 @@ export default function TransactionLayout({
                 listRoute: 'dashboard'
             };
         }
+        if (currentPath.startsWith('/cheque/')) {
+            const chequeId = currentPath.split('/')[2];
+            return {
+                copyRoute: 'cheque',
+                deleteRoute: 'cheque.destroy',
+                recordId: chequeId,
+                listRoute: 'dashboard'
+            };
+        }
         if (currentPath.startsWith('/payment/')) {
             return { 
                 copyRoute: 'payment', 
