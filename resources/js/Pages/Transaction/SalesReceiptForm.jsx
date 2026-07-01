@@ -9,11 +9,14 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
+import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
+import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { showToast } from "@/Components/ToastNotification";
 
 export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceiptNo = "", receipt = null }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const defaultCurrencyCode = company?.home_currency || 'LKR';
 
     const [customerOptions, setCustomerOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
@@ -65,6 +68,8 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                 items: receipt.items && receipt.items.length > 0 ? receipt.items : [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
                 ],
+                currency_id: receipt.currency_id || null,
+                exchange_rate: receipt.exchange_rate ? String(receipt.exchange_rate) : "",
                 action: 'save'
             });
         } else {
@@ -82,6 +87,8 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ],
+                currency_id: null,
+                exchange_rate: "",
                 action: 'save'
             });
         }
@@ -122,6 +129,8 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
+        currency_id: receipt?.currency_id || null,
+        exchange_rate: receipt?.exchange_rate ? String(receipt.exchange_rate) : "",
         action: 'save'
     });
 
@@ -129,6 +138,16 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
         0
     ).toFixed(2);
+
+    const { accountCurrencyDetails } = useAccountCurrency({
+        accountId: data.depositTo,
+        accountOptions,
+        exchangeRate: data.exchange_rate,
+        currencyId: data.currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode,
+    });
 
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
@@ -177,7 +196,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
             onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
-                
+
                 setSavedOnce(false);
                 setTimeout(() => setSavedOnce(true), 0);
 
@@ -202,6 +221,8 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                         ],
+                        currency_id: null,
+                        exchange_rate: "",
                         action: 'save'
                     });
                     reset();
@@ -346,6 +367,12 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                             size="sm"
                             error={errors.depositTo}
                         />
+                        <CurrencyConversionRow
+                            details={accountCurrencyDetails}
+                            exchangeRate={data.exchange_rate}
+                            onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
+                            error={errors.exchange_rate}
+                        />
                     </div>
                     <div className="w-[160px]">
                         <CommonInput
@@ -361,7 +388,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
                             onBlur={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('receiptNo', val);
-                            }}              
+                            }}
                             size="sm"
                             inputClass="font-mono text-right"
                             error={errors.receiptNo}

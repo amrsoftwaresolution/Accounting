@@ -17,6 +17,8 @@ class StoreBankDepositRequest extends FormRequest
             'depositDate' => 'required|date',
             'depositNo' => 'required',
             'depositTo' => 'required',
+            'currency_id' => 'nullable|exists:currencies,id',
+            'exchange_rate' => 'nullable|numeric|gt:0',
             'cashBackAccount' => 'nullable|uuid',
             'cashBackMemo' => 'nullable|string',
             'cashBackAmount' => 'nullable|numeric|min:0',

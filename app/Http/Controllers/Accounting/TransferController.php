@@ -31,12 +31,16 @@ class TransferController extends Controller
                 // 1. Create Business Document (Transfer)
                 $transfer = Transfer::create([
                     'company_id'      => session('active_company_id'),
-                    'from_account_id' => $request->transfer_from, // Updated key
-                    'to_account_id'   => $request->transfer_to,   // Updated key
+                    'from_account_id' => $request->transfer_from,
+                    'to_account_id'   => $request->transfer_to,
+                    'from_currency_id'=> $request->from_currency_id,
+                    'from_exchange_rate' => $request->from_exchange_rate,
+                    'to_currency_id' => $request->to_currency_id,
+                    'to_exchange_rate' => $request->to_exchange_rate,
                     'amount'          => $amount,
                     'date'            => $request->date,
                     'memo'            => $request->memo,
-                    'reference_no'    => $request->referenceNo ?? 'TRF-' . time(), // Fallback if null
+                    'reference_no'    => $request->referenceNo ?? 'TRF-' . time(),
                 ]);
 
                 // 2. Create Financial Truth (Journal Entry)
@@ -82,7 +86,7 @@ class TransferController extends Controller
     {
         // Load the lines and the related Transfer model
         $journalEntry->load(['lines', 'transactionable']);
-        
+
         $transfer = $journalEntry->transactionable;
 
         return Inertia::render('Transaction/TransferForm', [
@@ -90,6 +94,10 @@ class TransferController extends Controller
                 'id' => $journalEntry->id,
                 'transfer_from' => $transfer->from_account_id,
                 'transfer_to' => $transfer->to_account_id,
+                'from_currency_id' => $transfer->from_currency_id,
+                'from_exchange_rate' => $transfer->from_exchange_rate ? String($transfer->from_exchange_rate) : "",
+                'to_currency_id' => $transfer->to_currency_id,
+                'to_exchange_rate' => $transfer->to_exchange_rate ? String($transfer->to_exchange_rate) : "",
                 'amount' => $transfer->amount,
                 'date' => $transfer->date,
                 'memo' => $transfer->memo,
@@ -111,6 +119,10 @@ class TransferController extends Controller
                 $transfer->update([
                     'from_account_id' => $request->transfer_from,
                     'to_account_id'   => $request->transfer_to,
+                    'from_currency_id'=> $request->from_currency_id,
+                    'from_exchange_rate' => $request->from_exchange_rate,
+                    'to_currency_id' => $request->to_currency_id,
+                    'to_exchange_rate' => $request->to_exchange_rate,
                     'amount'          => $amount,
                     'date'            => $request->date,
                     'memo'            => $request->memo,
@@ -156,8 +168,8 @@ class TransferController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
-        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
-            ?? $journalEntry->lines->first()?->chart_of_account_id 
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id
+            ?? $journalEntry->lines->first()?->chart_of_account_id
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {

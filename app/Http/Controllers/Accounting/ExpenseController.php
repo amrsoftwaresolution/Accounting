@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PaymentMethod;
 use App\Models\ChartOfAcc;
+use App\Models\Currency;
 use App\Models\Supplier;
 use App\Models\Customer;
 use App\Models\Employee;
@@ -15,6 +16,7 @@ use App\Http\Requests\Accounting\StoreExpenseRequest;
 use App\Http\Requests\Accounting\UpdateExpenseRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 
 class ExpenseController extends Controller
@@ -35,6 +37,8 @@ class ExpenseController extends Controller
                 'paymentMethod' => $expense?->payment_method_id ?? '',
                 'referenceNo' => '',
                 'memo' => $journalEntry->description,
+                'currency_id' => $expense?->currency_id ?? null,
+                'exchange_rate' => $expense?->exchange_rate ? String($expense->exchange_rate) : "",
                 'items' => $expense ? $expense->items->whereNull('item_id')->map(function ($item) {
                     return [
                         'category' => $item->chart_of_acc_id,
@@ -122,6 +126,17 @@ class ExpenseController extends Controller
                 });
 
                 // 1. Create Business Document (Expense)
+                $exchangeRate = $request->input('exchange_rate');
+                if (!$exchangeRate && $request->input('currency_id')) {
+                    $currencyModel = Currency::find($request->input('currency_id'));
+                    $exchangeRate = $currencyModel?->exchange_rate;
+                }
+
+                $amountInBaseCurrency = null;
+                if ($exchangeRate && Schema::hasColumn('expenses', 'amount_in_base_currency')) {
+                    $amountInBaseCurrency = round((float) str_replace(',', '', $exchangeRate) * $totalAmount, 2);
+                }
+
                 $expense = \App\Models\Expense::create([
                     'company_id' => $companyId,
                     'payee_id' => $request->payee,
@@ -133,6 +148,9 @@ class ExpenseController extends Controller
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'status' => 'posted',
+                    'currency_id' => $request->input('currency_id'),
+                    'exchange_rate' => $exchangeRate,
+                    'amount_in_base_currency' => $amountInBaseCurrency,
                 ]);
 
                 // Categories
@@ -254,6 +272,8 @@ class ExpenseController extends Controller
                     'paymentMethod' => $paymentMethod,
                     'referenceNo' => $referenceNo,
                     'memo' => $request->memo,
+                    'currency_id' => $request->input('currency_id'),
+                    'exchange_rate' => $request->input('exchange_rate'),
                     'items' => collect($request->items)->filter(function($item) {
                         return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                     })->values()->toArray(),
@@ -282,6 +302,8 @@ class ExpenseController extends Controller
             'paymentMethod' => $expense?->payment_method_id ?? '',
             'referenceNo' => $journalEntry->reference,
             'memo' => $journalEntry->description,
+            'currency_id' => $expense?->currency_id ?? null,
+            'exchange_rate' => $expense?->exchange_rate ?? null,
             'items' => $expense ? $expense->items->whereNull('item_id')->map(function ($item) {
                 return [
                     'category' => $item->chart_of_acc_id,
@@ -359,6 +381,17 @@ class ExpenseController extends Controller
                 // 1. Update Business Document
                 $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
                 if ($expense) {
+                    $exchangeRate = $request->input('exchange_rate');
+                    if (!$exchangeRate && $request->input('currency_id')) {
+                        $currencyModel = Currency::find($request->input('currency_id'));
+                        $exchangeRate = $currencyModel?->exchange_rate;
+                    }
+
+                    $amountInBaseCurrency = null;
+                    if ($exchangeRate && Schema::hasColumn('expenses', 'amount_in_base_currency')) {
+                        $amountInBaseCurrency = round((float) str_replace(',', '', $exchangeRate) * $totalAmount, 2);
+                    }
+
                     $expense->update([
                         'payee_id' => $request->payee,
                         'payee_type' => $request->payeeType,
@@ -368,6 +401,9 @@ class ExpenseController extends Controller
                         'reference_no' => $referenceNo,
                         'total_amount' => $totalAmount,
                         'memo' => $request->memo,
+                        'currency_id' => $request->input('currency_id'),
+                        'exchange_rate' => $exchangeRate,
+                        'amount_in_base_currency' => $amountInBaseCurrency,
                     ]);
 
                     $expense->items()->delete();
@@ -481,6 +517,8 @@ class ExpenseController extends Controller
                     'paymentMethod' => $paymentMethod,
                     'referenceNo' => $referenceNo,
                     'memo' => $request->memo,
+                    'currency_id' => $request->input('currency_id'),
+                    'exchange_rate' => $request->input('exchange_rate'),
                     'items' => collect($request->items)->filter(function($item) {
                         return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                     })->values()->toArray(),

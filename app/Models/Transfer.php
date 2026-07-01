@@ -12,6 +12,8 @@ class Transfer extends Model
 
     protected $fillable = [
         'company_id', 'from_account_id', 'to_account_id',
+        'from_currency_id', 'from_exchange_rate',
+        'to_currency_id', 'to_exchange_rate',
         'amount', 'date', 'memo', 'reference_no'
     ];
 }

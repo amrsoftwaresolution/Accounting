@@ -58,6 +58,8 @@ class SalesReceiptController extends Controller
                 'receiptNo' => $this->getNextReceiptNo(),
                 'paymentMethod' => $receipt->payment_method_id,
                 'depositTo' => $receipt->deposit_to_account_id,
+                'currency_id' => $receipt->currency_id,
+                'exchange_rate' => $receipt->exchange_rate ? String($receipt->exchange_rate) : "",
                 'memo' => $receipt->memo,
                 'statementMessage' => $receipt->statement_message,
                 'items' => $receipt->items->map(function ($item) {
@@ -274,6 +276,8 @@ class SalesReceiptController extends Controller
             'receiptNo' => $receipt->receipt_no,
             'paymentMethod' => $receipt->payment_method_id,
             'depositTo' => $receipt->deposit_to_account_id,
+            'currency_id' => $receipt->currency_id,
+            'exchange_rate' => $receipt->exchange_rate ? String($receipt->exchange_rate) : "",
             'memo' => $receipt->memo,
             'statementMessage' => $receipt->statement_message,
             'items' => $receipt->items->map(function ($item) {
@@ -341,6 +345,8 @@ class SalesReceiptController extends Controller
                     'receipt_date' => $request->receiptDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
@@ -417,6 +423,10 @@ class SalesReceiptController extends Controller
                     'receiptNo' => $request->receiptNo,
                     'paymentMethod' => $request->paymentMethod,
                     'depositTo' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
                     'memo' => $request->memo,
                     'statementMessage' => $request->statementMessage,
                     'items' => collect($request->items)->filter(function($item) {
@@ -432,8 +442,8 @@ class SalesReceiptController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
-        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
-            ?? $journalEntry->lines->first()?->chart_of_account_id 
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id
+            ?? $journalEntry->lines->first()?->chart_of_account_id
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {

@@ -25,6 +25,8 @@ class StoreExpenseRequest extends FormRequest
             'paymentAccount' => 'required_without:account',
             'paymentDate' => 'required_without:date|date',
             'paymentMethod' => 'nullable',
+            'exchange_rate' => 'nullable|numeric|gt:0',
+            'currency_id' => 'nullable|exists:currencies,id',
         ];
     }
 }

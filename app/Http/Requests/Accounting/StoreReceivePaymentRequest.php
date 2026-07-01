@@ -18,6 +18,8 @@ class StoreReceivePaymentRequest extends FormRequest
             'amountReceived' => 'required',
             'paymentDate' => 'required|date',
             'depositTo' => 'required',
+            'currency_id' => 'nullable|exists:currencies,id',
+            'exchange_rate' => 'nullable|numeric|gt:0',
         ];
     }
 }

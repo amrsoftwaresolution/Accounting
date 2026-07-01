@@ -45,6 +45,8 @@ class PayBillController extends Controller
             'paymentDate' => 'required|date',
             'paymentMethod' => 'nullable|uuid',
             'paymentAccount' => 'required|uuid',
+            'currency_id' => 'nullable|exists:currencies,id',
+            'exchange_rate' => 'nullable|numeric|gt:0',
             'referenceNo' => 'nullable|string|max:255',
             'memo' => 'nullable|string',
             'bills' => 'nullable|array',
@@ -63,6 +65,8 @@ class PayBillController extends Controller
                     'payment_date' => $request->paymentDate,
                     'payment_method_id' => $request->paymentMethod,
                     'payment_account_id' => $request->paymentAccount,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
                 ]);
@@ -148,8 +152,8 @@ class PayBillController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
-        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
-            ?? $journalEntry->lines->first()?->chart_of_account_id 
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id
+            ?? $journalEntry->lines->first()?->chart_of_account_id
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {
@@ -157,11 +161,11 @@ class PayBillController extends Controller
 
             if ($payment) {
                 $allocations = BillPaymentAllocation::where('bill_payment_id', $payment->id)->get();
-                
+
                 foreach ($allocations as $allocation) {
                     $billId = $allocation->bill_id;
                     $allocation->delete();
-                    
+
                     // Re-evaluate bill status
                     $bill = \App\Models\Bill::find($billId);
                     if ($bill) {

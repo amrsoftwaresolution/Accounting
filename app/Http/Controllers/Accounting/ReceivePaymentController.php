@@ -103,6 +103,8 @@ class ReceivePaymentController extends Controller
                     'payment_date' => $request->paymentDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
                 ]);
@@ -191,6 +193,8 @@ class ReceivePaymentController extends Controller
                     'paymentDate' => $request->paymentDate,
                     'paymentMethod' => $request->paymentMethod,
                     'depositTo' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
                     'referenceNo' => $request->referenceNo,
                     'amountReceived' => $request->amountReceived,
                     'memo' => $request->memo,
@@ -264,6 +268,8 @@ class ReceivePaymentController extends Controller
                     'payment_date' => $request->paymentDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
                 ]);
@@ -360,8 +366,8 @@ class ReceivePaymentController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
-        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
-            ?? $journalEntry->lines->first()?->chart_of_account_id 
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id
+            ?? $journalEntry->lines->first()?->chart_of_account_id
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {

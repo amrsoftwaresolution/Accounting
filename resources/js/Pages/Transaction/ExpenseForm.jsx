@@ -8,7 +8,9 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
+import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
 import { showToast } from "@/Components/ToastNotification";
+import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import axios from "axios";
 
 export default function ExpenseForm({
@@ -68,7 +70,7 @@ export default function ExpenseForm({
     };
     const [isDirty, setIsDirty] = useState(false);
     const [savedEntryId, setSavedEntryId] = useState(expense?.id || null);
-    
+
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
@@ -107,10 +109,22 @@ export default function ExpenseForm({
         })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
+        exchange_rate: expense?.exchange_rate ? String(expense.exchange_rate) : "",
+        currency_id: expense?.currency_id || null,
         action: 'save'
     });
 
     const actionRef = useRef('save');
+
+    const { accountCurrencyDetails } = useAccountCurrency({
+        accountId: data.account,
+        accountOptions,
+        exchangeRate: data.exchange_rate,
+        currencyId: data.currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode: 'LKR'
+    });
 
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0) +
@@ -139,6 +153,8 @@ export default function ExpenseForm({
                 })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
                 ],
+                exchange_rate: expense.exchange_rate ? String(expense.exchange_rate) : "",
+                currency_id: expense.currency_id || null,
                 action: 'save'
             });
         } else {
@@ -156,6 +172,8 @@ export default function ExpenseForm({
                 itemDetails: [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ],
+                exchange_rate: "",
+                currency_id: null,
                 action: 'save'
             });
         }
@@ -179,7 +197,9 @@ export default function ExpenseForm({
                     qty: String(item.qty).replace(/,/g, ''),
                     rate: String(item.rate).replace(/,/g, ''),
                     amount: String(item.amount).replace(/,/g, '')
-                }))
+                })),
+            exchange_rate: data.exchange_rate ? String(data.exchange_rate).replace(/,/g, '') : null,
+            currency_id: data.currency_id || null,
         }));
     }, [transform]);
 
@@ -251,7 +271,7 @@ export default function ExpenseForm({
                 if (newId && !savedEntryId) {
                     setSavedEntryId(newId);
                 }
-                
+
                 if (action === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.ref || nextExpenseNo || 'EXP-0001';
@@ -266,6 +286,8 @@ export default function ExpenseForm({
                         payee: "", account: "", date: cachedDate, method: "", ref: nextRef, memo: "",
                         items: [{ category: "", description: "", amount: "0.00" }],
                         itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                        exchange_rate: "",
+                        currency_id: null,
                         action: 'save'
                     });
                     setIsDirty(false);
@@ -383,6 +405,13 @@ export default function ExpenseForm({
                     )}
                 </div>
 
+<CurrencyConversionRow
+                        details={accountCurrencyDetails}
+                        exchangeRate={data.exchange_rate}
+                        onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
+                        error={errors.exchange_rate}
+                    />
+
                 {/* ROW 2: Date, Method, Ref */}
                 <div className="flex items-end gap-6">
                     <div className="w-[200px]">
@@ -413,7 +442,7 @@ export default function ExpenseForm({
                             placeholder=""
                             value={data.ref}
                             onChange={(e) => { setData("ref", e.target.value); setIsDirty(true); }}
-                                
+
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData("ref", val);
