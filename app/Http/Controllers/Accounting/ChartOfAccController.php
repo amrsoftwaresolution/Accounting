@@ -18,7 +18,10 @@ class ChartOfAccController extends Controller
 
     public function index()
     {
-        $chartOfAccounts = ChartOfAcc::orderBy('account_type')->orderBy('account_code')->get();
+        $chartOfAccounts = ChartOfAcc::orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
+            ->orderBy('sub_type')
+            ->orderBy('name')
+            ->get();
         $currencies = \App\Models\Currency::orderBy('code')->get();
 
         return Inertia::render('Accounting/chart-of-acc-index', [
