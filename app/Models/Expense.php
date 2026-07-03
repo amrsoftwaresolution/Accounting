@@ -13,8 +13,7 @@ class Expense extends Model
     protected $fillable = [
         'company_id', 'payee_id', 'payee_type', 'payment_account_id',
         'payment_date', 'payment_method_id', 'reference_no',
-        'total_amount', 'memo', 'status',
-        'currency_id', 'exchange_rate', 'amount_in_base_currency'
+        'total_amount', 'memo', 'status'
     ];
 
     public function items()
