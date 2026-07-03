@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class Cheque extends Model
+{
+    use HasUuids, SoftDeletes;
+
+    protected $fillable = [
+        'company_id',
+        'payee_id',
+        'payee_type',
+        'bank_account_id',
+        'payment_date',
+        'currency_id',
+        'exchange_rate',
+        'cheque_no',
+        'total_amount',
+        'mailing_address',
+        'memo',
+        'status',
+    ];
+
+    protected $casts = [
+        'payment_date' => 'date',
+    ];
+
+    public function payee()
+    {
+        return $this->morphTo();
+    }
+
+    public function bankAccount()
+    {
+        return $this->belongsTo(ChartOfAcc::class, 'bank_account_id');
+    }
+
+    public function lines()
+    {
+        return $this->hasMany(ChequeLine::class)->orderBy('line_order');
+    }
+}

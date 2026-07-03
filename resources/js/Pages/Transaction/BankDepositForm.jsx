@@ -7,6 +7,8 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
+import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
+import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { showToast } from "@/Components/ToastNotification";
 
 export default function BankDepositForm({ auth, nextDepositNo = "", deposit = null }) {
@@ -22,7 +24,9 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalTarget, setAccountModalTarget] = useState(null);
     const [accountModalRowIndex, setAccountModalRowIndex] = useState(null);
-    const [savedOnce, setSavedOnce] = useState(!!deposit?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(deposit?.id || null);
+    const defaultCurrencyCode = company?.home_currency || 'LKR';
 
     const fetchPayees = (search = "") => {
         axios.get(route('api.payees', { search })).then(res => setPayeeOptions(res.data));
@@ -76,6 +80,10 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
         cashBackMemo: deposit?.cashBackMemo || "",
         cashBackAmount: deposit?.cashBackAmount ? parseFloat(deposit.cashBackAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
         memo: deposit?.memo || "",
+        currency_id: deposit?.currency_id || null,
+        exchange_rate: deposit?.exchange_rate ? String(deposit.exchange_rate) : "",
+        currency_id: deposit?.currency_id || null,
+        exchange_rate: deposit?.exchange_rate ? String(deposit.exchange_rate) : "",
         action: 'save'
     });
 
@@ -95,6 +103,8 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                 cashBackMemo: deposit.cashBackMemo || "",
                 cashBackAmount: deposit.cashBackAmount ? parseFloat(deposit.cashBackAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
                 memo: deposit.memo || "",
+                currency_id: deposit.currency_id || null,
+                exchange_rate: deposit.exchange_rate ? String(deposit.exchange_rate) : "",
                 action: 'save'
             });
         }
@@ -105,10 +115,21 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
     const cashBackAmount = parseFloat(String(data.cashBackAmount).replace(/,/g, '')) || 0;
     const otherFundsTotal = cashBackAmount.toFixed(2);
 
+    const { accountCurrencyDetails } = useAccountCurrency({
+        accountId: data.depositTo,
+        accountOptions: depositAccountOptions,
+        exchangeRate: data.exchange_rate,
+        currencyId: data.currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode,
+    });
+
     const handleItemChange = (index, field, value) => {
         const updated = [...data.items];
         updated[index][field] = value;
         setData('items', updated);
+        setIsDirty(true);
     };
 
     const handleSave = (action = 'save') => {
@@ -117,13 +138,26 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
         const method = deposit?.id ? patch : post;
 
         method(url, {
-            onSuccess: () => {
+            onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
-                setSavedOnce(true);
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.deposit?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
                 if (action === 'new') {
-                    setSavedOnce(false);
+                    setSavedEntryId(null);
+                    const currentRef = data.depositNo || nextDepositNo || '1001';
+                    const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
+                    const nextRef = String(num + 1).padStart(4, '0');
                     reset();
+                    setData('depositNo', nextRef);
                     clearErrors();
+                    setIsDirty(false);
                 }
             }
         });
@@ -135,7 +169,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
             title={deposit?.id ? `Edit Bank Deposit #${data.depositNo}` : `Bank Deposit #${data.depositNo}`}
             amount={parseFloat(totalAmount)}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
@@ -144,8 +178,8 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                     router.delete(route('deposit.destroy', deposit.id));
                 }
             } : undefined}
-            onAddLine={() => setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }])}
-            onClearRows={() => setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }])}
+            onAddLine={() => { setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
+            onClearRows={() => { setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
         >
             <Head title="Bank Deposit" />
 
@@ -157,11 +191,17 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                                 label="Account"
                                 options={depositAccountOptions}
                                 value={data.depositTo}
-                                onChange={(val) => setData('depositTo', val)}
+                                onChange={(val) => { setData('depositTo', val); setIsDirty(true); }}
                                 onSearch={fetchDepositAccounts}
                                 onAddNew={() => openAccountModal('depositTo')}
                                 size="sm"
                                 error={errors.depositTo}
+                            />
+                            <CurrencyConversionRow
+                                details={accountCurrencyDetails}
+                                exchangeRate={data.exchange_rate}
+                                onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
+                                error={errors.exchange_rate}
                             />
                         </div>
 
@@ -174,6 +214,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                                     const newDate = e.target.value;
                                     localStorage.setItem('last_transaction_date', newDate);
                                     setData('depositDate', newDate);
+                                    setIsDirty(true);
                                 }}
                                 size="sm"
                                 error={errors.depositDate}
@@ -191,7 +232,19 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                             <CommonInput
                                 label="Deposit no."
                                 value={data.depositNo}
-                                onChange={(e) => setData('depositNo', e.target.value)}
+                                onChange={(e) => { setData('depositNo', e.target.value); setIsDirty(true); }}
+
+                                onFocus={(e) => {
+                                    const val = e.target.value.replace(/,/g, '');
+                                    setData('depositNo', val);
+                                    setTimeout(() => e.target.select(), 0);
+                                }}
+
+                                onBlur={(e) => {
+                                    const val = e.target.value.replace(/,/g, '');
+                                    setData('depositNo', val);
+                                }}
+
                                 size="sm"
                                 inputClass="font-mono text-right"
                             />
@@ -203,9 +256,9 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                     columns={COLUMNS}
                     items={data.items}
                     handleItemChange={handleItemChange}
-                    addRow={() => setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }])}
-                    removeRow={(index) => setData('items', data.items.filter((_, i) => i !== index))}
-                    clearRows={() => setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }])}
+                    addRow={() => { setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
+                    removeRow={(index) => { setData('items', data.items.filter((_, i) => i !== index)); setIsDirty(true); }}
+                    clearRows={() => { setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
                     totals={{ "Total": totalAmount }}
                     currencyPrefix={currencyPrefix}
                 />
@@ -217,7 +270,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                             label="Memo"
                             placeholder="Add a note for this deposit..."
                             value={data.memo}
-                            onChange={(e) => setData('memo', e.target.value)}
+                            onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                             size="sm"
                             className="h-24"
                             error={errors.memo}

@@ -69,7 +69,7 @@ class SupplierCreditController extends Controller
             ];
 
             return Inertia::render('Transaction/SupplierCreditForm', [
-                'creditNote' => $creditNoteData,
+                'credit' => $creditNoteData,
                 'nextCreditNo' => (string)$this->getNextNo(),
             ]);
         }
@@ -220,8 +220,25 @@ class SupplierCreditController extends Controller
                 return redirect()->route('supplier-credit')->with('success', 'Supplier Return saved successfully.');
             }
 
-            return redirect()->route('SupplierCredit.edit', $journalEntry->id)
-                ->with('success', 'Supplier Return saved successfully.');
+            session()->flash('success', 'Supplier Return saved successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/SupplierCreditForm', [
+                'credit' => [
+                    'id' => $journalEntry->id,
+                    'supplier' => $request->supplier,
+                    'creditDate' => $request->creditDate,
+                    'creditNo' => $request->creditNo,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+                'nextCreditNo' => (string)$this->getNextNo(),
+            ]);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -263,7 +280,7 @@ class SupplierCreditController extends Controller
         ];
 
         return Inertia::render('Transaction/SupplierCreditForm', [
-            'creditNote' => $creditNoteData,
+            'credit' => $creditNoteData,
             'nextCreditNo' => $this->getNextNo()
         ]);
     }
@@ -394,7 +411,35 @@ class SupplierCreditController extends Controller
                 }
             });
 
-            return redirect()->back()->with('success', 'Supplier Return updated successfully.');
+            $action = $request->input('action', 'save');
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Supplier Return updated successfully.');
+            }
+
+            if ($action === 'new') {
+                return redirect()->route('supplier-credit')->with('success', 'Supplier Return updated successfully.');
+            }
+
+            session()->flash('success', 'Supplier Return updated successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/SupplierCreditForm', [
+                'credit' => [
+                    'id' => $journalEntry->id,
+                    'supplier' => $request->supplier,
+                    'creditDate' => $request->creditDate,
+                    'creditNo' => $request->creditNo,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+                'nextCreditNo' => (string)$this->getNextNo(),
+            ]);
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }

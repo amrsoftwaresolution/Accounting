@@ -4,7 +4,7 @@ namespace App\Http\Requests\Accounting;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateExpenseRequest extends FormRequest
+class UpdateChequeRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -17,13 +17,14 @@ class UpdateExpenseRequest extends FormRequest
             'payee' => 'nullable',
             'account' => 'required',
             'date' => 'required|date',
-            'method' => 'nullable',
-            'ref' => 'nullable|string',
+            'cheque_no' => 'nullable|string',
+            'mailing_address' => 'nullable|string',
             'memo' => 'nullable|string',
-            'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
-            'exchange_rate' => 'nullable|numeric|gt:0',
             'currency_id' => 'nullable|exists:currencies,id',
+            'exchange_rate' => 'nullable|numeric|gt:0',
+            'items' => 'nullable|array',
+            'paymentAccount' => 'required_without:account',
+            'paymentDate' => 'required_without:date|date',
         ];
     }
 }

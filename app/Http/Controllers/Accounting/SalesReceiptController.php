@@ -58,6 +58,8 @@ class SalesReceiptController extends Controller
                 'receiptNo' => $this->getNextReceiptNo(),
                 'paymentMethod' => $receipt->payment_method_id,
                 'depositTo' => $receipt->deposit_to_account_id,
+                'currency_id' => $receipt->currency_id,
+                'exchange_rate' => $receipt->exchange_rate ? String($receipt->exchange_rate) : "",
                 'memo' => $receipt->memo,
                 'statementMessage' => $receipt->statement_message,
                 'items' => $receipt->items->map(function ($item) {
@@ -213,8 +215,27 @@ class SalesReceiptController extends Controller
             return redirect()->route('receipt')->with('success', 'Cash sale saved successfully.');
         }
 
-        return redirect()->route('receipt.edit', $journalEntry->id)
-            ->with('success', 'Cash sale saved successfully.');
+        session()->flash('success', 'Cash sale saved successfully.');
+        session()->flash('journal_entry_id', $journalEntry->id);
+
+        return Inertia::render('Transaction/SalesReceiptForm', [
+            'nextReceiptNo' => $request->receiptNo,
+            'receipt' => [
+                'id' => $journalEntry->id,
+                'customer' => $request->customer,
+                'email' => $request->email,
+                'billingAddress' => $request->billingAddress ?? '',
+                'receiptDate' => $request->receiptDate,
+                'receiptNo' => $request->receiptNo,
+                'paymentMethod' => $request->paymentMethod,
+                'depositTo' => $request->depositTo,
+                'memo' => $request->memo,
+                'statementMessage' => $request->statementMessage,
+                'items' => collect($request->items)->filter(function($item) {
+                    return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                })->values()->toArray(),
+            ],
+        ]);
 
     }
 
@@ -255,6 +276,8 @@ class SalesReceiptController extends Controller
             'receiptNo' => $receipt->receipt_no,
             'paymentMethod' => $receipt->payment_method_id,
             'depositTo' => $receipt->deposit_to_account_id,
+            'currency_id' => $receipt->currency_id,
+            'exchange_rate' => $receipt->exchange_rate ? String($receipt->exchange_rate) : "",
             'memo' => $receipt->memo,
             'statementMessage' => $receipt->statement_message,
             'items' => $receipt->items->map(function ($item) {
@@ -322,6 +345,8 @@ class SalesReceiptController extends Controller
                     'receipt_date' => $request->receiptDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
@@ -377,14 +402,38 @@ class SalesReceiptController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->route('chart-of-account.index')->with('success', 'Cash sale updated successfully.');
+                return redirect()->route('dashboard')->with('success', 'Cash sale updated successfully.');
             }
 
             if ($action === 'new') {
                 return redirect()->route('receipt')->with('success', 'Cash sale updated successfully.');
             }
 
-            return redirect()->back()->with('success', 'Cash sale updated successfully.');
+            session()->flash('success', 'Cash sale updated successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/SalesReceiptForm', [
+                'nextReceiptNo' => $request->receiptNo,
+                'receipt' => [
+                    'id' => $journalEntry->id,
+                    'customer' => $request->customer,
+                    'email' => $request->email,
+                    'billingAddress' => $request->billingAddress ?? '',
+                    'receiptDate' => $request->receiptDate,
+                    'receiptNo' => $request->receiptNo,
+                    'paymentMethod' => $request->paymentMethod,
+                    'depositTo' => $request->depositTo,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
+                    'memo' => $request->memo,
+                    'statementMessage' => $request->statementMessage,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -393,8 +442,8 @@ class SalesReceiptController extends Controller
 
     public function destroy(JournalEntry $journalEntry)
     {
-        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id 
-            ?? $journalEntry->lines->first()?->chart_of_account_id 
+        $chartOfAccountId = $journalEntry->lines->first()?->chart_of_acc_id
+            ?? $journalEntry->lines->first()?->chart_of_account_id
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {

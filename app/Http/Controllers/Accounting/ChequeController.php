@@ -1,0 +1,380 @@
+<?php
+
+namespace App\Http\Controllers\Accounting;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Cheque;
+use App\Models\ChequeLine;
+use App\Models\ChartOfAcc;
+use App\Models\Customer;
+use App\Models\Supplier;
+use App\Models\JournalEntry;
+use App\Models\JournalEntryLine;
+use App\Http\Requests\Accounting\StoreChequeRequest;
+use App\Http\Requests\Accounting\UpdateChequeRequest;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+
+class ChequeController extends Controller
+{
+    public function index()
+    {
+        // For standard indexing, not specifically requested, but good for completeness
+        $cheques = Cheque::with('bankAccount', 'payee')->latest()->paginate(20);
+        return Inertia::render('Transaction/ChequeIndex', ['cheques' => $cheques]);
+    }
+
+    public function create(Request $request)
+    {
+        if ($copyId = $request->query('copy')) {
+            $journalEntry = JournalEntry::findOrFail($copyId);
+            $journalEntry->load('lines');
+            $cheque = Cheque::find($journalEntry->transactionable_id);
+
+            $chequeData = [
+                'id' => null,
+                'payee' => $journalEntry->payee_id,
+                'payeeType' => $cheque?->payee_type ?? ($journalEntry->payee_type == Customer::class ? 'customer' : 'supplier'),
+                'account' => $cheque?->bank_account_id ?? $journalEntry->lines->where('credit', '>', 0)->first()?->chart_of_acc_id,
+                'date' => $journalEntry->date,
+                'cheque_no' => '',
+                'mailing_address' => $cheque?->mailing_address ?? '',
+                'memo' => $journalEntry->description,
+                'items' => $cheque ? $cheque->lines->map(function ($item) {
+                    return [
+                        'category' => $item->category_account_id,
+                        'description' => $item->description,
+                        'amount' => $item->amount,
+                        'customer_id' => $item->customer_id,
+                    ];
+                })->values()->toArray() : [],
+            ];
+
+            return Inertia::render('Transaction/ChequeForm', [
+                'cheque' => $chequeData,
+            ]);
+        }
+
+        return Inertia::render('Transaction/ChequeForm', [
+            'nextChequeNo' => $this->getNextChequeNo()
+        ]);
+    }
+
+    private function getNextChequeNo()
+    {
+        $last = JournalEntry::where('company_id', session('active_company_id'))
+            ->where('transaction_type', 'cheque')
+            ->orderByRaw('CAST(REGEXP_REPLACE(reference, "[^0-9]", "") AS UNSIGNED) DESC')
+            ->first();
+
+        if ($last) {
+            $num = (int) preg_replace('/[^0-9]/', '', $last->reference);
+            return 'CHQ-' . str_pad($num + 1, 4, '0', STR_PAD_LEFT);
+        }
+        return 'CHQ-0001';
+    }
+
+    public function store(StoreChequeRequest $request)
+    {
+        $validated = $request->validated();
+
+        $bankAccount = $request->input('account', $request->input('paymentAccount'));
+        $paymentDate = $request->input('date', $request->input('paymentDate'));
+        $chequeNo = $request->input('cheque_no', $request->input('ref'));
+
+        $companyId = session('active_company_id');
+
+        try {
+            $journalEntry = DB::transaction(function() use ($request, $bankAccount, $paymentDate, $chequeNo, $companyId) {
+                $categoryItems = collect($request->items)->filter(function($item) {
+                    return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                });
+
+                if ($categoryItems->isEmpty()) {
+                    throw new \Exception('At least one Category item is required.');
+                }
+
+                $totalAmount = $categoryItems->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
+                });
+
+                // 1. Create Business Document (Cheque)
+                $cheque = Cheque::create([
+                    'company_id' => $companyId,
+                    'payee_id' => $request->payee,
+                    'payee_type' => $request->payeeType,
+                    'bank_account_id' => $bankAccount,
+                    'payment_date' => $paymentDate,
+                    'currency_id' => $request->currency_id,
+                    'exchange_rate' => $request->exchange_rate,
+                    'cheque_no' => $chequeNo,
+                    'mailing_address' => $request->mailing_address,
+                    'total_amount' => $totalAmount,
+                    'memo' => $request->memo,
+                    'status' => 'posted',
+                ]);
+
+                // Categories
+                $lineOrder = 1;
+                foreach ($categoryItems as $lineItem) {
+                    ChequeLine::create([
+                        'cheque_id' => $cheque->id,
+                        'category_account_id' => $lineItem['category'],
+                        'description' => $lineItem['description'] ?? '',
+                        'amount' => (float) str_replace(',', '', $lineItem['amount']),
+                        'customer_id' => $lineItem['customer_id'] ?? null,
+                        'line_order' => $lineOrder++,
+                    ]);
+                }
+
+                // 2. Create Financial Truth (Journal Entry)
+                $journalEntry = JournalEntry::create([
+                    'company_id' => $companyId,
+                    'date' => $paymentDate,
+                    'reference' => $chequeNo,
+                    'description' => $request->memo,
+                    'transaction_type' => 'cheque',
+                    'payee_id' => $request->payee,
+                    'payee_type' => $request->payeeType == 'customer' ? Customer::class : (Supplier::class),
+                    'total_amount' => $totalAmount,
+                    'status' => 'posted',
+                    'created_by' => Auth::id(),
+                    'transactionable_id' => $cheque->id,
+                    'transactionable_type' => Cheque::class,
+                ]);
+
+                // Debits (Expenses/Assets) - Categories
+                foreach ($categoryItems as $lineItem) {
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $lineItem['category'],
+                        'debit' => (float) str_replace(',', '', $lineItem['amount']),
+                        'credit' => 0,
+                        'memo' => $lineItem['description'] ?? $request->memo,
+                    ]);
+                }
+
+                // Bank Account Credit
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $bankAccount,
+                    'debit' => 0,
+                    'credit' => $totalAmount,
+                    'memo' => $request->memo,
+                ]);
+
+                return $journalEntry;
+            });
+
+            $action = $request->input('action', 'save');
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Cheque saved successfully.');
+            }
+
+            if ($action === 'new') {
+                return redirect()->route('cheque')->with('success', 'Cheque saved successfully.');
+            }
+
+            session()->flash('success', 'Cheque saved successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/ChequeForm', [
+                'nextChequeNo' => $chequeNo,
+                'cheque' => [
+                    'id' => $journalEntry->id,
+                    'payee' => $request->payee,
+                    'payeeType' => $request->payeeType,
+                    'account' => $bankAccount,
+                    'date' => $paymentDate,
+                    'cheque_no' => $chequeNo,
+                    'mailing_address' => $request->mailing_address,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $cheque = Cheque::find($journalEntry->transactionable_id);
+
+        $chequeData = [
+            'id' => $journalEntry->id,
+            'payee' => $journalEntry->payee_id,
+            'payeeType' => $cheque?->payee_type ?? ($journalEntry->payee_type == Customer::class ? 'customer' : 'supplier'),
+            'account' => $cheque?->bank_account_id ?? $journalEntry->lines->where('credit', '>', 0)->first()?->chart_of_acc_id,
+            'date' => $journalEntry->date,
+            'currency_id' => $cheque?->currency_id,
+            'exchange_rate' => $cheque?->exchange_rate ? String($cheque->exchange_rate) : "",
+            'cheque_no' => $cheque?->cheque_no ?? $journalEntry->reference,
+            'mailing_address' => $cheque?->mailing_address ?? '',
+            'memo' => $journalEntry->description,
+            'items' => $cheque ? $cheque->lines->map(function ($item) {
+                return [
+                    'category' => $item->category_account_id,
+                    'description' => $item->description,
+                    'amount' => $item->amount,
+                    'customer_id' => $item->customer_id,
+                ];
+            })->values()->toArray() : [],
+        ];
+
+        return Inertia::render('Transaction/ChequeForm', [
+            'cheque' => $chequeData,
+        ]);
+    }
+
+    public function update(UpdateChequeRequest $request, JournalEntry $journalEntry)
+    {
+        $validated = $request->validated();
+
+        $bankAccount = $request->input('account', $request->input('paymentAccount'));
+        $paymentDate = $request->input('date', $request->input('paymentDate'));
+        $chequeNo = $request->input('cheque_no', $request->input('ref'));
+
+        $companyId = session('active_company_id');
+
+        try {
+            DB::transaction(function() use ($request, $journalEntry, $bankAccount, $paymentDate, $chequeNo, $companyId) {
+                $categoryItems = collect($request->items)->filter(function($item) {
+                    return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                });
+
+                if ($categoryItems->isEmpty()) {
+                    throw new \Exception('At least one Category item is required.');
+                }
+
+                $totalAmount = $categoryItems->sum(function($item) {
+                    return (float) str_replace(',', '', $item['amount']);
+                });
+
+                // 1. Update Business Document
+                $cheque = Cheque::find($journalEntry->transactionable_id);
+                if ($cheque) {
+                    $cheque->update([
+                        'payee_id' => $request->payee,
+                        'payee_type' => $request->payeeType,
+                        'bank_account_id' => $bankAccount,
+                        'payment_date' => $paymentDate,
+                        'currency_id' => $request->currency_id,
+                        'exchange_rate' => $request->exchange_rate,
+                        'cheque_no' => $chequeNo,
+                        'mailing_address' => $request->mailing_address,
+                        'total_amount' => $totalAmount,
+                        'memo' => $request->memo,
+                    ]);
+
+                    $cheque->lines()->delete();
+
+                    // Categories
+                    $lineOrder = 1;
+                    foreach ($categoryItems as $lineItem) {
+                        ChequeLine::create([
+                            'cheque_id' => $cheque->id,
+                            'category_account_id' => $lineItem['category'],
+                            'description' => $lineItem['description'] ?? '',
+                            'amount' => (float) str_replace(',', '', $lineItem['amount']),
+                            'customer_id' => $lineItem['customer_id'] ?? null,
+                            'line_order' => $lineOrder++,
+                        ]);
+                    }
+                }
+
+                // 2. Update Financial Truth
+                $journalEntry->update([
+                    'date' => $paymentDate,
+                    'reference' => $chequeNo,
+                    'description' => $request->memo,
+                    'payee_id' => $request->payee,
+                    'payee_type' => $request->payeeType == 'customer' ? Customer::class : (Supplier::class),
+                    'total_amount' => $totalAmount,
+                ]);
+
+                $journalEntry->lines->each->delete();
+
+                // Debits (Expenses/Assets) - Categories
+                foreach ($categoryItems as $lineItem) {
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $lineItem['category'],
+                        'debit' => (float) str_replace(',', '', $lineItem['amount']),
+                        'credit' => 0,
+                        'memo' => $lineItem['description'] ?? $request->memo,
+                    ]);
+                }
+
+                // Credit
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $bankAccount,
+                    'debit' => 0,
+                    'credit' => $totalAmount,
+                    'memo' => $request->memo,
+                ]);
+            });
+
+            $action = $request->input('action', 'save');
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Cheque updated successfully.');
+            } elseif ($action === 'new') {
+                return redirect()->route('cheque')->with('success', 'Cheque updated successfully.');
+            }
+
+            session()->flash('success', 'Cheque updated successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/ChequeForm', [
+                'nextChequeNo' => $chequeNo,
+                'cheque' => [
+                    'id' => $journalEntry->id,
+                    'payee' => $request->payee,
+                    'payeeType' => $request->payeeType,
+                    'account' => $bankAccount,
+                    'date' => $paymentDate,
+                    'cheque_no' => $chequeNo,
+                    'mailing_address' => $request->mailing_address,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        // Must grab this BEFORE the transaction deletes the lines
+        $paymentAccountId = $journalEntry->lines()
+            ->where('credit', '>', 0)
+            ->value('chart_of_acc_id');
+
+        DB::transaction(function () use ($journalEntry) {
+            $cheque = Cheque::find($journalEntry->transactionable_id);
+
+            if ($cheque) {
+                $cheque->lines()->delete();
+                $cheque->delete();
+            }
+
+            $journalEntry->lines()->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('chart-of-account.history', ['chart_of_account' => $paymentAccountId])
+            ->with('success', 'Cheque deleted successfully.');
+    }
+}

@@ -8,7 +8,9 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
+import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
 import { showToast } from "@/Components/ToastNotification";
+import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import axios from "axios";
 
 export default function ExpenseForm({
@@ -66,8 +68,9 @@ export default function ExpenseForm({
     const fetchPaymentMethods = () => {
         axios.get(route('api.payment-methods')).then(res => setPaymentMethodOptions(res.data));
     };
-    const [savedOnce, setSavedOnce] = useState(!!expense?.id);
-    
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(expense?.id || null);
+
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
@@ -106,10 +109,22 @@ export default function ExpenseForm({
         })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
+        exchange_rate: expense?.exchange_rate ? String(expense.exchange_rate) : "",
+        currency_id: expense?.currency_id || null,
         action: 'save'
     });
 
     const actionRef = useRef('save');
+
+    const { accountCurrencyDetails } = useAccountCurrency({
+        accountId: data.account,
+        accountOptions,
+        exchangeRate: data.exchange_rate,
+        currencyId: data.currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode: 'LKR'
+    });
 
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0) +
@@ -138,6 +153,8 @@ export default function ExpenseForm({
                 })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
                 ],
+                exchange_rate: expense.exchange_rate ? String(expense.exchange_rate) : "",
+                currency_id: expense.currency_id || null,
                 action: 'save'
             });
         } else {
@@ -155,6 +172,8 @@ export default function ExpenseForm({
                 itemDetails: [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ],
+                exchange_rate: "",
+                currency_id: null,
                 action: 'save'
             });
         }
@@ -178,7 +197,9 @@ export default function ExpenseForm({
                     qty: String(item.qty).replace(/,/g, ''),
                     rate: String(item.rate).replace(/,/g, ''),
                     amount: String(item.amount).replace(/,/g, '')
-                }))
+                })),
+            exchange_rate: data.exchange_rate ? String(data.exchange_rate).replace(/,/g, '') : null,
+            currency_id: data.currency_id || null,
         }));
     }, [transform]);
 
@@ -186,6 +207,7 @@ export default function ExpenseForm({
         const updatedItems = [...data.items];
         updatedItems[index][field] = value;
         setData("items", updatedItems);
+        setIsDirty(true);
     };
 
     const handleProductItemChange = (index, field, value) => {
@@ -223,15 +245,18 @@ export default function ExpenseForm({
             }
         }
         setData("itemDetails", updated);
+        setIsDirty(true);
     };
 
     const handlePaymentDateChange = (dateVal) => {
         localStorage.setItem('last_transaction_date', dateVal);
         setData("date", dateVal);
+        setIsDirty(true);
     };
 
     const handleAccountChange = (val) => {
         setData("account", val);
+        setIsDirty(true);
         if (!expense?.id && val) {
             axios.get(route('api.expenses.next-ref', { account_id: val })).then(res => {
                 setData("ref", res.data.next_ref);
@@ -240,31 +265,50 @@ export default function ExpenseForm({
     };
 
     const handleSave = (action = 'save') => {
-    actionRef.current = action;
-    const url = expense?.id ? route('expense.update', expense.id) : route('expense.store');
-    const method = expense?.id ? patch : post;
+        actionRef.current = action;
+        const currentRef = data.ref;
 
-    method(url, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showToast('success', 'Record saved successfully.');
-            setSavedOnce(true);
-            
-            if (action === 'new') {
-                reset();
-                clearErrors();
-                fetchAccounts();
-                const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
-                setData({
-                    payee: "", account: "", date: cachedDate, method: "", ref: nextExpenseNo || "", memo: "",
-                    items: [{ category: "", description: "", amount: "0.00" }],
-                    itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
-                    action: 'save'
-                });
+        const currentId = savedEntryId || expense?.id;
+        const url = currentId ? route('expense.update', currentId) : route('expense.store');
+        const method = currentId ? patch : post;
+
+        method(url, {
+            preserveScroll: true,
+            preserveState: action === 'save',
+            onSuccess: (page) => {
+                showToast('success', 'Record saved successfully.');
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.expense?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
+                if (action === 'new') {
+                    setSavedEntryId(null);
+                    const currentNo = data.ref || nextExpenseNo || 'EXP-0001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 0;
+                    const nextRef = 'EXP-' + String(num + 1).padStart(4, '0');
+
+                    reset();
+                    clearErrors();
+                    fetchAccounts();
+                    const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                    setData({
+                        payee: "", account: "", date: cachedDate, method: "", ref: nextRef, memo: "",
+                        items: [{ category: "", description: "", amount: "0.00" }],
+                        itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                        exchange_rate: "",
+                        currency_id: null,
+                        action: 'save'
+                    });
+                    setIsDirty(false);
+                }
             }
-        }
-    });
-};
+        });
+    };
     const EXPENSE_COLUMNS = [
         {
             key: "category",
@@ -315,7 +359,7 @@ export default function ExpenseForm({
             title={expense?.id ? `Edit Payment no.${data.ref}` : "New Payment"}
             amount={totalAmount}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
@@ -337,7 +381,7 @@ export default function ExpenseForm({
                                 label="Payee"
                                 placeholder="Who did you pay?"
                                 value={data.payee}
-                                onChange={(val) => setData("payee", val)}
+                                onChange={(val) => { setData("payee", val); setIsDirty(true); }}
                                 options={payeeOptions}
                                 size="sm"
                                 error={errors.payee}
@@ -375,6 +419,13 @@ export default function ExpenseForm({
                     )}
                 </div>
 
+<CurrencyConversionRow
+                        details={accountCurrencyDetails}
+                        exchangeRate={data.exchange_rate}
+                        onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
+                        error={errors.exchange_rate}
+                    />
+
                 {/* ROW 2: Date, Method, Ref */}
                 <div className="flex items-end gap-6">
                     <div className="w-[200px]">
@@ -392,7 +443,7 @@ export default function ExpenseForm({
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.method}
-                            onChange={(val) => setData("method", val)}
+                            onChange={(val) => { setData("method", val); setIsDirty(true); }}
                             options={paymentMethodOptions}
                             onAddNew={() => setIsPaymentMethodModalOpen(true)}
                             size="sm"
@@ -404,7 +455,14 @@ export default function ExpenseForm({
                             label="Ref no."
                             placeholder=""
                             value={data.ref}
-                            onChange={(e) => setData("ref", e.target.value)}
+                            onChange={(e) => { setData("ref", e.target.value); setIsDirty(true); }}
+
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData("ref", val);
+                                // Select all after state update
+                                setTimeout(() => e.target.select(), 0);
+                            }}
                             size="sm"
                             error={errors.ref}
                         />
@@ -438,12 +496,13 @@ export default function ExpenseForm({
                             columns={EXPENSE_COLUMNS}
                             items={data.items}
                             handleItemChange={handleItemChange}
-                            addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
+                            addRow={() => { setData("items", [...data.items, { category: "", description: "", amount: "0.00" }]); setIsDirty(true); }}
                             removeRow={(index) => {
                                 const remaining = data.items.filter((_, i) => i !== index);
                                 setData("items", remaining.length > 0 ? remaining : [{ category: "", description: "", amount: "0.00" }]);
+                                setIsDirty(true);
                             }}
-                            clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
+                            clearRows={() => { setData("items", [{ category: "", description: "", amount: "0.00" }]); setIsDirty(true); }}
                             currencyPrefix={currencyPrefix}
                             hideActions={true}
                         />
@@ -477,12 +536,13 @@ export default function ExpenseForm({
                             columns={ITEM_COLUMNS}
                             items={data.itemDetails}
                             handleItemChange={handleProductItemChange}
-                            addRow={() => setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            addRow={() => { setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]); setIsDirty(true); }}
                             removeRow={(index) => {
                                 const remaining = data.itemDetails.filter((_, i) => i !== index);
                                 setData("itemDetails", remaining.length > 0 ? remaining : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                                setIsDirty(true);
                             }}
-                            clearRows={() => setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                            clearRows={() => { setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]); setIsDirty(true); }}
                             currencyPrefix={currencyPrefix}
                             hideActions={true}
                         />
@@ -497,7 +557,7 @@ export default function ExpenseForm({
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData("memo", e.target.value)}
+                        onChange={(e) => { setData("memo", e.target.value); setIsDirty(true); }}
                         className="h-24"
                         size="sm"
                         error={errors.memo}

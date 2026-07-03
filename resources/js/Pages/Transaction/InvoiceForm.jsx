@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useForm, usePage, Head } from "@inertiajs/react";
+import { useForm, usePage, Head, router } from "@inertiajs/react";
 import { showToast } from "@/Components/ToastNotification";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
@@ -27,8 +27,9 @@ export default function InvoiceForm({
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
-    const [savedOnce, setSavedOnce] = useState(!!invoice?.id);
+    const [isDirty, setIsDirty] = useState(false);
 
+    const [savedEntryId, setSavedEntryId] = useState(invoice?.id || null);
 
     const fetchPayees = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
@@ -38,6 +39,7 @@ export default function InvoiceForm({
 
     const handleCustomerChange = (val) => {
         setData(prev => ({ ...prev, customer: val }));
+        setIsDirty(true);
         if (val) {
             axios.get(route('api.customers.info', val)).then(res => {
                 if (res.data) {
@@ -256,7 +258,18 @@ export default function InvoiceForm({
                 updated[index].rate = formatCurrencyValue(a / q);
             }
         }
+
+            if (field === "amount") {
+        const r = parseCurrency(updated[index].rate);
+        const a = parseCurrency(value);
+        if (r > 0) {
+            const newQty = a / r;
+            updated[index].qty = String(newQty);
+        }
+    }
+    
         setData("items", updated);
+        setIsDirty(true);
     };
 
     const handleAddTerm = (newTerm) => {
@@ -269,41 +282,65 @@ export default function InvoiceForm({
         }));
     };
 
-    const handleSave = (action = 'save') => {
-    actionRef.current = action; // SET BEFORE calling method
-
-    const url = invoice?.id ? route('invoice.update', invoice.id) : route('invoice.store');
-    const method = invoice?.id ? patch : post;
+const handleSave = (action = 'save') => {
+    actionRef.current = action;
+    const currentNo = data.invoiceNo;
+    const currentId = savedEntryId || invoice?.id;
+    const url = currentId ? route('invoice.update', currentId) : route('invoice.store');
+    const method = currentId ? patch : post;
 
     method(url, {
         preserveScroll: true,
-        onSuccess: () => {
+        preserveState: action === 'save',
+        onSuccess: (page) => {
             showToast('success', 'Record saved successfully.');
-            setSavedOnce(true);
+            setIsDirty(false);
+            const newId = page.props?.flash?.journal_entry_id
+                       || page.props?.invoice?.id;
+            if (newId && !savedEntryId) {
+                setSavedEntryId(newId);
+            }
+
             if (action === 'new') {
-                setSavedOnce(false);
-                reset();
+                setSavedEntryId(null);
+                const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                const nextNo = String(num + 1).padStart(4, '0');
+                setData({
+                    customer: "", email: "", billingAddress: "",
+                    terms: "Net 30",
+                    invoiceDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                    dueDate: "",
+                    invoiceNo: nextNo,
+                    memo: "", action: 'save',
+                    items: [
+                        { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                        { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    ]
+                });
                 clearErrors();
+                setIsDirty(false);
             }
         }
     });
 };
 
-    return (
+return (
         <TransactionLayout
             historyType="creditsale"
             title={`Invoice ${data.invoiceNo}`}
             amount={totalAmount}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
                 setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setIsDirty(true);
             }}
             onClearRows={() => {
                 setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                setIsDirty(true);
             }}
         >
             <Head title={`Invoice ${data.invoiceNo}`} />
@@ -329,7 +366,7 @@ export default function InvoiceForm({
                                 label="Customer email"
                                 placeholder="Separate emails with a comma"
                                 value={data.email}
-                                onChange={(e) => setData("email", e.target.value)}
+                                onChange={(e) => { setData("email", e.target.value); setIsDirty(true); }}
                                 size="sm"
                                 error={errors.email}
                             />
@@ -354,7 +391,7 @@ export default function InvoiceForm({
                             label="Billing address"
                             placeholder=""
                             value={data.billingAddress}
-                            onChange={(e) => setData("billingAddress", e.target.value)}
+                            onChange={(e) => { setData("billingAddress", e.target.value); setIsDirty(true); }}
                             rows={1}
                             size="sm"
                             inputClass="min-h-[30px] h-auto"
@@ -365,11 +402,8 @@ export default function InvoiceForm({
                             label="Terms"
                             value={data.terms}
                             onChange={(val) => {
-                                setData(prev => ({
-                                    ...prev,
-                                    terms: val,
-                                    dueDate: calculateDueDate(prev.invoiceDate, val)
-                                }));
+                                setData(prev => ({ ...prev, terms: val, dueDate: calculateDueDate(prev.invoiceDate, val) }));
+                                setIsDirty(true);
                             }}
                             onAddNew={() => setIsTermModalOpen(true)}
                             options={termOptions}
@@ -384,11 +418,8 @@ export default function InvoiceForm({
                             onChange={(e) => {
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
-                                setData(prev => ({
-                                    ...prev,
-                                    invoiceDate: newDate,
-                                    dueDate: calculateDueDate(newDate, prev.terms)
-                                }));
+                                setData(prev => ({ ...prev, invoiceDate: newDate, dueDate: calculateDueDate(newDate, prev.terms) }));
+                                setIsDirty(true);
                             }}
                             size="sm"
                         />
@@ -398,7 +429,7 @@ export default function InvoiceForm({
                             type="date"
                             label="Due date"
                             value={data.dueDate}
-                            onChange={(e) => setData(prev => ({ ...prev, dueDate: e.target.value }))}
+                            onChange={(e) => { setData(prev => ({ ...prev, dueDate: e.target.value })); setIsDirty(true); }}
                             size="sm"
                         />
                     </div>
@@ -407,7 +438,17 @@ export default function InvoiceForm({
                         <CommonInput
                             label="Credit Sale no."
                             value={data.invoiceNo}
-                            onChange={(e) => setData('invoiceNo', e.target.value)}
+                            onChange={(e) => { setData('invoiceNo', e.target.value); setIsDirty(true); }}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('invoiceNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('invoiceNo', val);
+                            }}      
                             size="sm"
                             inputClass="font-mono text-right"
                         />
@@ -419,9 +460,18 @@ export default function InvoiceForm({
                 columns={INVOICE_COLUMNS}
                 items={data.items}
                 handleItemChange={handleItemChange}
-                addRow={() => setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
-                removeRow={(index) => setData("items", data.items.filter((_, i) => i !== index))}
-                clearRows={() => setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                addRow={() => {
+                    setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                    setIsDirty(true);
+                }}
+                removeRow={(index) => {
+                    setData("items", data.items.filter((_, i) => i !== index));
+                    setIsDirty(true);
+                }}
+                clearRows={() => {
+                    setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                    setIsDirty(true);
+                }}
                 totals={{ "Total": totalAmount }}
                 currencyPrefix={currencyPrefix}
                 hideActions={true}
@@ -434,7 +484,7 @@ export default function InvoiceForm({
                         label="Memo"
                         placeholder="This will show up on the Credit Sale."
                         value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
+                        onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                     />

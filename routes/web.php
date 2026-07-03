@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
     Route::get('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'create'])->name('pay-bill');
     Route::post('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'store'])->name('pay-bill.store');
+    Route::get('/pay-bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\PayBillController::class, 'edit'])->name('pay-bill.edit');
+    Route::patch('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'update'])->name('pay-bill.update');
     Route::delete('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'destroy'])->name('pay-bill.destroy');
     Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
     Route::patch('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'update'])->name('expense.update');
@@ -36,6 +38,7 @@ Route::middleware('auth')->group(function () {
     // API Lookups
     Route::get('/api/payees', [\App\Http\Controllers\Api\LookupController::class, 'payees'])->name('api.payees');
     Route::get('/api/accounts', [\App\Http\Controllers\Api\LookupController::class, 'accounts'])->name('api.accounts');
+    Route::get('/api/accounts/detail', [\App\Http\Controllers\Api\LookupController::class, 'accountDetails'])->name('api.accounts.detail');
     Route::get('/api/accounts/next-code', [\App\Http\Controllers\Api\LookupController::class, 'nextCode'])->name('api.accounts.next-code');
     Route::get('/api/expenses/next-ref', [\App\Http\Controllers\Api\LookupController::class, 'nextExpenseRef'])->name('api.expenses.next-ref');
     Route::post('/api/accounts/save-date', [\App\Http\Controllers\Api\LookupController::class, 'saveOpeningBalanceDate'])->name('api.accounts.save-date');
@@ -102,6 +105,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/supplier-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
     Route::patch('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
     Route::delete('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
+
+    Route::get('/cheque/list', [\App\Http\Controllers\Accounting\ChequeController::class, 'index'])->name('cheque.index');
+    Route::get('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'create'])->name('cheque');
+    Route::post('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'store'])->name('cheque.store');
+    Route::get('/cheque/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ChequeController::class, 'edit'])->name('cheque.edit');
+    Route::patch('/cheque/{journalEntry}', [\App\Http\Controllers\Accounting\ChequeController::class, 'update'])->name('cheque.update');
+    Route::delete('/cheque/{journalEntry}', [\App\Http\Controllers\Accounting\ChequeController::class, 'destroy'])->name('cheque.destroy');
 
     // Inventory Routes
     Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);

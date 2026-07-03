@@ -18,6 +18,9 @@ class ReportController extends Controller
     {
         $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
             ->whereIn('account_type', $types)
+            ->orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
+            ->orderBy('sub_type')
+            ->orderBy('name')
             ->get();
 
         $accountBalances = [];
@@ -25,7 +28,7 @@ class ReportController extends Controller
             $line = $lines->get($account->id);
             $total_debit = $line ? $line->total_debit : 0;
             $total_credit = $line ? $line->total_credit : 0;
-            
+
             $type = strtolower($account->account_type);
             if ($type === 'income' || $type === 'liability' || $type === 'equity') {
                 $balance = $total_credit - $total_debit;
@@ -56,7 +59,7 @@ class ReportController extends Controller
                 $tree[] = &$node;
             }
         }
-        
+
         // Helper to roll up balances
         $rollup = function(&$node) use (&$rollup) {
             $total = $node['balance'];
@@ -92,6 +95,9 @@ class ReportController extends Controller
     {
         $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
             ->whereIn('account_type', $types)
+            ->orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
+            ->orderBy('sub_type')
+            ->orderBy('name')
             ->get();
 
         $accountBalances = [];
@@ -107,7 +113,7 @@ class ReportController extends Controller
                     $monthLine = $accountLines->firstWhere('month', $month);
                     $debit = $monthLine ? $monthLine->total_debit : 0;
                     $credit = $monthLine ? $monthLine->total_credit : 0;
-                    
+
                     if ($type === 'income') {
                         $balance = $credit - $debit;
                     } else {
@@ -149,7 +155,7 @@ class ReportController extends Controller
                 $tree[] = &$node;
             }
         }
-        
+
         $rollup = function(&$node) use (&$rollup, $displayBy, $months) {
             $total = $node['balance'];
             $monthly = $node['monthly_balances'];
@@ -194,7 +200,7 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
         $displayBy = $request->query('display_by', 'total');
-        
+
         $startDate = $startDate !== null && $startDate !== '' ? $startDate : now()->startOfMonth()->toDateString();
         $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->endOfMonth()->toDateString();
 
@@ -272,7 +278,7 @@ class ReportController extends Controller
             ->select(
                 DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as retained_earnings')
             )->first();
-            
+
         $retainedEarningsAmount = $priorNetIncomeResult ? (float) $priorNetIncomeResult->retained_earnings : 0;
 
         // 2. Current Year Net Income
@@ -285,17 +291,17 @@ class ReportController extends Controller
             ->select(
                 DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as net_income')
             )->first();
-            
+
         $netIncomeAmount = $currentNetIncomeResult ? (float) $currentNetIncomeResult->net_income : 0;
 
         $equity = $reportData->get('equity', collect());
-        
+
         if ($retainedEarningsAmount != 0) {
             // Find existing retained earnings if any
             $existingReIdx = $equity->search(function ($item) {
                 return strtolower($item['name']) === 'retained earnings';
             });
-            
+
             if ($existingReIdx !== false) {
                 $item = $equity->get($existingReIdx);
                 $item['balance'] += $retainedEarningsAmount;
@@ -314,7 +320,7 @@ class ReportController extends Controller
                 ]);
             }
         }
-        
+
         if ($netIncomeAmount != 0) {
             $equity->push([
                 'id' => 'net_income_computed',

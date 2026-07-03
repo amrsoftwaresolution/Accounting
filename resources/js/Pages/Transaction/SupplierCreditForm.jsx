@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm, Head } from "@inertiajs/react";
+import { showToast } from "@/Components/ToastNotification";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
@@ -26,7 +27,8 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('expense');
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
-    const [savedOnce, setSavedOnce] = useState(!!credit?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(credit?.id || null);
 
     const fetchSuppliers = (search = "") => {
         axios.get(route('api.payees', { search, type: 'Supplier' })).then(res => setSupplierOptions(res.data));
@@ -58,26 +60,16 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         return new Date().toISOString().split('T')[0];
     };
 
-    const { data, setData, post, patch, processing, errors, reset, transform } = useForm({
-        supplier: credit?.supplier_id || "",
-        creditDate: getInitialDate(),
-        creditNo: credit?.credit_no || nextCreditNo || "1001",
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
+        supplier: credit?.supplier || credit?.supplier_id || "",
+        creditDate: credit?.creditDate || credit?.credit_date || getInitialDate(),
+        creditNo: credit?.creditNo || credit?.credit_no || nextCreditNo || "1001",
         memo: credit?.memo || "",
-        items: credit?.items?.filter(i => !i.item_id).map(i => ({
-            category: i.chart_of_acc_id,
-            description: i.description,
-            amount: i.amount
-        })) || [
+        items: credit?.items?.length > 0 ? credit.items : [
             { category: "", description: "", amount: "0.00" },
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: credit?.items?.filter(i => i.item_id).map(i => ({
-            product: i.item_id,
-            description: i.description,
-            qty: i.quantity,
-            rate: i.rate,
-            amount: i.amount
-        })) || [
+        itemDetails: credit?.itemDetails?.length > 0 ? credit.itemDetails : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -86,22 +78,12 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
     useEffect(() => {
         if (credit) {
             setData({
-                supplier: credit.supplier_id || "",
-                creditDate: credit.credit_date || "",
-                creditNo: credit.credit_no || "",
+                supplier: credit.supplier || credit.supplier_id || "",
+                creditDate: credit.creditDate || credit.credit_date || "",
+                creditNo: credit.creditNo || credit.credit_no || "",
                 memo: credit.memo || "",
-                items: credit.items?.filter(i => !i.item_id).map(i => ({
-                    category: i.chart_of_acc_id,
-                    description: i.description,
-                    amount: i.amount
-                })) || [{ category: "", description: "", amount: "0.00" }],
-                itemDetails: credit.items?.filter(i => i.item_id).map(i => ({
-                    product: i.item_id,
-                    description: i.description,
-                    qty: i.quantity,
-                    rate: i.rate,
-                    amount: i.amount
-                })) || [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                items: credit.items?.length > 0 ? credit.items : [{ category: "", description: "", amount: "0.00" }],
+                itemDetails: credit.itemDetails?.length > 0 ? credit.itemDetails : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
             });
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -134,6 +116,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         const updated = [...data.items];
         updated[index][field] = value;
         setData("items", updated);
+        setIsDirty(true);
     };
 
     const handleProductItemChange = (index, field, value) => {
@@ -141,13 +124,13 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         updated[index][field] = value;
 
         if (field === "product") {
-            const product = productOptions.find(p => p.value === value);
+            const product = productOptions.find(p => String(p.value) === String(value));
             if (product) {
-                const costPrice = parseFloat(product.purchase_price || product.rate || 0);
+                const costPrice = parseFloat(product.purchase_price) || parseFloat(product.cost_price) || parseFloat(product.rate) || parseFloat(product.sale_price) || 0;
                 updated[index].rate = formatCurrencyValue(costPrice);
                 const q = parseFloat(updated[index].qty) || 0;
                 updated[index].amount = formatCurrencyValue(q * costPrice);
-                updated[index].description = product.description || "";
+                updated[index].description = product.description || product.name || "";
             }
         }
 
@@ -171,11 +154,13 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
             }
         }
         setData("itemDetails", updated);
+        setIsDirty(true);
     };
 
     const handleSave = (actionType) => {
         transform((data) => ({
             ...data,
+            action: actionType,
             items: data.items
                 .filter(item => item.category && parseCurrency(item.amount) > 0)
                 .map(item => ({
@@ -191,17 +176,47 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                 }))
         }));
 
-        const url = credit?.id ? route('SupplierCredit.update', credit.id) : route('supplier-credit.store');
-        const method = credit?.id ? patch : post;
+        const currentId = savedEntryId || credit?.id;
+        const url = currentId ? route('supplier-credit.update', currentId) : route('supplier-credit.store');
+        const method = currentId ? patch : post;
 
         method(url, {
             preserveScroll: true,
-            onSuccess: () => {
+            preserveState: actionType === 'save',
+            onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
-                setSavedOnce(true);
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.credit?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
                 if (actionType === 'new') {
-                    setSavedOnce(false);
+                    setSavedEntryId(null);
+                    const currentNo = data.creditNo || nextCreditNo || '1001';
+                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
+                    const nextNo = String(num + 1).padStart(4, '0');
+                    setData({
+                        supplier: "",
+                        creditDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+                        creditNo: nextNo,
+                        memo: "",
+                        items: [
+                            { category: "", description: "", amount: "0.00" },
+                            { category: "", description: "", amount: "0.00" },
+                        ],
+                        itemDetails: [
+                            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                            { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                        ],
+                        action: 'save'
+                    });
                     reset();
+                    clearErrors();
+                    setIsDirty(false);
                 }
             }
         });
@@ -259,8 +274,9 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
             amount={totalAmount}
             currencyPrefix={currencyPrefix}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             onSave={() => handleSave('save')}
+            onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
         >
             <Head title="Supplier Return" />
@@ -280,7 +296,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                             value={data.supplier}
                             onSearch={fetchSuppliers}
                             onAddNew={() => setIsPayeeModalOpen(true)}
-                            onChange={(val) => setData('supplier', val)}
+                            onChange={(val) => { setData('supplier', val); setIsDirty(true); }}
                             options={supplierOptions}
                             error={errors.supplier}
                         />
@@ -294,6 +310,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData('creditDate', newDate);
+                                setIsDirty(true);
                             }}
                             error={errors.creditDate}
                             size="sm"
@@ -303,7 +320,17 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                         <CommonInput
                             label="Supplier Return no."
                             value={data.creditNo}
-                            onChange={(e) => setData('creditNo', e.target.value)}
+                            onChange={(e) => { setData('creditNo', e.target.value); setIsDirty(true); }}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('creditNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('creditNo', val);
+                            }}          
                             error={errors.creditNo}
                             size="sm"
                             inputClass="font-mono text-right"
@@ -337,12 +364,13 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                                 columns={BILL_COLUMNS}
                                 items={data.items}
                                 handleItemChange={handleItemChange}
-                                addRow={() => setData("items", [...data.items, { category: "", description: "", amount: "0.00" }])}
+                                addRow={() => { setData("items", [...data.items, { category: "", description: "", amount: "0.00" }]); setIsDirty(true); }}
                                 removeRow={(index) => {
                                     const remaining = data.items.filter((_, i) => i !== index);
                                     setData("items", remaining.length > 0 ? remaining : [{ category: "", description: "", amount: "0.00" }]);
+                                    setIsDirty(true);
                                 }}
-                                clearRows={() => setData("items", [{ category: "", description: "", amount: "0.00" }])}
+                                clearRows={() => { setData("items", [{ category: "", description: "", amount: "0.00" }]); setIsDirty(true); }}
                                 currencyPrefix={currencyPrefix}
                                 hideActions={true}
                             />
@@ -376,12 +404,13 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                                 columns={ITEM_COLUMNS}
                                 items={data.itemDetails}
                                 handleItemChange={handleProductItemChange}
-                                addRow={() => setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                                addRow={() => { setData("itemDetails", [...data.itemDetails, { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]); setIsDirty(true); }}
                                 removeRow={(index) => {
                                     const remaining = data.itemDetails.filter((_, i) => i !== index);
                                     setData("itemDetails", remaining.length > 0 ? remaining : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
+                                    setIsDirty(true);
                                 }}
-                                clearRows={() => setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
+                                clearRows={() => { setData("itemDetails", [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]); setIsDirty(true); }}
                                 currencyPrefix={currencyPrefix}
                                 hideActions={true}
                             />
@@ -395,7 +424,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
+                        onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                     />
@@ -434,8 +463,8 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                         if (addingItemRowIndex !== null && newItem) {
                             const updated = [...data.itemDetails];
                             updated[addingItemRowIndex].product = newItem.id;
-                            updated[addingItemRowIndex].description = newItem.description || "";
-                            const costPrice = parseFloat(newItem.cost_price || newItem.purchase_price || newItem.sale_price || 0);
+                            updated[addingItemRowIndex].description = newItem.description || newItem.name || "";
+                            const costPrice = parseFloat(newItem.cost_price) || parseFloat(newItem.purchase_price) || parseFloat(newItem.sale_price) || 0;
                             updated[addingItemRowIndex].rate = formatCurrencyValue(costPrice);
                             const q = parseFloat(updated[addingItemRowIndex].qty) || 0;
                             updated[addingItemRowIndex].amount = formatCurrencyValue(q * costPrice);

@@ -38,6 +38,8 @@ class BankDepositController extends Controller
                 'deposit_no' => $request->depositNo,
                 'deposit_date' => $request->depositDate,
                 'deposit_to_account_id' => $request->depositTo,
+                'currency_id' => $request->currency_id,
+                'exchange_rate' => $request->exchange_rate,
                 'cash_back_account_id' => $request->cashBackAccount,
                 'cash_back_memo' => $request->cashBackMemo,
                 'cash_back_amount' => (float) str_replace(',', '', $request->cashBackAmount ?? 0),
@@ -109,13 +111,15 @@ class BankDepositController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $deposit = BankDeposit::with('items')->find($journalEntry->transactionable_id);
-        
+
         return Inertia::render('Transaction/BankDepositForm', [
             'deposit' => [
                 'id' => $journalEntry->id,
                 'depositTo' => $deposit->deposit_to_account_id,
                 'depositDate' => $deposit->deposit_date,
                 'depositNo' => $deposit->deposit_no,
+                'currency_id' => $deposit->currency_id,
+                'exchange_rate' => $deposit->exchange_rate ? String($deposit->exchange_rate) : "",
                 'cashBackAccount' => $deposit->cash_back_account_id,
                 'cashBackMemo' => $deposit->cash_back_memo,
                 'cashBackAmount' => $deposit->cash_back_amount,
@@ -149,6 +153,8 @@ class BankDepositController extends Controller
                 'deposit_no' => $request->depositNo,
                 'deposit_date' => $request->depositDate,
                 'deposit_to_account_id' => $request->depositTo,
+                'currency_id' => $request->currency_id,
+                'exchange_rate' => $request->exchange_rate,
                 'cash_back_account_id' => $request->cashBackAccount,
                 'cash_back_memo' => $request->cashBackMemo,
                 'cash_back_amount' => (float) str_replace(',', '', $request->cashBackAmount ?? 0),

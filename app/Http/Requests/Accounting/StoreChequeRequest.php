@@ -4,7 +4,7 @@ namespace App\Http\Requests\Accounting;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreExpenseRequest extends FormRequest
+class StoreChequeRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,18 +15,16 @@ class StoreExpenseRequest extends FormRequest
     {
         return [
             'payee' => 'nullable',
-            'account' => 'required',
+            'account' => 'required', // This corresponds to Bank Account
             'date' => 'required|date',
-            'method' => 'nullable',
-            'ref' => 'nullable|string',
+            'cheque_no' => 'nullable|string',
+            'mailing_address' => 'nullable|string',
             'memo' => 'nullable|string',
+            'currency_id' => 'nullable|exists:currencies,id',
+            'exchange_rate' => 'nullable|numeric|gt:0',
             'items' => 'nullable|array',
-            'itemDetails' => 'nullable|array',
             'paymentAccount' => 'required_without:account',
             'paymentDate' => 'required_without:date|date',
-            'paymentMethod' => 'nullable',
-            'exchange_rate' => 'nullable|numeric|gt:0',
-            'currency_id' => 'nullable|exists:currencies,id',
         ];
     }
 }

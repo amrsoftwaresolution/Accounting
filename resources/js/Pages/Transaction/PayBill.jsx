@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, Head, router, usePage } from "@inertiajs/react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
@@ -8,10 +8,13 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
+import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
+import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 
 export default function PayBill({ paymentMethods = [], payment = null }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || '$';
+    const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
 
     const [supplierOptions, setSupplierOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
@@ -22,22 +25,25 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-
-    const [currentAction, setCurrentAction] = useState('save');
+    const actionRef = useRef('save');
+    const [isDirty, setIsDirty] = useState(false);
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         supplier: payment?.supplier || "",
         paymentDate: payment?.paymentDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         paymentMethod: payment?.paymentMethod || "",
-        referenceNo: payment?.referenceNo || "",
+        referenceNo: payment?.referenceNo || "0001",
         paymentAccount: payment?.paymentAccount || "",
         amount: payment?.amount || "0.00",
+        currency_id: payment?.currency_id || null,
+        exchange_rate: payment?.exchange_rate ? String(payment.exchange_rate) : "",
         memo: payment?.memo || "",
         action: 'save',
     });
 
     const handleSupplierChange = (val) => {
         setData(prev => ({ ...prev, supplier: val }));
+        setIsDirty(true);
         if (val) {
             // Fetch outstanding bills
             const url = payment?.payment_id
@@ -86,6 +92,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
 
             return updated;
         });
+        setIsDirty(true);
     };
 
     const handleBillPaymentChange = (originalIdx, value) => {
@@ -105,6 +112,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
 
             return updated;
         });
+        setIsDirty(true);
     };
 
     const filteredBills = bills.filter(bill => {
@@ -186,6 +194,16 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         fetchAccounts();
     }, []);
 
+    const { accountCurrencyDetails } = useAccountCurrency({
+        accountId: data.paymentAccount,
+        accountOptions,
+        exchangeRate: data.exchange_rate,
+        currencyId: data.currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode,
+    });
+
     useEffect(() => {
         if (payment) {
             setData({
@@ -195,6 +213,8 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 referenceNo: payment.referenceNo || "",
                 paymentAccount: payment.paymentAccount || "",
                 amount: payment.amount || "0.00",
+                currency_id: payment.currency_id || null,
+                exchange_rate: payment.exchange_rate ? String(payment.exchange_rate) : "",
                 memo: payment.memo || "",
                 action: 'save'
             });
@@ -214,9 +234,11 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 supplier: "",
                 paymentDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                 paymentMethod: "",
-                referenceNo: "",
+                referenceNo: "0001",
                 paymentAccount: "",
                 amount: "0.00",
+                currency_id: null,
+                exchange_rate: "",
                 memo: "",
                 action: 'save'
             });
@@ -228,48 +250,60 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
 
     useEffect(() => {
-        transform((data) => ({
-            ...data,
-            amount: String(data.amount).replace(/,/g, ''),
-            action: currentAction,
-            bills: bills
-                .filter(bill => bill.applied > 0)
-                .map(bill => ({
-                    id: bill.id,
-                    amount: String(bill.applied)
-                }))
-        }));
-    }, [currentAction, data.amount, bills]);
+    transform((data) => ({
+        ...data,
+        amount: String(data.amount).replace(/,/g, ''),
+        action: actionRef.current,
+        bills: bills
+            .filter(bill => bill.applied > 0)
+            .map(bill => ({
+                id: bill.id,
+                amount: String(bill.applied)
+            }))
+    }));
+}, [transform, data.amount, bills]);
 
-    const submit = (action = 'save') => {
-        setCurrentAction(action);
+const submit = (action = 'save') => {
+    actionRef.current = action;
+    const currentRefNo = data.referenceNo; // capture BEFORE submit
 
-        const url = payment?.id ? route('pay-bill.update', payment.id) : route('pay-bill.store');
-        const submitMethod = payment?.id ? patch : post;
+    const url = payment?.id ? route('pay-bill.update', payment.id) : route('pay-bill.store');
+    const submitMethod = payment?.id ? patch : post;
 
-        submitMethod(url, {
-            preserveScroll: true,
-            preserveState: action === 'save',
-            onSuccess: () => {
-                showToast('success', 'Record saved successfully.');
-                if (action === 'new') {
-                    reset();
-                    clearErrors();
-                }
+    submitMethod(url, {
+        preserveScroll: true,
+        preserveState: action === 'save',
+        onSuccess: () => {
+            showToast('success', 'Record saved successfully.');
+            setIsDirty(false);
+            if (action === 'new') {
+                const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
+                const nextNo = String(num + 1).padStart(4, '0');
+                reset();
+                clearErrors();
+                setBills([]);
+                const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                setData({
+                    supplier: "", paymentDate: cachedDate, paymentMethod: "",
+                    referenceNo: nextNo, paymentAccount: "", amount: "0.00",
+                    memo: "", action: 'save'
+                });
+                setIsDirty(false);
             }
-        });
-    };
+        }
+    });
+};
 
     return (
         <TransactionLayout
             historyType="pay_bill"
             title={payment?.id ? `Edit Bill Payment no.${data.referenceNo}` : "Pay Bill"}
-            amount={parseFloat(data.amount || 0).toFixed(2)}
+            amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
             onSaveAndNew={() => submit('new')}
             processing={processing}
-            dirty={Object.keys(data).some((key) => key !== 'action' && String(data[key]) !== "")}
+            dirty={isDirty}
         >
             <Head title="Pay Bill" />
 
@@ -304,7 +338,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                         <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Amount Paid</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
                             <span className="text-slate-400 text-[10px] font-medium mr-1">{currencyPrefix}</span>
-                            {parseFloat(data.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            {parseFloat(String(data.amount || 0).replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                     </div>
                 </div>
@@ -320,6 +354,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData("paymentDate", newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.paymentDate}
@@ -330,7 +365,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
-                            onChange={(val) => setData("paymentMethod", val)}
+                            onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}
                             options={methodOptions}
                             onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
@@ -341,7 +376,16 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                         <CommonInput
                             label="Reference no."
                             value={data.referenceNo}
-                            onChange={(e) => setData("referenceNo", e.target.value)}
+                            onChange={(e) => { setData("referenceNo", e.target.value); setIsDirty(true); }}
+                            onFocus={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('referenceNo', val);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+                            onBlur={(e) => {
+                                const val = e.target.value.replace(/,/g, '');
+                                setData('referenceNo', val);
+                            }}
                             size="sm"
                             inputClass="font-mono"
                             error={errors.referenceNo}
@@ -354,10 +398,16 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                             onSearch={fetchAccounts}
                             onAddNew={() => setIsAccountModalOpen(true)}
                             value={data.paymentAccount}
-                            onChange={(val) => setData("paymentAccount", val)}
+                            onChange={(val) => { setData("paymentAccount", val); setIsDirty(true); }}
                             placeholder="Select Account"
                             size="sm"
                             error={errors.paymentAccount}
+                        />
+                        <CurrencyConversionRow
+                            details={accountCurrencyDetails}
+                            exchangeRate={data.exchange_rate}
+                            onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
+                            error={errors.exchange_rate}
                         />
                     </div>
                     <div className="w-[180px]">
@@ -369,6 +419,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                             onChange={(e) => {
                                 const val = e.target.value.replace(/[^0-9.]/g, '');
                                 setData("amount", val);
+                                setIsDirty(true);
                             }}
                             onBlur={(e) => {
                                 const val = parseFloat(e.target.value || 0);
@@ -377,6 +428,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData("amount", val);
+                                setTimeout(() => e.target.select(), 0);
                             }}
                             size="sm"
                             inputClass="text-right font-semibold"
@@ -392,7 +444,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                         label="Memo"
                         placeholder="Add a memo..."
                         value={data.memo}
-                        onChange={(e) => setData("memo", e.target.value)}
+                        onChange={(e) => { setData("memo", e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                         error={errors.memo}

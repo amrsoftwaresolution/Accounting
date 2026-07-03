@@ -1,17 +1,23 @@
 import { useState, useEffect } from "react";
-import { useForm, Head } from "@inertiajs/react";
+import { useForm, Head, usePage } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
+import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
+import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { showToast } from "@/Components/ToastNotification";
 import axios from "axios";
 
 export default function TransferForm({ transfer = null }) {
+    const { auth } = usePage().props;
+    const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
+
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
-    const [savedOnce, setSavedOnce] = useState(!!transfer?.id);
+    const [isDirty, setIsDirty] = useState(false);
+    const [savedEntryId, setSavedEntryId] = useState(transfer?.id || null);
     const [currentAction, setCurrentAction] = useState('save');
 
 
@@ -21,8 +27,22 @@ export default function TransferForm({ transfer = null }) {
         amount: transfer?.amount ? parseFloat(transfer.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "",
         date: transfer?.date || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         memo: transfer?.memo || "",
-        referenceNo: transfer?.referenceNo || ""
+        referenceNo: transfer?.referenceNo || "",
+        from_currency_id: transfer?.from_currency_id || null,
+        from_exchange_rate: transfer?.from_exchange_rate ? String(transfer.from_exchange_rate) : "",
+        to_currency_id: transfer?.to_currency_id || null,
+        to_exchange_rate: transfer?.to_exchange_rate ? String(transfer.to_exchange_rate) : ""
     });
+
+    useEffect(() => {
+        transform((data) => ({
+            ...data,
+            amount: String(data.amount).replace(/,/g, ''),
+            from_exchange_rate: data.from_exchange_rate ? String(data.from_exchange_rate).replace(/,/g, '') : null,
+            to_exchange_rate: data.to_exchange_rate ? String(data.to_exchange_rate).replace(/,/g, '') : null,
+            action: currentAction,
+        }));
+    }, [data.amount, data.from_exchange_rate, data.to_exchange_rate, currentAction, transform]);
 
     const fetchAccounts = (search = "") => {
         axios.get(route('api.accounts', { search })).then(res => {
@@ -37,6 +57,30 @@ export default function TransferForm({ transfer = null }) {
     const selectedFrom = accountOptions.find(opt => opt.value === data.transfer_from);
     const selectedTo = accountOptions.find(opt => opt.value === data.transfer_to);
 
+    const { accountCurrencyDetails: fromAccountCurrencyDetails } = useAccountCurrency({
+        accountId: data.transfer_from,
+        accountOptions,
+        exchangeRate: data.from_exchange_rate,
+        currencyId: data.from_currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode,
+        currencyIdField: 'from_currency_id',
+        exchangeRateField: 'from_exchange_rate'
+    });
+
+    const { accountCurrencyDetails: toAccountCurrencyDetails } = useAccountCurrency({
+        accountId: data.transfer_to,
+        accountOptions,
+        exchangeRate: data.to_exchange_rate,
+        currencyId: data.to_currency_id,
+        setData,
+        apiDetailRoute: 'api.accounts.detail',
+        defaultCurrencyCode,
+        currencyIdField: 'to_currency_id',
+        exchangeRateField: 'to_exchange_rate'
+    });
+
     const formatCurrency = (val) => {
         const num = parseFloat(String(val).replace(/,/g, "")) || 0;
         return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -48,6 +92,7 @@ export default function TransferForm({ transfer = null }) {
         const parts = val.split('.');
         if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
         setData('amount', val);
+        setIsDirty(true);
     };
 
     const handleAmountBlur = () => {
@@ -55,14 +100,6 @@ export default function TransferForm({ transfer = null }) {
             setData('amount', formatCurrency(data.amount));
         }
     };
-
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            amount: String(data.amount).replace(/,/g, ''),
-            action: currentAction
-        }));
-    }, [data.amount, transform, currentAction]);
 
     const handleSave = (type = 'save') => {
         setCurrentAction(type);
@@ -72,12 +109,22 @@ export default function TransferForm({ transfer = null }) {
         method(url, {
             preserveScroll: true,
             preserveState: type === 'save',
-            onSuccess: () => {
+            onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
-                setSavedOnce(true);
+                setIsDirty(false);
+
+                const newId = page.props?.flash?.journal_entry_id
+                           || page.props?.transfer?.id
+                           || page.props?.record?.id;
+                if (newId && !savedEntryId) {
+                    setSavedEntryId(newId);
+                }
+
                 if (type === 'new') {
-                    setSavedOnce(false);
+                    setSavedEntryId(null);
                     reset();
+                    clearErrors();
+                    setIsDirty(false);
                 }
             },
         });
@@ -92,7 +139,7 @@ export default function TransferForm({ transfer = null }) {
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             processing={processing}
-            dirty={!savedOnce}
+            dirty={isDirty}
             moreOptions={transfer?.id ? { copyRoute: 'transfer', deleteRoute: 'transfer.destroy', recordId: transfer.id, listRoute: 'dashboard' } : null}
         >
             <Head title="Transfer Funds" />
@@ -107,7 +154,7 @@ export default function TransferForm({ transfer = null }) {
                                 options={accountOptions}
                                 onSearch={fetchAccounts}
                                 value={data.transfer_from}
-                                onChange={(val) => setData('transfer_from', val)}
+                                onChange={(val) => { setData('transfer_from', val); setIsDirty(true); }}
                                 placeholder="Select Source Account"
                                 size="sm"
                                 error={errors.transfer_from}
@@ -122,6 +169,12 @@ export default function TransferForm({ transfer = null }) {
                                     <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
+                            <CurrencyConversionRow
+                                details={fromAccountCurrencyDetails}
+                                exchangeRate={data.from_exchange_rate}
+                                onExchangeRateChange={(value) => { setData('from_exchange_rate', value); setIsDirty(true); }}
+                                error={errors.from_exchange_rate}
+                            />
                         </div>
 
                         {/* TO ACCOUNT */}
@@ -131,7 +184,7 @@ export default function TransferForm({ transfer = null }) {
                                 options={accountOptions}
                                 onSearch={fetchAccounts}
                                 value={data.transfer_to}
-                                onChange={(val) => setData('transfer_to', val)}
+                                onChange={(val) => { setData('transfer_to', val); setIsDirty(true); }}
                                 placeholder="Select Destination Account"
                                 size="sm"
                                 error={errors.transfer_to}
@@ -146,6 +199,12 @@ export default function TransferForm({ transfer = null }) {
                                     <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
+                            <CurrencyConversionRow
+                                details={toAccountCurrencyDetails}
+                                exchangeRate={data.to_exchange_rate}
+                                onExchangeRateChange={(value) => { setData('to_exchange_rate', value); setIsDirty(true); }}
+                                error={errors.to_exchange_rate}
+                            />
                         </div>
                     </div>
 
@@ -168,6 +227,7 @@ export default function TransferForm({ transfer = null }) {
                                 const newDate = e.target.value;
                                 localStorage.setItem('last_transaction_date', newDate);
                                 setData('date', newDate);
+                                setIsDirty(true);
                             }}
                             size="sm"
                             error={errors.date}
@@ -193,7 +253,7 @@ export default function TransferForm({ transfer = null }) {
                         label="Memo"
                         placeholder="Why are you transferring these funds?"
                         value={data.memo}
-                        onChange={(e) => setData('memo', e.target.value)}
+                        onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                         error={errors.memo}

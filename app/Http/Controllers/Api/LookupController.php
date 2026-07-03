@@ -62,7 +62,7 @@ class LookupController extends Controller
         $search = $request->query('search');
         $type = $request->query('type'); // optional: filter by account_type
 
-        $accounts = \App\Models\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type')
+        $accounts = \App\Models\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'currency')
             ->when($search, function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('account_code', 'like', "%{$search}%");
@@ -71,15 +71,75 @@ class LookupController extends Controller
             ->orderBy('account_code')
             ->get()
             ->map(function($acc) {
+                $currencyCode = $acc->currency ?: 'LKR';
+                $currencySymbol = $this->getCurrencySymbol($currencyCode);
+                $isMultiCurrency = $currencyCode !== 'LKR';
+
                 return [
                     'value' => $acc->id,
                     'label' => "{$acc->account_code} - {$acc->name}",
                     'balance' => $acc->balance,
-                    'account_type' => $acc->account_type
+                    'account_type' => $acc->account_type,
+                    'currency_code' => $currencyCode,
+                    'currency_symbol' => $currencySymbol,
+                    'is_multi_currency' => $isMultiCurrency,
                 ];
             });
 
         return response()->json($accounts);
+    }
+
+    public function accountDetails(Request $request)
+    {
+        $accountId = $request->query('account_id');
+        if (!$accountId) {
+            return response()->json([ 'error' => 'Account ID is required.' ], 422);
+        }
+
+        $account = \App\Models\ChartOfAcc::select('id', 'currency')->find($accountId);
+        if (!$account) {
+            return response()->json([ 'error' => 'Account not found.' ], 404);
+        }
+
+        $currencyCode = $account->currency ?: 'LKR';
+        $currency = \App\Models\Currency::where('code', $currencyCode)->latest('updated_at')->first();
+
+        $currencySymbol = $currency?->symbol ?? ($currencyCode === 'LKR' ? 'Rs.' : '');
+        $latestRate = $currency?->exchange_rate ?? ($currencyCode === 'LKR' ? 1 : null);
+
+        return response()->json([
+            'is_multi_currency' => $currencyCode !== 'LKR',
+            'currency_code' => $currencyCode,
+            'currency_symbol' => $currencySymbol,
+            'currency_id' => $currency?->id,
+            'flag' => $this->currencyFlagEmoji($currencyCode),
+            'latest_exchange_rate' => $latestRate,
+        ]);
+    }
+
+    private function getCurrencySymbol(string $currencyCode): string
+    {
+        if ($currencyCode === 'LKR') {
+            return 'Rs.';
+        }
+
+        $currency = \App\Models\Currency::where('code', $currencyCode)->first();
+        return $currency?->symbol ?? '';
+    }
+
+    private function currencyFlagEmoji(string $code): string
+    {
+        return match ($code) {
+            'USD' => '🇺🇸',
+            'EUR' => '🇪🇺',
+            'INR' => '🇮🇳',
+            'GBP' => '🇬🇧',
+            'AUD' => '🇦🇺',
+            'AED' => '🇦🇪',
+            'QAR' => '🇶🇦',
+            'LKR' => '🇱🇰',
+            default => '',
+        };
     }
 
     /**
@@ -117,7 +177,7 @@ class LookupController extends Controller
         $categories = \App\Models\ItemCategory::select('id', 'name')
             ->orderBy('name')
             ->get();
-            
+
         return response()->json($categories);
     }
 
@@ -200,7 +260,7 @@ class LookupController extends Controller
     {
         $customer->load('addresses');
         $billingAddress = $customer->addresses->where('type', 'billing')->first();
-        
+
         $addressString = '';
         if ($billingAddress) {
             $parts = array_filter([
@@ -234,14 +294,14 @@ class LookupController extends Controller
                 }
                 $allocatedAmount = $query->sum('amount');
                 $openBalance = $invoice->total_amount - $allocatedAmount;
-                
+
                 $applied = 0;
                 if ($paymentId) {
                     $applied = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id)
                         ->where('payment_id', $paymentId)
                         ->sum('amount');
                 }
-                
+
                 return [
                     'id' => $invoice->id,
                     'invoice_no' => $invoice->invoice_no,
@@ -262,7 +322,7 @@ class LookupController extends Controller
     {
         $supplier->load('addresses');
         $billingAddress = $supplier->addresses->where('type', 'billing')->first();
-        
+
         $addressString = '';
         if ($billingAddress) {
             $parts = array_filter([
@@ -296,14 +356,14 @@ class LookupController extends Controller
                 }
                 $allocatedAmount = $query->sum('amount_applied');
                 $openBalance = $bill->total_amount - $allocatedAmount;
-                
+
                 $applied = 0;
                 if ($paymentId) {
                     $applied = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id)
                         ->where('bill_payment_id', $paymentId)
                         ->sum('amount_applied');
                 }
-                
+
                 return [
                     'id' => $bill->id,
                     'bill_no' => $bill->bill_no,

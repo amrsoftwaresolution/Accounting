@@ -100,6 +100,10 @@ class BillController extends Controller
                     return (float) str_replace(',', '', $item['amount']);
                 });
 
+                if ($totalAmount > 9999999999999.99) {
+                    throw new \Exception('Total amount is too large. Please enter a smaller value.');
+                }
+
                 // 1. Create the Bill
                 $bill = Bill::create([
                     'company_id' => $companyId,
@@ -218,9 +222,34 @@ class BillController extends Controller
                 return redirect()->route('bill')->with('success', 'Bill saved successfully.');
             }
 
-            return redirect()->route('bill.edit', $journalEntry->id)
-                ->with('success', 'Bill saved successfully.');
+            session()->flash('success', 'Bill saved successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
 
+            return Inertia::render('Transaction/BillForm', [
+                'nextBillNo' => $request->billNo,
+                'bill' => [
+                    'id' => $journalEntry->id,
+                    'supplier' => $request->supplier,
+                    'mailingAddress' => $request->mailingAddress ?? '',
+                    'terms' => $request->terms ?? 'Net 30',
+                    'billDate' => $request->billDate,
+                    'dueDate' => $request->dueDate,
+                    'billNo' => $request->billNo,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == '22003') {
+                return redirect()->back()->withErrors(['error' => 'Total amount is too large. Please enter a smaller value.']);
+            }
+            return redirect()->back()->withErrors(['error' => 'A database error occurred.']);
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -288,6 +317,10 @@ class BillController extends Controller
                 }) + $productItems->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
                 });
+
+                if ($totalAmount > 9999999999999.99) {
+                    throw new \Exception('Total amount is too large. Please enter a smaller value.');
+                }
 
                 // 1. Update the Bill
                 $bill = Bill::find($journalEntry->transactionable_id);
@@ -402,7 +435,33 @@ class BillController extends Controller
                 return redirect()->route('bill')->with('success', 'Bill updated successfully.');
             }
 
-            return redirect()->back()->with('success', 'Bill updated successfully.');
+            session()->flash('success', 'Bill updated successfully.');
+            session()->flash('journal_entry_id', $journalEntry->id);
+
+            return Inertia::render('Transaction/BillForm', [
+                'nextBillNo' => $request->billNo,
+                'bill' => [
+                    'id' => $journalEntry->id,
+                    'supplier' => $request->supplier,
+                    'mailingAddress' => $request->mailingAddress ?? '',
+                    'terms' => $request->terms ?? 'Net 30',
+                    'billDate' => $request->billDate,
+                    'dueDate' => $request->dueDate,
+                    'billNo' => $request->billNo,
+                    'memo' => $request->memo,
+                    'items' => collect($request->items)->filter(function($item) {
+                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
+                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
+                    })->values()->toArray(),
+                ],
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == '22003') {
+                return redirect()->back()->withErrors(['error' => 'Total amount is too large. Please enter a smaller value.']);
+            }
+            return redirect()->back()->withErrors(['error' => 'A database error occurred.']);
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }   

@@ -16,6 +16,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
 
+    const [savedEntryId, setSavedEntryId] = useState(journalEntry?.id || null);
+
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -67,7 +69,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
 
     const [form, setForm] = useState({
         date: getInitialDate(),
-        journalNo: journalEntry?.reference || nextJournalNo || "",
+        journalNo: journalEntry?.reference || (nextJournalNo ? String(parseInt(nextJournalNo)).padStart(4, '0') : "0001"),
         memo: journalEntry?.description || "",
     });
 
@@ -209,51 +211,62 @@ const handleItemChange = (index, field, value) => {
     setIsDirty(true);
 };
 
-    const handleSave = (type = 'save') => {
-        if (Math.abs(totals.debit - totals.credit) > 0.001) {
-            alert("Debits and Credits must balance to save this entry.");
-            return;
-        }
+const handleSave = (type = 'save') => {
+    if (Math.abs(totals.debit - totals.credit) > 0.001) {
+        alert("Debits and Credits must balance to save this entry.");
+        return;
+    }
 
-        const payload = {
-            action: type,
-            date: form.date,
-            reference_no: form.journalNo,
-            description: form.memo,
-            lines: items
-                .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
-                .map(i => ({
-                    ...i,
-                    debit: parseCurrency(i.debit),
-                    credit: parseCurrency(i.credit)
-                }))
-        };
+    const currentRefNo = form.journalNo;
 
-        const method = isEditing ? 'patch' : 'post';
-        const url = isEditing ? `/journal-entries/${journalEntry.id}` : "/journal-entries";
-
-        router[method](url, payload, {
-            onSuccess: () => {
-                showToast('success', 'Record saved successfully.');
-                setIsDirty(false);
-                if (type === 'new') {
-                    setItems([createBlankLine(), createBlankLine()]);
-                    const currentNo = form.journalNo || nextJournalNo || '1';
-                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 0;
-                    const nextNo = String(num + 1);
-                    setForm({
-                        date: getInitialDate(),
-                        journalNo: nextNo,
-                        memo: ""
-                    });
-                }
-            },
-            onError: (errors) => {
-                alert(Object.values(errors).join('\n') || "Error saving entry ❌");
-            }
-        });
+    const payload = {
+        action: type,
+        date: form.date,
+        reference_no: form.journalNo,
+        description: form.memo,
+        lines: items
+            .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
+            .map(i => ({
+                ...i,
+                debit: parseCurrency(i.debit),
+                credit: parseCurrency(i.credit)
+            }))
     };
 
+    // Use savedEntryId if we already saved once this session
+    const currentId = savedEntryId || journalEntry?.id;
+    const method = currentId ? 'patch' : 'post';
+    const url = currentId ? `/journal-entries/${currentId}` : "/journal-entries";
+
+    router[method](url, payload, {
+        preserveState: true,   // STAY ON SAME PAGE
+        preserveScroll: true,
+        onSuccess: (page) => {
+            showToast('success', 'Record saved successfully.');
+            setIsDirty(false);
+
+            // Capture the new entry ID from flash or response
+            if (!savedEntryId && page.props?.flash?.journal_entry_id) {
+                setSavedEntryId(page.props.flash.journal_entry_id);
+            }
+
+            if (type === 'new') {
+                setSavedEntryId(null); // reset for new entry
+                setItems([createBlankLine(), createBlankLine()]);
+                const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
+                const nextNo = String(num + 1).padStart(4, '0');
+                setForm({
+                    date: getInitialDate(),
+                    journalNo: nextNo,
+                    memo: ""
+                });
+            }
+        },
+        onError: (errors) => {
+            alert(Object.values(errors).join('\n') || "Error saving entry ❌");
+        }
+    });
+};
     return (
         <TransactionLayout
             historyType="journal entry"
@@ -297,6 +310,10 @@ const handleItemChange = (index, field, value) => {
                         onChange={(e) => {
                             setForm({ ...form, journalNo: e.target.value });
                             setIsDirty(true);
+                        }}
+
+                        onFocus={(e) => {
+                        setTimeout(() => e.target.select(), 0);
                         }}
                         size="sm"
                         inputClass="font-mono"
