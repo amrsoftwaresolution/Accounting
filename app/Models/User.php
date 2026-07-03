@@ -79,7 +79,17 @@ class User extends Authenticatable
         return $this->belongsToMany(Company::class)->withPivot('role')->withTimestamps();
     }
 
-    protected $currentCompanyCache = null;
+    public function getCachedCompaniesAttribute()
+    {
+        $sessionCompanies = session('user_companies_data');
+        if ($sessionCompanies) {
+            return $sessionCompanies;
+        }
+
+        $companies = $this->companies()->get();
+        session(['user_companies_data' => $companies]);
+        return $companies;
+    }
 
     public function currentCompany()
     {
@@ -87,9 +97,16 @@ class User extends Authenticatable
         if (!$companyId) {
             return null;
         }
-        if ($this->currentCompanyCache === null || $this->currentCompanyCache->id !== $companyId) {
-            $this->currentCompanyCache = Company::find($companyId);
+
+        $sessionCompany = session('active_company_data');
+        if ($sessionCompany && $sessionCompany->id === $companyId) {
+            return $sessionCompany;
         }
-        return $this->currentCompanyCache;
+
+        $company = Company::find($companyId);
+        if ($company) {
+            session(['active_company_data' => $company]);
+        }
+        return $company;
     }
 }

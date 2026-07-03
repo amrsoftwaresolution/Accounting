@@ -60,6 +60,9 @@ class CompanyController extends Controller
         // Initialize default data
         CompanySetupService::setup($company);
 
+        // Clear user companies cache
+        session()->forget('user_companies_data');
+
         return redirect()->route('onboarding');
     }
 
@@ -71,6 +74,7 @@ class CompanyController extends Controller
         }
 
         session(['active_company_id' => $company->id]);
+        session()->forget('active_company_data');
 
         return redirect()->route('dashboard');
     }

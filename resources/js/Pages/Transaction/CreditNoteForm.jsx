@@ -52,7 +52,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
             width: "320px"
         },
         { key: "description", label: "Description", placeholder: "Enter description" },
-        { key: "qty", label: "Qty", type: "number", width: "100px", className: "text-right" },
+        { key: "qty", label: "Qty", type: "number", min: "0", width: "100px", className: "text-right" },
         { key: "rate", label: "Rate", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
         { key: "amount", label: "Amount", type: "currency", width: "160px", className: "text-right", inputClass: "text-right" },
     ];
@@ -154,9 +154,23 @@ const actionRef = useRef('save');
         }
 
         if (field === "qty" || field === "rate") {
-            const q = parseFloat(updated[index].qty) || 0;
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
             const r = parseCurrency(updated[index].rate);
             updated[index].amount = formatCurrencyValue(q * r);
+        } else if (field === "amount") {
+            const a = parseCurrency(value);
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
+            if (q !== 0) {
+                updated[index].rate = formatCurrencyValue(a / q);
+            }
         }
         setData("items", updated);
     };
@@ -183,7 +197,7 @@ const actionRef = useRef('save');
     return (
         <TransactionLayout
             historyType="sales return"
-            title={`Refund Receipt #${data.creditNoteNo}`}
+            title={`Sales Return #${data.creditNoteNo}`}
             amount={totalAmount}
             processing={processing}
             dirty={!savedOnce}
@@ -246,7 +260,7 @@ const actionRef = useRef('save');
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
-                            label="Refund Receipt date"
+                            label="Sales Return date"
                             value={data.creditNoteDate}
                             onChange={(e) => {
                                 const newDate = e.target.value;
@@ -259,7 +273,7 @@ const actionRef = useRef('save');
                     </div>
                     <div className="w-[160px]">
                         <CommonInput
-                            label="Refund Receipt no."
+                            label="Sales Return no."
                             value={data.creditNoteNo}
                             onChange={(e) => setData('creditNoteNo', e.target.value)}
                             size="sm"

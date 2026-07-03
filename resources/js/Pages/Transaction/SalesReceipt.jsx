@@ -40,7 +40,7 @@ export default function SalesReceipt({
             placeholder: "Select a product"
         },
         { key: "description", label: "Description" },
-        { key: "qty", label: "Qty", type: "number", className: "w-20 text-right" },
+        { key: "qty", label: "Qty", type: "number", min: "0", className: "w-20 text-right" },
         { key: "rate", label: "Rate", type: "number", className: "w-32 text-right" },
         { key: "amount", label: "Amount", type: "number", className: "w-32 text-right", inputClass: "bg-slate-50 font-bold" },
     ];
@@ -81,10 +81,25 @@ export default function SalesReceipt({
             }
         }
 
-        // Calculate line amount
-        const qty = parseFloat(updated[index].qty) || 0;
-        const rate = parseFloat(updated[index].rate) || 0;
-        updated[index].amount = (qty * rate).toFixed(2);
+        if (field === "qty" || field === "rate" || field === "product_id") {
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
+            const r = parseFloat(updated[index].rate) || 0;
+            updated[index].amount = (q * r).toFixed(2);
+        } else if (field === "amount") {
+            const a = parseFloat(value) || 0;
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
+            if (q !== 0) {
+                updated[index].rate = (a / q).toFixed(2);
+            }
+        }
 
         setItems(updated);
     };

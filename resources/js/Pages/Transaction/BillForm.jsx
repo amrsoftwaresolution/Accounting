@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef} from "react";
-import { useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage, Head } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import { showToast } from "@/Components/ToastNotification";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
@@ -243,9 +243,23 @@ useEffect(() => {
         }
 
         if (field === "qty" || field === "rate") {
-            const q = parseFloat(updated[index].qty) || 0;
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
             const r = parseCurrency(updated[index].rate);
             updated[index].amount = formatCurrencyValue(q * r);
+        } else if (field === "amount") {
+            const a = parseCurrency(value);
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
+            if (q !== 0) {
+                updated[index].rate = formatCurrencyValue(a / q);
+            }
         }
         setData("itemDetails", updated);
     };
@@ -325,7 +339,7 @@ useEffect(() => {
             }
         },
         { key: "description", label: "Description", placeholder: "Enter description" },
-        { key: "qty", label: "Qty", type: "number", width: "80px", className: "text-right" },
+        { key: "qty", label: "Qty", type: "number", min: "0", width: "80px", className: "text-right" },
         { key: "rate", label: "Rate", type: "currency", width: "120px", className: "text-right", inputClass: "text-right" },
         { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
     ];
@@ -341,6 +355,7 @@ useEffect(() => {
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
         >
+            <Head title={`Bill #${data.billNo}`} />
             <div className="py-6 px-1 space-y-8">
                 {/* Error Banner */}
                 {errors.error && (
