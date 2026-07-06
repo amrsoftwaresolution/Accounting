@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
+import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 
 export default function ContactBalanceDetail({ contact, contactType, lines = [], filters = {} }) {
     const { auth } = usePage().props;
@@ -24,7 +25,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
     const handlePresetChange = (e) => {
         const val = e.target.value;
         setDatePreset(val);
-        
+
         let newStart = startDate;
         let newEnd = endDate;
         const currentYear = new Date().getFullYear();
@@ -74,7 +75,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
     const filterElements = (
         <div className="flex items-end gap-4">
             <div className="w-[160px] pb-[1px]">
-                <CommonInput 
+                <CommonInput
                     type="select"
                     label="Date Period"
                     value={datePreset}
@@ -90,7 +91,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
             {datePreset === 'custom' && (
                 <>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="From"
                             value={startDate}
@@ -99,7 +100,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
                         />
                     </div>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="To"
                             value={endDate}
@@ -107,7 +108,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
                             size="sm"
                         />
                     </div>
-                    <button 
+                    <button
                         onClick={() => handleRunReport()}
                         className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
                     >
@@ -137,7 +138,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
                 <h3 className="text-lg text-gray-800 mt-1">{contactType} Balance Detail</h3>
                 {filters.start_date && filters.end_date ? (
                     <p className="text-[13px] text-gray-500 mt-1">
-                        {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        {formatDate(filters.start_date, dateFormat)} - {formatDate(filters.end_date, dateFormat)}
                     </p>
                 ) : (
                     <p className="text-[13px] text-gray-500 mt-1">

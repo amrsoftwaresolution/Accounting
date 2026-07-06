@@ -14,11 +14,11 @@ class HandleInertiaRequests extends Middleware
     public function handle(Request $request, Closure $next)
     {
         $response = parent::handle($request, $next);
-        
+
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
         $response->headers->set('Pragma', 'no-cache');
         $response->headers->set('Expires', '0');
-        
+
         return $response;
     }
     /**
@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
                 'companies' => $request->user() ? $request->user()->companies : [],
             ],
             'appName' => config('app.name'),
+            'settings' => fn () => \App\Models\AdvancedSettings::first() ?? [],
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),

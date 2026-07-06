@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 
 export default function SelectCompany({ companies }) {
     const { post, processing } = useForm();
     const user = usePage().props.auth.user;
-    
+    const dateFormat = useDateFormat();
+
     // State
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'admin', 'member', 'recent'
@@ -17,7 +19,7 @@ export default function SelectCompany({ companies }) {
     useEffect(() => {
         const storedPinned = JSON.parse(localStorage.getItem('pinnedCompanies') || '[]');
         setPinnedCompanies(storedPinned);
-        
+
         const storedRecent = JSON.parse(localStorage.getItem('recentCompanies') || '{}');
         setRecentCompanies(storedRecent);
     }, []);
@@ -38,7 +40,7 @@ export default function SelectCompany({ companies }) {
     // Handle Select
     const handleSelect = (company) => {
         setSelectingId(company.id);
-        
+
         // Update recently active
         const newRecent = { ...recentCompanies, [company.id]: new Date().toISOString() };
         localStorage.setItem('recentCompanies', JSON.stringify(newRecent));
@@ -51,10 +53,10 @@ export default function SelectCompany({ companies }) {
     const enrichedCompanies = useMemo(() => {
         return companies.map(c => {
             const lastActive = recentCompanies[c.id];
-            
+
             // Generate a 1 or 2 letter code from name
             const words = c.company_name.split(' ');
-            const code = words.length > 1 
+            const code = words.length > 1
                 ? (words[0][0] + words[1][0]).toUpperCase()
                 : c.company_name.substring(0, 2).toUpperCase();
 
@@ -76,8 +78,8 @@ export default function SelectCompany({ companies }) {
         // 1. Search Filter
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            result = result.filter(c => 
-                c.company_name.toLowerCase().includes(query) || 
+            result = result.filter(c =>
+                c.company_name.toLowerCase().includes(query) ||
                 (c.industry && c.industry.toLowerCase().includes(query)) ||
                 c.displayRole.toLowerCase().includes(query)
             );
@@ -118,10 +120,9 @@ export default function SelectCompany({ companies }) {
 
 
     // Formatting Date
-    const formatDate = (isoString) => {
+    const formatDisplayDate = (isoString) => {
         if (!isoString) return 'Never';
-        const date = new Date(isoString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return formatDate(isoString, dateFormat);
     };
 
     return (
@@ -136,13 +137,13 @@ export default function SelectCompany({ companies }) {
                     </div>
                     <span className="font-semibold text-slate-800 text-sm tracking-tight">FinGrow</span>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={() => setShowPinnedFirst(!showPinnedFirst)}
                         className={`text-xs font-medium px-3 py-1 rounded-full border transition-all ${
-                            showPinnedFirst 
-                            ? 'bg-emerald-50 border-emerald-200 text-[#00713D]' 
+                            showPinnedFirst
+                            ? 'bg-emerald-50 border-emerald-200 text-[#00713D]'
                             : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                     >
@@ -160,7 +161,7 @@ export default function SelectCompany({ companies }) {
             </nav>
 
             <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
-                
+
                 {/* Header Section */}
                 <header className="flex items-center justify-between border-b border-slate-200/60 px-2 py-1.5 mb-6">
                     <div>
@@ -261,7 +262,7 @@ export default function SelectCompany({ companies }) {
                                                         </>
                                                     )}
                                                     <span className="flex items-center gap-1">
-                                                        Active {formatDate(company.last_active_at)}
+                                                        Active {formatDisplayDate(company.last_active_at)}
                                                     </span>
                                                 </div>
                                             </div>
@@ -280,8 +281,8 @@ export default function SelectCompany({ companies }) {
                                             <button
                                                 onClick={(e) => togglePin(e, company.id)}
                                                 className={`p-2 rounded-full transition-colors ${
-                                                    company.is_pinned 
-                                                        ? 'text-yellow-500 hover:text-yellow-600' 
+                                                    company.is_pinned
+                                                        ? 'text-yellow-500 hover:text-yellow-600'
                                                         : 'text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100'
                                                 }`}
                                             >
@@ -319,7 +320,7 @@ export default function SelectCompany({ companies }) {
                                 <p className="text-slate-500 mb-6">
                                     We couldn't find any companies matching your search criteria. Try adjusting your filters or search term.
                                 </p>
-                                <button 
+                                <button
                                     onClick={() => { setSearchQuery(''); setActiveFilter('all'); }}
                                     className="text-[#00713D] font-semibold hover:text-[#005a30] hover:underline"
                                 >
@@ -338,8 +339,8 @@ export default function SelectCompany({ companies }) {
                         </div>
                         <h2 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">You don't have any companies yet</h2>
                         <p className="text-lg text-slate-500 mb-10 leading-relaxed max-w-lg mx-auto">
-                            {user.role === 'admin' 
-                                ? 'Set up your first company to start tracking finances, creating invoices, and managing your business.' 
+                            {user.role === 'admin'
+                                ? 'Set up your first company to start tracking finances, creating invoices, and managing your business.'
                                 : 'It looks like you haven\'t been invited to any companies yet. Please contact your administrator.'}
                         </p>
 

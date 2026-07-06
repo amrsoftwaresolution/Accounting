@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
+import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 
 export default function SupplierBalance({ reportData, filters, auth }) {
     const [endDate, setEndDate] = useState(filters.end_date || '');
@@ -18,7 +19,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
     const handlePresetChange = (e) => {
         const val = e.target.value;
         setDatePreset(val);
-        
+
         let newEnd = endDate;
         const currentYear = new Date().getFullYear();
 
@@ -51,25 +52,25 @@ export default function SupplierBalance({ reportData, filters, auth }) {
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'GrowDigitec';
         const endDate = filters.end_date;
-        
+
         let csvContent = "";
-        
+
         // Add Title Header
         csvContent += `"${companyName}"\n`;
         csvContent += `"Supplier Report"\n`;
-        csvContent += `"As of ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
-        
+        csvContent += `"As of ${formatDate(endDate, dateFormat)}"\n\n`;
+
         // Headers
         csvContent += `"Supplier Name","Email","Phone","Balance (${homeCurrency})"\n`;
-        
+
         // Suppliers
         suppliers.forEach(item => {
             csvContent += `"${item.name}","${item.email || ''}","${item.phone || ''}",${item.balance}\n`;
         });
-        
+
         // Total
         csvContent += `\n"Total",,,${totalBalance}\n`;
-        
+
         // Create download blob
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -84,7 +85,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
     const filterElements = (
         <div className="flex items-end gap-4">
             <div className="w-[160px] pb-[1px]">
-                <CommonInput 
+                <CommonInput
                     type="select"
                     label="Date Period"
                     value={datePreset}
@@ -100,7 +101,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
             {datePreset === 'custom' && (
                 <>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="As of Date"
                             value={endDate}
@@ -108,7 +109,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
                             size="sm"
                         />
                     </div>
-                    <button 
+                    <button
                         onClick={() => handleRunReport()}
                         className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
                     >
@@ -126,12 +127,12 @@ export default function SupplierBalance({ reportData, filters, auth }) {
             onExportExcel={handleExportExcel}
         >
             <Head title="Supplier Report" />
-            
+
             <div className="text-center mb-8 font-serif">
                 <h2 className="text-xl font-bold text-gray-900">Supplier Balance Summary</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <p className="text-[13px] text-gray-500 mt-1">
-                    As of {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    As of {formatDate(filters.end_date, dateFormat)}
                 </p>
             </div>
 
@@ -182,7 +183,7 @@ export default function SupplierBalance({ reportData, filters, auth }) {
             </div>
 
             <div className="mt-20 text-[10px] text-slate-400 font-bold text-center uppercase tracking-widest italic">
-                Generated on {new Date().toLocaleDateString()}
+                Generated on {formatDate(new Date(), dateFormat)}
             </div>
         </ReportLayout>
     );

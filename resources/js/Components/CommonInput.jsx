@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 
 /**
  * A highly reusable, premium input component for JobAlign Books.
@@ -19,12 +20,15 @@ export default forwardRef(function CommonInput(
         variant = 'boxed', // 'boxed', 'table', 'underlined'
         inputClass = '',
         children,
+        dateFormat,
         ...props
     },
     ref
 ) {
     const inputRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
+    const { settings } = usePage().props;
+    const resolvedDateFormat = dateFormat || settings?.date_format || 'mm/dd/yyyy';
 
     useEffect(() => {
         if (isFocused) {
@@ -84,7 +88,7 @@ export default forwardRef(function CommonInput(
         }
         if (type === 'date') {
             return (
-                <div 
+                <div
                     className={`absolute ${size === 'sm' || variant === 'table' ? 'right-1.5' : 'right-3'} top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-green-500 transition-colors z-10`}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -107,23 +111,31 @@ export default forwardRef(function CommonInput(
         return null;
     };
 
+    const getDatePlaceholder = () => {
+        const format = String(resolvedDateFormat || 'mm/dd/yyyy').toLowerCase();
+        if (format.includes('dd/mm')) return 'DD/MM/YYYY';
+        if (format.includes('dd-mm')) return 'DD-MM-YYYY';
+        if (format.includes('yyyy')) return 'YYYY-MM-DD';
+        return 'MM/DD/YYYY';
+    };
+
     const handlePaste = (e) => {
         if (type === 'date') {
             const pastedText = e.clipboardData.getData('text').trim();
-            
+
             // Try parsing Excel serial numbers (if it's a number, though rare in plain text paste, just in case)
             // or standard strings
             const d = new Date(pastedText);
-            
+
             if (!isNaN(d.getTime())) {
                 e.preventDefault();
-                
+
                 // Construct YYYY-MM-DD locally to avoid timezone shifts
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                 const dd = String(d.getDate()).padStart(2, '0');
                 const formatted = `${yyyy}-${mm}-${dd}`;
-                
+
                 const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
                 nativeInputValueSetter.call(inputRef.current, formatted);
                 const ev = new Event('input', { bubbles: true });
@@ -165,6 +177,7 @@ export default forwardRef(function CommonInput(
                         type={type === 'password' ? (showPassword ? 'text' : 'password') : type}
                         ref={inputRef}
                         onPaste={props.onPaste || handlePaste}
+                        placeholder={type === 'date' ? getDatePlaceholder() : props.placeholder}
                         className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} ${(type === 'date' || type === 'password' || icon) ? 'pr-8' : ''}`}
                     />
                 )}

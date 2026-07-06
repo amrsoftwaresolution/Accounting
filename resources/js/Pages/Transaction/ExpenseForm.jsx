@@ -11,6 +11,7 @@ import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
 import { showToast } from "@/Components/ToastNotification";
 import { useAccountCurrency } from "@/Utils/useAccountCurrency";
+import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 import axios from "axios";
 
 export default function ExpenseForm({
@@ -20,6 +21,7 @@ export default function ExpenseForm({
 }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const dateFormat = useDateFormat();
 
     // Accordion States (Expanded by default)
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
@@ -417,6 +419,7 @@ export default function ExpenseForm({
                     <div className="w-[200px]">
                         <CommonInput
                             type="date"
+                            placeholder={formatDate(new Date(), dateFormat)}
                             label="Payment Date"
                             value={data.date}
                             onChange={(e) => handlePaymentDateChange(e.target.value)}

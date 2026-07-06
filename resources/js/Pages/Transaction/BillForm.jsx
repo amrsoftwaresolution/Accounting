@@ -9,6 +9,7 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import TermModal from "@/Components/TermModal";
+import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 import axios from "axios";
 
 export default function BillForm({
@@ -20,6 +21,7 @@ export default function BillForm({
     const { props } = usePage();
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const dateFormat = useDateFormat();
 
     // Accordion States (Expanded by default)
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
@@ -470,7 +472,7 @@ useEffect(() => {
                             onBlur={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('billNo', val);
-                            }}  
+                            }}
                             onChange={(e) => { setData('billNo', e.target.value); setIsDirty(true); }}
                             size="sm"
                         />

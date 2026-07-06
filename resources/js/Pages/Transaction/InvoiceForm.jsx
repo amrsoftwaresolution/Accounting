@@ -8,6 +8,7 @@ import CommonInput from "@/Components/CommonInput";
 import TermModal from "@/Components/TermModal";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
+import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 import axios from "axios";
 
 export default function InvoiceForm({
@@ -18,6 +19,7 @@ export default function InvoiceForm({
     const { props } = usePage();
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const dateFormat = useDateFormat();
 
     const [customerOptions, setCustomerOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
@@ -253,7 +255,7 @@ export default function InvoiceForm({
             updated[index].qty = String(newQty);
         }
     }
-    
+
         setData("items", updated);
         setIsDirty(true);
     };
@@ -433,7 +435,7 @@ return (
                             onBlur={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('invoiceNo', val);
-                            }}      
+                            }}
                             size="sm"
                             inputClass="font-mono text-right"
                         />

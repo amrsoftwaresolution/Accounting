@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
+import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 
 export default function ProfitAndLoss({ reportData, filters, auth }) {
+    const dateFormat = useDateFormat();
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [datePreset, setDatePreset] = useState('custom');
@@ -22,7 +24,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     const handlePresetChange = (e) => {
         const val = e.target.value;
         setDatePreset(val);
-        
+
         let newStart = startDate;
         let newEnd = endDate;
         const currentYear = new Date().getFullYear();
@@ -84,15 +86,15 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     const flattenAccounts = (accounts, prefix = "") => {
         let flattened = [];
         accounts.forEach(acc => {
-            flattened.push({ 
-                name: prefix + acc.name, 
+            flattened.push({
+                name: prefix + acc.name,
                 balance: acc.balance,
                 monthly_balances: acc.monthly_balances
             });
             if (acc.children && acc.children.length > 0) {
                 flattened = flattened.concat(flattenAccounts(acc.children, prefix + "  "));
-                flattened.push({ 
-                    name: prefix + "Total " + acc.name, 
+                flattened.push({
+                    name: prefix + "Total " + acc.name,
                     balance: acc.total_balance,
                     monthly_balances: acc.total_monthly_balances
                 });
@@ -105,14 +107,14 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         const companyName = auth.company?.company_name || 'GrowDigitec';
         const startDate = filters.start_date;
         const endDate = filters.end_date;
-        
+
         let csvContent = "";
-        
+
         // Add Title Header
         csvContent += `"${companyName}"\n`;
         csvContent += `"Profit and Loss"\n`;
-        csvContent += `"${new Date(startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
-        
+        csvContent += `"${formatDate(startDate, dateFormat)} - ${formatDate(endDate, dateFormat)}"\n\n`;
+
         // Headers
         csvContent += `"Category","Account Name"`;
         if (isMonthWise) {
@@ -121,7 +123,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
             });
         }
         csvContent += `,"Balance (${homeCurrency})"\n`;
-        
+
         // Income
         csvContent += `"INCOME"\n`;
         const flatIncome = flattenAccounts(income);
@@ -139,7 +141,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         }
         incomeTotalRow += `,${totalIncome}\n\n`;
         csvContent += incomeTotalRow;
-        
+
         // Expenses
         csvContent += `"EXPENSES"\n`;
         const flatExpense = flattenAccounts(expense);
@@ -157,7 +159,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         }
         expenseTotalRow += `,${totalExpense}\n\n`;
         csvContent += expenseTotalRow;
-        
+
         // Net Income
         let netIncomeRow = `,"Net Income"`;
         if (isMonthWise) {
@@ -165,7 +167,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         }
         netIncomeRow += `,${netIncome}\n`;
         csvContent += netIncomeRow;
-        
+
         // Create download blob
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -180,7 +182,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     const filterElements = (
         <div className="flex items-end gap-4">
             <div className="w-[160px] pb-[1px]">
-                <CommonInput 
+                <CommonInput
                     type="select"
                     label="Date Period"
                     value={datePreset}
@@ -194,7 +196,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                 </CommonInput>
             </div>
             <div className="w-[160px] pb-[1px]">
-                <CommonInput 
+                <CommonInput
                     type="select"
                     label="Display columns by"
                     value={displayBy}
@@ -210,7 +212,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
             {datePreset === 'custom' && (
                 <>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="From"
                             value={startDate}
@@ -219,7 +221,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         />
                     </div>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="To"
                             value={endDate}
@@ -227,7 +229,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                             size="sm"
                         />
                     </div>
-                    <button 
+                    <button
                         onClick={() => handleRunReport()}
                         className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
                     >
@@ -292,12 +294,12 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
             onExportExcel={handleExportExcel}
         >
             <Head title="Profit and Loss" />
-            
+
             <div className="text-center mb-8 font-serif">
                 <h2 className="text-xl font-bold text-gray-900">Profit and Loss Summary</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <p className="text-[13px] text-gray-500 mt-1">
-                    {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {formatDate(filters.start_date, dateFormat)} - {formatDate(filters.end_date, dateFormat)}
                 </p>
             </div>
 
@@ -366,7 +368,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
             </div>
 
             <div className="mt-20 text-[10px] text-slate-400 font-bold text-center uppercase tracking-widest italic">
-                Accrual Basis | Generated on {new Date().toLocaleDateString()}
+                Accrual Basis | Generated on {formatDate(new Date(), dateFormat)}
             </div>
         </ReportLayout>
     );

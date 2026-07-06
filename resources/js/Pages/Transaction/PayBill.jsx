@@ -10,10 +10,12 @@ import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
 import { useAccountCurrency } from "@/Utils/useAccountCurrency";
+import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 
 export default function PayBill({ paymentMethods = [], payment = null }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || '$';
+    const dateFormat = useDateFormat();
     const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
 
     const [supplierOptions, setSupplierOptions] = useState([]);
@@ -348,6 +350,7 @@ const submit = (action = 'save') => {
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
+                            placeholder={formatDate(new Date(), dateFormat)}
                             label="Payment Date"
                             value={data.paymentDate}
                             onChange={(e) => {
@@ -511,10 +514,10 @@ const submit = (action = 'save') => {
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-blue-600 font-bold hover:underline cursor-pointer">
-                                                    Bill # {bill.bill_no} ({new Date(bill.bill_date).toLocaleDateString('en-GB')})
+                                                    Bill # {bill.bill_no} ({formatDate(bill.bill_date, dateFormat)})
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-medium">
-                                                    {new Date(bill.due_date).toLocaleDateString('en-GB')}
+                                                    {formatDate(bill.due_date, dateFormat)}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-mono text-right">
                                                     {currencyPrefix} {parseFloat(bill.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}

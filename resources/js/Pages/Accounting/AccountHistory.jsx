@@ -3,11 +3,13 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState, useEffect, Fragment } from 'react';
 import CommonButton from '@/Components/CommonButton';
 import CommonInput from '@/Components/CommonInput';
+import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 import axios from 'axios';
 
 export default function AccountHistory({ account, lines = [], accounts = [], filters = {} }) {
     const { auth } = usePage().props;
     const currencyPrefix = account.currency || auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
+    const dateFormat = useDateFormat();
 
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
@@ -25,7 +27,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
     const handlePresetChange = (e) => {
         const val = e.target.value;
         setDatePreset(val);
-        
+
         let newStart = startDate;
         let newEnd = endDate;
         const currentYear = new Date().getFullYear();
@@ -218,41 +220,41 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'GrowDigitec';
-        
+
         let csvContent = "";
-        
+
         // Add Title Header
         csvContent += `"${companyName}"\n`;
         csvContent += `"Account History: ${account.name}"\n`;
         if (filters.start_date && filters.end_date) {
-            csvContent += `"${new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}"\n\n`;
+            csvContent += `"${formatDate(filters.start_date, dateFormat)} - ${formatDate(filters.end_date, dateFormat)}"\n\n`;
         } else {
             csvContent += `"All Dates"\n\n`;
         }
-        
+
         // Headers
         csvContent += `"Date","Ref No.","Payee / Account","Memo","Debit","Credit","Balance"\n`;
-        
+
         // Transactions
         transactions.forEach(tx => {
             const date = tx.journal_entry?.date || '';
             const ref = tx.journal_entry?.reference || '';
-            
+
             const payeeLabel = getPayeeLabel(tx.payee_id || tx.journal_entry?.payee_id);
             const offsetAccount = getOffsetAccount(tx);
             const payeeAccountStr = `${payeeLabel !== '-' ? payeeLabel + ' / ' : ''}${offsetAccount}`;
-            
+
             const desc = tx.journal_entry?.description || '';
             const memo = tx.memo ? ` - ${tx.memo}` : '';
             const memoStr = `${desc}${memo}`;
-            
+
             const debit = parseFloat(tx.debit) > 0 ? parseFloat(tx.debit).toFixed(2) : '';
             const credit = parseFloat(tx.credit) > 0 ? parseFloat(tx.credit).toFixed(2) : '';
             const balance = parseFloat(tx.running_balance).toFixed(2);
-            
+
             csvContent += `"${date}","${ref}","${payeeAccountStr.replace(/"/g, '""')}","${memoStr.replace(/"/g, '""')}",${debit},${credit},${balance}\n`;
         });
-        
+
         // Create download blob
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -267,7 +269,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
     const filterElements = (
         <div className="flex items-end gap-4">
             <div className="w-[160px] pb-[1px]">
-                <CommonInput 
+                <CommonInput
                     type="select"
                     label="Date Period"
                     value={datePreset}
@@ -283,7 +285,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
             {datePreset === 'custom' && (
                 <>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="From"
                             value={startDate}
@@ -292,7 +294,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                         />
                     </div>
                     <div className="w-[140px]">
-                        <CommonInput 
+                        <CommonInput
                             type="date"
                             label="To"
                             value={endDate}
@@ -300,7 +302,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                             size="sm"
                         />
                     </div>
-                    <button 
+                    <button
                         onClick={() => handleRunReport()}
                         className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
                     >
@@ -332,7 +334,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                 </p>
                 {filters.start_date && filters.end_date && (
                     <p className="text-[13px] text-gray-500 mt-1">
-                        {new Date(filters.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - {new Date(filters.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        {formatDate(filters.start_date, dateFormat)} - {formatDate(filters.end_date, dateFormat)}
                     </p>
                 )}
             </div>
