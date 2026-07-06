@@ -31,7 +31,8 @@ const Toggle = ({ checked, onChange, label, description, disabled }) => (
     </label>
 );
 
-export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultType = 'asset' }) {
+export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultType = 'asset', account = null, initialParentAccount = null }) {
+    const isEdit = !!account;
     const { auth, currencies = [] } = usePage().props;
     const company = auth?.company;
     const multicurrencyEnabled = !!company?.multicurrency;
@@ -52,7 +53,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
 
     const initialDate = localStorage.getItem('last_opening_balance_date') || new Date().toISOString().split('T')[0];
 
-    const { data, setData, post, processing, errors, reset, setError } = useForm({
+    const { data, setData, post, patch, processing, errors, reset, clearErrors, setError } = useForm({
         account_code: '',
         name: '',
         account_type: defaultType,
@@ -65,11 +66,57 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         is_subaccount: false,
         parent_id: '',
         is_locked: false,
+        is_system: false,
     });
+
+    const [accountWasLockedInitially, setAccountWasLockedInitially] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            if (account) {
+                setAccountWasLockedInitially(!!account.is_locked);
+                const formattedBalance = parseFloat(account.opening_balance || 0).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                setData({
+                    account_code: account.account_code || '',
+                    name: account.name || '',
+                    account_type: account.account_type || 'asset',
+                    sub_type: account.sub_type || '',
+                    opening_balance: formattedBalance,
+                    opening_balance_date: account.opening_balance_date || initialDate,
+                    description: account.description || '',
+                    is_active: !!account.is_active,
+                    currency: account.currency || defaultCurrency,
+                    is_subaccount: !!account.parent_id,
+                    parent_id: account.parent_id || '',
+                    is_locked: !!account.is_locked,
+                    is_system: !!account.is_system,
+                });
+            } else {
+                setAccountWasLockedInitially(false);
+                reset();
+                const accType = initialParentAccount ? initialParentAccount.account_type : defaultType;
+                setData(prev => ({
+                    ...prev,
+                    account_type: accType,
+                    sub_type: initialParentAccount ? initialParentAccount.sub_type : (getDetailTypeOptions(accType)?.[0]?.value || ''),
+                    opening_balance: '0.00',
+                    opening_balance_date: initialDate,
+                    is_subaccount: !!initialParentAccount,
+                    parent_id: initialParentAccount ? initialParentAccount.id : '',
+                    is_locked: false,
+                    is_system: false,
+                }));
+            }
+            clearErrors();
+        }
+    }, [isOpen, account, initialParentAccount]);
 
     const validateAccountName = (value) => {
         const normalized = String(value || '').trim().toLowerCase();
-        return parentAccounts.some(acc => String(acc.name || '').trim().toLowerCase() === normalized);
+        return parentAccounts.some(acc => acc.value !== account?.id && String(acc.name || '').trim().toLowerCase() === normalized);
     };
 
     const handleTypeChange = (value) => {
@@ -114,14 +161,18 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         if (isOpen) {
             axios.get(route('api.accounts'))
                 .then(res => {
-                    setParentAccounts(res.data || []);
+                    const accs = res.data || [];
+                    setParentAccounts(accs.map(a => ({
+                        ...a,
+                        name: a.label.split(' - ')[1] || a.label
+                    })));
                 })
                 .catch(err => console.error("Failed to load accounts for parent select:", err));
         }
     }, [isOpen]);
 
     useEffect(() => {
-        if (isOpen && data.account_type) {
+        if (isOpen && !isEdit && data.account_type) {
             axios.get(route('api.accounts.next-code'), {
                 params: { type: data.account_type }
             })
@@ -134,7 +185,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                     console.error("Failed to fetch next account code:", err);
                 });
         }
-    }, [isOpen, data.account_type]);
+    }, [isOpen, isEdit, data.account_type]);
 
     useEffect(() => {
         setNameDuplicateError(validateAccountName(data.name) ? 'An account with this name already exists.' : '');
@@ -149,13 +200,54 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
             return;
         }
 
-        post(route('chart-of-account.store'), {
+        const options = {
             onSuccess: (page) => {
-                const newAccount = page.props.flash?.new_account;
+                const newAccount = page.props.flash?.new_account || account;
                 onSuccess && onSuccess(newAccount);
                 onClose();
-                reset();
             },
+        };
+
+        if (isEdit) {
+            patch(route('chart-of-account.update', account.id), options);
+        } else {
+            post(route('chart-of-account.store'), options);
+        }
+    };
+
+    const submitAndNew = (e) => {
+        e.preventDefault();
+
+        if (validateAccountName(data.name)) {
+            setError('name', 'An account with this name already exists.');
+            setNameDuplicateError('An account with this name already exists.');
+            return;
+        }
+
+        const options = {
+            onSuccess: () => {
+                reset();
+                clearErrors();
+                if (onSuccess) onSuccess(null, true); // true indicates save and new
+            },
+        };
+
+        if (isEdit) {
+            patch(route('chart-of-account.update', account.id), options);
+        } else {
+            post(route('chart-of-account.store'), options);
+        }
+    };
+
+    const handleDelete = () => {
+        import('@inertiajs/react').then(({ router }) => {
+            if (confirm("Are you sure you want to delete this account? This action cannot be undone.")) {
+                router.delete(route('chart-of-account.destroy', account.id), {
+                    onSuccess: () => {
+                        onClose();
+                    }
+                });
+            }
         });
     };
 
@@ -163,9 +255,21 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
         <SlideOver
             isOpen={isOpen}
             onClose={onClose}
-            title="Add New Account"
+            title={isEdit ? "Edit Account" : "Add New Account"}
         >
             <form onSubmit={submit} className="space-y-6">
+                {(data.is_locked || data.is_system) && (
+                    <div className="p-3 rounded-sm bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-2 animate-in fade-in duration-200">
+                        <svg className="w-4.5 h-4.5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>
+                            {data.is_system
+                                ? "This is a system account. Its properties cannot be modified or deleted."
+                                : "This account is locked and cannot be edited or deleted."}
+                        </span>
+                    </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                     <CommonInput
                         label="Account Code"
@@ -237,6 +341,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         >
                             <option value="">Select a parent account</option>
                             {parentAccounts
+                                .filter(acc => acc.account_type === data.account_type && (!account || acc.value !== account.id))
                                 .map(acc => (
                                     <option key={acc.value} value={acc.value}>
                                         {acc.label} {acc.account_type ? `(${acc.account_type})` : ''}
@@ -278,7 +383,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                     </div>
                 )}
 
-                {['asset', 'liability', 'equity'].includes(data.account_type) && (
+                {!isEdit && ['asset', 'liability', 'equity'].includes(data.account_type) && (
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                         <CommonInput
                             type="text"
@@ -311,11 +416,42 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                     />
                 </div>
 
-                <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
-                    <CommonButton variant="ghost" onClick={onClose} size="sm">Cancel</CommonButton>
-                    <CommonButton type="submit" variant="primary" processing={processing} size="sm">
-                        Save Account
-                    </CommonButton>
+                <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-between gap-3 border-t border-slate-100">
+                    <div>
+                        {isEdit && !data.is_locked && !data.is_system && (
+                            <CommonButton
+                                type="button"
+                                variant="danger"
+                                onClick={handleDelete}
+                                processing={processing}
+                            >
+                                Delete
+                            </CommonButton>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <CommonButton variant="ghost" onClick={onClose} size="sm">
+                            {(data.is_locked || data.is_system) ? "Close" : "Cancel"}
+                        </CommonButton>
+                        {(!data.is_locked || !accountWasLockedInitially || !isEdit) && (
+                            <>
+                                {!isEdit && (
+                                    <CommonButton
+                                        type="button"
+                                        variant="secondary"
+                                        processing={processing}
+                                        size="sm"
+                                        onClick={submitAndNew}
+                                    >
+                                        Save &amp; New
+                                    </CommonButton>
+                                )}
+                                <CommonButton type="submit" variant="primary" processing={processing} size="sm">
+                                    {isEdit ? "Update Account" : "Save Account"}
+                                </CommonButton>
+                            </>
+                        )}
+                    </div>
                 </div>
             </form>
         </SlideOver>

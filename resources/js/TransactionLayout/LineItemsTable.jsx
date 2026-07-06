@@ -210,6 +210,7 @@ const handleCurrencyBlur = (index, key, rawValue) => {
                                                         ? handleCurrencyChange(index, col.key, e.target.value)
                                                         : handleItemChange(index, col.key, e.target.value)
                                                     }
+                                                    min={col.min}
                                                     onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
                                                     onFocus={col.type === 'currency' ? handleCurrencyFocus : (col.key === 'description' ? handleDescriptionFocus : undefined)}
                                                     onClick={col.key === 'description' ? (e) => e.currentTarget.select() : undefined}

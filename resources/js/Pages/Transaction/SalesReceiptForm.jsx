@@ -110,7 +110,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             width: "280px"
         },
         { key: "description", label: "Description", placeholder: "Enter description" },
-        { key: "qty", label: "Qty", type: "number", width: "80px", className: "text-right" },
+        { key: "qty", label: "Qty", type: "number", min: "0", width: "80px", className: "text-right" },
         { key: "rate", label: "Rate", type: "currency", width: "120px", className: "text-right", inputClass: "text-right" },
         { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
     ];
@@ -168,9 +168,23 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
         }
 
         if (field === "qty" || field === "rate") {
-            const q = parseFloat(updated[index].qty) || 0;
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
             const r = parseCurrency(updated[index].rate);
             updated[index].amount = formatCurrencyValue(q * r);
+        } else if (field === "amount") {
+            const a = parseCurrency(value);
+            let q = parseFloat(updated[index].qty) || 0;
+            if (q < 0) {
+                q = 0;
+                updated[index].qty = "0";
+            }
+            if (q !== 0) {
+                updated[index].rate = formatCurrencyValue(a / q);
+            }
         }
         setData("items", updated);
         setIsDirty(true);

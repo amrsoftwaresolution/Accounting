@@ -81,11 +81,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'update'])->name('payment.update');
     Route::delete('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'destroy'])->name('payment.destroy');
 
-    Route::get('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
-    Route::post('/receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
-    Route::get('/receipt/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'edit'])->name('receipt.edit');
-    Route::patch('/receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'update'])->name('receipt.update');
-    Route::delete('/receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'destroy'])->name('receipt.destroy');
+    Route::get('/sales-receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
+    Route::post('/sales-receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
+    Route::get('/sales-receipt/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'edit'])->name('receipt.edit');
+    Route::patch('/sales-receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'update'])->name('receipt.update');
+    Route::delete('/sales-receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'destroy'])->name('receipt.destroy');
 
     // Bank Deposit
     Route::get('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'create'])->name('deposit');
@@ -94,17 +94,17 @@ Route::middleware('auth')->group(function () {
     Route::patch('/deposit/{journalEntry}', [\App\Http\Controllers\Accounting\BankDepositController::class, 'update'])->name('deposit.update');
     Route::delete('/deposit/{journalEntry}', [\App\Http\Controllers\Accounting\BankDepositController::class, 'destroy'])->name('deposit.destroy');
 
-    Route::get('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
-    Route::post('/credit-note', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
-    Route::get('/credit-note/{journalEntry}/edit', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'edit'])->name('credit-note.edit');
-    Route::patch('/credit-note/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'update'])->name('credit-note.update');
-    Route::delete('/credit-note/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'destroy'])->name('credit-note.destroy');
+    Route::get('/sales-return', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
+    Route::post('/sales-return', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
+    Route::get('/sales-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'edit'])->name('credit-note.edit');
+    Route::patch('/sales-return/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'update'])->name('credit-note.update');
+    Route::delete('/sales-return/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'destroy'])->name('credit-note.destroy');
 
-    Route::get('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('supplier-credit');
-    Route::post('/SupplierCredit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('supplier-credit.store');
-    Route::get('/SupplierCredit/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
-    Route::patch('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
-    Route::delete('/SupplierCredit/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
+    Route::get('/supplier-return', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('supplier-credit');
+    Route::post('/supplier-return', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('supplier-credit.store');
+    Route::get('/supplier-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
+    Route::patch('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
+    Route::delete('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
 
     Route::get('/cheque/list', [\App\Http\Controllers\Accounting\ChequeController::class, 'index'])->name('cheque.index');
     Route::get('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'create'])->name('cheque');
@@ -159,14 +159,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('companies', \App\Http\Controllers\CompanyController::class);
     Route::post('/companies/{company}/switch', [\App\Http\Controllers\CompanyController::class, 'switch'])->name('companies.switch');
 
-    // Super Admin route
     Route::middleware(['auth', 'super.admin'])->group(function () {
-
-    // Packages
-    Route::resource('packages', \App\Http\Controllers\PackageController::class);
-    //compenies
-    Route::get('/Company/AdminIndex', [\App\Http\Controllers\CompanyController::class, 'adminIndex'])->name('admin.companies.index');
-});
+        Route::resource('packages', \App\Http\Controllers\PackageController::class);
+        Route::get('/Company/AdminIndex', [\App\Http\Controllers\CompanyController::class, 'adminIndex'])->name('admin.companies.index');
+    });
 
 });
 

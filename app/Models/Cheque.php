@@ -16,8 +16,6 @@ class Cheque extends Model
         'payee_type',
         'bank_account_id',
         'payment_date',
-        'currency_id',
-        'exchange_rate',
         'cheque_no',
         'total_amount',
         'mailing_address',

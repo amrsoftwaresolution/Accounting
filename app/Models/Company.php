@@ -27,10 +27,26 @@ class Company extends Model
         'is_onboarded',
         'package_id',
     ];
+
+    protected static function booted()
+    {
+        static::updated(function ($company) {
+            if (session('active_company_id') === $company->id) {
+                session()->forget('active_company_data');
+            }
+            session()->forget('user_companies_data');
+        });
+
+        static::deleted(function ($company) {
+            if (session('active_company_id') === $company->id) {
+                session()->forget('active_company_id');
+                session()->forget('active_company_data');
+            }
+            session()->forget('user_companies_data');
+        });
+    }
     
     protected $appends = ['logo_url', 'slug', 'home_currency', 'home_currency_prefix'];
-    
-    protected $with = ['currency'];
 
     public function currency()
     {
@@ -39,12 +55,18 @@ class Company extends Model
 
     public function getHomeCurrencyAttribute()
     {
-        return $this->currency?->code;
+        $currencies = \Illuminate\Support\Facades\Cache::rememberForever('currencies_all', function () {
+            return \App\Models\Currency::all()->keyBy('id');
+        });
+        return $currencies->get($this->currency_id)?->code;
     }
 
     public function getHomeCurrencyPrefixAttribute()
     {
-        return $this->currency?->symbol;
+        $currencies = \Illuminate\Support\Facades\Cache::rememberForever('currencies_all', function () {
+            return \App\Models\Currency::all()->keyBy('id');
+        });
+        return $currencies->get($this->currency_id)?->symbol;
     }
 
     public function getLogoUrlAttribute()
