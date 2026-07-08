@@ -192,7 +192,12 @@ class ReportController extends Controller
 
         $tree = $filterZero($tree);
 
-        return collect($tree)->groupBy('account_type');
+        return collect($tree)->groupBy(function ($item) {
+            if ($item['sub_type'] === 'cost-of-goods-sold') {
+                return 'cogs';
+            }
+            return $item['account_type'];
+        });
     }
 
     public function profitAndLoss(Request $request)

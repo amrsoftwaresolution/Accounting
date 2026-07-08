@@ -506,7 +506,12 @@ class ExpenseController extends Controller
         $journalEntry->delete();
     });
 
-    return redirect()->route('chart-of-account.history', ['chart_of_account' => $paymentAccountId])
+    if ($paymentAccountId) {
+        return redirect()->route('chart-of-account.history', ['chart_of_account' => $paymentAccountId])
+            ->with('success', 'Expense deleted successfully.');
+    }
+
+    return redirect()->route('dashboard')
         ->with('success', 'Expense deleted successfully.');
 }
 }

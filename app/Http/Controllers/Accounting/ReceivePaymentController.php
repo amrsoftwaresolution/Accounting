@@ -352,7 +352,7 @@ class ReceivePaymentController extends Controller
                 ->with('success', 'Payment deleted successfully.');
         }
 
-        return redirect()->route('chart-of-account.index')
+        return redirect()->route('dashboard')
             ->with('success', 'Payment deleted successfully.');
     }
 }

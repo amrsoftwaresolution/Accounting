@@ -189,7 +189,7 @@ class PayBillController extends Controller
                 ->with('success', 'Bill Payment deleted successfully.');
         }
 
-        return redirect()->route('chart-of-account.index')
+        return redirect()->route('dashboard')
             ->with('success', 'Bill Payment deleted successfully.');
     }
 }
