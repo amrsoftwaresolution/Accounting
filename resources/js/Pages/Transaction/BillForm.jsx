@@ -45,8 +45,10 @@ export default function BillForm({
         try {
             const response = await axios.get(route('api.payees', { search, type: 'Supplier' }));
             setPayeeOptions(response.data);
+            return response.data;
         } catch (error) {
             console.error("Failed to fetch payees:", error);
+            return [];
         }
     };
 
@@ -54,8 +56,10 @@ export default function BillForm({
         try {
             const response = await axios.get(route('api.accounts', { search }));
             setAccountOptions(response.data);
+            return response.data;
         } catch (error) {
             console.error("Failed to fetch accounts:", error);
+            return [];
         }
     };
 

@@ -33,10 +33,10 @@ export default function InvoiceForm({
 
     const [savedEntryId, setSavedEntryId] = useState(invoice?.id || null);
 
-    const fetchPayees = (search = "") => {
-        axios.get(route('api.payees', { search, type: 'Customer' })).then(res => {
-            setCustomerOptions(res.data);
-        });
+    const fetchPayees = async (search = "") => {
+        const res = await axios.get(route('api.payees', { search, type: 'Customer' }));
+        setCustomerOptions(res.data);
+        return res.data;
     };
 
     const handleCustomerChange = (val) => {
