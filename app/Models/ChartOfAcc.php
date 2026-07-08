@@ -143,18 +143,15 @@ class ChartOfAcc extends Model
         $systemNames = [
             'Opening Balance Equity',
             'Retained Earnings',
+            'Accounts Receivable (A/R)',
+            'Accounts Payable (A/P)',
+            'Inventory Asset',
+            'Cost of Goods Sold',
+            'Uncategorized Expense',
+            'Uncategorized Income',
         ];
 
-        $systemSubTypes = [
-            'accounts-receivable',
-            'accounts-payable',
-            'inventory',
-            'cost-of-goods-sold',
-            'retained-earnings',
-            'opening-balance-equity',
-        ];
-
-        return in_array($this->name, $systemNames) || in_array($this->sub_type, $systemSubTypes);
+        return in_array($this->name, $systemNames) && $this->is_locked;
     }
 
     public function getIsSystemAttribute(): bool

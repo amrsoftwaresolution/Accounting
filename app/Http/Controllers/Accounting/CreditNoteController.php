@@ -146,9 +146,6 @@ class CreditNoteController extends Controller
             }
 
             return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return saved successfully.');
-                    })->values()->toArray(),
-                ],
-            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -270,9 +267,6 @@ class CreditNoteController extends Controller
             }
 
             return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return updated successfully.');
-                    })->values()->toArray(),
-                ],
-            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
