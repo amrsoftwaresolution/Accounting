@@ -12,7 +12,7 @@ class JournalEntryLineObserver
      */
     public function created(JournalEntryLine $line): void
     {
-        ChartOfAcc::adjustBalance($line->chart_of_acc_id, $line->debit, $line->credit);
+        // Balance is now computed dynamically.
     }
 
     /**
@@ -20,11 +20,7 @@ class JournalEntryLineObserver
      */
     public function updated(JournalEntryLine $line): void
     {
-        // Subtract old values
-        ChartOfAcc::adjustBalance($line->chart_of_acc_id, -$line->getOriginal('debit'), -$line->getOriginal('credit'));
-        
-        // Add new values
-        ChartOfAcc::adjustBalance($line->chart_of_acc_id, $line->debit, $line->credit);
+        // Balance is now computed dynamically.
     }
 
     /**
@@ -32,6 +28,6 @@ class JournalEntryLineObserver
      */
     public function deleted(JournalEntryLine $line): void
     {
-        ChartOfAcc::adjustBalance($line->chart_of_acc_id, -$line->debit, -$line->credit);
+        // Balance is now computed dynamically.
     }
 }

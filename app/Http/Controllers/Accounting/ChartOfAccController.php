@@ -18,7 +18,9 @@ class ChartOfAccController extends Controller
 
     public function index()
     {
-        $accounts = ChartOfAcc::orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "expense")')
+        $accounts = ChartOfAcc::withSum('journalLines', 'debit')
+            ->withSum('journalLines', 'credit')
+            ->orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "expense")')
             ->orderBy('sub_type')
             ->orderBy('name')
             ->get();

@@ -126,25 +126,26 @@ export default function SelectCompany({ companies }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/10 to-slate-100 flex flex-col font-sans relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-emerald-600/5 to-transparent pointer-events-none"></div>
             <Head title="Select Company" />
 
             {/* Top Navigation */}
-            <nav className="w-full px-6 py-1.5 flex items-center justify-between border-b border-slate-200/60 bg-white sticky top-0 z-10">
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 bg-[#00713D] rounded-md flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">F</span>
+            <nav className="w-full px-8 py-4 flex items-center justify-between border-b border-white/40 bg-white/40 backdrop-blur-md sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-[#00713D] to-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center">
+                        <span className="text-white font-black text-lg">F</span>
                     </div>
-                    <span className="font-semibold text-slate-800 text-sm tracking-tight">FinGrow</span>
+                    <span className="font-extrabold text-slate-800 text-lg tracking-tight">FinGrow</span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                     <button
                         onClick={() => setShowPinnedFirst(!showPinnedFirst)}
-                        className={`text-xs font-medium px-3 py-1 rounded-full border transition-all ${
+                        className={`text-xs font-bold px-4 py-2 rounded-full transition-all duration-300 ${
                             showPinnedFirst
-                            ? 'bg-emerald-50 border-emerald-200 text-[#00713D]'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? 'bg-emerald-100/50 text-[#00713D] shadow-sm'
+                            : 'bg-white/60 text-slate-500 hover:bg-white hover:text-slate-800 shadow-sm'
                         }`}
                     >
                         {showPinnedFirst ? 'Pinned First: On' : 'Pinned First: Off'}
@@ -153,32 +154,32 @@ export default function SelectCompany({ companies }) {
                         href={route('logout')}
                         method="post"
                         as="button"
-                        className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors px-2 py-1"
+                        className="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors px-2 py-1"
                     >
                         Sign out
                     </Link>
                 </div>
             </nav>
 
-            <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-10 lg:py-16">
+            <main className="flex-1 w-full max-w-5xl mx-auto px-6 lg:px-8 py-12 lg:py-20 relative z-10">
 
                 {/* Header Section */}
-                <header className="flex items-center justify-between border-b border-slate-200/60 px-2 py-1.5 mb-6">
+                <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
                     <div>
-                        <h1 className="text-lg font-semibold text-gray-800">
-                            Welcome back, {user.name}
+                        <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">
+                            Welcome back, <span className="text-[#00713D]">{user.name}</span>
                         </h1>
-                        <p className="text-xs text-slate-500">
-                            Select a company to continue
+                        <p className="text-slate-500 text-lg font-medium">
+                            Select a workspace to continue your progress.
                         </p>
                     </div>
 
                     {user.role === 'admin' && (
                         <Link
                             href={route('companies.create')}
-                            className="inline-flex items-center gap-1.5 bg-[#00713D] text-white font-medium text-sm px-3.5 py-1.5 rounded-lg hover:bg-[#005a30] transition-all"
+                            className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-bold text-sm px-6 py-3 rounded-2xl hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/20 transition-all duration-300 transform hover:-translate-y-1"
                         >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
                             Create Company
@@ -189,34 +190,34 @@ export default function SelectCompany({ companies }) {
                 {companies.length > 0 ? (
                     <>
                         {/* Search & Filters */}
-                        <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200/60 mb-8 flex flex-col lg:flex-row gap-2">
-                            <div className="relative flex-1">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="bg-white/70 backdrop-blur-md p-3 rounded-[2rem] shadow-sm shadow-slate-200/50 border border-white/50 mb-10 flex flex-col lg:flex-row gap-3 relative z-10">
+                            <div className="relative flex-1 group">
+                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                    <svg className="h-6 w-6 text-slate-400 group-focus-within:text-[#00713D] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Search companies, industries or roles..."
+                                    placeholder="Search by name, industry, or role..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="block w-full pl-11 pr-4 py-3 bg-transparent border-none text-slate-800 placeholder-slate-400 focus:ring-0 sm:text-sm font-medium outline-none"
+                                    className="block w-full pl-14 pr-6 py-4 bg-transparent border-none text-slate-800 placeholder-slate-400 focus:ring-0 text-base font-semibold outline-none rounded-2xl transition-all"
                                 />
                             </div>
-                            <div className="h-px lg:h-12 w-full lg:w-px bg-slate-100 hidden lg:block mx-2" />
-                            <div className="flex gap-1 overflow-x-auto p-1 lg:p-0 no-scrollbar items-center">
+                            <div className="h-px lg:h-14 w-full lg:w-px bg-slate-200/50 hidden lg:block mx-1" />
+                            <div className="flex gap-2 overflow-x-auto p-1 lg:p-0 no-scrollbar items-center">
                                 {['all', 'recent'].map((filterOption) => (
                                     <button
                                         key={filterOption}
                                         onClick={() => setActiveFilter(filterOption)}
-                                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
+                                        className={`px-6 py-3.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all duration-300 ${
                                             activeFilter === filterOption
-                                                ? 'bg-[#00713D] text-white shadow-md shadow-emerald-100'
-                                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                                                ? 'bg-[#00713D] text-white shadow-lg shadow-emerald-600/30 transform scale-[1.02]'
+                                                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/80'
                                         }`}
                                     >
-                                        {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+                                        {filterOption === 'all' ? 'All Companies' : 'Recently Active'}
                                     </button>
                                 ))}
                             </div>
@@ -224,55 +225,56 @@ export default function SelectCompany({ companies }) {
 
                         {/* Company List (Rows) */}
                         {filteredAndSortedCompanies.length > 0 ? (
-                            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+                            <div className="grid grid-cols-1 gap-4 relative z-10">
                                 {filteredAndSortedCompanies.map((company) => (
                                     <div
                                         key={company.id}
                                         onClick={() => handleSelect(company)}
-                                        className={`group px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-all cursor-pointer ${
-                                            selectingId === company.id ? 'bg-emerald-50/40' : ''
-                                        }`}
+                                        className={`group relative bg-white/70 backdrop-blur-sm rounded-[1.5rem] border ${
+                                            selectingId === company.id ? 'border-[#00713D] shadow-lg shadow-emerald-500/20' : 'border-white/60 shadow-sm shadow-slate-200/50 hover:shadow-md hover:border-emerald-200/50'
+                                        } p-5 flex items-center justify-between transition-all duration-300 cursor-pointer transform hover:-translate-y-1`}
                                     >
-                                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                                        <div className="flex items-center gap-5 min-w-0 flex-1">
                                             {/* Logo/Code */}
-                                            <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 group-hover:border-emerald-100/50 transition-colors">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                                                selectingId === company.id ? 'bg-[#00713D] text-white shadow-md' : 'bg-gradient-to-br from-slate-100 to-slate-200 border border-white/50 text-slate-500 group-hover:bg-gradient-to-br group-hover:from-emerald-50 group-hover:to-emerald-100 group-hover:text-[#00713D]'
+                                            }`}>
                                                 {company.logo_url ? (
-                                                    <img src={company.logo_url} alt="" className="w-7 h-7 object-contain rounded-lg" />
+                                                    <img src={company.logo_url} alt="" className="w-10 h-10 object-contain rounded-xl" />
                                                 ) : (
-                                                    <span className="text-sm font-bold text-slate-600 group-hover:text-[#00713D] transition-colors">
+                                                    <span className="text-xl font-black">
                                                         {company.code}
                                                     </span>
                                                 )}
                                             </div>
 
                                             {/* Company Details */}
-                                            <div className="min-w-0">
-                                                <h3 className="font-bold text-slate-800 text-base group-hover:text-[#00713D] transition-colors truncate">
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="font-extrabold text-slate-800 text-lg group-hover:text-[#00713D] transition-colors truncate mb-1">
                                                     {company.company_name}
                                                 </h3>
-                                                <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-500">
-                                                    <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
+                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                                                    <span className="font-bold text-slate-400 uppercase tracking-widest text-[11px] bg-slate-100/80 px-2 py-0.5 rounded-md">
                                                         {company.displayRole}
                                                     </span>
-                                                    <span>•</span>
                                                     {company.industry && (
-                                                        <>
-                                                            <span className="truncate">{company.industry}</span>
-                                                            <span>•</span>
-                                                        </>
+                                                        <span className="truncate font-medium">{company.industry}</span>
                                                     )}
-                                                    <span className="flex items-center gap-1">
-                                                        Active {formatDisplayDate(company.last_active_at)}
+                                                    <span className="flex items-center gap-1.5 font-medium text-slate-400">
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        {formatDisplayDate(company.last_active_at)}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4 shrink-0">
+                                        <div className="flex items-center gap-5 shrink-0 pl-4 border-l border-slate-100">
                                             {/* Status Badge */}
                                             {company.status === 'Active' && (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                                                     Active
                                                 </span>
                                             )}
@@ -280,26 +282,30 @@ export default function SelectCompany({ companies }) {
                                             {/* Pin Button */}
                                             <button
                                                 onClick={(e) => togglePin(e, company.id)}
-                                                className={`p-2 rounded-full transition-colors ${
+                                                className={`p-2.5 rounded-xl transition-all duration-300 ${
                                                     company.is_pinned
-                                                        ? 'text-yellow-500 hover:text-yellow-600'
-                                                        : 'text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100'
+                                                        ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
+                                                        : 'text-slate-300 hover:text-slate-600 hover:bg-slate-100 opacity-0 group-hover:opacity-100'
                                                 }`}
                                             >
-                                                <svg className="w-4 h-4" fill={company.is_pinned ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={company.is_pinned ? "0" : "2"}>
+                                                <svg className="w-5 h-5" fill={company.is_pinned ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={company.is_pinned ? "0" : "2.5"}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                                                 </svg>
                                             </button>
 
                                             {/* Action/Loading Indicator */}
-                                            <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 group-hover:bg-emerald-50 group-hover:text-[#00713D] flex items-center justify-center transition-all">
+                                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                                                selectingId === company.id 
+                                                    ? 'bg-[#00713D] text-white shadow-md shadow-emerald-500/30' 
+                                                    : 'bg-slate-100 text-slate-400 group-hover:bg-[#00713D] group-hover:text-white group-hover:shadow-md group-hover:shadow-emerald-500/20'
+                                            }`}>
                                                 {selectingId === company.id ? (
-                                                    <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                     </svg>
                                                 ) : (
-                                                    <svg className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
                                                     </svg>
                                                 )}

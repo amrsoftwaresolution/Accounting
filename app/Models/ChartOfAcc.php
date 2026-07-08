@@ -36,28 +36,27 @@ class ChartOfAcc extends Model
         return $this->hasMany(ChartOfAcc::class, 'parent_id');
     }
 
+    public function journalLines()
+    {
+        return $this->hasMany(JournalEntryLine::class, 'chart_of_acc_id');
+    }
+
     /**
-     * Adjust account balance based on its type.
+     * Get dynamically calculated account balance.
      * Assets & Expenses: Debit (+), Credit (-)
      * Liabilities, Equity, Income: Credit (+), Debit (-)
      */
-    public static function adjustBalance($accountId, $debit, $credit)
+    public function getBalanceAttribute()
     {
-        $account = self::find($accountId);
-        if (!$account) return;
+        $debit = $this->journal_lines_sum_debit ?? $this->journalLines()->sum('debit') ?? 0;
+        $credit = $this->journal_lines_sum_credit ?? $this->journalLines()->sum('credit') ?? 0;
 
-        $impact = 0;
-        $type = strtolower($account->account_type);
-
+        $type = strtolower($this->account_type);
         if (in_array($type, ['asset', 'expense'])) {
-            $impact = $debit - $credit;
+            return $debit - $credit;
         } else {
-            $impact = $credit - $debit;
+            return $credit - $debit;
         }
-
-        $account->increment('balance', $impact);
-        
-        return $account->balance;
     }
 
     public static function getOrCreateDefault($subType, $companyId = null)

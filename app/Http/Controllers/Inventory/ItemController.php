@@ -14,12 +14,58 @@ use Inertia\Inertia;
 
 class ItemController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::with(['category', 'incomeAccount', 'expenseAccount', 'inventoryAccount', 'preferredSupplier', 'bundleComponents.item'])->get();
+        $companyId = session('active_company_id');
+        $query = Item::with(['category', 'incomeAccount', 'expenseAccount', 'inventoryAccount', 'preferredSupplier', 'bundleComponents.item'])
+            ->where('items.company_id', $companyId);
+
+        // Calculate counts before pagination
+        $lowStockCount = (clone $query)->where('track_inventory', true)
+            ->whereNotNull('reorder_point')
+            ->whereRaw('quantity_on_hand <= reorder_point')
+            ->where('quantity_on_hand', '>', 0)
+            ->count();
+            
+        $outOfStockCount = (clone $query)->where('track_inventory', true)
+            ->where('quantity_on_hand', '<=', 0)
+            ->count();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('type') && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('stock_status')) {
+            if ($request->stock_status === 'low') {
+                $query->where('track_inventory', true)
+                    ->whereNotNull('reorder_point')
+                    ->whereRaw('quantity_on_hand <= reorder_point')
+                    ->where('quantity_on_hand', '>', 0);
+            } else if ($request->stock_status === 'out') {
+                $query->where('track_inventory', true)
+                    ->where('quantity_on_hand', '<=', 0);
+            }
+        }
+
+        // To group by category, we order by category name then item name
+        $query->leftJoin('item_categories', 'items.item_category_id', '=', 'item_categories.id')
+            ->orderBy('item_categories.name', 'asc')
+            ->orderBy('items.name', 'asc')
+            ->select('items.*');
+
+        $items = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Inventory/ItemList', [
             'items' => $items,
+            'filters' => request()->all('search', 'type', 'stock_status'),
+            'counts' => [
+                'low_stock' => $lowStockCount,
+                'out_of_stock' => $outOfStockCount,
+            ]
         ]);
     }
 

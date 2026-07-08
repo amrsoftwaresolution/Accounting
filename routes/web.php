@@ -14,9 +14,7 @@ Route::get('/', function () {
     ]);
 })->name('welcome');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -148,12 +146,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/{user}/resend-invite', [\App\Http\Controllers\UserController::class, 'resendInvitation'])->name('users.resend-invite');
 
     // Reports
+    Route::get('/reports', [\App\Http\Controllers\Accounting\ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
     Route::get('/reports/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
     Route::get('/reports/customer-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalance'])->name('reports.customer-balance');
     Route::get('/reports/customer-balance/{customer}', [\App\Http\Controllers\Accounting\ReportController::class, 'customerDetail'])->name('reports.customer-detail');
     Route::get('/reports/supplier-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalance'])->name('reports.supplier-balance');
     Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
+    Route::get('/reports/inventory-summary', [\App\Http\Controllers\Accounting\ReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
+    Route::get('/reports/inventory-detail/{item}', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
 
     // Companies
     Route::resource('companies', \App\Http\Controllers\CompanyController::class);

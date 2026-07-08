@@ -7,6 +7,7 @@ import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 export default function CustomerBalance({ reportData, filters, auth }) {
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [datePreset, setDatePreset] = useState('custom');
+    const dateFormat = useDateFormat();
 
     const handleRunReport = (overrideEnd) => {
         const e = overrideEnd !== undefined ? overrideEnd : endDate;

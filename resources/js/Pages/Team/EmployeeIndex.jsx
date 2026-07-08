@@ -106,71 +106,71 @@ export default function EmployeeIndex({ employees = [] }) {
                 </div>
 
                 {/* Employee Table */}
-                <div className="bg-white border border-slate-200 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden">
-                    <table className="w-full text-left border-collapse">
+                <div className="bg-white border border-slate-200 rounded-b-xl shadow-sm overflow-hidden">
+                    <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Employee</th>
-                                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Designation</th>
-                                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Salary</th>
-                                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Join Date</th>
-                                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                            <tr className="bg-slate-50/80 border-b border-slate-200">
+                                <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-2/5">Employee</th>
+                                <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">Designation</th>
+                                <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Salary</th>
+                                <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Join Date</th>
+                                <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className="divide-y divide-slate-100">
                             {filteredEmployees.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center">
-                                        <div className="flex flex-col items-center">
-                                            <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-4">
-                                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-300">
+                                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                                 </svg>
                                             </div>
-                                            <p className="text-sm font-bold text-slate-500">No employees found</p>
+                                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">No employees found</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredEmployees.map((employee) => (
                                     <tr key={employee.id} className="group hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-2">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-xl bg-[#00713D]/10 flex items-center justify-center text-[#00713D] font-black text-xs">
+                                                <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center text-primary-700 font-black text-xs shrink-0">
                                                     {(employee.name || employee.user?.name || '?').charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-bold text-slate-900 leading-tight">{employee.name || employee.user?.name}</div>
-                                                    <div className="text-xs font-medium text-slate-400">{employee.email || employee.user?.email}</div>
+                                                    <div className="font-bold text-slate-900 leading-tight group-hover:text-primary-600 transition-colors">{employee.name || employee.user?.name}</div>
+                                                    <div className="text-[10px] text-slate-400">{employee.email || employee.user?.email}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-xs font-bold text-slate-600">
+                                        <td className="px-4 py-2">
+                                            <span className="font-bold text-slate-700">
                                                 {employee.designation}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-xs font-bold text-slate-500 font-mono">
+                                        <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums">
                                             {employee.salary ? `LKR ${parseFloat(employee.salary).toLocaleString()}` : '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-xs font-bold text-slate-500 font-mono uppercase">
+                                        <td className="px-4 py-2 text-right font-medium text-slate-500 text-[11px] uppercase">
                                             {employee.join_date || '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <td className="px-4 py-2 text-right">
+                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => handleEdit(employee)}
-                                                    className="p-2 text-slate-400 hover:text-[#00713D] hover:bg-[#00713D]/5 rounded-xl transition-all"
+                                                    className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-all"
                                                 >
-                                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                     </svg>
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(employee.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
                                                 >
-                                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
                                                 </button>

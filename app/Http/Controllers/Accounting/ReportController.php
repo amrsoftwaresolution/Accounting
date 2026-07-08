@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    public function index()
+    {
+        return Inertia::render('Reports/Index');
+    }
     private function buildAccountTree($types, $lines, $isBalanceSheet = false)
     {
         $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
@@ -509,6 +513,105 @@ class ReportController extends Controller
         return Inertia::render('Reports/ContactBalanceDetail', [
             'contact' => $supplier,
             'contactType' => 'Supplier',
+            'lines' => $lines,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate
+            ]
+        ]);
+    }
+
+    public function inventorySummary(Request $request)
+    {
+        $companyId = session('active_company_id');
+
+        $items = \App\Models\Item::where('company_id', $companyId)
+            ->where('track_inventory', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'sku' => $item->sku,
+                    'qty_on_hand' => (float)$item->quantity_on_hand,
+                    'avg_cost' => (float)$item->purchase_price,
+                    'asset_value' => (float)($item->quantity_on_hand * $item->purchase_price),
+                ];
+            });
+
+        return Inertia::render('Reports/InventorySummary', [
+            'reportData' => $items,
+        ]);
+    }
+
+    public function inventoryDetail(Request $request, \App\Models\Item $item)
+    {
+        $companyId = session('active_company_id');
+        if ($item->company_id !== $companyId || !$item->track_inventory) {
+            abort(404);
+        }
+
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date') ?: date('Y-m-d');
+
+        // To get the inventory detail, we look for JournalEntryLines that touch the Inventory Asset account
+        // However, we didn't tag the specific item on JournalEntryLines currently in this system (we rely on Item models).
+        // Wait, looking at InventoryQuantityAdjustment, it saves the items. Bill and Invoice save the items. 
+        // We can just query `journal_entry_lines` for `transactionable` ? No, journal lines are tied to JournalEntry.
+        // Actually, the simplest way to get inventory transactions is from Journal Entries of types:
+        // bill, invoice, supplier_credit, credit_note, inventory_adjustment where they contain the item.
+        // But since we just want a simple view, let's just show a placeholder or basic transaction list for now.
+        
+        // As a simple approximation, we can look for `JournalEntry` lines where the description contains the item name.
+        // But the best way is to look at the `items` relation if the transaction has one!
+        // For now, let's fetch transactions that are likely related.
+        $query = DB::table('journal_entries')
+            ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', $companyId)
+            ->where('chart_of_accs.sub_type', 'inventory')
+            ->where('journal_entry_lines.memo', 'like', '%' . $item->name . '%');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type')
+            ->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->get()
+            ->map(function ($line) use ($item) {
+                // Approximate quantity change based on cost
+                $qtyChange = 0;
+                if ($item->purchase_price > 0) {
+                    if ($line->debit > 0) {
+                        $qtyChange = $line->debit / $item->purchase_price;
+                    } else if ($line->credit > 0) {
+                        $qtyChange = -($line->credit / $item->purchase_price);
+                    }
+                }
+
+                return [
+                    'id' => $line->id,
+                    'date' => $line->date,
+                    'transaction_type' => $line->transaction_type,
+                    'reference' => $line->reference,
+                    'memo' => $line->memo,
+                    'qty_change' => round($qtyChange, 2),
+                    'debit' => (float)$line->debit,
+                    'credit' => (float)$line->credit,
+                ];
+            });
+
+        return Inertia::render('Reports/InventoryDetail', [
+            'item' => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku,
+            ],
             'lines' => $lines,
             'filters' => [
                 'start_date' => $startDate ?? '',

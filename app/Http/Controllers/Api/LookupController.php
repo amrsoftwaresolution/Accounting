@@ -63,6 +63,8 @@ class LookupController extends Controller
         $type = $request->query('type'); // optional: filter by account_type
 
         $accounts = \App\Models\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'currency')
+            ->withSum('journalLines', 'debit')
+            ->withSum('journalLines', 'credit')
             ->when($search, function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('account_code', 'like', "%{$search}%");

@@ -10,7 +10,8 @@ class RecalculateAccountBalancesSeeder extends Seeder
 {
     public function run()
     {
-        $accounts = ChartOfAcc::all();
+        // Get accounts for company_id = 4
+        $accounts = ChartOfAcc::where('company_id', 4)->get();
 
         foreach ($accounts as $account) {
             $debits = JournalEntryLine::where('chart_of_acc_id', $account->id)->sum('debit');

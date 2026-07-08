@@ -53,20 +53,26 @@ class Company extends Model
         return $this->belongsTo(Currency::class);
     }
 
+    protected static $allCurrencies = null;
+
+    private static function getAllCurrencies()
+    {
+        if (self::$allCurrencies === null) {
+            self::$allCurrencies = \Illuminate\Support\Facades\Cache::rememberForever('currencies_all', function () {
+                return \App\Models\Currency::all()->keyBy('id');
+            });
+        }
+        return self::$allCurrencies;
+    }
+
     public function getHomeCurrencyAttribute()
     {
-        $currencies = \Illuminate\Support\Facades\Cache::rememberForever('currencies_all', function () {
-            return \App\Models\Currency::all()->keyBy('id');
-        });
-        return $currencies->get($this->currency_id)?->code;
+        return self::getAllCurrencies()->get($this->currency_id)?->code;
     }
 
     public function getHomeCurrencyPrefixAttribute()
     {
-        $currencies = \Illuminate\Support\Facades\Cache::rememberForever('currencies_all', function () {
-            return \App\Models\Currency::all()->keyBy('id');
-        });
-        return $currencies->get($this->currency_id)?->symbol;
+        return self::getAllCurrencies()->get($this->currency_id)?->symbol;
     }
 
     public function getLogoUrlAttribute()

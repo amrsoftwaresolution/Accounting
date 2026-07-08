@@ -45,18 +45,9 @@ export default function AuthenticatedLayout({ header, children }) {
         { name: 'Customers', href: route('customers.index'), icon: 'users' },
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
-    ];
-
-    const teamLinks = user.role === 'super_admin' ? [] : [
-        { name: 'Employees', href: route('employees.index') },
-        { name: 'User Management', href: route('users.index'), adminOnly: true },
-    ];
-
-    const reports = user.role === 'super_admin' ? [] : [
-        { name: 'Profit and Loss', href: route('reports.profit-loss') },
-        { name: 'Balance Sheet', href: route('reports.balance-sheet') },
-        { name: 'Customer Report', href: route('reports.customer-balance') },
-        { name: 'Supplier Report', href: route('reports.supplier-balance') },
+        { name: 'Employees', href: route('employees.index'), icon: 'team' },
+        { name: 'User Management', href: route('users.index'), adminOnly: true, icon: 'users' },
+        { name: 'Reports', href: route('reports.index'), icon: 'finance' },
     ];
 
     return (
@@ -67,8 +58,6 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="fixed inset-y-0 left-0 w-56 bg-slate-900 shadow-2xl print:hidden" onClick={e => e.stopPropagation()}>
                         <SidebarContent
                             navigation={navigation}
-                            teamLinks={teamLinks}
-                            reports={reports}
                             user={user}
                             onQuickMenuOpen={() => {
                                 setSidebarOpen(false);
@@ -85,8 +74,6 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl print:hidden">
                         <SidebarContent
                             navigation={navigation}
-                            teamLinks={teamLinks}
-                            reports={reports}
                             user={user}
                             onQuickMenuOpen={() => setIsQuickMenuOpen(true)}
                         />
@@ -199,19 +186,17 @@ export default function AuthenticatedLayout({ header, children }) {
                         {/* User Profile Dropdown */}
                         <Dropdown>
                             <Dropdown.Trigger>
-                                <button className="flex items-center gap-3 p-1 rounded-full hover:bg-slate-50 transition-colors">
-                                    <div className="h-8 w-8 rounded-full bg-[#00713D] flex items-center justify-center text-white text-xs font-bold ring-2 ring-green-50 shadow-sm">
+                                <button className="flex items-center justify-center p-1 rounded-full hover:bg-slate-50 transition-all duration-300">
+                                    <div className="h-8 w-8 rounded-full bg-[#00713D] flex items-center justify-center text-white text-xs font-bold ring-2 ring-green-50 shadow-sm shrink-0">
                                         {user.name[0]}
                                     </div>
-                                    <span className="hidden sm:block text-sm font-medium text-slate-700">{user.name}</span>
-                                    <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
                             </Dropdown.Trigger>
 
                             <Dropdown.Content align="right" width="48" contentClasses="py-1 bg-white ring-1 ring-black ring-opacity-5 rounded-xl shadow-xl overflow-hidden mt-2">
                                 <div className="px-4 py-2 border-b border-slate-50">
-                                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Signed in as</p>
-                                    <p className="text-sm font-medium text-slate-900 truncate">{user.email}</p>
+                                    <p className="text-xs font-bold text-slate-800 truncate">{user.name}</p>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 truncate">{user.email}</p>
                                 </div>
                                 <Dropdown.Link href={route('profile.edit')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 px-4 py-2.5 text-sm transition-colors">My Profile</Dropdown.Link>
                                 <Dropdown.Link href={route('logout')} method="post" as="button" className="w-full text-left text-red-600 hover:bg-red-50 px-4 py-2.5 text-sm transition-colors border-t border-slate-50">Log Out</Dropdown.Link>
@@ -251,7 +236,7 @@ export default function AuthenticatedLayout({ header, children }) {
     );
 }
 
-function SidebarContent({ navigation, teamLinks, reports, user, onQuickMenuOpen }) {
+function SidebarContent({ navigation, user, onQuickMenuOpen }) {
     const scrollContainerRef = useRef(null);
 
     const getInitialOpenMenu = () => {
@@ -272,7 +257,6 @@ function SidebarContent({ navigation, teamLinks, reports, user, onQuickMenuOpen 
             return currentPath.startsWith(href) || href.startsWith(currentPath);
         };
 
-        if (reports.some(r => matchesPath(r.href))) return 'reports';
         if (teamLinks.some(t => matchesPath(t.href))) return 'team';
 
         return null;
@@ -363,71 +347,9 @@ function SidebarContent({ navigation, teamLinks, reports, user, onQuickMenuOpen 
                     </div>
                 </div>
 
-                {/* Team Group */}
-                {teamLinks.length > 0 && (
-                    <div>
-                        <button
-                            onClick={() => setOpenMenu(openMenu === 'team' ? null : 'team')}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'team' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <SidebarIcon name="team" />
-                                <span className="text-xs font-bold text-left">Staff</span>
-                            </div>
-                            <svg className={`h-3 w-3 transition-transform duration-300 ${openMenu === 'team' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </button>
+                {/* Team Group Removed */}
 
-                        {openMenu === 'team' && (
-                            <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-800/50">
-                                {teamLinks.map((child) => (
-                                    (!child.adminOnly || user.role === 'admin') && (
-                                        <Link
-                                            key={child.href}
-                                            href={child.href}
-                                            className="block px-6 py-1.5 text-[11px] font-bold text-slate-500 hover:text-white transition-colors relative group"
-                                        >
-                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-[1px] bg-slate-800 transition-all group-hover:w-2 group-hover:bg-primary-500" />
-                                            {child.name}
-                                        </Link>
-                                    )
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Reports Group */}
-                {reports.length > 0 && (
-                    <div>
-                        <button
-                            onClick={() => setOpenMenu(openMenu === 'reports' ? null : 'reports')}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all ${openMenu === 'reports' ? 'bg-white/5 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <SidebarIcon name="finance" />
-                                <span className="text-xs font-bold text-left">Reports</span>
-                            </div>
-                            <svg className={`h-3 w-3 transition-transform duration-300 ${openMenu === 'reports' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-
-                        {openMenu === 'reports' && (
-                            <div className="mt-1 ml-3 space-y-0.5 border-l border-slate-800/50">
-                                {reports.map((child) => (
-                                    <Link
-                                        key={child.href}
-                                        href={child.href}
-                                        className="block px-6 py-1.5 text-[11px] font-bold text-slate-500 hover:text-white transition-colors relative group"
-                                    >
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-[1px] bg-slate-800 transition-all group-hover:w-2 group-hover:bg-primary-500" />
-                                        {child.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                {/* Reports Group Removed */}
             </div>
 
             {/* Bottom Footer Section */}
