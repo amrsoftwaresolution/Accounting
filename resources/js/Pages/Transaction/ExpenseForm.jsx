@@ -128,6 +128,12 @@ export default function ExpenseForm({
         defaultCurrencyCode: 'LKR'
     });
 
+
+    const searchItems = async (search = '') => {
+    const response = await axios.get(route('api.items', { search }));
+    return response.data; // just return, don't call setProductOptions
+};
+
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0) +
         data.itemDetails.reduce((sum, item) => sum + parseCurrency(item.amount), 0)
@@ -341,7 +347,7 @@ export default function ExpenseForm({
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
-            onSearch: fetchItems,
+            onSearch: searchItems,
             type: "select",
             width: "280px",
             onAddNew: (index) => {

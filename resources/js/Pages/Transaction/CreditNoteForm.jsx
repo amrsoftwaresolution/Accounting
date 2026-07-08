@@ -32,6 +32,11 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
         });
     };
 
+    const searchItems = async (search = "") => {
+        const response = await axios.get(route('api.items', { search }));
+        return response.data;
+    };
+
     useEffect(() => {
         fetchCustomers();
         fetchProducts();
@@ -43,7 +48,7 @@ export default function CreditNoteForm({ auth, nextCreditNoteNo = "", creditNote
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
-            onSearch: fetchProducts,
+            onSearch: searchItems,
             onAddNew: (index) => {
                 setAddingItemRowIndex(index);
                 setIsItemModalOpen(true);
@@ -328,7 +333,7 @@ const actionRef = useRef('save');
                             onBlur={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('creditNoteNo', val);
-                            }}      
+                            }}
                             size="sm"
                             inputClass="font-mono text-right"
                             error={errors.creditNoteNo}

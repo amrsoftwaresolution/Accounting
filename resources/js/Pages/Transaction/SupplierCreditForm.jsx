@@ -41,6 +41,11 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
         });
     };
 
+    const searchItems = async (search = "") => {
+        const response = await axios.get(route('api.items', { search }));
+        return response.data;
+    };
+
     const fetchAccounts = (search = "") => {
         axios.get(route('api.accounts', { search })).then(res => {
             setAccountOptions(res.data);
@@ -253,7 +258,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
-            onSearch: fetchProducts,
+            onSearch: searchItems,
             onAddNew: (index) => {
                 setAddingItemRowIndex(index);
                 setIsItemModalOpen(true);
@@ -330,7 +335,7 @@ export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = n
                             onBlur={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
                                 setData('creditNo', val);
-                            }}          
+                            }}
                             error={errors.creditNo}
                             size="sm"
                             inputClass="font-mono text-right"
