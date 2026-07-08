@@ -11,6 +11,11 @@ use App\Models\BundleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use App\Models\BillItem;
+use App\Models\InvoiceItem;
+use App\Models\ExpenseItem;
+use App\Models\JournalEntryLine;
 
 class ItemController extends Controller
 {
@@ -237,21 +242,87 @@ class ItemController extends Controller
             $validated['is_purchased'] = $request->boolean('is_purchased', false);
         }
 
-        $item->update($validated);
+        $oldIncomeAccount = $item->income_account_id;
+        $oldExpenseAccount = $item->expense_account_id;
+        $oldInventoryAccount = $item->inventory_account_id;
 
-        if ($validated['type'] === 'bundle') {
-            $item->bundleComponents()->delete();
-            $bundleItems = $request->input('bundle_items', []);
-            foreach ($bundleItems as $bi) {
-                BundleItem::create([
-                    'bundle_id' => $item->id,
-                    'item_id' => $bi['item_id'],
-                    'quantity' => $bi['quantity'],
-                ]);
+        DB::transaction(function () use ($item, $validated, $request, $oldIncomeAccount, $oldExpenseAccount, $oldInventoryAccount) {
+            $item->update($validated);
+
+            if ($validated['type'] === 'bundle') {
+                $item->bundleComponents()->delete();
+                $bundleItems = $request->input('bundle_items', []);
+                foreach ($bundleItems as $bi) {
+                    BundleItem::create([
+                        'bundle_id' => $item->id,
+                        'item_id' => $bi['item_id'],
+                        'quantity' => $bi['quantity'],
+                    ]);
+                }
+            } else {
+                $item->bundleComponents()->delete();
             }
-        } else {
-            $item->bundleComponents()->delete();
-        }
+
+            if ($request->boolean('update_historical')) {
+                // Update Bills and Expenses (direct chart_of_acc_id on items)
+                if ($oldExpenseAccount && $oldExpenseAccount !== $item->expense_account_id) {
+                    // Update BillItems and their JournalEntryLines
+                    $billItems = BillItem::where('item_id', $item->id)->where('chart_of_acc_id', $oldExpenseAccount)->get();
+                    foreach ($billItems as $bi) {
+                        $bi->update(['chart_of_acc_id' => $item->expense_account_id]);
+                        // Bill creates JournalEntry where transactionable is the Bill. We find the JournalEntryLine with old account
+                        $je = $bi->bill->journalEntry;
+                        if ($je) {
+                            JournalEntryLine::where('journal_entry_id', $je->id)
+                                ->where('chart_of_acc_id', $oldExpenseAccount)
+                                ->update(['chart_of_acc_id' => $item->expense_account_id]);
+                        }
+                    }
+
+                    // Update ExpenseItems and their JournalEntryLines
+                    $expenseItems = ExpenseItem::where('item_id', $item->id)->where('chart_of_acc_id', $oldExpenseAccount)->get();
+                    foreach ($expenseItems as $ei) {
+                        $ei->update(['chart_of_acc_id' => $item->expense_account_id]);
+                        $je = $ei->expense->journalEntry;
+                        if ($je) {
+                            JournalEntryLine::where('journal_entry_id', $je->id)
+                                ->where('chart_of_acc_id', $oldExpenseAccount)
+                                ->update(['chart_of_acc_id' => $item->expense_account_id]);
+                        }
+                    }
+                }
+
+                // Update Invoices (they don't store chart_of_acc_id directly on invoice_items, they rely on item accounts)
+                if (($oldIncomeAccount && $oldIncomeAccount !== $item->income_account_id) || 
+                    ($oldExpenseAccount && $oldExpenseAccount !== $item->expense_account_id) ||
+                    ($oldInventoryAccount && $oldInventoryAccount !== $item->inventory_account_id)) {
+                    
+                    $invoiceItems = InvoiceItem::where('item_id', $item->id)->get();
+                    foreach ($invoiceItems as $ii) {
+                        $je = $ii->invoice->journalEntry;
+                        if ($je) {
+                            if ($oldIncomeAccount && $oldIncomeAccount !== $item->income_account_id) {
+                                JournalEntryLine::where('journal_entry_id', $je->id)
+                                    ->where('chart_of_acc_id', $oldIncomeAccount)
+                                    ->update(['chart_of_acc_id' => $item->income_account_id]);
+                            }
+                            if ($item->type === 'inventory') {
+                                if ($oldExpenseAccount && $oldExpenseAccount !== $item->expense_account_id) {
+                                    JournalEntryLine::where('journal_entry_id', $je->id)
+                                        ->where('chart_of_acc_id', $oldExpenseAccount)
+                                        ->update(['chart_of_acc_id' => $item->expense_account_id]);
+                                }
+                                if ($oldInventoryAccount && $oldInventoryAccount !== $item->inventory_account_id) {
+                                    JournalEntryLine::where('journal_entry_id', $je->id)
+                                        ->where('chart_of_acc_id', $oldInventoryAccount)
+                                        ->update(['chart_of_acc_id' => $item->inventory_account_id]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
         return redirect()->route('items.index')->with('success', 'Item updated successfully');
     }

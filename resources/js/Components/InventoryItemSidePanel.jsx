@@ -117,6 +117,7 @@ export default function InventoryItemSidePanel({
         inventory_account_id: initialDefaults.inventory_account_id,
         is_sold: true,
         is_purchased: false,
+        update_historical: false,
         bundle_items: []
     });
 
@@ -217,12 +218,13 @@ export default function InventoryItemSidePanel({
                     purchase_price: item.purchase_price ? parseFloat(item.purchase_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00',
                     purchase_description: item.purchase_description || '',
                     preferred_supplier_id: item.preferred_supplier_id || '',
-                    quantity_on_hand: item.quantity_on_hand ? Math.round(parseFloat(item.quantity_on_hand)).toString() : '0',
+                    quantity_on_hand: item.quantity_on_hand ? String(Math.round(parseFloat(item.quantity_on_hand))) : '0',
                     as_of_date: item.as_of_date || '',
-                    reorder_point: item.reorder_point ? parseFloat(item.reorder_point).toLocaleString('en-US') : '0',
+                    reorder_point: item.reorder_point ? String(Math.round(parseFloat(item.reorder_point))) : '0',
                     inventory_account_id: item.inventory_account_id || '',
                     is_sold: item.is_sold !== undefined ? !!item.is_sold : true,
                     is_purchased: item.is_purchased !== undefined ? !!item.is_purchased : false,
+                    update_historical: false,
                     bundle_items: item.bundle_components ? item.bundle_components.map(bc => ({
                         item_id: bc.item_id || '',
                         quantity: bc.quantity ? parseFloat(bc.quantity).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '1.00'
@@ -248,6 +250,7 @@ export default function InventoryItemSidePanel({
                     inventory_account_id: '',
                     is_sold: true,
                     is_purchased: false,
+                    update_historical: false,
                     bundle_items: []
                 });
                 clearErrors();
@@ -790,6 +793,22 @@ export default function InventoryItemSidePanel({
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    )}
+
+                    {item && (data.inventory_account_id !== item.inventory_account_id || data.income_account_id !== item.income_account_id || data.expense_account_id !== item.expense_account_id) && (
+                        <div className="mt-4 flex items-start p-3 bg-amber-50 rounded border border-amber-200">
+                            <input
+                                type="checkbox"
+                                id="update_historical"
+                                className="mt-0.5 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                                checked={data.update_historical}
+                                onChange={e => setData('update_historical', e.target.checked)}
+                            />
+                            <label htmlFor="update_historical" className="ml-2 text-xs text-amber-800">
+                                <span className="font-bold block">Update historical transactions?</span>
+                                Check this if you want past invoices and bills to use the new accounts. (Warning: This will change past financial reports).
+                            </label>
                         </div>
                     )}
 

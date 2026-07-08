@@ -68,17 +68,17 @@ export default function ItemList({ items, filters, counts }) {
     };
 
     // Group items by category (they are already sorted by category in the backend)
-    const groupedItems = useMemo(() => {
+    const groupedItems = (() => {
         const groups = {};
         if (items && items.data) {
             items.data.forEach(item => {
-                const cat = item.category?.name || 'Uncategorized';
+                const cat = item?.category?.name || 'Uncategorized';
                 if (!groups[cat]) groups[cat] = [];
                 groups[cat].push(item);
             });
         }
         return groups;
-    }, [items]);
+    })();
 
     return (
         <AuthenticatedLayout header="Products & Services">
