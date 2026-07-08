@@ -69,6 +69,11 @@ export default function BillForm({
         }
     };
 
+    const searchItems = async (search = '') => {
+        const response = await axios.get(route('api.items', { search }));
+        return response.data;
+    };
+
     useEffect(() => {
         fetchPayees();
         fetchAccounts();
@@ -380,7 +385,7 @@ useEffect(() => {
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
-            onSearch: fetchItems,
+            onSearch: searchItems,
             type: "select",
             width: "280px",
             onAddNew: (index) => {

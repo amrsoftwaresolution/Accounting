@@ -63,6 +63,11 @@ export default function InvoiceForm({
         });
     };
 
+    const searchItems = async (search = "") => {
+        const response = await axios.get(route('api.items', { search }));
+        return response.data;
+    };
+
     useEffect(() => {
         fetchPayees();
         fetchItems();
@@ -75,7 +80,7 @@ export default function InvoiceForm({
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
-            onSearch: fetchItems,
+            onSearch: searchItems,
             onAddNew: (index) => {
                 setAddingItemRowIndex(index);
                 setIsItemModalOpen(true);

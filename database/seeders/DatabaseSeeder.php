@@ -227,6 +227,7 @@ class DatabaseSeeder extends Seeder
             PaymentMethodSeeder::class,
             AdvancedSettingsSeeder::class,
             CurrencyMetadataSeeder::class,
+            ItemSeeder::class,
         ]);
     }
 }

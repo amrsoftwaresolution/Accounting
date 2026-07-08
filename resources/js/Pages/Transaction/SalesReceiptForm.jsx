@@ -47,6 +47,11 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
         });
     };
 
+    const searchItems = async (search = "") => {
+        const response = await axios.get(route('api.items', { search }));
+        return response.data;
+    };
+
     useEffect(() => {
         fetchCustomers();
         fetchAccounts();
@@ -101,7 +106,7 @@ export default function SalesReceiptForm({ auth, paymentMethods = [], nextReceip
             label: "Product/Service",
             placeholder: "Select product",
             options: productOptions,
-            onSearch: fetchProducts,
+            onSearch: searchItems,
             onAddNew: (index) => {
                 setAddingItemRowIndex(index);
                 setIsItemModalOpen(true);
