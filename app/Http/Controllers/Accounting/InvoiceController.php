@@ -157,25 +157,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoice')->with('success', 'credit Sale saved successfully.');
         }
 
-       session()->flash('success', 'Credit Sale saved successfully.');
-session()->flash('journal_entry_id', $journalEntry->id);
-
-return Inertia::render('Transaction/InvoiceForm', [
-    'nextInvoiceNo' => $request->invoiceNo,
-    'invoice' => [
-        'id' => $journalEntry->id,
-        'customer' => $request->customer,
-        'email' => $request->email,
-        'billingAddress' => $request->billingAddress,
-        'terms' => $request->terms,
-        'invoiceNo' => $request->invoiceNo,
-        'invoiceDate' => $request->invoiceDate,
-        'dueDate' => $request->dueDate,
-        'memo' => $request->memo,
-        'statementMessage' => $request->statementMessage,
-        'items' => $request->items,
-    ],
-    ]);
+       return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'Credit Sale saved successfully.');
 
     }
 
@@ -298,25 +280,7 @@ return Inertia::render('Transaction/InvoiceForm', [
         if ($action === 'new') {
             return redirect()->route('invoice')->with('success', 'Invoice updated successfully.');
         }
-        session()->flash('success', 'Invoice updated successfully.');
-session()->flash('journal_entry_id', $journalEntry->id);
-
-return Inertia::render('Transaction/InvoiceForm', [
-    'nextInvoiceNo' => $request->invoiceNo,
-    'invoice' => [
-        'id' => $journalEntry->id,
-        'customer' => $request->customer,
-        'email' => $request->email,
-        'billingAddress' => $request->billingAddress,
-        'terms' => $request->terms,
-        'invoiceNo' => $request->invoiceNo,
-        'invoiceDate' => $request->invoiceDate,
-        'dueDate' => $request->dueDate,
-        'memo' => $request->memo,
-        'statementMessage' => $request->statementMessage,
-        'items' => $request->items,
-    ],
-]);
+        return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'Invoice updated successfully.');
     }
 
 

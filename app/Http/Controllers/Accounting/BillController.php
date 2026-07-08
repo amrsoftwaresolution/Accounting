@@ -222,28 +222,7 @@ class BillController extends Controller
                 return redirect()->route('bill')->with('success', 'Bill saved successfully.');
             }
 
-            session()->flash('success', 'Bill saved successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/BillForm', [
-                'nextBillNo' => $request->billNo,
-                'bill' => [
-                    'id' => $journalEntry->id,
-                    'supplier' => $request->supplier,
-                    'mailingAddress' => $request->mailingAddress ?? '',
-                    'terms' => $request->terms ?? 'Net 30',
-                    'billDate' => $request->billDate,
-                    'dueDate' => $request->dueDate,
-                    'billNo' => $request->billNo,
-                    'memo' => $request->memo,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
-                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill saved successfully.');
 
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == '22003') {
@@ -435,28 +414,7 @@ class BillController extends Controller
                 return redirect()->route('bill')->with('success', 'Bill updated successfully.');
             }
 
-            session()->flash('success', 'Bill updated successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/BillForm', [
-                'nextBillNo' => $request->billNo,
-                'bill' => [
-                    'id' => $journalEntry->id,
-                    'supplier' => $request->supplier,
-                    'mailingAddress' => $request->mailingAddress ?? '',
-                    'terms' => $request->terms ?? 'Net 30',
-                    'billDate' => $request->billDate,
-                    'dueDate' => $request->dueDate,
-                    'billNo' => $request->billNo,
-                    'memo' => $request->memo,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                    'itemDetails' => collect($request->itemDetails)->filter(function($item) {
-                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill updated successfully.');
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == '22003') {
                 return redirect()->back()->withErrors(['error' => 'Total amount is too large. Please enter a smaller value.']);

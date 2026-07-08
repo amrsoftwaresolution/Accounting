@@ -215,27 +215,7 @@ class SalesReceiptController extends Controller
             return redirect()->route('receipt')->with('success', 'Cash sale saved successfully.');
         }
 
-        session()->flash('success', 'Cash sale saved successfully.');
-        session()->flash('journal_entry_id', $journalEntry->id);
-
-        return Inertia::render('Transaction/SalesReceiptForm', [
-            'nextReceiptNo' => $request->receiptNo,
-            'receipt' => [
-                'id' => $journalEntry->id,
-                'customer' => $request->customer,
-                'email' => $request->email,
-                'billingAddress' => $request->billingAddress ?? '',
-                'receiptDate' => $request->receiptDate,
-                'receiptNo' => $request->receiptNo,
-                'paymentMethod' => $request->paymentMethod,
-                'depositTo' => $request->depositTo,
-                'memo' => $request->memo,
-                'statementMessage' => $request->statementMessage,
-                'items' => collect($request->items)->filter(function($item) {
-                    return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
-                })->values()->toArray(),
-            ],
-        ]);
+        return redirect()->route('receipt.edit', $journalEntry->id)->with('success', 'Cash sale saved successfully.');
 
     }
 
@@ -409,31 +389,7 @@ class SalesReceiptController extends Controller
                 return redirect()->route('receipt')->with('success', 'Cash sale updated successfully.');
             }
 
-            session()->flash('success', 'Cash sale updated successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/SalesReceiptForm', [
-                'nextReceiptNo' => $request->receiptNo,
-                'receipt' => [
-                    'id' => $journalEntry->id,
-                    'customer' => $request->customer,
-                    'email' => $request->email,
-                    'billingAddress' => $request->billingAddress ?? '',
-                    'receiptDate' => $request->receiptDate,
-                    'receiptNo' => $request->receiptNo,
-                    'paymentMethod' => $request->paymentMethod,
-                    'depositTo' => $request->depositTo,
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
-                    'memo' => $request->memo,
-                    'statementMessage' => $request->statementMessage,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['product']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('receipt.edit', $journalEntry->id)->with('success', 'Cash sale updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

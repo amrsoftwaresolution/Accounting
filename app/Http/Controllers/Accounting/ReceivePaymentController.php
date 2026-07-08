@@ -180,26 +180,7 @@ class ReceivePaymentController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            session()->flash('success', 'Payment received successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/ReceivePaymentForm', [
-                'paymentMethods' => $paymentMethods,
-                'nextPaymentNo' => $request->referenceNo,
-                'payment' => [
-                    'id' => $journalEntry->id,
-                    'customer' => $request->customer,
-                    'email' => $request->email,
-                    'paymentDate' => $request->paymentDate,
-                    'paymentMethod' => $request->paymentMethod,
-                    'depositTo' => $request->depositTo,
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate ? String($request->exchange_rate) : "",
-                    'referenceNo' => $request->referenceNo,
-                    'amountReceived' => $request->amountReceived,
-                    'memo' => $request->memo,
-                ],
-            ]);
+            return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment received successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -341,23 +322,7 @@ class ReceivePaymentController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            session()->flash('success', 'Payment updated successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/ReceivePaymentForm', [
-                'paymentMethods' => $paymentMethods,
-                'payment' => [
-                    'id' => $journalEntry->id,
-                    'customer' => $request->customer,
-                    'email' => $request->email,
-                    'paymentDate' => $request->paymentDate,
-                    'paymentMethod' => $request->paymentMethod,
-                    'depositTo' => $request->depositTo,
-                    'referenceNo' => $request->referenceNo,
-                    'amountReceived' => $request->amountReceived,
-                    'memo' => $request->memo,
-                ],
-            ]);
+            return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

@@ -178,25 +178,7 @@ class ChequeController extends Controller
                 return redirect()->route('cheque')->with('success', 'Cheque saved successfully.');
             }
 
-            session()->flash('success', 'Cheque saved successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/ChequeForm', [
-                'nextChequeNo' => $chequeNo,
-                'cheque' => [
-                    'id' => $journalEntry->id,
-                    'payee' => $request->payee,
-                    'payeeType' => $request->payeeType,
-                    'account' => $bankAccount,
-                    'date' => $paymentDate,
-                    'cheque_no' => $chequeNo,
-                    'mailing_address' => $request->mailing_address,
-                    'memo' => $request->memo,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('cheque.edit', $journalEntry->id)->with('success', 'Cheque saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -330,25 +312,7 @@ class ChequeController extends Controller
                 return redirect()->route('cheque')->with('success', 'Cheque updated successfully.');
             }
 
-            session()->flash('success', 'Cheque updated successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/ChequeForm', [
-                'nextChequeNo' => $chequeNo,
-                'cheque' => [
-                    'id' => $journalEntry->id,
-                    'payee' => $request->payee,
-                    'payeeType' => $request->payeeType,
-                    'account' => $bankAccount,
-                    'date' => $paymentDate,
-                    'cheque_no' => $chequeNo,
-                    'mailing_address' => $request->mailing_address,
-                    'memo' => $request->memo,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('cheque.edit', $journalEntry->id)->with('success', 'Cheque updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

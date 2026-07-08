@@ -343,26 +343,28 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         >
                             <option value="">Select a parent account</option>
                             {parentAccounts
-                                .filter(acc => acc.account_type === data.account_type && (!account || acc.value !== account.id))
+                                .filter(acc => String(acc.account_type).toLowerCase() === String(data.account_type).toLowerCase() && (!account || acc.value !== account.id))
                                 .map(acc => (
                                     <option key={acc.value} value={acc.value}>
                                         {acc.label} {acc.account_type ? `(${acc.account_type})` : ''}
                                     </option>
                                 ))}
                         </CommonInput>
-
-                        <CommonInput
-                            type="textarea"
-                            label="Description"
-                            value={data.description}
-                            onChange={e => setData('description', e.target.value)}
-                            error={errors.description}
-                            rows="3"
-                            className="resize-none"
-                            disabled={data.is_locked}
-                        />
                     </div>
                 )}
+
+                <div className="pt-4 border-t border-slate-150">
+                    <CommonInput
+                        type="textarea"
+                        label="Description"
+                        value={data.description}
+                        onChange={e => setData('description', e.target.value)}
+                        error={errors.description}
+                        rows="3"
+                        className="resize-none"
+                        disabled={data.is_locked}
+                    />
+                </div>
 
                 {multicurrencyEnabled && (
                     <div className="pt-4 border-t border-slate-100">

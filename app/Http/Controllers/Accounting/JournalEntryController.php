@@ -135,27 +135,7 @@ class JournalEntryController extends Controller
         if ($action === 'new') {
             return redirect()->route('journal-entries.create')->with('success', 'Journal Entry saved successfully.');
         }
-        session()->flash('success', 'Journal Entry saved successfully.');
-        session()->flash('journal_entry_id', $entry->id);
-
-        return Inertia::render('Transaction/JournalEntryForm', [
-            'nextJournalNo' => $request->reference_no,
-            'journalEntry' => [
-                'id' => $entry->id,
-                'date' => $request->date,
-                'reference' => $request->reference_no,
-                'description' => $request->description,
-                'lines' => collect($request->lines)->map(function ($line) {
-                    return [
-                        'chart_of_acc_id' => $line['account_id'],
-                        'payee_id' => $line['payee_id'] ?? null,
-                        'debit' => (float)($line['debit'] ?? 0),
-                        'credit' => (float)($line['credit'] ?? 0),
-                        'memo' => $line['description'] ?? null,
-                    ];
-                })->toArray(),
-            ]
-        ]);
+        return redirect()->route('journal-entries.edit', $entry->id)->with('success', 'Journal Entry saved successfully.');
     });
 }
 
@@ -219,27 +199,7 @@ class JournalEntryController extends Controller
                 return redirect()->route('journal-entries.create')->with('success', 'Journal Entry updated successfully.');
             }
             
-            session()->flash('success', 'Journal Entry updated successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/JournalEntryForm', [
-                'nextJournalNo' => $request->reference_no,
-                'journalEntry' => [
-                    'id' => $journalEntry->id,
-                    'date' => $request->date,
-                    'reference' => $request->reference_no,
-                    'description' => $request->description,
-                    'lines' => collect($request->lines)->map(function ($line) {
-                        return [
-                            'chart_of_acc_id' => $line['account_id'],
-                            'payee_id' => $line['payee_id'] ?? null,
-                            'debit' => (float)($line['debit'] ?? 0),
-                            'credit' => (float)($line['credit'] ?? 0),
-                            'memo' => $line['description'] ?? null,
-                        ];
-                    })->toArray(),
-                ]
-            ]);
+            return redirect()->route('journal-entries.edit', $journalEntry->id)->with('success', 'Journal Entry updated successfully.');
         });
     }
 
