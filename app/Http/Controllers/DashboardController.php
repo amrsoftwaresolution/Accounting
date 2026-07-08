@@ -98,7 +98,7 @@ class DashboardController extends Controller
                   ->whereYear('date', $currentYear)
                   ->whereMonth('date', $currentMonth);
             })
-            ->selectRaw('chart_of_accs.name as category, SUM(journal_entry_lines.debit - journal_entry_lines.credit) as value')
+            ->selectRaw('chart_of_accs.name as name, SUM(journal_entry_lines.debit - journal_entry_lines.credit) as value')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->groupBy('chart_of_accs.name')

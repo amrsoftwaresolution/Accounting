@@ -97,7 +97,7 @@ export default function Dashboard({ auth, bankAccounts = [], monthlyPnL = [], ex
                                                 <div key={idx} className="flex items-center justify-between text-xs">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
-                                                        <span className="text-slate-600 font-medium truncate max-w-[100px]">{item.category}</span>
+                                                        <span className="text-slate-600 font-medium truncate max-w-[100px]">{item.name}</span>
                                                     </div>
                                                     <span className="font-bold text-slate-800">{formatCurrency(item.value)}</span>
                                                 </div>

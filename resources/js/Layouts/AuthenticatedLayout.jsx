@@ -257,8 +257,6 @@ function SidebarContent({ navigation, user, onQuickMenuOpen }) {
             return currentPath.startsWith(href) || href.startsWith(currentPath);
         };
 
-        if (teamLinks.some(t => matchesPath(t.href))) return 'team';
-
         return null;
     };
 
