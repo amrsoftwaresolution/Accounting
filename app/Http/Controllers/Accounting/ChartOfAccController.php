@@ -18,10 +18,21 @@ class ChartOfAccController extends Controller
 
     public function index()
     {
-        $chartOfAccounts = ChartOfAcc::orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
+        $accounts = ChartOfAcc::orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "expense")')
             ->orderBy('sub_type')
             ->orderBy('name')
             ->get();
+
+        $chartOfAccounts = collect();
+        $buildTree = function ($parentId) use (&$buildTree, $accounts, &$chartOfAccounts) {
+            $children = $accounts->where('parent_id', $parentId);
+            foreach ($children as $child) {
+                $chartOfAccounts->push($child);
+                $buildTree($child->id);
+            }
+        };
+        $buildTree(null);
+
         $currencies = \App\Models\Currency::orderBy('code')->get();
 
         return Inertia::render('Accounting/chart-of-acc-index', [

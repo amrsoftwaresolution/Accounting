@@ -133,12 +133,20 @@ export default function TransactionLayout({
     // }, []);
 
    const handleClose = () => {
+    const goBack = () => {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            router.get(route(resolvedMoreOptions?.listRoute || 'dashboard'));
+        }
+    };
+
     if (hasUnsavedChanges) {
         if (confirm('You have unsaved changes. Are you sure you want to close?')) {
-            router.get(route('dashboard'));
+            goBack();
         }
     } else {
-        router.get(route('dashboard'));
+        goBack();
     }
 };
 

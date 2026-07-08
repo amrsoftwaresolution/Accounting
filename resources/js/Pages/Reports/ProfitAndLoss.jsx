@@ -48,11 +48,14 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     };
 
     const income = reportData.income || [];
+    const cogs = reportData.cogs || [];
     const expense = reportData.expense || [];
 
     const totalIncome = income.reduce((sum, item) => sum + item.total_balance, 0);
+    const totalCogs = cogs.reduce((sum, item) => sum + item.total_balance, 0);
+    const grossProfit = totalIncome - totalCogs;
     const totalExpense = expense.reduce((sum, item) => sum + item.total_balance, 0);
-    const netIncome = totalIncome - totalExpense;
+    const netIncome = grossProfit - totalExpense;
 
     const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR';
 
@@ -72,14 +75,18 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     };
 
     const totalIncomeMonthly = {};
+    const totalCogsMonthly = {};
+    const grossProfitMonthly = {};
     const totalExpenseMonthly = {};
     const netIncomeMonthly = {};
 
     if (isMonthWise) {
         monthCols.forEach(ym => {
             totalIncomeMonthly[ym] = income.reduce((sum, item) => sum + (item.total_monthly_balances?.[ym] || 0), 0);
+            totalCogsMonthly[ym] = cogs.reduce((sum, item) => sum + (item.total_monthly_balances?.[ym] || 0), 0);
+            grossProfitMonthly[ym] = totalIncomeMonthly[ym] - totalCogsMonthly[ym];
             totalExpenseMonthly[ym] = expense.reduce((sum, item) => sum + (item.total_monthly_balances?.[ym] || 0), 0);
-            netIncomeMonthly[ym] = totalIncomeMonthly[ym] - totalExpenseMonthly[ym];
+            netIncomeMonthly[ym] = grossProfitMonthly[ym] - totalExpenseMonthly[ym];
         });
     }
 
@@ -141,6 +148,32 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         }
         incomeTotalRow += `,${totalIncome}\n\n`;
         csvContent += incomeTotalRow;
+
+        // Cost of Goods Sold
+        csvContent += `"COST OF GOODS SOLD"\n`;
+        const flatCogs = flattenAccounts(cogs);
+        flatCogs.forEach(item => {
+            let row = `,"${item.name}"`;
+            if (isMonthWise) {
+                monthCols.forEach(ym => row += `,${item.monthly_balances?.[ym] || 0}`);
+            }
+            row += `,${item.balance}\n`;
+            csvContent += row;
+        });
+        let cogsTotalRow = `,"Total Cost of Goods Sold"`;
+        if (isMonthWise) {
+            monthCols.forEach(ym => cogsTotalRow += `,${totalCogsMonthly[ym] || 0}`);
+        }
+        cogsTotalRow += `,${totalCogs}\n`;
+        csvContent += cogsTotalRow;
+
+        // Gross Profit
+        let grossProfitRow = `,"GROSS PROFIT"`;
+        if (isMonthWise) {
+            monthCols.forEach(ym => grossProfitRow += `,${grossProfitMonthly[ym] || 0}`);
+        }
+        grossProfitRow += `,${grossProfit}\n\n`;
+        csvContent += grossProfitRow;
 
         // Expenses
         csvContent += `"EXPENSES"\n`;
@@ -336,6 +369,32 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                                 <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncomeMonthly[ym] || 0} /></td>
                             ))}
                             <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncome} /></td>
+                        </tr>
+
+                        {/* Cost of Goods Sold Section */}
+                        <tr className="bg-gray-50 border-y border-gray-300">
+                            <td colSpan={isMonthWise ? monthCols.length + 2 : 2} className="py-2 px-3 font-bold text-gray-900 mt-4">
+                                <span className="inline-block mr-1 text-[10px]">▼</span> Cost of Goods Sold
+                            </td>
+                        </tr>
+                        {cogs.map((item) => (
+                            <AccountRow key={item.id} item={item} />
+                        ))}
+                        <tr className="border-t border-b border-gray-300 bg-white font-semibold">
+                            <td className="py-2 px-3 pl-8 text-gray-900">Total Cost of Goods Sold</td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalCogsMonthly[ym] || 0} /></td>
+                            ))}
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalCogs} /></td>
+                        </tr>
+
+                        {/* Gross Profit */}
+                        <tr className="border-b-2 border-gray-300 font-bold bg-white text-[13px]">
+                            <td className="py-2.5 px-3 pl-8 text-gray-900">GROSS PROFIT</td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2.5 px-3 text-right tabular-nums text-gray-900"><Currency value={grossProfitMonthly[ym] || 0} /></td>
+                            ))}
+                            <td className="py-2.5 px-3 text-right tabular-nums text-gray-900"><Currency value={grossProfit} /></td>
                         </tr>
 
                         {/* Expense Section */}

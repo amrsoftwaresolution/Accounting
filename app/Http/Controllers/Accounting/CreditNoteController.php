@@ -145,24 +145,7 @@ class CreditNoteController extends Controller
                 return redirect()->route('credit-note')->with('success', 'Sales Return saved successfully.');
             }
 
-            session()->flash('success', 'Sales Return saved successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/CreditNoteForm', [
-                'nextCreditNoteNo' => $request->creditNoteNo,
-                'creditNote' => [
-                    'id' => $journalEntry->id,
-                    'customer' => $request->customer,
-                    'email' => $request->email,
-                    'creditNoteDate' => $request->creditNoteDate,
-                    'creditNoteNo' => $request->creditNoteNo,
-                    'memo' => $request->memo,
-                    'statementMessage' => $request->statementMessage,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['product']);
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -283,24 +266,7 @@ class CreditNoteController extends Controller
                 return redirect()->route('credit-note')->with('success', 'Sales Return updated successfully.');
             }
 
-            session()->flash('success', 'Sales Return updated successfully.');
-            session()->flash('journal_entry_id', $journalEntry->id);
-
-            return Inertia::render('Transaction/CreditNoteForm', [
-                'nextCreditNoteNo' => $request->creditNoteNo,
-                'creditNote' => [
-                    'id' => $journalEntry->id,
-                    'customer' => $request->customer,
-                    'email' => $request->email,
-                    'creditNoteDate' => $request->creditNoteDate,
-                    'creditNoteNo' => $request->creditNoteNo,
-                    'memo' => $request->memo,
-                    'statementMessage' => $request->statementMessage,
-                    'items' => collect($request->items)->filter(function($item) {
-                        return !empty($item['product']);
-                    })->values()->toArray(),
-                ],
-            ]);
+            return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
