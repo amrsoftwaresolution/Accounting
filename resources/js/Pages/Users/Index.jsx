@@ -4,26 +4,36 @@ import CommonButton from '@/Components/CommonButton';
 
 export default function Index({ users }) {
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout
+            header={
+                <h2 className="font-bold text-lg text-slate-800 tracking-tight">System Users</h2>
+            }
+        >
             <Head title="System Users" />
 
-            <div className="py-8 px-4 sm:px-6 lg:px-8">
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase italic">System Users</h1>
-                        <p className="text-sm text-slate-500 mt-1 font-medium tracking-tight">Manage global system administrators and user accounts.</p>
-                    </div>
-                    <Link href={route('users.create')}>
-                        <CommonButton variant="primary">
-                            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Add New User
-                        </CommonButton>
-                    </Link>
-                </div>
+            <div className="p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between gap-4">
+                        <div className="relative flex-1 max-w-sm">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Find a user"
+                                className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-full focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
+                            />
+                        </div>
 
-                <div className="bg-white border border-slate-200 rounded-b-xl shadow-sm overflow-x-auto">
+                        <Link href={route('users.create')}>
+                            <CommonButton variant="primary">
+                                Add New User
+                            </CommonButton>
+                        </Link>
+                    </div>
+
+                    <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left border-collapse text-xs">
                         <thead>
                             <tr className="bg-slate-50/80 border-b border-slate-200">
@@ -123,6 +133,7 @@ export default function Index({ users }) {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>

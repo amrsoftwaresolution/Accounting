@@ -58,9 +58,7 @@ class Company extends Model
     private static function getAllCurrencies()
     {
         if (self::$allCurrencies === null) {
-            self::$allCurrencies = \Illuminate\Support\Facades\Cache::rememberForever('currencies_all', function () {
-                return \App\Models\Currency::all()->keyBy('id');
-            });
+            self::$allCurrencies = \App\Models\Currency::all()->keyBy('id');
         }
         return self::$allCurrencies;
     }

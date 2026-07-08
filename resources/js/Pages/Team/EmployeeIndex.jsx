@@ -71,43 +71,40 @@ export default function EmployeeIndex({ employees = [] }) {
     );
 
     return (
-        <AuthenticatedLayout>
-            <Head title="Employee Management" />
+        <AuthenticatedLayout
+            header={
+                <h2 className="font-bold text-lg text-slate-800 tracking-tight">Employees</h2>
+            }
+        >
+            <Head title="Employees" />
             
-            <div className="py-8 px-4 sm:px-6 lg:px-8">
-                {/* Header Section */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Employee Management</h1>
-                        <p className="text-sm text-slate-500 mt-1 font-medium">Manage your organization's employees and their details.</p>
-                    </div>
-                    <CommonButton variant="primary" onClick={handleOpenCreate}>
-                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Employee
-                    </CommonButton>
-                </div>
-
-                {/* Toolbar */}
-                <div className="mb-6 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                    <div className="relative max-w-sm w-full">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between gap-4">
+                        <div className="relative flex-1 max-w-sm">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            </div>
+                            <input 
+                                type="text" 
+                                placeholder="Find an employee..." 
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                className="pl-9 pr-4 py-1.5 border border-slate-300 rounded-md text-[11px] w-full focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
+                            />
                         </div>
-                        <input 
-                            type="text" 
-                            placeholder="Search employees..." 
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm w-full focus:ring-2 focus:ring-[#00713D]/20 focus:bg-white transition-all"
-                        />
-                    </div>
-                </div>
 
-                {/* Employee Table */}
-                <div className="bg-white border border-slate-200 rounded-b-xl shadow-sm overflow-hidden">
-                    <table className="w-full text-left border-collapse text-xs">
+                        <CommonButton
+                            variant="primary"
+                            onClick={handleOpenCreate}
+                        >
+                            New employee
+                        </CommonButton>
+                    </div>
+                    {/* Employee Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr className="bg-slate-50/80 border-b border-slate-200">
                                 <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-2/5">Employee</th>
@@ -181,6 +178,7 @@ export default function EmployeeIndex({ employees = [] }) {
                             )}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
 

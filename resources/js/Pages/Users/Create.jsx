@@ -8,7 +8,7 @@ export default function Create({ managers }) {
         name: '',
         email: '',
         role: 'user',
-        phone: '',
+        phone: '+94 ',
     });
 
     function submit(e) {
@@ -29,8 +29,7 @@ export default function Create({ managers }) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                             </div>
-                            <h1 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Create System User</h1>
-                            <p className="text-sm text-slate-500 font-medium mt-1 font-medium tracking-tight">Add a new user with global administrative or standard access.</p>
+                            <h1 className="text-2xl font-black text-slate-900 tracking-tight italic uppercase">Create User</h1>
                         </div>
 
                         <form onSubmit={submit} className="p-10 space-y-8">
@@ -58,9 +57,15 @@ export default function Create({ managers }) {
 
                                 <CommonInput
                                     label="Phone Number"
-                                    placeholder="+1 (555) 000-0000"
+                                    placeholder="+94 7X XXX XXXX"
                                     value={data.phone}
-                                    onChange={(e) => setData('phone', e.target.value)}
+                                    onChange={(e) => {
+                                        let val = e.target.value;
+                                        if (!val.startsWith('+94')) {
+                                            val = '+94 ' + val.replace(/^\+?\d*/, '').trim();
+                                        }
+                                        setData('phone', val);
+                                    }}
                                     error={errors.phone}
                                 />
 

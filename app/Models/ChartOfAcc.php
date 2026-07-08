@@ -48,8 +48,13 @@ class ChartOfAcc extends Model
      */
     public function getBalanceAttribute()
     {
-        $debit = $this->journal_lines_sum_debit ?? $this->journalLines()->sum('debit') ?? 0;
-        $credit = $this->journal_lines_sum_credit ?? $this->journalLines()->sum('credit') ?? 0;
+        if (array_key_exists('journal_lines_sum_debit', $this->attributes)) {
+            $debit = $this->journal_lines_sum_debit ?? 0;
+            $credit = $this->journal_lines_sum_credit ?? 0;
+        } else {
+            $debit = $this->journalLines()->sum('debit') ?? 0;
+            $credit = $this->journalLines()->sum('credit') ?? 0;
+        }
 
         $type = strtolower($this->account_type);
         if (in_array($type, ['asset', 'expense'])) {

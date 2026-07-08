@@ -60,7 +60,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
             'role' => 'required|in:admin,user',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'regex:/^\+94\s?[0-9\s]{9,15}$/', 'max:20'],
         ]);
 
         $activeCompanyId = session('active_company_id');

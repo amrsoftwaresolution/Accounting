@@ -21,33 +21,33 @@ class ItemController extends Controller
             ->where('items.company_id', $companyId);
 
         // Calculate counts before pagination
-        $lowStockCount = (clone $query)->where('track_inventory', true)
-            ->whereNotNull('reorder_point')
-            ->whereRaw('quantity_on_hand <= reorder_point')
-            ->where('quantity_on_hand', '>', 0)
+        $lowStockCount = (clone $query)->where('items.track_inventory', true)
+            ->whereNotNull('items.reorder_point')
+            ->whereRaw('items.quantity_on_hand <= items.reorder_point')
+            ->where('items.quantity_on_hand', '>', 0)
             ->count();
             
-        $outOfStockCount = (clone $query)->where('track_inventory', true)
-            ->where('quantity_on_hand', '<=', 0)
+        $outOfStockCount = (clone $query)->where('items.track_inventory', true)
+            ->where('items.quantity_on_hand', '<=', 0)
             ->count();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('items.name', 'like', '%' . $request->search . '%');
         }
 
         if ($request->filled('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
+            $query->where('items.type', $request->type);
         }
 
         if ($request->filled('stock_status')) {
             if ($request->stock_status === 'low') {
-                $query->where('track_inventory', true)
-                    ->whereNotNull('reorder_point')
-                    ->whereRaw('quantity_on_hand <= reorder_point')
-                    ->where('quantity_on_hand', '>', 0);
+                $query->where('items.track_inventory', true)
+                    ->whereNotNull('items.reorder_point')
+                    ->whereRaw('items.quantity_on_hand <= items.reorder_point')
+                    ->where('items.quantity_on_hand', '>', 0);
             } else if ($request->stock_status === 'out') {
-                $query->where('track_inventory', true)
-                    ->where('quantity_on_hand', '<=', 0);
+                $query->where('items.track_inventory', true)
+                    ->where('items.quantity_on_hand', '<=', 0);
             }
         }
 
