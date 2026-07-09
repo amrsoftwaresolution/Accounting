@@ -168,6 +168,11 @@ class ExpenseController extends Controller
                 // Products
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $qty = (float)str_replace(',', '', $productItem['qty'] ?? 1);
+                        $itemModel->increment('quantity_on_hand', $qty);
+                    }
+
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
@@ -383,6 +388,12 @@ class ExpenseController extends Controller
                         'amount_in_base_currency' => $amountInBaseCurrency,
                     ]);
 
+                    foreach ($expense->items->whereNotNull('item_id') as $oldItem) {
+                        $itemModel = \App\Models\Item::find($oldItem->item_id);
+                        if ($itemModel && $itemModel->type === 'inventory') {
+                            $itemModel->decrement('quantity_on_hand', $oldItem->quantity);
+                        }
+                    }
                     $expense->items()->delete();
 
                     // Categories
@@ -400,6 +411,11 @@ class ExpenseController extends Controller
                     // Products
                     foreach ($productItems as $productItem) {
                         $itemModel = \App\Models\Item::find($productItem['product']);
+                        if ($itemModel && $itemModel->type === 'inventory') {
+                            $qty = (float)str_replace(',', '', $productItem['qty'] ?? 1);
+                            $itemModel->increment('quantity_on_hand', $qty);
+                        }
+
                         $chartOfAccId = $itemModel?->type === 'inventory'
                             ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                             : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
@@ -498,6 +514,12 @@ class ExpenseController extends Controller
         $expense = \App\Models\Expense::find($journalEntry->transactionable_id);
 
         if ($expense) {
+            foreach ($expense->items->whereNotNull('item_id') as $oldItem) {
+                $itemModel = \App\Models\Item::find($oldItem->item_id);
+                if ($itemModel && $itemModel->type === 'inventory') {
+                    $itemModel->decrement('quantity_on_hand', $oldItem->quantity);
+                }
+            }
             $expense->items()->delete();
             $expense->delete();
         }

@@ -197,6 +197,7 @@ class SalesReceiptController extends Controller
 
                     if ($itemModel && $itemModel->type === 'inventory') {
                         $qty = (float) str_replace(',', '', $itemData['qty'] ?? 1);
+                        $itemModel->decrement('quantity_on_hand', $qty);
                         $cogsAmount = $qty * (float) $itemModel->purchase_price;
 
                         if ($cogsAmount > 0) {
@@ -208,7 +209,7 @@ class SalesReceiptController extends Controller
                                 'chart_of_acc_id' => $cogsAccount,
                                 'debit' => $cogsAmount,
                                 'credit' => 0,
-                                'memo' => 'Cost of goods sold: ' . ($itemData['description'] ?? $itemModel->name),
+                                'memo' => 'Cost of goods sold: ' . ($itemData['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                             ]);
 
                             JournalEntryLine::create([
@@ -216,7 +217,7 @@ class SalesReceiptController extends Controller
                                 'chart_of_acc_id' => $inventoryAccount,
                                 'debit' => 0,
                                 'credit' => $cogsAmount,
-                                'memo' => 'Inventory reduction: ' . ($itemData['description'] ?? $itemModel->name),
+                                'memo' => 'Inventory reduction: ' . ($itemData['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                             ]);
                         }
                     }
@@ -358,6 +359,12 @@ class SalesReceiptController extends Controller
                     'statement_message' => $request->statementMessage,
                 ]);
 
+                foreach ($receipt->items as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->increment('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $receipt->items()->delete();
                 foreach ($items as $itemData) {
                     SalesReceiptItem::create([
@@ -406,6 +413,7 @@ class SalesReceiptController extends Controller
 
                     if ($itemModel && $itemModel->type === 'inventory') {
                         $qty = (float) str_replace(',', '', $itemData['qty'] ?? 1);
+                        $itemModel->decrement('quantity_on_hand', $qty);
                         $cogsAmount = $qty * (float) $itemModel->purchase_price;
 
                         if ($cogsAmount > 0) {
@@ -417,7 +425,7 @@ class SalesReceiptController extends Controller
                                 'chart_of_acc_id' => $cogsAccount,
                                 'debit' => $cogsAmount,
                                 'credit' => 0,
-                                'memo' => 'Cost of goods sold: ' . ($itemData['description'] ?? $itemModel->name),
+                                'memo' => 'Cost of goods sold: ' . ($itemData['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                             ]);
 
                             JournalEntryLine::create([
@@ -425,7 +433,7 @@ class SalesReceiptController extends Controller
                                 'chart_of_acc_id' => $inventoryAccount,
                                 'debit' => 0,
                                 'credit' => $cogsAmount,
-                                'memo' => 'Inventory reduction: ' . ($itemData['description'] ?? $itemModel->name),
+                                'memo' => 'Inventory reduction: ' . ($itemData['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                             ]);
                         }
                     }
@@ -458,6 +466,12 @@ class SalesReceiptController extends Controller
             $receipt = SalesReceipt::find($journalEntry->transactionable_id);
 
             if ($receipt) {
+                foreach ($receipt->items as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->increment('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $receipt->items()->delete();
                 $receipt->delete();
             }

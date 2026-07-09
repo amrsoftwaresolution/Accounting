@@ -92,6 +92,12 @@ class CreditNoteController extends Controller
                         'rate' => $itemData['rate'] ?? 0,
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                     ]);
+
+                    $itemModel = \App\Models\Item::find($itemData['product']);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $qty = (float) str_replace(',', '', $itemData['qty'] ?? 1);
+                        $itemModel->increment('quantity_on_hand', $qty);
+                    }
                 }
 
                 // 2. Financial Truth (Journal Entry)
@@ -210,6 +216,12 @@ class CreditNoteController extends Controller
                 ]);
 
                 // Recreate items
+                foreach ($creditNote->items as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->decrement('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $creditNote->items()->delete();
                 foreach ($request->items as $itemData) {
                     CreditNoteItem::create([
@@ -220,6 +232,12 @@ class CreditNoteController extends Controller
                         'rate' => $itemData['rate'] ?? 0,
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                     ]);
+
+                    $itemModel = \App\Models\Item::find($itemData['product']);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $qty = (float) str_replace(',', '', $itemData['qty'] ?? 1);
+                        $itemModel->increment('quantity_on_hand', $qty);
+                    }
                 }
 
                 // 2. Update Financial Truth (Journal Entry)
@@ -283,6 +301,12 @@ class CreditNoteController extends Controller
             $creditNote = CreditNote::find($journalEntry->transactionable_id);
 
             if ($creditNote) {
+                foreach ($creditNote->items as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->decrement('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $creditNote->items()->delete();
                 $creditNote->delete();
             }

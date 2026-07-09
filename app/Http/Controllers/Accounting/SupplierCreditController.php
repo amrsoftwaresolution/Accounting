@@ -130,6 +130,11 @@ class SupplierCreditController extends Controller
                 // Create Credit Note Items (Products)
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $qty = (float)str_replace(',', '', $productItem['qty'] ?? 1);
+                        $itemModel->decrement('quantity_on_hand', $qty);
+                    }
+
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
@@ -303,6 +308,12 @@ class SupplierCreditController extends Controller
                 ]);
 
                 // Recreate Items
+                foreach ($creditNote->items->whereNotNull('item_id') as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->increment('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $creditNote->items()->delete();
 
                 // Create Credit Note Items (Categories)
@@ -320,6 +331,11 @@ class SupplierCreditController extends Controller
                 // Create Credit Note Items (Products)
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $qty = (float)str_replace(',', '', $productItem['qty'] ?? 1);
+                        $itemModel->decrement('quantity_on_hand', $qty);
+                    }
+
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
@@ -419,6 +435,12 @@ class SupplierCreditController extends Controller
             $creditNote = SupplierCreditNote::find($journalEntry->transactionable_id);
 
             if ($creditNote) {
+                foreach ($creditNote->items->whereNotNull('item_id') as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->increment('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $creditNote->items()->delete();
                 $creditNote->delete();
             }
