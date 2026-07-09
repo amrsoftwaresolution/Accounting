@@ -202,22 +202,35 @@ const handleCurrencyBlur = (index, key, rawValue) => {
                                                     ref={(node) => {
                                                         inputRefs.current[`${index}-${col.key}`] = node;
                                                     }}
-                                                    type={col.type === 'currency' ? 'text' : (col.type || "text")}
+                                                    type={col.type === 'currency' || col.type === 'number' ? 'text' : (col.type || "text")}
                                                     variant="table"
                                                     size="sm"
                                                     value={item[col.key] || ""}
                                                     onChange={(e) => col.type === 'currency'
-                                                        ? handleCurrencyChange(index, col.key, e.target.value)
-                                                        : handleItemChange(index, col.key, e.target.value)
-                                                    }
+    ? handleCurrencyChange(index, col.key, e.target.value)
+    : col.type === 'number'
+    ? handleItemChange(index, col.key, String(e.target.value).replace(/,/g, ''))
+    : handleItemChange(index, col.key, e.target.value)
+}
                                                     min={col.min}
                                                     onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
-                                                    onFocus={col.type === 'currency' ? handleCurrencyFocus : (col.key === 'description' ? handleDescriptionFocus : undefined)}
+                                                    onFocus={col.type === 'currency'
+    ? handleCurrencyFocus
+    : col.type === 'number'
+    ? (e) => { e.target.value = String(e.target.value).replace(/,/g, ''); e.target.select(); }
+    : col.key === 'description'
+    ? handleDescriptionFocus
+    : undefined}
                                                     onClick={col.key === 'description' ? (e) => e.currentTarget.select() : undefined}
                                                     onBlur={col.type === 'currency'
-                                                        ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
-                                                        : undefined
-                                                    }
+    ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
+    : col.type === 'number'
+    ? (e) => {
+        const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
+        handleItemChange(index, col.key, num.toLocaleString('en-US'));
+    }
+    : undefined
+}
                                                     placeholder={col.placeholder || ""}
                                                     className={col.inputClass || ''}
                                                     tabIndex={col.tabIndex ?? 0}
