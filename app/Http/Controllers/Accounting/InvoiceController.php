@@ -42,17 +42,16 @@ class InvoiceController extends Controller
                 'dueDate' => $journalEntry->due_date,
                 'memo' => $journalEntry->description,
                 'statementMessage' => $invoice?->statement_message ?? '',
-                'items' => $journalEntry->lines->where('credit', '>', 0)->map(function ($line) {
-                    $item = \App\Models\Item::where('income_account_id', $line->chart_of_acc_id)->first();
+                'items' => $invoice?->items->map(function ($invoiceItem) {
                     return [
-                        'product' => $item?->id,
-                        'description' => $line->memo,
-                        'serviceDate' => $line->service_date,
-                        'amount' => $line->credit,
-                        'qty' => 1,
-                        'rate' => $line->credit,
+                        'product' => $invoiceItem->item_id,
+                        'description' => $invoiceItem->description,
+                        'serviceDate' => $invoiceItem->service_date,
+                        'amount' => $invoiceItem->amount,
+                        'qty' => $invoiceItem->quantity,
+                        'rate' => $invoiceItem->rate,
                     ];
-                })->values()->toArray(),
+                })->toArray() ?? [],
             ];
 
             return Inertia::render('Transaction/InvoiceForm', [
@@ -135,6 +134,7 @@ class InvoiceController extends Controller
 
                 if ($itemModel && $itemModel->type === 'inventory') {
                     $qty = (float) str_replace(',', '', $lineItem['qty'] ?? 1);
+                    $itemModel->decrement('quantity_on_hand', $qty);
                     $cogsAmount = $qty * (float) $itemModel->purchase_price;
 
                     if ($cogsAmount > 0) {
@@ -146,7 +146,7 @@ class InvoiceController extends Controller
                             'chart_of_acc_id' => $cogsAccount,
                             'debit' => $cogsAmount,
                             'credit' => 0,
-                            'memo' => 'Cost of goods sold: ' . ($lineItem['description'] ?? $itemModel->name),
+                            'memo' => 'Cost of goods sold: ' . ($lineItem['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                         ]);
 
                         JournalEntryLine::create([
@@ -154,7 +154,7 @@ class InvoiceController extends Controller
                             'chart_of_acc_id' => $inventoryAccount,
                             'debit' => 0,
                             'credit' => $cogsAmount,
-                            'memo' => 'Inventory reduction: ' . ($lineItem['description'] ?? $itemModel->name),
+                            'memo' => 'Inventory reduction: ' . ($lineItem['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                         ]);
                     }
                 }
@@ -203,17 +203,16 @@ class InvoiceController extends Controller
             'dueDate' => $journalEntry->due_date,
             'memo' => $journalEntry->description,
             'statementMessage' => $invoice?->statement_message ?? '',
-            'items' => $journalEntry->lines->where('credit', '>', 0)->map(function ($line) {
-                $item = \App\Models\Item::where('income_account_id', $line->chart_of_acc_id)->first();
+            'items' => $invoice?->items->map(function ($invoiceItem) {
                 return [
-                    'product' => $item?->id,
-                    'description' => $line->memo,
-                    'serviceDate' => $line->service_date,
-                    'amount' => $line->credit,
-                    'qty' => 1,
-                    'rate' => $line->credit,
+                    'product' => $invoiceItem->item_id,
+                    'description' => $invoiceItem->description,
+                    'serviceDate' => $invoiceItem->service_date,
+                    'amount' => $invoiceItem->amount,
+                    'qty' => $invoiceItem->quantity,
+                    'rate' => $invoiceItem->rate,
                 ];
-            })->values()->toArray(),
+            })->toArray() ?? [],
         ];
 
         return Inertia::render('Transaction/InvoiceForm', [
@@ -249,6 +248,12 @@ class InvoiceController extends Controller
                     'statement_message' => $request->statementMessage,
                 ]);
 
+                foreach ($invoice->items as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->increment('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $invoice->items()->delete();
                 foreach ($request->items as $lineItem) {
                     \App\Models\InvoiceItem::create([
@@ -290,6 +295,7 @@ class InvoiceController extends Controller
 
                 if ($itemModel && $itemModel->type === 'inventory') {
                     $qty = (float) str_replace(',', '', $lineItem['qty'] ?? 1);
+                    $itemModel->decrement('quantity_on_hand', $qty);
                     $cogsAmount = $qty * (float) $itemModel->purchase_price;
 
                     if ($cogsAmount > 0) {
@@ -301,7 +307,7 @@ class InvoiceController extends Controller
                             'chart_of_acc_id' => $cogsAccount,
                             'debit' => $cogsAmount,
                             'credit' => 0,
-                            'memo' => 'Cost of goods sold: ' . ($lineItem['description'] ?? $itemModel->name),
+                            'memo' => 'Cost of goods sold: ' . ($lineItem['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                         ]);
 
                         JournalEntryLine::create([
@@ -309,7 +315,7 @@ class InvoiceController extends Controller
                             'chart_of_acc_id' => $inventoryAccount,
                             'debit' => 0,
                             'credit' => $cogsAmount,
-                            'memo' => 'Inventory reduction: ' . ($lineItem['description'] ?? $itemModel->name),
+                            'memo' => 'Inventory reduction: ' . ($lineItem['description'] ?? $itemModel->name) . " (Qty: {$qty})",
                         ]);
                     }
                 }
@@ -346,6 +352,12 @@ class InvoiceController extends Controller
             $invoice = \App\Models\Invoice::find($journalEntry->transactionable_id);
 
             if ($invoice) {
+                foreach ($invoice->items as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->increment('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $invoice->items()->delete();
                 $invoice->delete();
             }

@@ -132,6 +132,11 @@ class BillController extends Controller
                 // Create Bill Items (Products)
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $qty = (float)str_replace(',', '', $productItem['qty'] ?? 1);
+                        $itemModel->increment('quantity_on_hand', $qty);
+                    }
+
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                         : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
@@ -313,6 +318,12 @@ class BillController extends Controller
                         'memo' => $request->memo,
                     ]);
 
+                    foreach ($bill->items->whereNotNull('item_id') as $oldItem) {
+                        $itemModel = \App\Models\Item::find($oldItem->item_id);
+                        if ($itemModel && $itemModel->type === 'inventory') {
+                            $itemModel->decrement('quantity_on_hand', $oldItem->quantity);
+                        }
+                    }
                     $bill->items()->delete();
 
                     // Categories
@@ -331,6 +342,11 @@ class BillController extends Controller
                     // Products
                     foreach ($productItems as $productItem) {
                         $itemModel = \App\Models\Item::find($productItem['product']);
+                        if ($itemModel && $itemModel->type === 'inventory') {
+                            $qty = (float)str_replace(',', '', $productItem['qty'] ?? 1);
+                            $itemModel->increment('quantity_on_hand', $qty);
+                        }
+
                         $chartOfAccId = $itemModel?->type === 'inventory'
                             ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
                             : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
@@ -435,6 +451,12 @@ class BillController extends Controller
             $bill = Bill::find($journalEntry->transactionable_id);
 
             if ($bill) {
+                foreach ($bill->items->whereNotNull('item_id') as $oldItem) {
+                    $itemModel = \App\Models\Item::find($oldItem->item_id);
+                    if ($itemModel && $itemModel->type === 'inventory') {
+                        $itemModel->decrement('quantity_on_hand', $oldItem->quantity);
+                    }
+                }
                 $bill->items()->delete();
                 $bill->delete();
             }
