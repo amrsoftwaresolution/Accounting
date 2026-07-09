@@ -34,11 +34,13 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     const dropdownRef = useRef(null);
     const inputRef = useRef(null);
 
-    const filteredOptions = onSearch
+    const [isAsyncMode, setIsAsyncMode] = useState(false);
+
+    const filteredOptions = isAsyncMode
     ? searchResults.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()))
     : options.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()));
 
-    const displayOptions = (search === "" && initialLimit && !onSearch)
+    const displayOptions = (search === "" && initialLimit && !isAsyncMode)
         ? filteredOptions.slice(0, initialLimit)
         : filteredOptions;
 
@@ -64,7 +66,10 @@ useEffect(() => {
     if (!onSearch || !isOpen) return;
     const result = onSearch(search);
     if (result && typeof result.then === 'function') {
+        setIsAsyncMode(true);
         result.then(data => setSearchResults(data || []));
+    } else {
+        setIsAsyncMode(false);
     }
 }, [search, isOpen]);
 
