@@ -154,8 +154,10 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                     const currentRef = data.depositNo || nextDepositNo || '1001';
                     const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
                     const nextRef = String(num + 1).padStart(4, '0');
+                    const currentDate = data.depositDate;
                     reset();
                     setData('depositNo', nextRef);
+                    setData('depositDate', currentDate);
                     clearErrors();
                     setIsDirty(false);
                 }
