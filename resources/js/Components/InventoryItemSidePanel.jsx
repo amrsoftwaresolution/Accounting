@@ -157,6 +157,8 @@ export default function InventoryItemSidePanel({
     };
 
     useEffect(() => {
+        setShowHistoricalModal(false);
+        setPendingAccountId(null);
         if (isOpen) {
             setIsLoadingOptions(true);
             axios.get(route('api.items.create-options'))
@@ -410,6 +412,10 @@ export default function InventoryItemSidePanel({
     const showBundleSection = data.type === 'bundle';
     const showToggles = data.type === 'service' || data.type === 'non-inventory';
 
+    //inventory account change alert
+    const [showHistoricalModal, setShowHistoricalModal] = useState(false);
+    const [pendingAccountId, setPendingAccountId] = useState(null);
+
     return (
         <SlideOver
             isOpen={isOpen}
@@ -596,7 +602,14 @@ export default function InventoryItemSidePanel({
                                 <SearchableSelect
                                     options={localInventoryAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
                                     value={data.inventory_account_id}
-                                    onChange={val => setData('inventory_account_id', val)}
+                                    onChange={val => {
+                                        if (isEdit) {
+                                            setPendingAccountId(val);
+                                            setShowHistoricalModal(true);
+                                        } else {
+                                            setData('inventory_account_id', val);
+                                        }
+                                    }}
                                     placeholder="Link to Inventory Asset"
                                     onAddNew={() => {
                                         setAccountModalType('asset');
@@ -796,7 +809,7 @@ export default function InventoryItemSidePanel({
                         </div>
                     )}
 
-                    {item && (data.inventory_account_id !== item.inventory_account_id || data.income_account_id !== item.income_account_id || data.expense_account_id !== item.expense_account_id) && (
+                    {/* {item && (data.inventory_account_id !== item.inventory_account_id || data.income_account_id !== item.income_account_id || data.expense_account_id !== item.expense_account_id) && (
                         <div className="mt-4 flex items-start p-3 bg-amber-50 rounded border border-amber-200">
                             <input
                                 type="checkbox"
@@ -810,7 +823,53 @@ export default function InventoryItemSidePanel({
                                 Check this if you want past invoices and bills to use the new accounts. (Warning: This will change past financial reports).
                             </label>
                         </div>
-                    )}
+                    )} */}
+
+                {/* // alert msg for inventory account change */}
+                {showHistoricalModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-lg shadow-xl w-[400px] p-6 border border-slate-200">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-sm font-bold text-slate-800">Update Historical Transactions?</h3>
+                        </div>
+                        <p className="text-xs text-slate-600 mb-5 leading-relaxed">
+                            Do you want past invoices and bills to use the new account?
+                            <span className="block mt-1 text-amber-700 font-semibold">Warning: This will affect past financial reports.</span>
+                        </p>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setData('inventory_account_id', pendingAccountId);
+                                    setData('update_historical', false);
+                                    setShowHistoricalModal(false);
+                                    setPendingAccountId(null);
+                                }}
+                                className="px-4 py-1.5 text-xs font-bold border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50 transition-all"
+                            >
+                                No, Keep Old
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setData('inventory_account_id', pendingAccountId);
+                                    setData('update_historical', true);
+                                    setShowHistoricalModal(false);
+                                    setPendingAccountId(null);
+                                }}
+                                className="px-4 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-all"
+                            >
+                                Yes, Update All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
                     <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
                         <CommonButton variant="ghost" onClick={onClose} type="button" size="sm">Cancel</CommonButton>
