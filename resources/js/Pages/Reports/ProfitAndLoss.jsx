@@ -21,8 +21,8 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
         });
     };
 
-    const handleDisplayByChange = (e) => {
-        const val = e.target.value;
+    const toggleDisplayBy = () => {
+        const val = displayBy === 'total' ? 'month' : 'total';
         setDisplayBy(val);
         router.get(route('reports.profit-loss'), { 
             start_date: filters.start_date, 
@@ -201,23 +201,18 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     };
 
     const filterElements = (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-row flex-wrap items-end gap-3 mb-4">
             <ReportDateFilter 
                 currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
                 onFilterChange={handleFilterChange}
             />
-            <div className="w-[160px] pb-[1px]">
-                <CommonInput
-                    type="select"
-                    label="Display columns by"
-                    value={displayBy}
-                    onChange={handleDisplayByChange}
-                    size="sm"
-                >
-                    <option value="total">Total Only</option>
-                    <option value="month">Months</option>
-                </CommonInput>
-            </div>
+            <button
+                onClick={toggleDisplayBy}
+                className="flex items-center gap-1.5 hover:text-gray-900 transition-colors h-[30px] px-3 border border-slate-300 rounded-sm text-xs text-slate-700 bg-white shadow-sm hover:bg-slate-50 focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+            >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                {displayBy === 'month' ? 'View Totals' : 'View by Month'}
+            </button>
         </div>
     );
 

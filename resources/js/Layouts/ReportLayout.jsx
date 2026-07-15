@@ -41,11 +41,11 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
             const element = document.getElementById('report-content');
             const cleanTitle = title ? title.replace(/[^a-z0-9]/gi, '_') : 'Report';
             const opt = {
-                margin:       [0.4, 0.4, 0.4, 0.4],
-                filename:     `${cleanTitle}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                margin: [0.4, 0.4, 0.4, 0.4],
+                filename: `${cleanTitle}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(element).save();
         }).catch(err => {
@@ -64,9 +64,9 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                     <div className="flex items-center gap-4">
                         {filters}
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-[13px] font-medium text-gray-700">
-                        <button className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
+                        {/* <button className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                             Columns
                         </button>
@@ -77,19 +77,19 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                         <button className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                             General options
-                        </button>
+                        </button> */}
 
                         <div className="flex gap-2 ml-4 pl-4 border-l border-gray-300">
-                            <button 
+                            <button
                                 onClick={() => window.print()}
                                 className="flex items-center gap-1.5 hover:text-gray-900 transition-colors"
                                 title="Print"
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             </button>
-                            
+
                             <div className="relative" ref={dropdownRef}>
-                                <button 
+                                <button
                                     onClick={() => setIsOpen(!isOpen)}
                                     className="flex items-center gap-1.5 hover:text-gray-900 transition-colors"
                                     title="Export"
@@ -102,14 +102,14 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
 
                                 {isOpen && (
                                     <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg z-50 py-1">
-                                        <button 
+                                        <button
                                             onClick={() => { setIsOpen(false); handleExportPDF(); }}
                                             className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100"
                                         >
                                             Export to PDF
                                         </button>
                                         {onExportExcel && (
-                                            <button 
+                                            <button
                                                 onClick={() => { setIsOpen(false); onExportExcel(); }}
                                                 className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100 border-t border-gray-100"
                                             >
@@ -129,8 +129,9 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                         {children}
                     </div>
                 </div>
-                
-                <style dangerouslySetInnerHTML={{ __html: `
+
+                <style dangerouslySetInnerHTML={{
+                    __html: `
                     @media print {
                         body { background: white !important; }
                         .no-print { display: none !important; }

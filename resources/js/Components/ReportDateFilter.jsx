@@ -116,9 +116,9 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
     }, [currentFilter]);
 
     return (
-        <div className="flex flex-col sm:flex-row items-end gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
-            <div className="w-full sm:w-64">
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Date Range</label>
+        <div className="flex flex-col sm:flex-row items-end gap-3">
+            <div className="w-full sm:w-48">
+                <label className="font-bold text-slate-600 ml-0.5 text-xs mb-1 block">Date Range</label>
                 <select
                     value={filterType}
                     onChange={(e) => {
@@ -127,7 +127,7 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             handleApply(e.target.value);
                         }
                     }}
-                    className="w-full h-11 border-slate-200 rounded-lg text-sm focus:ring-primary focus:border-primary transition-colors bg-slate-50 hover:bg-white cursor-pointer"
+                    className="w-full h-[30px] py-0 border border-slate-300 rounded-sm text-xs focus:ring-green-500/20 focus:border-green-500 transition-colors bg-white cursor-pointer shadow-sm text-slate-900"
                 >
                     <option value="all_dates">All Dates</option>
                     <option value="custom">Custom Date</option>
@@ -147,7 +147,7 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
 
             {filterType === 'custom' && (
                 <>
-                    <div className="w-full sm:w-48">
+                    <div className="w-full sm:w-36">
                         <CommonInput
                             label="Start Date"
                             type="date"
@@ -158,7 +158,7 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             onBlur={() => handleApply('custom', startDate, endDate)}
                         />
                     </div>
-                    <div className="w-full sm:w-48">
+                    <div className="w-full sm:w-36">
                         <CommonInput
                             label="End Date"
                             type="date"
@@ -177,7 +177,7 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                     <button
                         type="button"
                         onClick={() => handleApply('custom', startDate, endDate)}
-                        className="w-full sm:w-auto h-11 px-6 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+                        className="w-full sm:w-auto h-[30px] px-4 bg-primary text-white text-xs font-semibold rounded-sm hover:bg-primary-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
                     >
                         Apply
                     </button>
