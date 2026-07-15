@@ -169,15 +169,15 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
                                                     <CommonButton
                                                         variant="ghost"
                                                         size="xs"
-                                                        href={route('chart-of-account.history', account.id)}
+                                                        onClick={() => handleOpenEdit(account)}
                                                     >
-                                                        History
+                                                        Edit
                                                     </CommonButton>
                                                 ) : (
                                                     <CommonButton
                                                         variant="ghost"
                                                         size="xs"
-                                                        href={route('reports.profit-loss')}
+                                                        href={route('chart-of-account.history', account.id)}
                                                     >
                                                         Run Report
                                                     </CommonButton>

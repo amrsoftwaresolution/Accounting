@@ -1,5 +1,6 @@
-import { router, usePage } from '@inertiajs/react';
+import { router, usePage, Head } from '@inertiajs/react';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 const typeLabel = (type = '') => {
     return String(type || '')
@@ -23,10 +24,12 @@ const getEditRoute = (type) => {
 export default function TransactionHistoryPage() {
     const { records = [], transactionType = 'invoice' } = usePage().props;
     const dateFormat = useDateFormat();
+    const title = `${typeLabel(transactionType)} History`;
 
     return (
-        <div className="min-h-screen bg-slate-50">
-            <div className="mx-auto flex max-w-3xl flex-col px-6 py-8">
+        <AuthenticatedLayout header={title}>
+            <Head title={title} />
+            <div className="mx-auto flex max-w-5xl flex-col px-6 py-8">
                 <div className="mb-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">History</p>
@@ -34,10 +37,10 @@ export default function TransactionHistoryPage() {
                     </div>
                     <button
                         type="button"
-                        onClick={() => router.visit(route('dashboard'))}
+                        onClick={() => window.history.back()}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-600 hover:bg-slate-100"
                     >
-                        Close
+                        Back
                     </button>
                 </div>
 
@@ -45,24 +48,60 @@ export default function TransactionHistoryPage() {
                     <div className="border-b border-slate-100 px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
                         All records
                     </div>
-                    <div className="max-h-[70vh] overflow-y-auto p-2 text-[11px] text-slate-700">
+                    <div className="max-h-[70vh] overflow-y-auto p-0 text-[11px] text-slate-700">
                         {records.length === 0 ? (
                             <div className="px-3 py-8 text-center text-[10px] uppercase tracking-[0.25em] text-slate-400">No history found</div>
                         ) : (
-                            records.map((record) => (
-                                <button
-                                    key={record.id}
-                                    type="button"
-                                    onClick={() => router.visit(route(getEditRoute(transactionType), record.id))}
-                                    className="mb-1 block w-full rounded-lg px-3 py-2 text-left text-[11px] text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:bg-slate-100"
-                                >
-                                    {record.number || record.id} • {formatDate(record.date, dateFormat) || '—'} • {record.name || '—'}
-                                </button>
-                            ))
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 z-10">
+                                    <tr>
+                                        <th className="py-2.5 px-4 font-semibold text-slate-600 w-[12%]">Date</th>
+                                        <th className="py-2.5 px-4 font-semibold text-slate-600 w-[12%]">Ref No.</th>
+                                        <th className="py-2.5 px-4 font-semibold text-slate-600 w-[20%]">Payee / Account</th>
+                                        <th className="py-2.5 px-4 font-semibold text-slate-600 w-[24%]">Memo</th>
+                                        <th className="py-2.5 px-4 font-semibold text-slate-600 text-right w-[12%]">Debit</th>
+                                        <th className="py-2.5 px-4 font-semibold text-slate-600 text-right w-[12%]">Credit</th>
+                                        <th className="py-2.5 px-4 w-[8%]"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {records.map((record) => (
+                                        <tr key={record.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <td className="px-4 py-3 text-slate-600 font-mono">
+                                                {formatDate(record.date, dateFormat) || '—'}
+                                            </td>
+                                            <td className="px-4 py-3 font-bold text-slate-800 font-mono">
+                                                {record.ref_no || record.id}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-800 font-bold">
+                                                {record.payee_account || '—'}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate" title={record.memo}>
+                                                {record.memo || '—'}
+                                            </td>
+                                            <td className="px-4 py-3 font-bold text-slate-900 text-right font-mono">
+                                                {record.debit > 0 ? parseFloat(record.debit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3 font-bold text-slate-900 text-right font-mono">
+                                                {record.credit > 0 ? parseFloat(record.credit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => router.visit(route(getEditRoute(transactionType), record.id))}
+                                                    className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-[10px] font-bold text-slate-600 transition-all shadow-sm"
+                                                >
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </AuthenticatedLayout>
     );
 }

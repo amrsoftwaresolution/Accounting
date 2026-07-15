@@ -43,7 +43,7 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
                 { name: "Bill", href: "/bill" },
                { name: "Pay Bill", href: route('pay-bill') },
                 // { name: "Purchase order", href: "#" },
-                { name: "Supplier Return", href: "/SupplierCredit" },
+                { name: "Supplier Return", href: "/supplier-return" },
                 {name: "Cheque", href: "/cheque"},
                 { name: "Add Supplier", action: 'supplier', isSolid: true },
 

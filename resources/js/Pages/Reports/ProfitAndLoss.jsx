@@ -8,6 +8,19 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 export default function ProfitAndLoss({ reportData, filters, auth }) {
     const dateFormat = useDateFormat();
     const [displayBy, setDisplayBy] = useState(filters.display_by || 'total');
+    const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+
+    const toggleGroup = (id) => {
+        setCollapsedGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
 
     const handleFilterChange = (newFilters) => {
         router.get(route('reports.profit-loss'), { 
@@ -218,12 +231,21 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
 
     const AccountRow = ({ item, depth = 0 }) => {
         const hasChildren = item.children && item.children.length > 0;
-        const paddingLeft = `${2 + depth * 1.5}rem`;
+        const isCollapsed = collapsedGroups.has(item.id);
+        const paddingLeft = `${1.5 + depth * 1.5}rem`;
 
         return (
             <React.Fragment>
-                <tr className="hover:bg-gray-50 transition-colors">
+                <tr 
+                    className={`hover:bg-gray-50 transition-colors ${hasChildren ? 'cursor-pointer' : ''}`}
+                    onClick={() => hasChildren && toggleGroup(item.id)}
+                >
                     <td className="py-2 px-3 text-gray-900" style={{ paddingLeft }}>
+                        {hasChildren && (
+                            <span className="inline-block mr-2 text-[10px] w-3 text-center text-gray-500">
+                                {isCollapsed ? '▶' : '▼'}
+                            </span>
+                        )}
                         {item.name}
                     </td>
                     {isMonthWise && monthCols.map(ym => {
@@ -231,28 +253,35 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         const sDate = `${ym}-01`;
                         const lastDay = new Date(y, m, 0).getDate();
                         const eDate = `${ym}-${lastDay.toString().padStart(2, '0')}`;
+                        
+                        const displayVal = (hasChildren && isCollapsed) ? item.total_monthly_balances?.[ym] : item.monthly_balances?.[ym];
+                        
                         return (
                             <td key={ym} className="py-2 px-3 text-right tabular-nums">
-                                {hasChildren && (item.monthly_balances?.[ym] || 0) === 0 ? null : (
-                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + sDate + '&end_date=' + eDate} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                        <Currency value={item.monthly_balances?.[ym] || 0} />
+                                {(hasChildren && !isCollapsed && (item.monthly_balances?.[ym] || 0) === 0) ? null : (
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + sDate + '&end_date=' + eDate} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4" onClick={(e) => hasChildren && e.stopPropagation()}>
+                                        <Currency value={displayVal || 0} />
                                     </Link>
                                 )}
                             </td>
                         );
                     })}
                     <td className="py-2 px-3 text-right tabular-nums">
-                        {hasChildren && item.balance === 0 ? null : (
-                            <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
-                                <Currency value={item.balance} />
-                            </Link>
-                        )}
+                        {(() => {
+                            const displayVal = (hasChildren && isCollapsed) ? item.total_balance : item.balance;
+                            if (hasChildren && !isCollapsed && item.balance === 0) return null;
+                            return (
+                                <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4 font-medium" onClick={(e) => hasChildren && e.stopPropagation()}>
+                                    <Currency value={displayVal || 0} />
+                                </Link>
+                            );
+                        })()}
                     </td>
                 </tr>
-                {hasChildren && item.children.map(child => (
+                {hasChildren && !isCollapsed && item.children.map(child => (
                     <AccountRow key={child.id} item={child} depth={depth + 1} />
                 ))}
-                {hasChildren && (
+                {hasChildren && !isCollapsed && (
                     <tr className="hover:bg-gray-50 transition-colors font-medium border-t border-gray-100">
                         <td className="py-2 px-3 text-gray-700" style={{ paddingLeft }}>
                             Total {item.name}
@@ -262,7 +291,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                                 <Currency value={item.total_monthly_balances?.[ym] || 0} />
                             </td>
                         ))}
-                        <td className="py-2 px-3 text-right tabular-nums">
+                        <td className="py-2 px-3 text-right tabular-nums border-t border-gray-200">
                             <Currency value={item.total_balance} />
                         </td>
                     </tr>
@@ -306,38 +335,68 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {/* Income Section */}
-                        <tr className="bg-gray-50 border-y border-gray-300">
-                            <td colSpan={isMonthWise ? monthCols.length + 2 : 2} className="py-2 px-3 font-bold text-gray-900">
-                                <span className="inline-block mr-1 text-[10px]">▼</span> Income
+                        <tr 
+                            className="bg-gray-50 border-y border-gray-300 cursor-pointer hover:bg-gray-100"
+                            onClick={() => toggleGroup('Income')}
+                        >
+                            <td className="py-2 px-3 font-bold text-gray-900">
+                                <span className="inline-block mr-1 text-[10px] w-3 text-center text-gray-600">
+                                    {collapsedGroups.has('Income') ? '▶' : '▼'}
+                                </span> Income
+                            </td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900 font-bold">
+                                    {collapsedGroups.has('Income') && <Currency value={totalIncomeMonthly[ym] || 0} />}
+                                </td>
+                            ))}
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900 font-bold">
+                                {collapsedGroups.has('Income') && <Currency value={totalIncome} />}
                             </td>
                         </tr>
-                        {income.map((item) => (
+                        {!collapsedGroups.has('Income') && income.map((item) => (
                             <AccountRow key={item.id} item={item} />
                         ))}
-                        <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
-                            <td className="py-2 px-3 pl-8 text-gray-900">Total Income</td>
-                            {isMonthWise && monthCols.map(ym => (
-                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncomeMonthly[ym] || 0} /></td>
-                            ))}
-                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncome} /></td>
-                        </tr>
+                        {!collapsedGroups.has('Income') && (
+                            <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
+                                <td className="py-2 px-3 pl-8 text-gray-900">Total Income</td>
+                                {isMonthWise && monthCols.map(ym => (
+                                    <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncomeMonthly[ym] || 0} /></td>
+                                ))}
+                                <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalIncome} /></td>
+                            </tr>
+                        )}
 
                         {/* Cost of Goods Sold Section */}
-                        <tr className="bg-gray-50 border-y border-gray-300">
-                            <td colSpan={isMonthWise ? monthCols.length + 2 : 2} className="py-2 px-3 font-bold text-gray-900 mt-4">
-                                <span className="inline-block mr-1 text-[10px]">▼</span> Cost of Goods Sold
+                        <tr 
+                            className="bg-gray-50 border-y border-gray-300 cursor-pointer hover:bg-gray-100"
+                            onClick={() => toggleGroup('COGS')}
+                        >
+                            <td className="py-2 px-3 font-bold text-gray-900 mt-4">
+                                <span className="inline-block mr-1 text-[10px] w-3 text-center text-gray-600">
+                                    {collapsedGroups.has('COGS') ? '▶' : '▼'}
+                                </span> Cost of Goods Sold
+                            </td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900 font-bold">
+                                    {collapsedGroups.has('COGS') && <Currency value={totalCogsMonthly[ym] || 0} />}
+                                </td>
+                            ))}
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900 font-bold">
+                                {collapsedGroups.has('COGS') && <Currency value={totalCogs} />}
                             </td>
                         </tr>
-                        {cogs.map((item) => (
+                        {!collapsedGroups.has('COGS') && cogs.map((item) => (
                             <AccountRow key={item.id} item={item} />
                         ))}
-                        <tr className="border-t border-b border-gray-300 bg-white font-semibold">
-                            <td className="py-2 px-3 pl-8 text-gray-900">Total Cost of Goods Sold</td>
-                            {isMonthWise && monthCols.map(ym => (
-                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalCogsMonthly[ym] || 0} /></td>
-                            ))}
-                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalCogs} /></td>
-                        </tr>
+                        {!collapsedGroups.has('COGS') && (
+                            <tr className="border-t border-b border-gray-300 bg-white font-semibold">
+                                <td className="py-2 px-3 pl-8 text-gray-900">Total Cost of Goods Sold</td>
+                                {isMonthWise && monthCols.map(ym => (
+                                    <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalCogsMonthly[ym] || 0} /></td>
+                                ))}
+                                <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalCogs} /></td>
+                            </tr>
+                        )}
 
                         {/* Gross Profit */}
                         <tr className="border-b-2 border-gray-300 font-bold bg-white text-[13px]">
@@ -349,21 +408,36 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                         </tr>
 
                         {/* Expense Section */}
-                        <tr className="bg-gray-50 border-y border-gray-300">
-                            <td colSpan={isMonthWise ? monthCols.length + 2 : 2} className="py-2 px-3 font-bold text-gray-900 mt-4">
-                                <span className="inline-block mr-1 text-[10px]">▼</span> Expenses
+                        <tr 
+                            className="bg-gray-50 border-y border-gray-300 cursor-pointer hover:bg-gray-100"
+                            onClick={() => toggleGroup('Expense')}
+                        >
+                            <td className="py-2 px-3 font-bold text-gray-900 mt-4">
+                                <span className="inline-block mr-1 text-[10px] w-3 text-center text-gray-600">
+                                    {collapsedGroups.has('Expense') ? '▶' : '▼'}
+                                </span> Expenses
+                            </td>
+                            {isMonthWise && monthCols.map(ym => (
+                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900 font-bold">
+                                    {collapsedGroups.has('Expense') && <Currency value={totalExpenseMonthly[ym] || 0} />}
+                                </td>
+                            ))}
+                            <td className="py-2 px-3 text-right tabular-nums text-gray-900 font-bold">
+                                {collapsedGroups.has('Expense') && <Currency value={totalExpense} />}
                             </td>
                         </tr>
-                        {expense.map((item) => (
+                        {!collapsedGroups.has('Expense') && expense.map((item) => (
                             <AccountRow key={item.id} item={item} />
                         ))}
-                        <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
-                            <td className="py-2 px-3 pl-8 text-gray-900">Total Expenses</td>
-                            {isMonthWise && monthCols.map(ym => (
-                                <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalExpenseMonthly[ym] || 0} /></td>
-                            ))}
-                            <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalExpense} /></td>
-                        </tr>
+                        {!collapsedGroups.has('Expense') && (
+                            <tr className="border-t border-b-2 border-gray-300 bg-white font-semibold">
+                                <td className="py-2 px-3 pl-8 text-gray-900">Total Expenses</td>
+                                {isMonthWise && monthCols.map(ym => (
+                                    <td key={ym} className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalExpenseMonthly[ym] || 0} /></td>
+                                ))}
+                                <td className="py-2 px-3 text-right tabular-nums text-gray-900"><Currency value={totalExpense} /></td>
+                            </tr>
+                        )}
 
                         {/* Net Income */}
                         <tr className="border-t-2 border-b-4 border-gray-400 font-bold bg-white text-[14px]">

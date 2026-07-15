@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
-import { Head, Link, router } from '@inertiajs/react';
-import ReportDateFilter from '@/Components/ReportDateFilter';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import ReportDateFilter from '@/Components/ReportDateFilter';
 
-export default function SalesByItem({ reportData, filters, auth }) {
+export default function AllInventoryDetail({ reportData = [], filters = {} }) {
+    const { auth } = usePage().props;
+    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
     const dateFormat = useDateFormat();
+
     const [collapsedGroups, setCollapsedGroups] = useState(new Set());
 
     const toggleGroup = (id) => {
@@ -37,7 +40,7 @@ export default function SalesByItem({ reportData, filters, auth }) {
     };
 
     const handleFilterChange = (newFilters) => {
-        router.get(route('reports.sales-by-item'), { 
+        router.get(route('reports.inventory-detail-all'), { 
             start_date: newFilters.start_date, 
             end_date: newFilters.end_date,
             type: newFilters.type 
@@ -47,48 +50,6 @@ export default function SalesByItem({ reportData, filters, auth }) {
         });
     };
 
-    const items = reportData || [];
-    const totalAmount = items.reduce((sum, group) => sum + parseFloat(group.item.total_amount || 0), 0);
-    const totalQuantity = items.reduce((sum, group) => sum + parseFloat(group.item.total_qty || 0), 0);
-
-    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
-
-    const Currency = ({ value }) => (
-        <span className={value < 0 ? 'text-red-600' : 'text-slate-900'}>
-            <span className="text-[10px] font-bold text-slate-400 mr-1">{homeCurrency}</span>
-            {parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-    );
-
-    const formatQty = (val) => {
-        if (val < 0) return <span className="text-red-600">-{Math.abs(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>;
-        return <span>{Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>;
-    };
-
-    const handleExportExcel = () => {
-        const companyName = auth.company?.company_name || 'Company';
-        let csvContent = `"${companyName}"\n"Sales By Item Report"\n`;
-        csvContent += `"Date Range: ${filters.start_date} to ${filters.end_date}"\n\n`;
-        csvContent += `"Date","Transaction Type","Number","Customer","Item Name","Quantity Sold","Rate","Total Amount (${homeCurrency})"\n`;
-
-        items.forEach(group => {
-            group.lines.forEach(line => {
-                csvContent += `"${line.date}","${line.transaction_type}","${line.reference}","${line.contact_name}","${group.item.name}",${line.qty},${line.rate},${line.amount}\n`;
-            });
-            csvContent += `"","","","","Total for ${group.item.name}",${group.item.total_qty},"","${group.item.total_amount}"\n\n`;
-        });
-        csvContent += `"","","","","Grand Total",${totalQuantity},"","${totalAmount}"\n`;
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Sales_By_Item.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
     const filterElements = (
         <ReportDateFilter 
             currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
@@ -96,20 +57,73 @@ export default function SalesByItem({ reportData, filters, auth }) {
         />
     );
 
+    // Process data to calculate running balances per item
+    const processedData = useMemo(() => {
+        return reportData.map(group => {
+            let currentQty = 0;
+            let currentValue = 0;
+            
+            const linesWithBalance = group.lines.map(line => {
+                const amount = line.debit - line.credit;
+                currentQty += line.qty_change;
+                currentValue += amount;
+                
+                return {
+                    ...line,
+                    amount,
+                    running_qty: currentQty,
+                    running_value: currentValue
+                };
+            });
+
+            return {
+                ...group,
+                lines: linesWithBalance,
+                final_qty: currentQty,
+                final_value: currentValue
+            };
+        });
+    }, [reportData]);
+
+    // Calculate Grand Total
+    const grandTotalValue = useMemo(() => {
+        return processedData.reduce((sum, group) => sum + group.final_value, 0);
+    }, [processedData]);
+
+    const formatCurrency = (val) => {
+        if (val < 0) return <span className="text-red-600">-{currencyPrefix}{Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+        return <span>{currencyPrefix}{Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+    };
+
+    const formatQty = (val) => {
+        if (val < 0) return <span className="text-red-600">-{Math.abs(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>;
+        return <span>{Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>;
+    };
+
     return (
         <ReportLayout
-            title="Sales By Item"
+            title="Inventory Balance Detail"
             filters={filterElements}
-            onExportExcel={handleExportExcel}
         >
-            <Head title="Sales By Item" />
+            <Head title="Inventory Balance Detail" />
 
-            <div className="text-center mb-8 font-serif">
-                <h2 className="text-xl font-bold text-gray-900">Sales By Item</h2>
-                <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
-                <p className="text-[13px] text-gray-500 mt-1">
-                    {filters.start_date ? formatDate(filters.start_date, dateFormat) : 'Beginning'} - {formatDate(filters.end_date, dateFormat)}
-                </p>
+            <div className="text-center mb-8 font-serif relative">
+                <div className="absolute left-0 top-0">
+                    <Link href={route(`reports.inventory-summary`)} className="text-xs text-blue-600 hover:underline font-sans">
+                        &larr; Back to Inventory Summary
+                    </Link>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">{auth.company?.company_name || 'Company'}</h2>
+                <h3 className="text-lg text-gray-800 mt-1">Inventory Balance Detail</h3>
+                {filters.start_date && filters.end_date ? (
+                    <p className="text-[13px] text-gray-500 mt-1">
+                        {formatDate(filters.start_date, dateFormat)} - {formatDate(filters.end_date, dateFormat)}
+                    </p>
+                ) : (
+                    <p className="text-[13px] text-gray-500 mt-1">
+                        All Dates
+                    </p>
+                )}
             </div>
 
             <div className="w-full overflow-x-auto pb-10">
@@ -119,21 +133,22 @@ export default function SalesByItem({ reportData, filters, auth }) {
                             <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Date</th>
                             <th className="py-2.5 px-3 font-semibold text-gray-900 w-[15%]">Transaction Type</th>
                             <th className="py-2.5 px-3 font-semibold text-gray-900 w-[10%]">Number</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[23%]">Customer</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[18%]">Name / Memo</th>
                             <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[10%]">Qty</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[15%]">Rate</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[15%]">Amount</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[10%]">Rate / Cost</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[10%]">Qty on Hand</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[15%]">Asset Value</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {items.length === 0 ? (
+                        {processedData.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="py-8 text-center text-gray-500">
+                                <td colSpan="8" className="py-8 text-center text-gray-500">
                                     No records found for this period.
                                 </td>
                             </tr>
                         ) : (
-                            items.map((group) => {
+                            processedData.map((group) => {
                                 const displayName = group.item.name;
                                 const isCollapsed = collapsedGroups.has(group.item.id);
                                 return (
@@ -143,7 +158,7 @@ export default function SalesByItem({ reportData, filters, auth }) {
                                             className="bg-slate-50/50 hover:bg-slate-100 cursor-pointer transition-colors"
                                             onClick={() => toggleGroup(group.item.id)}
                                         >
-                                            <td colSpan="7" className="py-2 px-3 font-bold text-gray-800">
+                                            <td colSpan="8" className="py-2 px-3 font-bold text-gray-800">
                                                 <div className="flex items-center gap-2 whitespace-nowrap">
                                                     <svg 
                                                         className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-90'}`} 
@@ -164,40 +179,42 @@ export default function SalesByItem({ reportData, filters, auth }) {
                                                     {tx.date}
                                                 </td>
                                                 <td className="py-2 px-3 text-gray-600 capitalize truncate">
-                                                    {tx.transaction_type}
+                                                    {tx.transaction_type ? tx.transaction_type.replace('_', ' ') : 'Journal Entry'}
                                                 </td>
                                                 <td className="py-2 px-3 text-gray-600">
                                                     {tx.reference || '-'}
                                                 </td>
-                                                <td className="py-2 px-3 text-gray-600 truncate" title={tx.contact_name}>
-                                                    {tx.contact_name || '-'}
+                                                <td className="py-2 px-3 text-gray-600 truncate" title={tx.memo}>
+                                                    {tx.memo || '-'}
                                                 </td>
                                                 <td className="py-2 px-3 text-right tabular-nums text-gray-900">
-                                                    {formatQty(tx.qty)}
+                                                    {formatQty(tx.qty_change)}
                                                 </td>
                                                 <td className="py-2 px-3 text-right tabular-nums text-gray-600">
-                                                    {tx.rate ? <Currency value={tx.rate} /> : '-'}
+                                                    {tx.rate ? formatCurrency(tx.rate) : '-'}
+                                                </td>
+                                                <td className="py-2 px-3 text-right tabular-nums font-medium text-gray-900">
+                                                    {formatQty(tx.running_qty)}
                                                 </td>
                                                 <td className="py-2 px-3 text-right tabular-nums font-medium text-gray-900">
                                                     <Link href={route(getEditRoute(tx.transaction_type), tx.journal_entry_id)} className="text-indigo-600 hover:text-indigo-900 hover:underline">
-                                                        <Currency value={tx.amount} />
+                                                        {formatCurrency(tx.running_value)}
                                                     </Link>
                                                 </td>
                                             </tr>
                                         ))}
 
-                                        {/* Group Footer Total */}
+                                        {/* Group Footer Total (only show if expanded and has lines) */}
                                         {!isCollapsed && group.lines.length > 0 && (
                                             <tr className="border-t border-gray-100 bg-white">
-                                                <td colSpan="4" className="py-2 px-3 font-semibold text-gray-700 pl-10 text-right">
+                                                <td colSpan="6" className="py-2 px-3 font-semibold text-gray-700 pl-10 text-right">
                                                     Total for {displayName}
                                                 </td>
                                                 <td className="py-2 px-3 text-right font-semibold text-gray-900 tabular-nums">
-                                                    {formatQty(group.item.total_qty)}
+                                                    {formatQty(group.final_qty)}
                                                 </td>
-                                                <td className="py-2 px-3"></td>
                                                 <td className="py-2 px-3 text-right font-semibold text-gray-900 tabular-nums">
-                                                    <Currency value={group.item.total_amount} />
+                                                    {formatCurrency(group.final_value)}
                                                 </td>
                                             </tr>
                                         )}
@@ -209,17 +226,13 @@ export default function SalesByItem({ reportData, filters, auth }) {
                         )}
                         
                         {/* Grand Total Footer Row */}
-                        {items.length > 0 && (
+                        {processedData.length > 0 && (
                             <tr className="border-t-2 border-gray-300">
-                                <td colSpan="4" className="py-3 px-3 font-bold text-gray-900 text-lg uppercase text-right">
-                                    Grand Total
+                                <td colSpan="7" className="py-3 px-3 font-bold text-gray-900 text-lg uppercase">
+                                    Total Asset Value
                                 </td>
                                 <td className="py-3 px-3 text-right font-bold text-gray-900 text-lg tabular-nums">
-                                    {formatQty(totalQuantity)}
-                                </td>
-                                <td className="py-3 px-3"></td>
-                                <td className="py-3 px-3 text-right font-bold text-gray-900 text-lg tabular-nums">
-                                    <Currency value={totalAmount} />
+                                    {formatCurrency(grandTotalValue)}
                                 </td>
                             </tr>
                         )}

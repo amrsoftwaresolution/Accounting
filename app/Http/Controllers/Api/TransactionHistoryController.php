@@ -35,7 +35,7 @@ class TransactionHistoryController extends Controller
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get()
-            ->map(function (JournalEntry $entry) {
+            ->map(function (JournalEntry $entry) use ($normalizedType) {
                 $memo = $entry->description
                     ?: $entry->transactionable?->memo
                     ?: $entry->transactionable?->description
@@ -49,6 +49,18 @@ class TransactionHistoryController extends Controller
                     ?: $entry->transactionable?->total_amount
                     ?: $entry->transactionable?->amount
                     ?: 0;
+                    
+                $refNo = $entry->reference 
+                    ?: $entry->transactionable?->reference_number
+                    ?: $entry->transactionable?->invoice_number
+                    ?: $entry->transactionable?->bill_number
+                    ?: $entry->transactionable?->receipt_number
+                    ?: '—';
+                    
+                $payeeName = $entry->payee?->display_name
+                    ?: $entry->transactionable?->customer?->display_name
+                    ?: $entry->transactionable?->supplier?->display_name
+                    ?: '—';
 
                 return [
                     'id' => $entry->id,
@@ -58,7 +70,11 @@ class TransactionHistoryController extends Controller
                         ?: $entry->transactionable?->receipt_date
                         ?: $entry->transactionable?->payment_date
                         ?: $entry->created_at?->toDateString(),
+                    'ref_no' => $refNo,
+                    'payee_account' => $payeeName,
                     'memo' => $memo,
+                    'debit' => in_array($normalizedType, ['invoice', 'payment', 'bank_deposit', 'expense', 'supplier_credit', 'journal_entry', 'inventory_adjustment']) ? $amount : 0,
+                    'credit' => in_array($normalizedType, ['bill', 'credit_note', 'sales_receipt']) ? $amount : 0,
                     'amount' => $amount,
                 ];
             })

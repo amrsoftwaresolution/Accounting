@@ -97,14 +97,14 @@ export default function CreateAdjustment({ items, accounts, nextReference }) {
 
     const submit = (e, close = false) => {
         e.preventDefault();
-        
+
         transform((data) => ({
             ...data,
             items: data.items.filter(item => item.item_id !== '')
         }));
-        
+
         localStorage.setItem('last_transaction_date', data.adjustment_date);
-        
+
         post(route('inventory-adjustment.store', { action: close ? 'new' : 'save' }), {
             onSuccess: () => {
                 if (close) {
@@ -122,11 +122,7 @@ export default function CreateAdjustment({ items, accounts, nextReference }) {
         <AuthenticatedLayout header="Inventory Quantity Adjustment">
             <Head title="Inventory Quantity Adjustment" />
 
-            <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-32">
-                <div className="mb-6 flex items-center">
-                    {/* Removed Back to Items link */}
-                </div>
-
+            <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto ">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                         <h1 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -263,16 +259,16 @@ export default function CreateAdjustment({ items, accounts, nextReference }) {
                             Cancel
                         </Link>
                         <div className="flex gap-3">
-                            <CommonButton 
-                                variant="secondary" 
+                            <CommonButton
+                                variant="secondary"
                                 onClick={(e) => submit(e, false)}
                                 disabled={processing}
                                 size="sm"
                             >
                                 Save
                             </CommonButton>
-                            <CommonButton 
-                                variant="primary" 
+                            <CommonButton
+                                variant="primary"
                                 onClick={(e) => submit(e, true)}
                                 disabled={processing}
                                 size="sm"

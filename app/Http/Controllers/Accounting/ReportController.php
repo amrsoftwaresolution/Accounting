@@ -535,24 +535,74 @@ class ReportController extends Controller
     public function inventorySummary(Request $request)
     {
         $companyId = session('active_company_id');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
 
-        $items = \App\Models\Item::where('company_id', $companyId)
+        $itemsQuery = \App\Models\Item::with('category')->where('company_id', $companyId)
             ->where('track_inventory', true)
             ->orderBy('name')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'sku' => $item->sku,
-                    'qty_on_hand' => (float)$item->quantity_on_hand,
-                    'avg_cost' => (float)$item->purchase_price,
-                    'asset_value' => (float)($item->quantity_on_hand * $item->purchase_price),
-                ];
+            ->get();
+
+        if ($endDate && $endDate < date('Y-m-d')) {
+            $query = DB::table('journal_entries')
+                ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+                ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+                ->where('journal_entries.company_id', $companyId)
+                ->where('chart_of_accs.sub_type', 'inventory')
+                ->where('journal_entries.date', '<=', $endDate);
+
+            $allLines = $query->select('journal_entry_lines.memo', 'journal_entry_lines.debit', 'journal_entry_lines.credit')->get();
+            
+            $items = $itemsQuery->map(function ($item) use ($allLines) {
+                $qty = 0;
+                $itemLines = $allLines->filter(function ($line) use ($item) {
+                    return stripos($line->memo, $item->name) !== false;
+                });
+                
+                if ($item->purchase_price > 0) {
+                    foreach ($itemLines as $line) {
+                        if ($line->debit > 0) {
+                            $qty += $line->debit / $item->purchase_price;
+                        } else if ($line->credit > 0) {
+                            $qty -= $line->credit / $item->purchase_price;
+                        }
+                    }
+                }
+                
+                $item->quantity_on_hand = round($qty, 2);
+                return $item;
             });
+        } else {
+            $items = $itemsQuery;
+        }
+
+        $mappedItems = $items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku,
+                'category' => $item->category ? $item->category->name : 'Uncategorized',
+                'qty_on_hand' => (float)$item->quantity_on_hand,
+                'avg_cost' => (float)$item->purchase_price,
+                'asset_value' => (float)($item->quantity_on_hand * $item->purchase_price),
+            ];
+        });
+
+        // Group by category name
+        $groupedData = $mappedItems->groupBy('category')->map(function ($catItems, $categoryName) {
+            return [
+                'category' => $categoryName,
+                'items' => $catItems->values(),
+            ];
+        })->values();
 
         return Inertia::render('Reports/InventorySummary', [
-            'reportData' => $items,
+            'reportData' => $groupedData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate ?? '',
+                'type' => $request->query('type') ?? 'custom'
+            ]
         ]);
     }
 
@@ -631,6 +681,84 @@ class ReportController extends Controller
         ]);
     }
 
+    public function inventoryDetailAll(Request $request)
+    {
+        $companyId = session('active_company_id');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date') ?: date('Y-m-d');
+
+        $items = \App\Models\Item::where('company_id', $companyId)
+            ->where('track_inventory', true)
+            ->orderBy('name')
+            ->get();
+
+        $query = DB::table('journal_entries')
+            ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', $companyId)
+            ->where('chart_of_accs.sub_type', 'inventory');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $allLines = $query->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type')
+            ->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->get();
+
+        $reportData = $items->map(function ($item) use ($allLines) {
+            // Find lines that belong to this item (using memo hack as per existing system)
+            $itemLines = $allLines->filter(function ($line) use ($item) {
+                return stripos($line->memo, $item->name) !== false;
+            })->values()->map(function ($line) use ($item) {
+                $qtyChange = 0;
+                if ($item->purchase_price > 0) {
+                    if ($line->debit > 0) {
+                        $qtyChange = $line->debit / $item->purchase_price;
+                    } else if ($line->credit > 0) {
+                        $qtyChange = -($line->credit / $item->purchase_price);
+                    }
+                }
+                return [
+                    'id' => $line->id,
+                    'date' => $line->date,
+                    'transaction_type' => $line->transaction_type,
+                    'reference' => $line->reference,
+                    'memo' => $line->memo,
+                    'qty_change' => round($qtyChange, 2),
+                    'debit' => (float)$line->debit,
+                    'credit' => (float)$line->credit,
+                    'rate' => (float)$item->purchase_price
+                ];
+            });
+
+            return [
+                'item' => [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'sku' => $item->sku,
+                    'purchase_price' => (float)$item->purchase_price,
+                    'qty_on_hand' => (float)$item->quantity_on_hand,
+                    'asset_value' => (float)($item->quantity_on_hand * $item->purchase_price),
+                ],
+                'lines' => $itemLines
+            ];
+        })->filter(function ($group) {
+            return $group['lines']->isNotEmpty() || $group['item']['qty_on_hand'] > 0;
+        })->values();
+
+        return Inertia::render('Reports/AllInventoryDetail', [
+            'reportData' => $reportData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate
+            ]
+        ]);
+    }
+
     public function salesByItem(Request $request)
     {
         $startDate = $request->query('start_date');
@@ -639,7 +767,12 @@ class ReportController extends Controller
 
         $query = DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->join('journal_entries', function($join) {
+                $join->on('journal_entries.transactionable_id', '=', 'invoices.id')
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Invoice::class);
+            })
             ->join('items', 'invoice_items.item_id', '=', 'items.id')
+            ->join('customers', 'invoices.customer_id', '=', 'customers.id')
             ->where('invoices.company_id', $companyId)
             ->where('invoices.status', 'posted');
 
@@ -649,14 +782,50 @@ class ReportController extends Controller
             $query->where('invoices.invoice_date', '<=', $endDate);
         }
 
-        $reportData = $query->select(
+        $allLines = $query->select(
+                'invoice_items.id as line_id',
+                'invoice_items.quantity',
+                'invoice_items.rate',
+                'invoice_items.amount',
+                'invoices.invoice_number as reference',
+                'invoices.invoice_date as date',
+                'items.id as item_id',
                 'items.name as item_name',
-                DB::raw('SUM(invoice_items.quantity) as total_quantity'),
-                DB::raw('SUM(invoice_items.amount) as total_amount')
+                'items.sku as item_sku',
+                'customers.display_name as customer_name',
+                'journal_entries.id as journal_entry_id'
             )
-            ->groupBy('items.id', 'items.name')
-            ->orderByDesc('total_amount')
+            ->orderBy('invoices.invoice_date', 'asc')
             ->get();
+            
+        // Group by item_id
+        $reportData = $allLines->groupBy('item_id')->map(function ($lines, $itemId) {
+            $firstLine = $lines->first();
+            $totalQty = $lines->sum('quantity');
+            $totalAmount = $lines->sum('amount');
+            return [
+                'item' => [
+                    'id' => $itemId,
+                    'name' => $firstLine->item_name,
+                    'sku' => $firstLine->item_sku,
+                    'total_qty' => $totalQty,
+                    'total_amount' => $totalAmount,
+                ],
+                'lines' => $lines->map(function ($line) {
+                    return [
+                        'id' => $line->line_id,
+                        'journal_entry_id' => $line->journal_entry_id,
+                        'date' => $line->date,
+                        'transaction_type' => 'invoice',
+                        'reference' => $line->reference,
+                        'contact_name' => $line->customer_name,
+                        'qty' => (float)$line->quantity,
+                        'rate' => (float)$line->rate,
+                        'amount' => (float)$line->amount
+                    ];
+                })->values()
+            ];
+        })->values()->sortByDesc('item.total_amount')->values();
 
         return Inertia::render('Reports/SalesByItem', [
             'reportData' => $reportData,
@@ -710,10 +879,14 @@ class ReportController extends Controller
         $endDate = $request->query('end_date') ?: date('Y-m-d');
         $companyId = session('active_company_id');
 
-        // Bills
         $billsQuery = DB::table('bill_items')
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->join('journal_entries', function($join) {
+                $join->on('journal_entries.transactionable_id', '=', 'bills.id')
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Bill::class);
+            })
             ->join('items', 'bill_items.item_id', '=', 'items.id')
+            ->join('suppliers', 'bills.supplier_id', '=', 'suppliers.id')
             ->where('bills.company_id', $companyId)
             ->where('bills.status', 'posted');
 
@@ -724,18 +897,29 @@ class ReportController extends Controller
         }
 
         $billsData = $billsQuery->select(
+                'bill_items.id as line_id',
+                'bill_items.quantity',
+                'bill_items.rate',
+                'bill_items.amount',
+                'bills.bill_number as reference',
+                'bills.bill_date as date',
                 'items.id as item_id',
                 'items.name as item_name',
-                DB::raw('SUM(bill_items.quantity) as total_quantity'),
-                DB::raw('SUM(bill_items.amount) as total_amount')
-            )
-            ->groupBy('items.id', 'items.name')
-            ->get();
+                'items.sku as item_sku',
+                'suppliers.display_name as supplier_name',
+                'journal_entries.id as journal_entry_id',
+                DB::raw("'Bill' as transaction_type")
+            )->get();
 
         // Expenses
         $expensesQuery = DB::table('expense_items')
             ->join('expenses', 'expense_items.expense_id', '=', 'expenses.id')
+            ->join('journal_entries', function($join) {
+                $join->on('journal_entries.transactionable_id', '=', 'expenses.id')
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Expense::class);
+            })
             ->join('items', 'expense_items.item_id', '=', 'items.id')
+            ->leftJoin('suppliers', 'expenses.payee_id', '=', 'suppliers.id')
             ->where('expenses.company_id', $companyId)
             ->where('expenses.status', 'posted');
 
@@ -746,40 +930,50 @@ class ReportController extends Controller
         }
 
         $expensesData = $expensesQuery->select(
+                'expense_items.id as line_id',
+                'expense_items.quantity',
+                'expense_items.rate',
+                'expense_items.amount',
+                'expenses.expense_number as reference',
+                'expenses.payment_date as date',
                 'items.id as item_id',
                 'items.name as item_name',
-                DB::raw('SUM(expense_items.quantity) as total_quantity'),
-                DB::raw('SUM(expense_items.amount) as total_amount')
-            )
-            ->groupBy('items.id', 'items.name')
-            ->get();
+                'items.sku as item_sku',
+                'suppliers.display_name as supplier_name',
+                'journal_entries.id as journal_entry_id',
+                DB::raw("'Expense' as transaction_type")
+            )->get();
 
-        // Merge results
-        $reportData = collect();
-        $itemsMap = [];
+        $allLines = $billsData->concat($expensesData)->sortBy('date')->values();
 
-        foreach ($billsData as $row) {
-            $itemsMap[$row->item_id] = [
-                'item_name' => $row->item_name,
-                'total_quantity' => $row->total_quantity,
-                'total_amount' => $row->total_amount,
+        // Group by item_id
+        $reportData = $allLines->groupBy('item_id')->map(function ($lines, $itemId) {
+            $firstLine = $lines->first();
+            $totalQty = $lines->sum('quantity');
+            $totalAmount = $lines->sum('amount');
+            return [
+                'item' => [
+                    'id' => $itemId,
+                    'name' => $firstLine->item_name,
+                    'sku' => $firstLine->item_sku,
+                    'total_qty' => $totalQty,
+                    'total_amount' => $totalAmount,
+                ],
+                'lines' => $lines->map(function ($line) {
+                    return [
+                        'id' => $line->line_id,
+                        'journal_entry_id' => $line->journal_entry_id,
+                        'date' => $line->date,
+                        'transaction_type' => strtolower($line->transaction_type),
+                        'reference' => $line->reference,
+                        'contact_name' => $line->supplier_name,
+                        'qty' => (float)$line->quantity,
+                        'rate' => (float)$line->rate,
+                        'amount' => (float)$line->amount
+                    ];
+                })->values()
             ];
-        }
-
-        foreach ($expensesData as $row) {
-            if (isset($itemsMap[$row->item_id])) {
-                $itemsMap[$row->item_id]['total_quantity'] += $row->total_quantity;
-                $itemsMap[$row->item_id]['total_amount'] += $row->total_amount;
-            } else {
-                $itemsMap[$row->item_id] = [
-                    'item_name' => $row->item_name,
-                    'total_quantity' => $row->total_quantity,
-                    'total_amount' => $row->total_amount,
-                ];
-            }
-        }
-
-        $reportData = collect(array_values($itemsMap))->sortByDesc('total_amount')->values();
+        })->values()->sortByDesc('item.total_amount')->values();
 
         return Inertia::render('Reports/PurchaseByItem', [
             'reportData' => $reportData,
@@ -865,6 +1059,100 @@ class ReportController extends Controller
 
         return Inertia::render('Reports/PurchaseBySupplier', [
             'reportData' => $reportData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
+            ]
+        ]);
+    }
+
+    public function customerBalanceDetailAll(Request $request)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $customers = Customer::where('company_id', session('active_company_id'))->get();
+
+        $query = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Customer::class)
+            ->where('chart_of_accs.sub_type', 'accounts-receivable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $allLines = $query->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date', 'journal_entries.payee_id')
+            ->get()
+            ->groupBy('payee_id');
+
+        $reportData = $customers->map(function ($customer) use ($allLines) {
+            $lines = $allLines->get($customer->id, collect());
+            return [
+                'contact' => $customer,
+                'lines' => $lines
+            ];
+        })->filter(function ($group) {
+            return $group['lines']->isNotEmpty() || ($group['contact']->opening_balance > 0);
+        })->values();
+
+        return Inertia::render('Reports/AllContactBalanceDetail', [
+            'reportData' => $reportData,
+            'contactType' => 'Customer',
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
+            ]
+        ]);
+    }
+
+    public function supplierBalanceDetailAll(Request $request)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
+
+        $query = JournalEntryLine::query()
+            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+            ->where('journal_entries.company_id', session('active_company_id'))
+            ->where('journal_entries.payee_type', Supplier::class)
+            ->where('chart_of_accs.sub_type', 'accounts-payable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $allLines = $query->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date', 'journal_entries.payee_id')
+            ->get()
+            ->groupBy('payee_id');
+
+        $reportData = $suppliers->map(function ($supplier) use ($allLines) {
+            $lines = $allLines->get($supplier->id, collect());
+            return [
+                'contact' => $supplier,
+                'lines' => $lines
+            ];
+        })->filter(function ($group) {
+            return $group['lines']->isNotEmpty() || ($group['contact']->opening_balance > 0);
+        })->values();
+
+        return Inertia::render('Reports/AllContactBalanceDetail', [
+            'reportData' => $reportData,
+            'contactType' => 'Supplier',
             'filters' => [
                 'start_date' => $startDate ?? '',
                 'end_date' => $endDate,

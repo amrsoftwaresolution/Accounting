@@ -58,7 +58,8 @@ class InventoryQuantityAdjustmentController extends Controller
         $companyId = session('active_company_id') ?? auth()->user()->company_id;
 
         try {
-            DB::transaction(function () use ($validated, $companyId) {
+            $journalEntry = null;
+            DB::transaction(function () use ($validated, $companyId, &$journalEntry) {
                 $adjustment = InventoryQuantityAdjustment::create([
                     'company_id' => $companyId,
                     'adjustment_date' => $validated['adjustment_date'],

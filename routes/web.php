@@ -150,10 +150,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
     Route::get('/reports/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
     Route::get('/reports/customer-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalance'])->name('reports.customer-balance');
+    Route::get('/reports/customer-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalanceDetailAll'])->name('reports.customer-balance-detail');
     Route::get('/reports/customer-balance/{customer}', [\App\Http\Controllers\Accounting\ReportController::class, 'customerDetail'])->name('reports.customer-detail');
+
     Route::get('/reports/supplier-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalance'])->name('reports.supplier-balance');
+    Route::get('/reports/supplier-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalanceDetailAll'])->name('reports.supplier-balance-detail');
     Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
     Route::get('/reports/inventory-summary', [\App\Http\Controllers\Accounting\ReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
+    Route::get('/reports/inventory-detail-all', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetailAll'])->name('reports.inventory-detail-all');
     Route::get('/reports/inventory-detail/{item}', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
     Route::get('/reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByItem'])->name('reports.sales-by-item');
     Route::get('/reports/sales-by-customer', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByCustomer'])->name('reports.sales-by-customer');

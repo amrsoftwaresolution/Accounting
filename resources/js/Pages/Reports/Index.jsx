@@ -19,7 +19,7 @@ export default function ReportsIndex() {
             category: 'Customers & Sales',
             reports: [
                 { name: 'Customer Balance Summary', href: route('reports.customer-balance') },
-                { name: 'Customer Balance Details', href: route('reports.customer-balance') }, // Detailed is usually accessed via clicking a customer, but we can just route to summary for now
+                { name: 'Customer Balance Details', href: route('reports.customer-balance-detail') }, 
                 { name: 'Sales By Customer', href: route('reports.sales-by-customer') },
                 { name: 'Sales By Item', href: route('reports.sales-by-item') },
             ]
@@ -28,7 +28,7 @@ export default function ReportsIndex() {
             category: 'Suppliers & Purchases',
             reports: [
                 { name: 'Supplier Balance Summary', href: route('reports.supplier-balance') },
-                { name: 'Supplier Balance Details', href: route('reports.supplier-balance') }, // Detailed is usually accessed via clicking a supplier
+                { name: 'Supplier Balance Details', href: route('reports.supplier-balance-detail') }, 
                 { name: 'Purchase by Supplier', href: route('reports.purchase-by-supplier') },
                 { name: 'Purchase by Item', href: route('reports.purchase-by-item') },
             ]
@@ -37,14 +37,14 @@ export default function ReportsIndex() {
             category: 'Inventory',
             reports: [
                 { name: 'Inventory Balance Summary', href: route('reports.inventory-summary') },
-                { name: 'Inventory Balance Details', href: route('reports.inventory-summary') }, // Detailed is accessed via clicking an item
+                { name: 'Inventory Balance Details', href: route('reports.inventory-detail-all') }, 
             ]
         }
     ];
 
     const filteredGroups = reportGroups.map(group => ({
         ...group,
-        reports: group.reports.filter(report => 
+        reports: group.reports.filter(report =>
             report.name.toLowerCase().includes(searchTerm.toLowerCase())
         )
     })).filter(group => group.reports.length > 0);
@@ -57,12 +57,9 @@ export default function ReportsIndex() {
                 <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 font-serif tracking-tight">Reports Center</h1>
-                        <p className="mt-2 text-sm text-gray-600 max-w-2xl">
-                            Find, filter, and run reports to gain insights into your business's financial health, inventory, and customer balances.
-                        </p>
                     </div>
                     <div className="w-full md:w-80">
-                        <CommonInput 
+                        <CommonInput
                             type="text"
                             placeholder="Find report by name..."
                             value={searchTerm}
@@ -76,9 +73,9 @@ export default function ReportsIndex() {
                     </div>
                 </div>
 
-                <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {filteredGroups.length === 0 ? (
-                        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                        <div className="col-span-full text-center py-12 bg-white rounded-xl border border-gray-200">
                             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
@@ -92,24 +89,23 @@ export default function ReportsIndex() {
                         </div>
                     ) : (
                         filteredGroups.map((group, gIdx) => (
-                            <div key={gIdx} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                            <div key={gIdx} className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
+                                <div className="px-6 py-4 border-b border-gray-100 bg-white rounded-t-xl">
                                     <h2 className="text-lg font-bold text-gray-800">{group.category}</h2>
                                 </div>
-                                <div className="p-6">
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="p-6 flex-1">
+                                    <ul className="space-y-3">
                                         {group.reports.map((item, rIdx) => (
-                                            <Link 
-                                                key={rIdx} 
-                                                href={item.href}
-                                                className="group relative flex flex-col justify-center items-center p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-500/50 transition-all duration-200 h-full"
-                                            >
-                                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors text-center leading-tight">
+                                            <li key={rIdx}>
+                                                <Link
+                                                    href={item.href}
+                                                    className="text-sm font-medium text-slate-600 hover:text-primary-600 hover:underline transition-colors"
+                                                >
                                                     {item.name}
-                                                </h3>
-                                            </Link>
+                                                </Link>
+                                            </li>
                                         ))}
-                                    </div>
+                                    </ul>
                                 </div>
                             </div>
                         ))
