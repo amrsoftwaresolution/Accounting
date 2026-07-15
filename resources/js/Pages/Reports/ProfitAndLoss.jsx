@@ -3,48 +3,36 @@ import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function ProfitAndLoss({ reportData, filters, auth }) {
     const dateFormat = useDateFormat();
-    const [startDate, setStartDate] = useState(filters.start_date || '');
-    const [endDate, setEndDate] = useState(filters.end_date || '');
-    const [datePreset, setDatePreset] = useState('custom');
     const [displayBy, setDisplayBy] = useState(filters.display_by || 'total');
 
-    const handleRunReport = (overrideStart, overrideEnd, overrideDisplayBy) => {
-        const s = typeof overrideStart === 'string' ? overrideStart : startDate;
-        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
-        const d = typeof overrideDisplayBy === 'string' ? overrideDisplayBy : displayBy;
-        router.get(route('reports.profit-loss'), { start_date: s, end_date: e, display_by: d }, {
+    const handleFilterChange = (newFilters) => {
+        router.get(route('reports.profit-loss'), { 
+            start_date: newFilters.start_date, 
+            end_date: newFilters.end_date,
+            display_by: displayBy,
+            type: newFilters.type 
+        }, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    const handlePresetChange = (e) => {
+    const handleDisplayByChange = (e) => {
         const val = e.target.value;
-        setDatePreset(val);
-
-        let newStart = startDate;
-        let newEnd = endDate;
-        const currentYear = new Date().getFullYear();
-
-        if (val === 'all') {
-            newStart = '';
-            newEnd = '';
-        } else if (val === 'this_year') {
-            newStart = `${currentYear}-01-01`;
-            newEnd = `${currentYear}-12-31`;
-        } else if (val === 'last_year') {
-            newStart = `${currentYear - 1}-01-01`;
-            newEnd = `${currentYear - 1}-12-31`;
-        }
-
-        if (val !== 'custom') {
-            setStartDate(newStart);
-            setEndDate(newEnd);
-            handleRunReport(newStart, newEnd);
-        }
+        setDisplayBy(val);
+        router.get(route('reports.profit-loss'), { 
+            start_date: filters.start_date, 
+            end_date: filters.end_date,
+            display_by: val,
+            type: filters.type
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const income = reportData.income || [];
@@ -213,63 +201,23 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     };
 
     const filterElements = (
-        <div className="flex items-end gap-4">
-            <div className="w-[160px] pb-[1px]">
-                <CommonInput
-                    type="select"
-                    label="Date Period"
-                    value={datePreset}
-                    onChange={handlePresetChange}
-                    size="sm"
-                >
-                    <option value="all">All Dates</option>
-                    <option value="this_year">Current Year</option>
-                    <option value="last_year">Last Year</option>
-                    <option value="custom">Customize</option>
-                </CommonInput>
-            </div>
+        <div className="flex flex-col gap-4">
+            <ReportDateFilter 
+                currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
+                onFilterChange={handleFilterChange}
+            />
             <div className="w-[160px] pb-[1px]">
                 <CommonInput
                     type="select"
                     label="Display columns by"
                     value={displayBy}
-                    onChange={(e) => {
-                        setDisplayBy(e.target.value);
-                    }}
+                    onChange={handleDisplayByChange}
                     size="sm"
                 >
                     <option value="total">Total Only</option>
                     <option value="month">Months</option>
                 </CommonInput>
             </div>
-            {datePreset === 'custom' && (
-                <>
-                    <div className="w-[140px]">
-                        <CommonInput
-                            type="date"
-                            label="From"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <div className="w-[140px]">
-                        <CommonInput
-                            type="date"
-                            label="To"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <button
-                        onClick={() => handleRunReport()}
-                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
-                    >
-                        Run Report
-                    </button>
-                </>
-            )}
         </div>
     );
 

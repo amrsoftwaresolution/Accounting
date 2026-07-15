@@ -629,5 +629,245 @@ class ReportController extends Controller
                 'end_date' => $endDate
             ]
         ]);
+    public function salesByItem(Request $request)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date') ?: date('Y-m-d');
+        $companyId = session('active_company_id');
+
+        $query = DB::table('invoice_items')
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->join('items', 'invoice_items.item_id', '=', 'items.id')
+            ->where('invoices.company_id', $companyId)
+            ->where('invoices.status', 'posted');
+
+        if ($startDate) {
+            $query->whereBetween('invoices.invoice_date', [$startDate, $endDate]);
+        } else {
+            $query->where('invoices.invoice_date', '<=', $endDate);
+        }
+
+        $reportData = $query->select(
+                'items.name as item_name',
+                DB::raw('SUM(invoice_items.quantity) as total_quantity'),
+                DB::raw('SUM(invoice_items.amount) as total_amount')
+            )
+            ->groupBy('items.id', 'items.name')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        return Inertia::render('Reports/SalesByItem', [
+            'reportData' => $reportData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
+            ]
+        ]);
+    }
+
+    public function salesByCustomer(Request $request)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date') ?: date('Y-m-d');
+        $companyId = session('active_company_id');
+
+        $query = DB::table('invoices')
+            ->join('customers', 'invoices.customer_id', '=', 'customers.id')
+            ->where('invoices.company_id', $companyId)
+            ->where('invoices.status', 'posted');
+
+        if ($startDate) {
+            $query->whereBetween('invoices.invoice_date', [$startDate, $endDate]);
+        } else {
+            $query->where('invoices.invoice_date', '<=', $endDate);
+        }
+
+        $reportData = $query->select(
+                'customers.display_name as customer_name',
+                DB::raw('COUNT(invoices.id) as invoice_count'),
+                DB::raw('SUM(invoices.total_amount) as total_amount')
+            )
+            ->groupBy('customers.id', 'customers.display_name')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        return Inertia::render('Reports/SalesByCustomer', [
+            'reportData' => $reportData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
+            ]
+        ]);
+    }
+
+    public function purchaseByItem(Request $request)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date') ?: date('Y-m-d');
+        $companyId = session('active_company_id');
+
+        // Bills
+        $billsQuery = DB::table('bill_items')
+            ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->join('items', 'bill_items.item_id', '=', 'items.id')
+            ->where('bills.company_id', $companyId)
+            ->where('bills.status', 'posted');
+
+        if ($startDate) {
+            $billsQuery->whereBetween('bills.bill_date', [$startDate, $endDate]);
+        } else {
+            $billsQuery->where('bills.bill_date', '<=', $endDate);
+        }
+
+        $billsData = $billsQuery->select(
+                'items.id as item_id',
+                'items.name as item_name',
+                DB::raw('SUM(bill_items.quantity) as total_quantity'),
+                DB::raw('SUM(bill_items.amount) as total_amount')
+            )
+            ->groupBy('items.id', 'items.name')
+            ->get();
+
+        // Expenses
+        $expensesQuery = DB::table('expense_items')
+            ->join('expenses', 'expense_items.expense_id', '=', 'expenses.id')
+            ->join('items', 'expense_items.item_id', '=', 'items.id')
+            ->where('expenses.company_id', $companyId)
+            ->where('expenses.status', 'posted');
+
+        if ($startDate) {
+            $expensesQuery->whereBetween('expenses.payment_date', [$startDate, $endDate]);
+        } else {
+            $expensesQuery->where('expenses.payment_date', '<=', $endDate);
+        }
+
+        $expensesData = $expensesQuery->select(
+                'items.id as item_id',
+                'items.name as item_name',
+                DB::raw('SUM(expense_items.quantity) as total_quantity'),
+                DB::raw('SUM(expense_items.amount) as total_amount')
+            )
+            ->groupBy('items.id', 'items.name')
+            ->get();
+
+        // Merge results
+        $reportData = collect();
+        $itemsMap = [];
+
+        foreach ($billsData as $row) {
+            $itemsMap[$row->item_id] = [
+                'item_name' => $row->item_name,
+                'total_quantity' => $row->total_quantity,
+                'total_amount' => $row->total_amount,
+            ];
+        }
+
+        foreach ($expensesData as $row) {
+            if (isset($itemsMap[$row->item_id])) {
+                $itemsMap[$row->item_id]['total_quantity'] += $row->total_quantity;
+                $itemsMap[$row->item_id]['total_amount'] += $row->total_amount;
+            } else {
+                $itemsMap[$row->item_id] = [
+                    'item_name' => $row->item_name,
+                    'total_quantity' => $row->total_quantity,
+                    'total_amount' => $row->total_amount,
+                ];
+            }
+        }
+
+        $reportData = collect(array_values($itemsMap))->sortByDesc('total_amount')->values();
+
+        return Inertia::render('Reports/PurchaseByItem', [
+            'reportData' => $reportData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
+            ]
+        ]);
+    }
+
+    public function purchaseBySupplier(Request $request)
+    {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date') ?: date('Y-m-d');
+        $companyId = session('active_company_id');
+
+        // Purchases by supplier usually includes Bills and Expenses
+        $billsQuery = DB::table('bills')
+            ->join('suppliers', 'bills.supplier_id', '=', 'suppliers.id')
+            ->where('bills.company_id', $companyId)
+            ->where('bills.status', 'posted');
+
+        if ($startDate) {
+            $billsQuery->whereBetween('bills.bill_date', [$startDate, $endDate]);
+        } else {
+            $billsQuery->where('bills.bill_date', '<=', $endDate);
+        }
+
+        $billsData = $billsQuery->select(
+                'suppliers.id as supplier_id',
+                'suppliers.display_name as supplier_name',
+                DB::raw('COUNT(bills.id) as tx_count'),
+                DB::raw('SUM(bills.total_amount) as total_amount')
+            )
+            ->groupBy('suppliers.id', 'suppliers.display_name')
+            ->get();
+
+        $expensesQuery = DB::table('expenses')
+            ->join('suppliers', 'expenses.payee_id', '=', 'suppliers.id')
+            ->where('expenses.company_id', $companyId)
+            ->where('expenses.payee_type', \App\Models\Supplier::class)
+            ->where('expenses.status', 'posted');
+
+        if ($startDate) {
+            $expensesQuery->whereBetween('expenses.payment_date', [$startDate, $endDate]);
+        } else {
+            $expensesQuery->where('expenses.payment_date', '<=', $endDate);
+        }
+
+        $expensesData = $expensesQuery->select(
+                'suppliers.id as supplier_id',
+                'suppliers.display_name as supplier_name',
+                DB::raw('COUNT(expenses.id) as tx_count'),
+                DB::raw('SUM(expenses.total_amount) as total_amount')
+            )
+            ->groupBy('suppliers.id', 'suppliers.display_name')
+            ->get();
+
+        $supplierMap = [];
+        foreach ($billsData as $row) {
+            $supplierMap[$row->supplier_id] = [
+                'supplier_name' => $row->supplier_name,
+                'tx_count' => $row->tx_count,
+                'total_amount' => $row->total_amount,
+            ];
+        }
+
+        foreach ($expensesData as $row) {
+            if (isset($supplierMap[$row->supplier_id])) {
+                $supplierMap[$row->supplier_id]['tx_count'] += $row->tx_count;
+                $supplierMap[$row->supplier_id]['total_amount'] += $row->total_amount;
+            } else {
+                $supplierMap[$row->supplier_id] = [
+                    'supplier_name' => $row->supplier_name,
+                    'tx_count' => $row->tx_count,
+                    'total_amount' => $row->total_amount,
+                ];
+            }
+        }
+
+        $reportData = collect(array_values($supplierMap))->sortByDesc('total_amount')->values();
+
+        return Inertia::render('Reports/PurchaseBySupplier', [
+            'reportData' => $reportData,
+            'filters' => [
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
+            ]
+        ]);
     }
 }

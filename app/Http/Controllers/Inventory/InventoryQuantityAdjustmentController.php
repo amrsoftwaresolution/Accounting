@@ -25,9 +25,17 @@ class InventoryQuantityAdjustmentController extends Controller
             
         $accounts = ChartOfAcc::where('company_id', $companyId)->get(['id', 'name', 'account_code']);
 
+        $lastRef = InventoryQuantityAdjustment::where('company_id', $companyId)
+            ->whereNotNull('reference_number')
+            ->orderByRaw('CAST(reference_number AS UNSIGNED) DESC')
+            ->first();
+            
+        $nextRef = ($lastRef && is_numeric($lastRef->reference_number)) ? (int) $lastRef->reference_number + 1 : 1;
+
         return Inertia::render('Inventory/QuantityAdjustment/Create', [
             'items' => $items,
             'accounts' => $accounts,
+            'nextReference' => (string) $nextRef,
         ]);
     }
 
@@ -146,6 +154,19 @@ class InventoryQuantityAdjustmentController extends Controller
                     }
                 }
             });
+            $action = $request->input('action', 'save');
+
+            if ($action === 'new') {
+                return redirect()->route('inventory-adjustment')->with('success', 'Inventory quantity adjustment saved successfully.');
+            }
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Inventory quantity adjustment saved successfully.');
+            }
+
+            if (isset($journalEntry)) {
+                return redirect()->route('journal-entries.edit', $journalEntry->id)->with('success', 'Inventory quantity adjustment saved successfully.');
+            }
 
             return redirect()->back()->with('success', 'Inventory quantity adjustment saved successfully.');
         } catch (\Exception $e) {

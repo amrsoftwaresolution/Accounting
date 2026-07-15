@@ -17,10 +17,10 @@ const FormSection = ({ title, children, show = true }) => {
     );
 };
 
-export default function CreateAdjustment({ items, accounts }) {
+export default function CreateAdjustment({ items, accounts, nextReference }) {
     const { data, setData, post, processing, errors, transform } = useForm({
-        adjustment_date: new Date().toISOString().split('T')[0],
-        reference_number: '1',
+        adjustment_date: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
+        reference_number: nextReference || '1',
         adjustment_reason: 'Damaged Goods',
         inventory_adjustment_account_id: accounts.length > 0 ? accounts[0].id : '',
         memo: '',
@@ -103,11 +103,11 @@ export default function CreateAdjustment({ items, accounts }) {
             items: data.items.filter(item => item.item_id !== '')
         }));
         
-        post(route('inventory-adjustment.store'), {
+        localStorage.setItem('last_transaction_date', data.adjustment_date);
+        
+        post(route('inventory-adjustment.store', { action: close ? 'new' : 'save' }), {
             onSuccess: () => {
                 if (close) {
-                    window.location.href = route('items.index');
-                } else {
                     setData({
                         ...data,
                         items: [{ id: Date.now(), item_id: '', sku: '', description: '', qty_on_hand: 0, new_qty: 0, change_in_qty: 0 }],
@@ -124,13 +124,7 @@ export default function CreateAdjustment({ items, accounts }) {
 
             <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-32">
                 <div className="mb-6 flex items-center">
-                    <Link
-                        href={route('items.index')}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-                        Back to Items
-                    </Link>
+                    {/* Removed Back to Items link */}
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -283,8 +277,7 @@ export default function CreateAdjustment({ items, accounts }) {
                                 disabled={processing}
                                 size="sm"
                             >
-                                Save and close
-                                <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                Save and new
                             </CommonButton>
                         </div>
                     </div>

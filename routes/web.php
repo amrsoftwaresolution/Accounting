@@ -155,6 +155,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
     Route::get('/reports/inventory-summary', [\App\Http\Controllers\Accounting\ReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
     Route::get('/reports/inventory-detail/{item}', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
+    Route::get('/reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByItem'])->name('reports.sales-by-item');
+    Route::get('/reports/sales-by-customer', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByCustomer'])->name('reports.sales-by-customer');
+    Route::get('/reports/purchase-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseByItem'])->name('reports.purchase-by-item');
+    Route::get('/reports/purchase-by-supplier', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseBySupplier'])->name('reports.purchase-by-supplier');
 
     // Companies
     Route::resource('companies', \App\Http\Controllers\CompanyController::class);

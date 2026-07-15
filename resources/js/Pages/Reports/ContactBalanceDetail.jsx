@@ -3,49 +3,22 @@ import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function ContactBalanceDetail({ contact, contactType, lines = [], filters = {} }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
 
-    const [startDate, setStartDate] = useState(filters.start_date || '');
-    const [endDate, setEndDate] = useState(filters.end_date || '');
-    const [datePreset, setDatePreset] = useState('custom');
-
-    const handleRunReport = (overrideStart, overrideEnd) => {
-        const s = typeof overrideStart === 'string' ? overrideStart : startDate;
-        const e = typeof overrideEnd === 'string' ? overrideEnd : endDate;
+    const handleFilterChange = (newFilters) => {
         const routeName = contactType === 'Customer' ? 'reports.customer-detail' : 'reports.supplier-detail';
-        router.get(route(routeName, contact.id), { start_date: s, end_date: e }, {
+        router.get(route(routeName, contact.id), { 
+            start_date: newFilters.start_date, 
+            end_date: newFilters.end_date,
+            type: newFilters.type 
+        }, {
             preserveState: true,
             preserveScroll: true,
         });
-    };
-
-    const handlePresetChange = (e) => {
-        const val = e.target.value;
-        setDatePreset(val);
-
-        let newStart = startDate;
-        let newEnd = endDate;
-        const currentYear = new Date().getFullYear();
-
-        if (val === 'all') {
-            newStart = '';
-            newEnd = '';
-        } else if (val === 'this_year') {
-            newStart = `${currentYear}-01-01`;
-            newEnd = `${currentYear}-12-31`;
-        } else if (val === 'last_year') {
-            newStart = `${currentYear - 1}-01-01`;
-            newEnd = `${currentYear - 1}-12-31`;
-        }
-
-        if (val !== 'custom') {
-            setStartDate(newStart);
-            setEndDate(newEnd);
-            handleRunReport(newStart, newEnd);
-        }
     };
 
     const transactions = useMemo(() => {
@@ -73,50 +46,10 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
     }, [lines, contactType, contact.opening_balance]);
 
     const filterElements = (
-        <div className="flex items-end gap-4">
-            <div className="w-[160px] pb-[1px]">
-                <CommonInput
-                    type="select"
-                    label="Date Period"
-                    value={datePreset}
-                    onChange={handlePresetChange}
-                    size="sm"
-                >
-                    <option value="all">All Dates</option>
-                    <option value="this_year">Current Year</option>
-                    <option value="last_year">Last Year</option>
-                    <option value="custom">Customize</option>
-                </CommonInput>
-            </div>
-            {datePreset === 'custom' && (
-                <>
-                    <div className="w-[140px]">
-                        <CommonInput
-                            type="date"
-                            label="From"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <div className="w-[140px]">
-                        <CommonInput
-                            type="date"
-                            label="To"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <button
-                        onClick={() => handleRunReport()}
-                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
-                    >
-                        Run Report
-                    </button>
-                </>
-            )}
-        </div>
+        <ReportDateFilter 
+            currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
+            onFilterChange={handleFilterChange}
+        />
     );
 
     const displayName = contact.display_name || contact.company_name;

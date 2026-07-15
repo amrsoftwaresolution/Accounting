@@ -3,44 +3,20 @@ import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function InventoryDetail({ item, lines, filters, auth }) {
     const dateFormat = useDateFormat();
-    const [startDate, setStartDate] = useState(filters.start_date || '');
-    const [endDate, setEndDate] = useState(filters.end_date || '');
-    const [datePreset, setDatePreset] = useState('custom');
 
-    const handleRunReport = (start = startDate, end = endDate) => {
-        router.get(route('reports.inventory-detail', item.id), { start_date: start, end_date: end }, {
+    const handleFilterChange = (newFilters) => {
+        router.get(route('reports.inventory-detail', item.id), { 
+            start_date: newFilters.start_date, 
+            end_date: newFilters.end_date,
+            type: newFilters.type 
+        }, {
             preserveState: true,
             preserveScroll: true,
         });
-    };
-
-    const handlePresetChange = (e) => {
-        const val = e.target.value;
-        setDatePreset(val);
-
-        let newStart = startDate;
-        let newEnd = endDate;
-        const currentYear = new Date().getFullYear();
-
-        if (val === 'all') {
-            newStart = '';
-            newEnd = ''; 
-        } else if (val === 'this_year') {
-            newStart = `${currentYear}-01-01`;
-            newEnd = `${currentYear}-12-31`;
-        } else if (val === 'last_year') {
-            newStart = `${currentYear - 1}-01-01`;
-            newEnd = `${currentYear - 1}-12-31`;
-        }
-
-        if (val !== 'custom') {
-            setStartDate(newStart);
-            setEndDate(newEnd);
-            handleRunReport(newStart, newEnd);
-        }
     };
 
     const handleExportExcel = () => {
@@ -49,7 +25,7 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
         let csvContent = "";
         csvContent += `"${companyName}"\n`;
         csvContent += `"Inventory Detail: ${item.name}"\n`;
-        csvContent += `"Date Range: ${startDate ? formatDate(startDate, dateFormat) : 'All Time'} to ${endDate ? formatDate(endDate, dateFormat) : 'Present'}"\n\n`;
+        csvContent += `"Date Range: ${filters.start_date ? formatDate(filters.start_date, dateFormat) : 'All Time'} to ${filters.end_date ? formatDate(filters.end_date, dateFormat) : 'Present'}"\n\n`;
 
         // Headers
         csvContent += `"Date","Transaction Type","Ref #","Memo","Qty Change"\n`;
@@ -71,48 +47,10 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
 
     const filterElements = (
         <div className="flex items-end gap-4 flex-wrap">
-            <div className="w-[160px] pb-[1px]">
-                <CommonInput
-                    type="select"
-                    label="Date Period"
-                    value={datePreset}
-                    onChange={handlePresetChange}
-                    size="sm"
-                >
-                    <option value="all">All Dates</option>
-                    <option value="this_year">Current Year</option>
-                    <option value="last_year">Last Year</option>
-                    <option value="custom">Customize</option>
-                </CommonInput>
-            </div>
-            {datePreset === 'custom' && (
-                <>
-                    <div className="w-[130px]">
-                        <CommonInput
-                            type="date"
-                            label="From Date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <div className="w-[130px]">
-                        <CommonInput
-                            type="date"
-                            label="To Date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <button
-                        onClick={() => handleRunReport()}
-                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
-                    >
-                        Run Report
-                    </button>
-                </>
-            )}
+            <ReportDateFilter 
+                currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
+                onFilterChange={handleFilterChange}
+            />
             
             <div className="ml-auto">
                 <Link 
@@ -139,9 +77,9 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <h4 className="text-md font-semibold text-primary mt-2">{item.name} {item.sku ? `(SKU: ${item.sku})` : ''}</h4>
                 <p className="text-[13px] text-gray-500 mt-1">
-                    {startDate ? formatDate(startDate, dateFormat) : 'All Time'} 
+                    {filters.start_date ? formatDate(filters.start_date, dateFormat) : 'All Time'} 
                     {' '}to{' '} 
-                    {endDate ? formatDate(endDate, dateFormat) : 'Present'}
+                    {filters.end_date ? formatDate(filters.end_date, dateFormat) : 'Present'}
                 </p>
             </div>
 

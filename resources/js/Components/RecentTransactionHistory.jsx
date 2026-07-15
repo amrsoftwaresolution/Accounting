@@ -39,6 +39,10 @@ const getEditRoute = (type) => {
             return 'payment.edit';
         case 'bank_deposit':
             return 'deposit.edit';
+        case 'supplier_credit':
+            return 'supplier-credit.edit';
+        case 'credit_note':
+            return 'credit-note.edit';
         default:
             return 'journal-entries.edit';
     }
@@ -164,15 +168,7 @@ export default function RecentTransactionHistory({ historyType = 'invoice', dirt
                                         </div>
                                     </button>
                                 ))}
-                                <div className="mt-2 border-t border-slate-100 pt-2 text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => router.visit(route('history.index', { transactionType: normalizedType }))}
-                                        className="text-[10px] font-black uppercase tracking-[0.25em] text-primary-600 hover:text-primary-700"
-                                    >
-                                        More...
-                                    </button>
-                                </div>
+                                {/* Removed More... button */}
                             </>
                         )}
                     </div>

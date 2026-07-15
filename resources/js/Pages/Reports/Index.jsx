@@ -6,59 +6,78 @@ import CommonInput from '@/Components/CommonInput';
 export default function ReportsIndex() {
     const [searchTerm, setSearchTerm] = useState('');
 
-    const reports = [
+    const reportGroups = [
         {
-            name: 'Profit and Loss',
-            href: route('reports.profit-loss'),
+            category: 'Financial Reports',
+            reports: [
+                { name: 'Profit and Loss (PNL)', href: route('reports.profit-loss') },
+                { name: 'Balance Sheet', href: route('reports.balance-sheet') },
+                { name: 'Account History Report', href: route('chart-of-account.index') }, // Directs to COA to select an account for history
+            ]
         },
         {
-            name: 'Balance Sheet',
-            href: route('reports.balance-sheet'),
+            category: 'Customers & Sales',
+            reports: [
+                { name: 'Customer Balance Summary', href: route('reports.customer-balance') },
+                { name: 'Customer Balance Details', href: route('reports.customer-balance') }, // Detailed is usually accessed via clicking a customer, but we can just route to summary for now
+                { name: 'Sales By Customer', href: route('reports.sales-by-customer') },
+                { name: 'Sales By Item', href: route('reports.sales-by-item') },
+            ]
         },
         {
-            name: 'Customer Balance Summary',
-            href: route('reports.customer-balance'),
+            category: 'Suppliers & Purchases',
+            reports: [
+                { name: 'Supplier Balance Summary', href: route('reports.supplier-balance') },
+                { name: 'Supplier Balance Details', href: route('reports.supplier-balance') }, // Detailed is usually accessed via clicking a supplier
+                { name: 'Purchase by Supplier', href: route('reports.purchase-by-supplier') },
+                { name: 'Purchase by Item', href: route('reports.purchase-by-item') },
+            ]
         },
         {
-            name: 'Supplier Balance Summary',
-            href: route('reports.supplier-balance'),
-        },
-        {
-            name: 'Inventory Summary',
-            href: route('reports.inventory-summary'),
+            category: 'Inventory',
+            reports: [
+                { name: 'Inventory Balance Summary', href: route('reports.inventory-summary') },
+                { name: 'Inventory Balance Details', href: route('reports.inventory-summary') }, // Detailed is accessed via clicking an item
+            ]
         }
     ];
 
-    const filteredReports = reports.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredGroups = reportGroups.map(group => ({
+        ...group,
+        reports: group.reports.filter(report => 
+            report.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    })).filter(group => group.reports.length > 0);
 
     return (
         <AuthenticatedLayout header="Reports Center">
             <Head title="Reports Center" />
 
             <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 font-serif tracking-tight">Reports Center</h1>
-                    <p className="mt-2 text-sm text-gray-600 max-w-2xl">
-                        Find, filter, and run reports to gain insights into your business's financial health, inventory, and customer balances.
-                    </p>
+                <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 font-serif tracking-tight">Reports Center</h1>
+                        <p className="mt-2 text-sm text-gray-600 max-w-2xl">
+                            Find, filter, and run reports to gain insights into your business's financial health, inventory, and customer balances.
+                        </p>
+                    </div>
+                    <div className="w-full md:w-80">
+                        <CommonInput 
+                            type="text"
+                            placeholder="Find report by name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            icon={
+                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            }
+                        />
+                    </div>
                 </div>
 
-                <div className="mb-8 max-w-md">
-                    <CommonInput 
-                        type="text"
-                        placeholder="Find report by name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        icon={
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        }
-                    />
-                </div>
-
-                <div className="space-y-12">
-                    {filteredReports.length === 0 ? (
+                <div className="space-y-8">
+                    {filteredGroups.length === 0 ? (
                         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -72,21 +91,28 @@ export default function ReportsIndex() {
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {filteredReports.map((item, iIdx) => (
-                                    <Link 
-                                        key={iIdx} 
-                                        href={item.href}
-                                        className="group relative flex flex-col justify-center items-center p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-primary-500/30 transition-all duration-200"
-                                    >
-                                        <h3 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors text-center">
-                                            {item.name}
-                                        </h3>
-                                    </Link>
-                                ))}
+                        filteredGroups.map((group, gIdx) => (
+                            <div key={gIdx} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+                                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                                    <h2 className="text-lg font-bold text-gray-800">{group.category}</h2>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                        {group.reports.map((item, rIdx) => (
+                                            <Link 
+                                                key={rIdx} 
+                                                href={item.href}
+                                                className="group relative flex flex-col justify-center items-center p-5 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-500/50 transition-all duration-200 h-full"
+                                            >
+                                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors text-center leading-tight">
+                                                    {item.name}
+                                                </h3>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ))
                     )}
                 </div>
             </div>
