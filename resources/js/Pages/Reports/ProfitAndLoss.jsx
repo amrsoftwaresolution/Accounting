@@ -286,7 +286,8 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                     {isMonthWise && monthCols.map(ym => {
                         const [y, m] = ym.split('-');
                         const sDate = `${ym}-01`;
-                        const eDate = new Date(y, m, 0).toISOString().split('T')[0];
+                        const lastDay = new Date(y, m, 0).getDate();
+                        const eDate = `${ym}-${lastDay.toString().padStart(2, '0')}`;
                         return (
                             <td key={ym} className="py-2 px-3 text-right tabular-nums">
                                 {hasChildren && (item.monthly_balances?.[ym] || 0) === 0 ? null : (
