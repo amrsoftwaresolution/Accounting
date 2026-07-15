@@ -64,6 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'create'])->name('invoice');
     Route::post('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'store'])->name('invoice.store');
     Route::get('/invoice/{journalEntry}/edit', [\App\Http\Controllers\Accounting\InvoiceController::class, 'edit'])->name('invoice.edit');
+    Route::get('/invoice/{journalEntry}/print', [\App\Http\Controllers\Accounting\InvoiceController::class, 'print'])->name('invoice.print');
     Route::patch('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'update'])->name('invoice.update');
     Route::delete('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'destroy'])->name('invoice.destroy');
 

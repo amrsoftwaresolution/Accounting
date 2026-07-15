@@ -223,6 +223,14 @@ class InvoiceController extends Controller
         ]);
     }
 
+    public function print(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $invoice = \App\Models\Invoice::with('items.item', 'customer', 'company')->findOrFail($journalEntry->transactionable_id);
+
+        return view('invoices.print', compact('invoice', 'journalEntry'));
+    }
+
     public function update(UpdateInvoiceRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();

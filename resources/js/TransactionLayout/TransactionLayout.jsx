@@ -39,6 +39,7 @@ export default function TransactionLayout({
             return { 
                 copyRoute: 'invoice', 
                 deleteRoute: 'invoice.destroy', 
+                printRoute: 'invoice.print',
                 recordId: props.invoice?.id, 
                 listRoute: 'dashboard' };
         }
@@ -208,6 +209,7 @@ export default function TransactionLayout({
                         <MoreOptionsMenu
                             copyRoute={resolvedMoreOptions.copyRoute}
                             deleteRoute={resolvedMoreOptions.deleteRoute}
+                            printRoute={resolvedMoreOptions.printRoute}
                             recordId={resolvedMoreOptions.recordId}
                             listRoute={resolvedMoreOptions.listRoute}
                         />

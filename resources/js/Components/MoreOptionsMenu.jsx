@@ -5,6 +5,7 @@ import axios from 'axios';
 export default function MoreOptionsMenu({
     copyRoute = null,
     deleteRoute = null,
+    printRoute = null,
     recordId = null,
     listRoute = 'dashboard',
     label = 'More Options',
@@ -55,7 +56,14 @@ export default function MoreOptionsMenu({
         });
     };
 
-    if (!recordId || (!copyRoute && !deleteRoute)) {
+    const handlePrint = () => {
+        setOpen(false);
+        if (printRoute) {
+            window.open(route(printRoute, recordId), '_blank');
+        }
+    };
+
+    if (!recordId || (!copyRoute && !deleteRoute && !printRoute)) {
         return null;
     }
 
@@ -81,11 +89,20 @@ export default function MoreOptionsMenu({
                             <span className="text-[10px] uppercase tracking-[0.25em] text-slate-400">New</span>
                         </button>
                     )}
+                    {printRoute && (
+                        <button
+                            type="button"
+                            onClick={handlePrint}
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-700"
+                        >
+                            Print
+                        </button>
+                    )}
                     {deleteRoute && (
                         <button
                             type="button"
                             onClick={handleDelete}
-                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-rose-400 transition hover:bg-slate-700"
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-rose-400 transition hover:bg-slate-700 border-t border-slate-700 mt-1 pt-2"
                         >
                             Delete
                         </button>
