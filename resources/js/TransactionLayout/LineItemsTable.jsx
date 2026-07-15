@@ -205,7 +205,7 @@ const handleCurrencyBlur = (index, key, rawValue) => {
                                                     type={col.type === 'currency' || col.type === 'number' ? 'text' : (col.type || "text")}
                                                     variant="table"
                                                     size="sm"
-                                                    value={item[col.key] || ""}
+                                                    value={item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : ""}
                                                     onChange={(e) => col.type === 'currency'
     ? handleCurrencyChange(index, col.key, e.target.value)
     : col.type === 'number'
@@ -226,8 +226,8 @@ const handleCurrencyBlur = (index, key, rawValue) => {
     ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
     : col.type === 'number'
     ? (e) => {
-        const num = parseFloat(String(e.target.value).replace(/,/g, '')) || 0;
-        handleItemChange(index, col.key, num.toLocaleString('en-US'));
+        const num = parseFloat(String(e.target.value).replace(/,/g, ''));
+        handleItemChange(index, col.key, isNaN(num) ? "" : String(num));
     }
     : undefined
 }
