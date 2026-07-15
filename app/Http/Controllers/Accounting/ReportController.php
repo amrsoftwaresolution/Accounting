@@ -210,18 +210,26 @@ class ReportController extends Controller
         $endDate = $request->query('end_date');
         $displayBy = $request->query('display_by', 'total');
 
-        $startDate = $startDate !== null && $startDate !== '' ? $startDate : now()->startOfMonth()->toDateString();
-        $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->endOfMonth()->toDateString();
+        if (!$request->has('start_date') && !$request->has('end_date')) {
+            $startDate = now()->startOfMonth()->toDateString();
+            $endDate = now()->endOfMonth()->toDateString();
+        }
 
         $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.company_id', session('active_company_id'))
-            ->whereBetween('journal_entries.date', [$startDate, $endDate])
             ->select(
                 'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
             );
+
+        if ($startDate) {
+            $query->where('journal_entries.date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
 
         if ($displayBy === 'month') {
             $query->addSelect(DB::raw('DATE_FORMAT(journal_entries.date, "%Y-%m") as month'))
@@ -234,8 +242,11 @@ class ReportController extends Controller
 
         $months = [];
         if ($displayBy === 'month') {
-            $start = \Carbon\Carbon::parse($startDate)->startOfMonth();
-            $end = \Carbon\Carbon::parse($endDate)->startOfMonth();
+            $actualStart = $startDate ? \Carbon\Carbon::parse($startDate) : ($lines->min('month') ? \Carbon\Carbon::createFromFormat('Y-m', $lines->min('month')) : now());
+            $actualEnd = $endDate ? \Carbon\Carbon::parse($endDate) : ($lines->max('month') ? \Carbon\Carbon::createFromFormat('Y-m', $lines->max('month')) : now());
+            
+            $start = $actualStart->copy()->startOfMonth();
+            $end = $actualEnd->copy()->startOfMonth();
             while ($start->lte($end)) {
                 $months[] = $start->format('Y-m');
                 $start->addMonth();

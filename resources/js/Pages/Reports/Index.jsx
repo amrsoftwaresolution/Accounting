@@ -8,51 +8,28 @@ export default function ReportsIndex() {
 
     const reports = [
         {
-            group: 'Business Overview',
-            items: [
-                {
-                    name: 'Profit and Loss',
-                    description: 'Shows your income, expenses, and net income (profit or loss).',
-                    href: route('reports.profit-loss'),
-                },
-                {
-                    name: 'Balance Sheet',
-                    description: 'Shows what you own (assets), what you owe (liabilities), and what you invested (equity).',
-                    href: route('reports.balance-sheet'),
-                }
-            ]
+            name: 'Profit and Loss',
+            href: route('reports.profit-loss'),
         },
         {
-            group: 'Who owes you & Who you owe',
-            items: [
-                {
-                    name: 'Customer Balance Summary',
-                    description: 'Shows the unpaid balances for each customer.',
-                    href: route('reports.customer-balance'),
-                },
-                {
-                    name: 'Supplier Balance Summary',
-                    description: 'Shows the unpaid balances for each supplier.',
-                    href: route('reports.supplier-balance'),
-                }
-            ]
+            name: 'Balance Sheet',
+            href: route('reports.balance-sheet'),
         },
         {
-            group: 'Inventory',
-            items: [
-                {
-                    name: 'Inventory Summary',
-                    description: 'Shows the quantity, average cost, and total value of your inventory items.',
-                    href: route('reports.inventory-summary'),
-                }
-            ]
+            name: 'Customer Balance Summary',
+            href: route('reports.customer-balance'),
+        },
+        {
+            name: 'Supplier Balance Summary',
+            href: route('reports.supplier-balance'),
+        },
+        {
+            name: 'Inventory Summary',
+            href: route('reports.inventory-summary'),
         }
     ];
 
-    const filteredReports = reports.map(group => ({
-        ...group,
-        items: group.items.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    })).filter(group => group.items.length > 0);
+    const filteredReports = reports.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return (
         <AuthenticatedLayout header="Reports Center">
@@ -95,33 +72,21 @@ export default function ReportsIndex() {
                             </div>
                         </div>
                     ) : (
-                        filteredReports.map((group, gIdx) => (
-                            <div key={gIdx}>
-                                <h2 className="text-lg font-bold text-gray-900 mb-4 tracking-tight border-b border-gray-200 pb-2">{group.group}</h2>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    {group.items.map((item, iIdx) => (
-                                        <Link 
-                                            key={iIdx} 
-                                            href={item.href}
-                                            className="group relative flex flex-col items-start p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-primary-500/30 transition-all duration-200"
-                                        >
-                                            <h3 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors mb-2">
-                                                {item.name}
-                                            </h3>
-                                            <p className="text-[13px] text-gray-500 leading-relaxed">
-                                                {item.description}
-                                            </p>
-                                            <div className="mt-auto pt-4 flex items-center text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-                                                Run Report
-                                                <svg className="ml-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                                </svg>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {filteredReports.map((item, iIdx) => (
+                                    <Link 
+                                        key={iIdx} 
+                                        href={item.href}
+                                        className="group relative flex flex-col justify-center items-center p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-primary-500/30 transition-all duration-200"
+                                    >
+                                        <h3 className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors text-center">
+                                            {item.name}
+                                        </h3>
+                                    </Link>
+                                ))}
                             </div>
-                        ))
+                        </div>
                     )}
                 </div>
             </div>

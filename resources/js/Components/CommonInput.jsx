@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 
 /**
- * A highly reusable, premium input component for JobAlign Books.
+ * A highly reusable, premium input component for JBooks.
  * Supports different input types, selects, and textareas with a consistent design.
  */
 export default forwardRef(function CommonInput(

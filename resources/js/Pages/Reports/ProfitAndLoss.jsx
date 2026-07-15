@@ -283,13 +283,20 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                     <td className="py-2 px-3 text-gray-900" style={{ paddingLeft }}>
                         {item.name}
                     </td>
-                    {isMonthWise && monthCols.map(ym => (
-                        <td key={ym} className="py-2 px-3 text-right tabular-nums">
-                            {hasChildren && (item.monthly_balances?.[ym] || 0) === 0 ? null : (
-                                <Currency value={item.monthly_balances?.[ym] || 0} />
-                            )}
-                        </td>
-                    ))}
+                    {isMonthWise && monthCols.map(ym => {
+                        const [y, m] = ym.split('-');
+                        const sDate = `${ym}-01`;
+                        const eDate = new Date(y, m, 0).toISOString().split('T')[0];
+                        return (
+                            <td key={ym} className="py-2 px-3 text-right tabular-nums">
+                                {hasChildren && (item.monthly_balances?.[ym] || 0) === 0 ? null : (
+                                    <Link href={route('chart-of-account.history', item.id) + '?start_date=' + sDate + '&end_date=' + eDate} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
+                                        <Currency value={item.monthly_balances?.[ym] || 0} />
+                                    </Link>
+                                )}
+                            </td>
+                        );
+                    })}
                     <td className="py-2 px-3 text-right tabular-nums">
                         {hasChildren && item.balance === 0 ? null : (
                             <Link href={route('chart-of-account.history', item.id) + '?start_date=' + filters.start_date + '&end_date=' + filters.end_date} className="hover:underline cursor-pointer decoration-slate-400 underline-offset-4">
