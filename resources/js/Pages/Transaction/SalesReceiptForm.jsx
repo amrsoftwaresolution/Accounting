@@ -173,7 +173,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
         }
 
         if (field === "qty" || field === "rate") {
-            let q = parseFloat(updated[index].qty) || 0;
+            let q = parseFloat(String(updated[index].qty).replace(/,/g, '')) || 0;
             if (q < 0) {
                 q = 0;
                 updated[index].qty = "0";

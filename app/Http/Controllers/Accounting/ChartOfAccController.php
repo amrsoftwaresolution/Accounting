@@ -37,6 +37,12 @@ class ChartOfAccController extends Controller
 
         $currencies = \App\Models\Currency::orderBy('code')->get();
 
+        $chartOfAccounts = $chartOfAccounts->map(function ($account) {
+            $account->currency_code = $account->currency ? $account->currency : null;
+
+            return $account;
+        });
+
         return Inertia::render('Accounting/chart-of-acc-index', [
             'chartOfAccounts' => $chartOfAccounts,
             'currencies' => $currencies,
