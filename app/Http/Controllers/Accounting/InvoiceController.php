@@ -227,8 +227,9 @@ class InvoiceController extends Controller
     {
         $journalEntry->load('lines');
         $invoice = \App\Models\Invoice::with('items.item', 'customer', 'company')->findOrFail($journalEntry->transactionable_id);
+        $company = $invoice->company;
 
-        return view('invoices.print', compact('invoice', 'journalEntry'));
+        return view('invoices.print', compact('invoice', 'journalEntry', 'company'));
     }
 
     public function update(UpdateInvoiceRequest $request, JournalEntry $journalEntry)
