@@ -629,6 +629,8 @@ class ReportController extends Controller
                 'end_date' => $endDate
             ]
         ]);
+    }
+
     public function salesByItem(Request $request)
     {
         $startDate = $request->query('start_date');
