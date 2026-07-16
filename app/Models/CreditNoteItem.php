@@ -12,4 +12,9 @@ class CreditNoteItem extends Model
     protected $fillable = [
         'credit_note_id', 'item_id', 'description', 'quantity', 'rate', 'amount'
     ];
+
+    public function item()
+    {
+        return $this->belongsTo(Item::class);
+    }
 }

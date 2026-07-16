@@ -8,15 +8,11 @@ class CompanySetting extends Model
 {
     protected $fillable = [
         'company_id',
-        'work_week_start', 'show_service_field', 'allow_billable_time', 'show_billing_rate',
         'show_tags', 'bill_payment_terms',
     ];
 
     protected $casts = [
         'multicurrency' => 'boolean',
-        'show_service_field' => 'boolean',
-        'allow_billable_time' => 'boolean',
-        'show_billing_rate' => 'boolean',
         'show_tags' => 'boolean',
     ];
 }

@@ -355,4 +355,54 @@ class ReceivePaymentController extends Controller
         return redirect()->route('dashboard')
             ->with('success', 'Payment deleted successfully.');
     }
+
+    public function print(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $payment = \App\Models\Payment::with('customer', 'company', 'allocations.invoice')->findOrFail($journalEntry->transactionable_id);
+        $company = $payment->company;
+
+        $tableItems = [];
+        if ($payment->allocations && $payment->allocations->count() > 0) {
+            foreach ($payment->allocations as $alloc) {
+                $tableItems[] = [
+                    "Payment applied to Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
+                    ($company->home_currency_prefix ?? '$') . number_format($alloc->amount, 2),
+                ];
+            }
+        } else {
+            $tableItems[] = [
+                "Payment Received",
+                ($company->home_currency_prefix ?? '$') . number_format($payment->amount, 2),
+            ];
+        }
+
+        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+            ->where('document_type', 'payment_receipt')
+            ->first();
+
+        return view('print.document', [
+            'title' => $printSetting?->custom_title ?: 'Payment Receipt',
+            'headerAlignment' => $printSetting?->header_alignment ?: 'left',
+            'staticFooterContent' => $printSetting?->static_footer_content ?: null,
+            'layoutConfig' => $printSetting?->layout_config,
+            'primaryColor' => $printSetting?->primary_color,
+            'textColor' => $printSetting?->text_color,
+            'pageSetup' => $printSetting?->page_setup,
+            'blockStyles' => $printSetting?->block_styles,
+            'documentNo' => $payment->reference_no,
+            'date' => $payment->payment_date,
+            'dueDate' => null,
+            'partyLabel' => 'Received From',
+            'partyName' => $payment->customer->display_name ?? $payment->customer->company_name,
+            'partyAddress' => '',
+            'partyEmail' => $payment->customer->email ?? '',
+            'tableHeaders' => ['Description', 'Amount'],
+            'tableItems' => $tableItems,
+            'totalAmount' => $payment->amount,
+            'memo' => $payment->memo,
+            'statementMessage' => null,
+            'company' => $company,
+        ]);
+    }
 }

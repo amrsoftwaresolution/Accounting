@@ -473,5 +473,54 @@ class BillController extends Controller
         return redirect()->route('chart-of-account.index')
             ->with('success', 'Bill deleted successfully.');
     }
+
+    public function print(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $bill = Bill::with('items.item', 'items.chartOfAccount', 'supplier', 'company')->findOrFail($journalEntry->transactionable_id);
+        $company = $bill->company;
+
+        $tableItems = [];
+        foreach ($bill->items as $item) {
+            $desc = "<div class='font-semibold text-gray-800'>" . ($item->item->name ?? $item->chartOfAccount->name ?? 'Item') . "</div>";
+            if ($item->description) {
+                $desc .= "<div class='text-sm text-gray-500 mt-1'>" . $item->description . "</div>";
+            }
+            $tableItems[] = [
+                $desc,
+                $item->quantity,
+                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+            ];
+        }
+
+        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+            ->where('document_type', 'bill')
+            ->first();
+
+        return view('print.document', [
+            'title' => $printSetting?->custom_title ?: 'Purchase Bill',
+            'headerAlignment' => $printSetting?->header_alignment ?: 'left',
+            'staticFooterContent' => $printSetting?->static_footer_content ?: null,
+            'layoutConfig' => $printSetting?->layout_config,
+            'primaryColor' => $printSetting?->primary_color,
+            'textColor' => $printSetting?->text_color,
+            'pageSetup' => $printSetting?->page_setup,
+            'blockStyles' => $printSetting?->block_styles,
+            'documentNo' => $bill->bill_no,
+            'date' => $bill->bill_date,
+            'dueDate' => $bill->due_date,
+            'partyLabel' => 'Billed From',
+            'partyName' => $bill->supplier->display_name ?? $bill->supplier->company_name,
+            'partyAddress' => '',
+            'partyEmail' => $bill->supplier->email ?? '',
+            'tableHeaders' => ['Description', 'Qty', 'Rate', 'Amount'],
+            'tableItems' => $tableItems,
+            'totalAmount' => $bill->total_amount,
+            'memo' => $bill->memo,
+            'statementMessage' => null,
+            'company' => $company,
+        ]);
+    }
 }
 

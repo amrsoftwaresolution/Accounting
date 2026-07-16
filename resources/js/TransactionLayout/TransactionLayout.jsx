@@ -47,6 +47,7 @@ export default function TransactionLayout({
             return { 
                 copyRoute: 'bill', 
                 deleteRoute: 'bill.destroy', 
+                printRoute: 'bill.print',
                 recordId: props.bill?.id, 
                 listRoute: 'dashboard' };
         }
@@ -69,6 +70,14 @@ export default function TransactionLayout({
                 listRoute: 'dashboard'
             };
         }
+        if (currentPath.startsWith('/pay-bill/')) {
+            return { 
+                copyRoute: null, 
+                deleteRoute: 'pay-bill.destroy', 
+                printRoute: 'pay-bill.print',
+                recordId: props.payment?.id || props.journalEntry?.id, 
+                listRoute: 'dashboard' };
+        }
         if (currentPath.startsWith('/cheque/')) {
             const chequeId = currentPath.split('/')[2];
             return {
@@ -82,6 +91,7 @@ export default function TransactionLayout({
             return { 
                 copyRoute: 'payment', 
                 deleteRoute: 'payment.destroy', 
+                printRoute: 'payment.print',
                 recordId: props.payment?.id, 
                 listRoute: 'dashboard' };
         }
@@ -96,13 +106,15 @@ export default function TransactionLayout({
             return { 
                 copyRoute: 'credit-note', 
                 deleteRoute: 'credit-note.destroy', 
+                printRoute: 'credit-note.print',
                 recordId: props.creditNote?.id, 
                 listRoute: 'dashboard' };
         }
-        if (currentPath.startsWith('/SupplierCredit/')) {
+        if (currentPath.startsWith('/SupplierCredit/') || currentPath.startsWith('/supplier-return/')) {
             return { 
                 copyRoute: 'supplier-credit', 
                 deleteRoute: 'supplier-credit.destroy', 
+                printRoute: 'supplier-credit.print',
                 recordId: props.credit?.id, 
                 listRoute: 'dashboard' };
         }

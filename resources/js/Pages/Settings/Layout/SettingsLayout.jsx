@@ -5,10 +5,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 export default function SettingsLayout({ children, activeTab }) {
     const navItems = [
         { name: 'Company', id: 'company' },
-        { name: 'Sales', id: 'sales' },
-        { name: 'Expenses', id: 'expenses' },
-        { name: 'Time', id: 'time' },
         { name: 'Advanced', id: 'advanced' },
+        { name: 'Print', id: 'print' },
 
     ];
 
@@ -29,11 +27,10 @@ export default function SettingsLayout({ children, activeTab }) {
                             <Link
                                 key={item.id}
                                 href={route('settings.index', { tab: item.id })}
-                                className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all uppercase tracking-widest ${
-                                    activeTab === item.id
+                                className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all uppercase tracking-widest ${activeTab === item.id
                                         ? 'bg-primary-50 text-primary-700 shadow-sm'
                                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                }`}
+                                    }`}
                             >
                                 {item.name}
                             </Link>
@@ -42,7 +39,7 @@ export default function SettingsLayout({ children, activeTab }) {
 
                     {/* Main Content Area */}
                     <main className="flex-1">
-                        <div className="bg-white/70 backdrop-blur-xl border border-white/40 shadow-sm rounded-2xl overflow-hidden min-h-[500px]">
+                        <div className="rounded-2xl min-h-[500px]">
                             {children}
                         </div>
                     </main>

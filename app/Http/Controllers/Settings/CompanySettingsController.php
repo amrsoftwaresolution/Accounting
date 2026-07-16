@@ -40,16 +40,13 @@ class CompanySettingsController extends Controller
         // Merge company info and specific settings
         $mergedData = array_merge($company->toArray(), $settings->toArray(), [
             'settings_metadata' => [
-                'time' => [
-                    'work_week_start' => $settings->work_week_start,
-                    'show_service_field' => $settings->show_service_field,
-                    'allow_billable_time' => $settings->allow_billable_time,
-                    'show_billing_rate' => $settings->show_billing_rate,
-                ],
                 'expenses' => [
                     'show_tags' => $settings->show_tags,
                     'bill_payment_terms' => $settings->bill_payment_terms,
                 ],
+                'sales' => \App\Models\SalesSetting::firstOrCreate(['company_id' => $company->id])->toArray(),
+                'advanced' => \App\Models\AdvancedSettings::first() ? \App\Models\AdvancedSettings::first()->toArray() : [],
+                'print_settings' => \App\Models\PrintSetting::where('company_id', $company->id)->get(),
             ],
         ]);
 
@@ -111,22 +108,6 @@ class CompanySettingsController extends Controller
         return back()->with('message', 'Currency settings updated successfully.');
     }
 
-    /**
-     * Update Time Settings
-     */
-    public function updateTime(Request $request)
-    {
-        $validated = $request->validate([
-            'work_week_start' => 'required|string|max:20',
-            'show_service_field' => 'required|boolean',
-            'allow_billable_time' => 'required|boolean',
-            'show_billing_rate' => 'required|boolean',
-        ]);
-
-        $this->getSettings()->update($validated);
-
-        return back()->with('message', 'Time settings updated successfully.');
-    }
 
     /**
      * Update Expense Settings

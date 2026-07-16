@@ -33,4 +33,9 @@ class BillPayment extends Model
     {
         return $this->hasMany(BillPaymentAllocation::class);
     }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
 }

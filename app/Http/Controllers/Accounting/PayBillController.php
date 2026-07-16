@@ -192,4 +192,54 @@ class PayBillController extends Controller
         return redirect()->route('dashboard')
             ->with('success', 'Bill Payment deleted successfully.');
     }
+
+    public function print(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $payment = BillPayment::with('supplier', 'company', 'allocations.bill')->findOrFail($journalEntry->transactionable_id);
+        $company = $payment->company;
+
+        $tableItems = [];
+        if ($payment->allocations && $payment->allocations->count() > 0) {
+            foreach ($payment->allocations as $alloc) {
+                $tableItems[] = [
+                    "Payment applied to Bill #" . ($alloc->bill->bill_no ?? 'Unknown'),
+                    ($company->home_currency_prefix ?? '$') . number_format($alloc->amount_applied, 2),
+                ];
+            }
+        } else {
+            $tableItems[] = [
+                "Payment to Supplier",
+                ($company->home_currency_prefix ?? '$') . number_format($payment->amount, 2),
+            ];
+        }
+
+        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+            ->where('document_type', 'payment_voucher')
+            ->first();
+
+        return view('print.document', [
+            'title' => $printSetting?->custom_title ?: 'Payment Voucher',
+            'headerAlignment' => $printSetting?->header_alignment ?: 'left',
+            'staticFooterContent' => $printSetting?->static_footer_content ?: null,
+            'layoutConfig' => $printSetting?->layout_config,
+            'primaryColor' => $printSetting?->primary_color,
+            'textColor' => $printSetting?->text_color,
+            'pageSetup' => $printSetting?->page_setup,
+            'blockStyles' => $printSetting?->block_styles,
+            'documentNo' => $payment->reference_no,
+            'date' => $payment->payment_date,
+            'dueDate' => null,
+            'partyLabel' => 'Paid To',
+            'partyName' => $payment->supplier->display_name ?? $payment->supplier->company_name,
+            'partyAddress' => '',
+            'partyEmail' => $payment->supplier->email ?? '',
+            'tableHeaders' => ['Description', 'Amount'],
+            'tableItems' => $tableItems,
+            'totalAmount' => $payment->amount,
+            'memo' => $payment->memo,
+            'statementMessage' => null,
+            'company' => $company,
+        ]);
+    }
 }

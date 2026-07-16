@@ -323,6 +323,55 @@ class CreditNoteController extends Controller
             ->with('success', 'Sales Return deleted successfully.');
     }
 
+    public function print(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $creditNote = CreditNote::with('items.item', 'customer', 'company')->findOrFail($journalEntry->transactionable_id);
+        $company = $creditNote->company;
+
+        $tableItems = [];
+        foreach ($creditNote->items as $item) {
+            $desc = "<div class='font-semibold text-gray-800'>" . ($item->item->name ?? 'Item') . "</div>";
+            if ($item->description) {
+                $desc .= "<div class='text-sm text-gray-500 mt-1'>" . $item->description . "</div>";
+            }
+            $tableItems[] = [
+                $desc,
+                $item->quantity,
+                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+            ];
+        }
+
+        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+            ->where('document_type', 'credit_note')
+            ->first();
+
+        return view('print.document', [
+            'title' => $printSetting?->custom_title ?: 'Credit Note',
+            'headerAlignment' => $printSetting?->header_alignment ?: 'left',
+            'staticFooterContent' => $printSetting?->static_footer_content ?: null,
+            'layoutConfig' => $printSetting?->layout_config,
+            'primaryColor' => $printSetting?->primary_color,
+            'textColor' => $printSetting?->text_color,
+            'pageSetup' => $printSetting?->page_setup,
+            'blockStyles' => $printSetting?->block_styles,
+            'documentNo' => $journalEntry->reference,
+            'date' => $creditNote->credit_note_date,
+            'dueDate' => null,
+            'partyLabel' => 'Credit To',
+            'partyName' => $creditNote->customer->display_name ?? $creditNote->customer->company_name,
+            'partyAddress' => '',
+            'partyEmail' => $creditNote->email ?? '',
+            'tableHeaders' => ['Description', 'Qty', 'Rate', 'Amount'],
+            'tableItems' => $tableItems,
+            'totalAmount' => $creditNote->total_amount,
+            'memo' => $creditNote->memo,
+            'statementMessage' => $creditNote->statement_message,
+            'company' => $company,
+        ]);
+    }
+
     private function getNextNo()
     {
         $last = CreditNote::where('company_id', session('active_company_id'))->latest()->first();

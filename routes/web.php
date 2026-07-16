@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'create'])->name('pay-bill');
     Route::post('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'store'])->name('pay-bill.store');
     Route::get('/pay-bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\PayBillController::class, 'edit'])->name('pay-bill.edit');
+    Route::get('/pay-bill/{journalEntry}/print', [\App\Http\Controllers\Accounting\PayBillController::class, 'print'])->name('pay-bill.print');
     Route::patch('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'update'])->name('pay-bill.update');
     Route::delete('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'destroy'])->name('pay-bill.destroy');
     Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
@@ -71,12 +72,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill');
     Route::post('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'store'])->name('bill.store');
     Route::get('/bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\BillController::class, 'edit'])->name('bill.edit');
+    Route::get('/bill/{journalEntry}/print', [\App\Http\Controllers\Accounting\BillController::class, 'print'])->name('bill.print');
     Route::patch('/bill/{journalEntry}', [\App\Http\Controllers\Accounting\BillController::class, 'update'])->name('bill.update');
     Route::delete('/bill/{journalEntry}', [\App\Http\Controllers\Accounting\BillController::class, 'destroy'])->name('bill.destroy');
 
     Route::get('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'create'])->name('payment');
     Route::post('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'store'])->name('payment.store');
     Route::get('/payment/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'edit'])->name('payment.edit');
+    Route::get('/payment/{journalEntry}/print', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'print'])->name('payment.print');
     Route::patch('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'update'])->name('payment.update');
     Route::delete('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'destroy'])->name('payment.destroy');
 
@@ -96,12 +99,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/sales-return', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
     Route::post('/sales-return', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
     Route::get('/sales-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'edit'])->name('credit-note.edit');
+    Route::get('/sales-return/{journalEntry}/print', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'print'])->name('credit-note.print');
     Route::patch('/sales-return/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'update'])->name('credit-note.update');
     Route::delete('/sales-return/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'destroy'])->name('credit-note.destroy');
 
     Route::get('/supplier-return', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('supplier-credit');
     Route::post('/supplier-return', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('supplier-credit.store');
     Route::get('/supplier-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
+    Route::get('/supplier-return/{journalEntry}/print', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'print'])->name('supplier-credit.print');
     Route::patch('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
     Route::delete('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
 
@@ -136,6 +141,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/expense', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateExpense'])->name('expense.settings.update');
     Route::post('/settings/sales', [\App\Http\Controllers\Settings\SalesSettingController::class, 'update'])->name('sales.settings.update');
     Route::post('/settings/advanced', [\App\Http\Controllers\Settings\AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
+    Route::post('/settings/print-settings', [\App\Http\Controllers\Settings\PrintSettingController::class, 'update'])->name('print.settings.update');
+    Route::post('/settings/print-settings/preview', [\App\Http\Controllers\Settings\PrintSettingController::class, 'preview'])->name('print.settings.preview');
     Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
 
     // Onboarding

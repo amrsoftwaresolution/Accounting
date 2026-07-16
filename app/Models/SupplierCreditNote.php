@@ -24,4 +24,9 @@ class SupplierCreditNote extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
 }

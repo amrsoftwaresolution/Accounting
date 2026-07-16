@@ -229,7 +229,47 @@ class InvoiceController extends Controller
         $invoice = \App\Models\Invoice::with('items.item', 'customer', 'company')->findOrFail($journalEntry->transactionable_id);
         $company = $invoice->company;
 
-        return view('invoices.print', compact('invoice', 'journalEntry', 'company'));
+        $tableItems = [];
+        foreach ($invoice->items as $item) {
+            $desc = "<div class='font-semibold text-gray-800'>" . ($item->item->name ?? 'Item') . "</div>";
+            if ($item->description) {
+                $desc .= "<div class='text-sm text-gray-500 mt-1'>" . $item->description . "</div>";
+            }
+            $tableItems[] = [
+                $desc,
+                $item->quantity,
+                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+            ];
+        }
+
+        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+            ->where('document_type', 'invoice')
+            ->first();
+
+        return view('print.document', [
+            'title' => $printSetting?->custom_title ?: 'Sales Invoice',
+            'headerAlignment' => $printSetting?->header_alignment ?: 'left',
+            'staticFooterContent' => $printSetting?->static_footer_content ?: null,
+            'layoutConfig' => $printSetting?->layout_config,
+            'primaryColor' => $printSetting?->primary_color,
+            'textColor' => $printSetting?->text_color,
+            'pageSetup' => $printSetting?->page_setup,
+            'blockStyles' => $printSetting?->block_styles,
+            'documentNo' => $invoice->invoice_no,
+            'date' => $invoice->invoice_date,
+            'dueDate' => $invoice->due_date,
+            'partyLabel' => 'Bill To',
+            'partyName' => $invoice->customer->display_name ?? $invoice->customer->company_name,
+            'partyAddress' => $invoice->billing_address,
+            'partyEmail' => $invoice->email,
+            'tableHeaders' => ['Description', 'Qty', 'Rate', 'Amount'],
+            'tableItems' => $tableItems,
+            'totalAmount' => $invoice->total_amount,
+            'memo' => $invoice->memo,
+            'statementMessage' => $invoice->statement_message,
+            'company' => $company,
+        ]);
     }
 
     public function update(UpdateInvoiceRequest $request, JournalEntry $journalEntry)

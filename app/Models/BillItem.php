@@ -13,4 +13,14 @@ class BillItem extends Model
     protected $fillable = [
         'bill_id', 'item_id', 'chart_of_acc_id', 'description', 'quantity', 'rate', 'amount'
     ];
+
+    public function item()
+    {
+        return $this->belongsTo(Item::class);
+    }
+
+    public function chartOfAccount()
+    {
+        return $this->belongsTo(ChartOfAcc::class, 'chart_of_acc_id');
+    }
 }

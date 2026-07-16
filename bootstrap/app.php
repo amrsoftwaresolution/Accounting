@@ -24,7 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleCompanyContext::class,
         ]);
 
-        //
+        $middleware->validateCsrfTokens(except: [
+            'settings/print-settings/preview',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -24,4 +24,9 @@ class CreditNote extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
 }

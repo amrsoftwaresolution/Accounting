@@ -6,14 +6,14 @@ import ExpenseSettings from './Partials/ExpenseSettings';
 import AdvancedSettings from './Partials/AdvancedSettings';
 import TimeSettings from './Partials/TimeSettings';
 
+import PrintSettings from './Partials/PrintSettings';
+
 export default function Index({ auth, tab, settings, currencies }) {
     return (
         <SettingsLayout activeTab={tab}>
             {tab === 'company' && <CompanySettings settings={settings} currencies={currencies} />}
-            {tab === 'sales' && <SalesSettings settings={settings?.settings_metadata?.sales} />}
-            {tab === 'expenses' && <ExpenseSettings settings={settings?.settings_metadata?.expenses} />}
-            {tab === 'advanced' && <AdvancedSettings settings={settings?.settings_metadata?.advanced} />}
-            {tab === 'time' && <TimeSettings settings={settings?.settings_metadata?.time} />}
+            {tab === 'advanced' && <AdvancedSettings settings={settings} />}
+            {tab === 'print' && <PrintSettings printSettings={settings?.settings_metadata?.print_settings || []} companySettings={settings} />}
 
             {/* Fallback code remains same */}
         </SettingsLayout>
