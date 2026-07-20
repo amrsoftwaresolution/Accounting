@@ -59,8 +59,7 @@ class ChartOfAccController extends Controller
             ]);
         }
 
-        $company = \App\Models\Company::findOrFail(session('active_company_id'));
-
+        
         if ($company->multicurrency && blank($request->input('currency'))) {
             return redirect()->back()
                 ->withErrors(['currency' => 'Currency is required when multi-currency is enabled.'])
@@ -73,12 +72,10 @@ class ChartOfAccController extends Controller
             session(['last_opening_balance_date' => $request->input('opening_balance_date')]);
         }
 
-        $company = \App\Models\Company::findOrFail(session('active_company_id'));
-        $selectedCurrency = $request->input('currency');
+                $selectedCurrency = $request->input('currency');
         $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $account = ChartOfAcc::create([
-            'company_id' => $company->id,
             'account_code' => $request->input('account_code'),
             'name' => $request->input('name'),
             'account_type' => $request->input('account_type'),
@@ -99,7 +96,6 @@ class ChartOfAccController extends Controller
         if ($openingBalance != 0 && $canHaveOpeningBalance) {
             $equityAccount = ChartOfAcc::firstOrCreate(
                 [
-                    'company_id' => $company->id,
                     'name' => 'Opening Balance Equity'
                 ],
                 [
@@ -111,7 +107,6 @@ class ChartOfAccController extends Controller
             );
 
             $journalEntry = \App\Models\JournalEntry::create([
-                'company_id' => $company->id,
                 'date' => $request->input('opening_balance_date', now()),
                 'reference' => 'OPENING_BAL',
                 'description' => 'Opening balance for ' . $account->name,
@@ -212,8 +207,7 @@ class ChartOfAccController extends Controller
             return redirect()->route('chart-of-account.index')->with('success', "Account {$statusText} successfully.");
         }
 
-        $company = \App\Models\Company::findOrFail(session('active_company_id'));
-
+        
         if ($company->multicurrency && blank($request->input('currency'))) {
             return redirect()->back()
                 ->withErrors(['currency' => 'Currency is required when multi-currency is enabled.'])
@@ -222,8 +216,7 @@ class ChartOfAccController extends Controller
 
         $request->validated();
 
-        $company = \App\Models\Company::findOrFail(session('active_company_id'));
-        $selectedCurrency = $request->input('currency');
+                $selectedCurrency = $request->input('currency');
         $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $chartOfAccount->update([

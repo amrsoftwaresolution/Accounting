@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('supplier_credit_notes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->uuid('supplier_id');
             $table->date('credit_date');
             $table->decimal('total_amount', 15, 2)->default(0);

@@ -72,41 +72,15 @@ class SalesReceiptController extends Controller
                 })->toArray(),
             ];
 
-            $companyId = session('active_company_id');
-            $paymentMethods = PaymentMethod::withoutGlobalScopes()
-                ->where('is_active', true)
-                ->where(function ($query) use ($companyId) {
-                    $query->whereNull('company_id');
-                    if ($companyId) {
-                        $query->orWhere('company_id', $companyId);
-                    }
-                })
-                ->orderBy('name')
-                ->get();
-
             return Inertia::render('Transaction/SalesReceiptForm', [
                 'receipt' => $receiptData,
-                'paymentMethods' => $paymentMethods,
+                'paymentMethods' => $this->paymentMethods(),
                 'nextReceiptNo' => $this->getNextReceiptNo(),
             ]);
         }
 
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Transaction/SalesReceiptForm', [
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $this->paymentMethods(),
             'nextReceiptNo' => $this->getNextReceiptNo()
         ]);
     }
@@ -135,7 +109,7 @@ class SalesReceiptController extends Controller
                 $customerId = $request->customer;
                 if (!$customerId) {
                     $walkInCustomer = \App\Models\Customer::firstOrCreate(
-                        ['company_id' => session('active_company_id'), 'display_name' => 'Walk-in Customer'],
+                        ['display_name' => 'Walk-in Customer'],
                         ['first_name' => 'Walk-in', 'last_name' => 'Customer', 'is_active' => true]
                     );
                     $customerId = $walkInCustomer->id;
@@ -144,7 +118,6 @@ class SalesReceiptController extends Controller
                 // 1. Save Document (Business Details)
                 if ($request->action === 'credit_sale') {
                     $receipt = \App\Models\Invoice::create([
-                        'company_id' => session('active_company_id'),
                         'invoice_no' => $request->receiptNo,
                         'customer_id' => $customerId,
                         'email' => $request->email,
@@ -168,7 +141,6 @@ class SalesReceiptController extends Controller
                     }
                 } else {
                     $receipt = SalesReceipt::create([
-                        'company_id' => session('active_company_id'),
                         'receipt_no' => $request->receiptNo,
                         'customer_id' => $customerId,
                         'email' => $request->email,
@@ -356,23 +328,9 @@ class SalesReceiptController extends Controller
             })->toArray(),
         ];
 
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Transaction/SalesReceiptForm', [
             'receipt' => $receiptData,
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $this->paymentMethods(),
             'nextReceiptNo' => $this->getNextReceiptNo()
         ]);
     }
@@ -545,7 +503,7 @@ class SalesReceiptController extends Controller
 
    private function getNextReceiptNo()
    {
-       $last = SalesReceipt::where('company_id', session('active_company_id'))->latest()->first();
+       $last = SalesReceipt::query()->latest()->first();
        return $last ? (int)$last->receipt_no + 1 : 1001;
    }
 }

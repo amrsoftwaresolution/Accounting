@@ -47,8 +47,6 @@ export default function AdvancedSettings() {
         tax_form: settings?.settings_metadata?.advanced?.tax_form || 'Partnership or limited liability company',
         enable_acct_nums: !!settings?.settings_metadata?.advanced?.enable_acct_nums,
         discount_acct: settings?.settings_metadata?.advanced?.discount_acct || 'Discounts given',
-        date_format: settings?.settings_metadata?.advanced?.date_format || 'mm/dd/yyyy',
-        currency_format: settings?.settings_metadata?.advanced?.currency_format || '$123,456.00',
         warn_dup_cheque: !!settings?.settings_metadata?.advanced?.warn_dup_cheque,
         warn_dup_bill: !!settings?.settings_metadata?.advanced?.warn_dup_bill,
         warn_dup_journal: !!settings?.settings_metadata?.advanced?.warn_dup_journal,
@@ -169,8 +167,6 @@ export default function AdvancedSettings() {
             >
                 {editingSection !== 'other' ? (
                     <>
-                        <Row label="Date format" value={data.date_format} />
-                        <Row label="Currency format" value={data.currency_format} />
                         <Row label="Warn me if duplicate cheque number is used" value={data.warn_dup_cheque ? "On" : "Off"} />
                         <Row label="Warn me if I enter a bill number that's already been used" value={data.warn_dup_bill ? "On" : "Off"} />
                         <Row label="Warn me if duplicate journal number is used" value={data.warn_dup_journal ? "On" : "Off"} />
@@ -178,18 +174,6 @@ export default function AdvancedSettings() {
                     </>
                 ) : (
                     <div className="space-y-3">
-                        <div className="flex justify-between items-center text-xs">
-                            <span>Date format</span>
-                            <select value={data.date_format} onChange={e => setData('date_format', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
-                                <option>dd/mm/yyyy</option><option>mm/dd/yyyy</option><option>yyyy/mm/dd</option>
-                            </select>
-                        </div>
-                        <div className="flex justify-between items-center text-xs">
-                            <span>Currency format</span>
-                            <select value={data.currency_format} onChange={e => setData('currency_format', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
-                                <option>Rs. 123,456.00</option><option>123.456,00</option>
-                            </select>
-                        </div>
                         <Toggle label="Warn me if duplicate cheque number is used" field="warn_dup_cheque" />
                         <Toggle label="Warn me if I enter a bill number that's already been used for that supplier" field="warn_dup_bill" />
                         <Toggle label="Warn me if duplicate journal number is used" field="warn_dup_journal" />

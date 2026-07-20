@@ -24,7 +24,7 @@ class StoreChartOfAccRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::unique('chart_of_accs', 'account_code')->where(function ($query) {
-                    return $query->where('company_id', session('active_company_id'));
+                    return $query;
                 })
             ],
             'name' => [
@@ -32,8 +32,7 @@ class StoreChartOfAccRequest extends FormRequest
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    $companyId = session('active_company_id');
-                    $exists = ChartOfAcc::query()->where('company_id', '=', $companyId)
+                                        $exists = ChartOfAcc::query()
                         ->whereRaw('LOWER(name) = ?', [Str::lower($value)])
                         ->exists();
 

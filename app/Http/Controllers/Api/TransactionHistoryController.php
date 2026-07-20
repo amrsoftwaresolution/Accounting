@@ -29,7 +29,7 @@ class TransactionHistoryController extends Controller
         $normalizedType = $this->normalizeType($transactionType);
 
         return JournalEntry::query()
-            ->where('company_id', session('active_company_id'))
+            
             ->where('transaction_type', $normalizedType)
             ->with(['payee', 'transactionable'])
             ->orderByDesc('created_at')

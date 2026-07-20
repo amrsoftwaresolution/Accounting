@@ -1,5 +1,4 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
 
 /**
  * A highly reusable, premium input component for JBooks.
@@ -27,8 +26,7 @@ export default forwardRef(function CommonInput(
 ) {
     const inputRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
-    const { settings } = usePage().props;
-    const resolvedDateFormat = dateFormat || settings?.date_format || 'mm/dd/yyyy';
+    const resolvedDateFormat = dateFormat || 'mm/dd/yyyy';
 
     useEffect(() => {
         if (isFocused) {

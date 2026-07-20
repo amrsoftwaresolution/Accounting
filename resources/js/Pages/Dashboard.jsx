@@ -8,7 +8,7 @@ export default function Dashboard({ auth, metrics, lowStockItems, recentJobs }) 
 
             <div className="py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                         {/* Service Metrics */}
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
@@ -34,7 +34,7 @@ export default function Dashboard({ auth, metrics, lowStockItems, recentJobs }) 
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Today's Revenue</p>
-                                <p className="text-2xl font-black text-slate-900">Rs. {parseFloat(metrics.todays_revenue || 0).toFixed(2)}</p>
+                                <p className="text-2xl font-black text-slate-900">LKR {parseFloat(metrics.todays_revenue || 0).toFixed(2)}</p>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-green-500">
                                 <span className="material-symbols-outlined">payments</span>
@@ -45,7 +45,7 @@ export default function Dashboard({ auth, metrics, lowStockItems, recentJobs }) 
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Monthly Revenue</p>
-                                <p className="text-2xl font-black text-slate-900">Rs. {parseFloat(metrics.monthly_revenue || 0).toFixed(2)}</p>
+                                <p className="text-2xl font-black text-slate-900">LKR {parseFloat(metrics.monthly_revenue || 0).toFixed(2)}</p>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
                                 <span className="material-symbols-outlined">trending_up</span>
@@ -55,7 +55,7 @@ export default function Dashboard({ auth, metrics, lowStockItems, recentJobs }) 
                         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Monthly Expenses</p>
-                                <p className="text-2xl font-black text-slate-900">Rs. {parseFloat(metrics.monthly_expenses || 0).toFixed(2)}</p>
+                                <p className="text-2xl font-black text-slate-900">LKR {parseFloat(metrics.monthly_expenses || 0).toFixed(2)}</p>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center text-red-500">
                                 <span className="material-symbols-outlined">trending_down</span>
@@ -66,7 +66,7 @@ export default function Dashboard({ auth, metrics, lowStockItems, recentJobs }) 
                             <div>
                                 <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Monthly Profit</p>
                                 <p className={`text-2xl font-black ${metrics.monthly_profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                    Rs. {parseFloat(metrics.monthly_profit || 0).toFixed(2)}
+                                    LKR {parseFloat(metrics.monthly_profit || 0).toFixed(2)}
                                 </p>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500">

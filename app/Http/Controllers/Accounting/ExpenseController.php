@@ -55,21 +55,9 @@ class ExpenseController extends Controller
                 })->values()->toArray() : [],
             ];
 
-            $companyId = session('active_company_id');
-            $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
-                ->where('is_active', true)
-                ->where(function ($query) use ($companyId) {
-                    $query->whereNull('company_id');
-                    if ($companyId) {
-                        $query->orWhere('company_id', $companyId);
-                    }
-                })
-                ->orderBy('name')
-                ->get();
-
             return Inertia::render('Transaction/ExpenseForm', [
                 'expense' => $expenseData,
-                'paymentMethods' => $paymentMethods,
+                'paymentMethods' => $this->paymentMethods(),
             ]);
         }
 
@@ -80,7 +68,7 @@ class ExpenseController extends Controller
 
     private function getNextExpenseNo()
     {
-        $last = JournalEntry::where('company_id', session('active_company_id'))
+        $last = JournalEntry::query()
             ->where('transaction_type', 'expense')
             ->orderByRaw('CAST(REGEXP_REPLACE(reference, "[^0-9]", "") AS UNSIGNED) DESC')
             ->first();
@@ -101,10 +89,9 @@ class ExpenseController extends Controller
         $paymentMethod = $request->input('method', $request->input('paymentMethod'));
         $referenceNo = $request->input('ref', $request->input('referenceNo'));
 
-        $companyId = session('active_company_id');
-
+        
         try {
-            $journalEntry = DB::transaction(function() use ($request, $paymentAccount, $paymentDate, $paymentMethod, $referenceNo, $companyId) {
+            $journalEntry = DB::transaction(function() use ($request, $paymentAccount, $paymentDate, $paymentMethod, $referenceNo) {
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -126,7 +113,6 @@ class ExpenseController extends Controller
                 // 1. Create Business Document (Expense)
 
                 $expense = \App\Models\Expense::create([
-                    'company_id' => $companyId,
                     'payee_id' => $request->payee,
                     'payee_type' => $request->payeeType,
                     'payment_account_id' => $paymentAccount,
@@ -159,11 +145,11 @@ class ExpenseController extends Controller
                     }
 
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     \App\Models\ExpenseItem::create([
@@ -179,7 +165,6 @@ class ExpenseController extends Controller
 
                 // 2. Create Financial Truth (Journal Entry)
                 $journalEntry = JournalEntry::create([
-                    'company_id' => $companyId,
                     'date' => $paymentDate,
                     'reference' => $referenceNo,
                     'description' => $request->memo,
@@ -208,11 +193,11 @@ class ExpenseController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'expense')->first()?->id);
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id;
                     }
 
                     JournalEntryLine::create([
@@ -287,20 +272,6 @@ class ExpenseController extends Controller
             })->values()->toArray() : [],
         ];
 
-        $companyId = session('active_company_id');
-
-        $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Transaction/ExpenseForm', [
             'payees' => array_merge(
                 Customer::orderBy('display_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->display_name, 'type' => 'customer'])->toArray(),
@@ -308,7 +279,7 @@ class ExpenseController extends Controller
             ),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'expense' => $expenseData,
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $this->paymentMethods(),
         ]);
     }
 
@@ -321,10 +292,9 @@ class ExpenseController extends Controller
         $paymentMethod = $request->input('method', $request->input('paymentMethod'));
         $referenceNo = $request->input('ref', $request->input('referenceNo'));
 
-        $companyId = session('active_company_id');
-
+        
         try {
-            DB::transaction(function() use ($request, $journalEntry, $paymentAccount, $paymentDate, $paymentMethod, $referenceNo, $companyId) {
+            DB::transaction(function() use ($request, $journalEntry, $paymentAccount, $paymentDate, $paymentMethod, $referenceNo) {
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -387,11 +357,11 @@ class ExpenseController extends Controller
                         }
 
                         $chartOfAccId = $itemModel?->type === 'inventory'
-                            ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                            ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                         if (!$chartOfAccId) {
-                            $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                            $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                         }
 
                         \App\Models\ExpenseItem::create([
@@ -433,11 +403,11 @@ class ExpenseController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'expense')->first()?->id);
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id;
                     }
 
                     JournalEntryLine::create([

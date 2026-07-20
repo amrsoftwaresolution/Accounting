@@ -70,16 +70,7 @@ export default function ItemCategorySidePanel({
                     required
                 />
 
-                <div>
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Parent Category</label>
-                    <SearchableSelect
-                        options={parents.map(p => ({ value: p.id, label: p.name }))}
-                        value={data.parent_id}
-                        onChange={val => setData('parent_id', val)}
-                        placeholder="None (Top Level)"
-                    />
-                    {errors.parent_id && <p className="mt-1 text-xs text-red-600">{errors.parent_id}</p>}
-                </div>
+
 
                 <div className="pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
                     <CommonButton variant="ghost" onClick={handleClose} type="button">Cancel</CommonButton>

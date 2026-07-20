@@ -11,9 +11,8 @@ class OnboardingController extends Controller
 {
     public function index()
     {
-        $companyId = session('active_company_id');
-        $company = Company::findOrFail($companyId);
-        $salesSettings = SalesSetting::firstOrCreate(['company_id' => $companyId]);
+                $company = Company::findOrFail($companyId);
+        $salesSettings = SalesSetting::firstOrCreate([]);
 
         return Inertia::render('Settings/Onboarding', [
             'company' => $company,
@@ -23,8 +22,6 @@ class OnboardingController extends Controller
 
     public function complete(Request $request)
     {
-        // Mark onboarding as complete (maybe add a field to companies table)
-        // For now, just redirect to dashboard
         return redirect()->route('dashboard')->with('message', 'Setup complete! Welcome aboard.');
     }
 }

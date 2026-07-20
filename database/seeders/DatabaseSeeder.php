@@ -23,7 +23,6 @@ class DatabaseSeeder extends Seeder
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('companies')->truncate();
-        DB::table('company_user')->truncate();
         DB::table('chart_of_accs')->truncate();
         DB::table('item_categories')->truncate();
         DB::table('items')->truncate();
@@ -58,9 +57,6 @@ class DatabaseSeeder extends Seeder
         );
 
 
-        // Link users to company
-        $ilhamsadath->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
-
         // 4. Create Chart of Accounts for the single company
         $accounts = [
             ['code' => '1000', 'name' => 'Cash on Hand', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
@@ -81,7 +77,7 @@ class DatabaseSeeder extends Seeder
 
         foreach ($accounts as $acc) {
             ChartOfAcc::updateOrCreate(
-                ['company_id' => $testCompany->id, 'account_code' => $acc['code']],
+                ['account_code' => $acc['code']],
                 [
                     'name' => $acc['name'],
                     'account_type' => $acc['type'],
@@ -91,11 +87,9 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // Run other seeders
         $this->call([
             PaymentMethodSeeder::class,
             AdvancedSettingsSeeder::class,
-            ItemSeeder::class,
         ]);
     }
 }

@@ -13,14 +13,12 @@ return new class extends Migration
     {
         Schema::create('print_settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->string('document_type'); // e.g. 'invoice', 'bill'
             $table->string('custom_title')->nullable();
             $table->string('header_alignment')->default('left');
             $table->text('static_footer_content')->nullable();
+            $table->json('layout_config')->nullable();
             $table->timestamps();
-
-            $table->unique(['company_id', 'document_type']);
         });
     }
 

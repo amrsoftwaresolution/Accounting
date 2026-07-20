@@ -6,7 +6,7 @@ import CommonButton from '@/Components/CommonButton';
 export default function Show({ auth, jobCard }) {
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    
+
     const { data, setData, put, processing } = useForm({
         customer_id: jobCard.customer_id,
         device_id: jobCard.device_id,
@@ -21,15 +21,15 @@ export default function Show({ auth, jobCard }) {
 
     const startDrawing = (e) => {
         const canvas = canvasRef.current;
-        if(!canvas) return;
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
-        
+
         ctx.beginPath();
         // Support for both mouse and touch
         const clientX = e.clientX || (e.touches && e.touches[0].clientX);
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
+
         ctx.moveTo(clientX - rect.left, clientY - rect.top);
         setIsDrawing(true);
     };
@@ -37,13 +37,13 @@ export default function Show({ auth, jobCard }) {
     const draw = (e) => {
         if (!isDrawing) return;
         const canvas = canvasRef.current;
-        if(!canvas) return;
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
-        
+
         const clientX = e.clientX || (e.touches && e.touches[0].clientX);
         const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        
+
         ctx.lineTo(clientX - rect.left, clientY - rect.top);
         ctx.stroke();
     };
@@ -54,7 +54,7 @@ export default function Show({ auth, jobCard }) {
 
     const clearSignature = () => {
         const canvas = canvasRef.current;
-        if(canvas) {
+        if (canvas) {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -63,10 +63,10 @@ export default function Show({ auth, jobCard }) {
 
     const saveSignature = () => {
         const canvas = canvasRef.current;
-        if(canvas) {
+        if (canvas) {
             const dataUrl = canvas.toDataURL();
             setData('customer_signature', dataUrl);
-            
+
             // Immediately submit update
             setTimeout(() => {
                 put(route('job-cards.update', jobCard.id));
@@ -80,7 +80,7 @@ export default function Show({ auth, jobCard }) {
 
             <div className="py-8">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    
+
                     <div className="flex justify-between items-center mb-6 print:hidden">
                         <Link href={route('job-cards.index')}>
                             <CommonButton variant="ghost">Back to List</CommonButton>
@@ -112,7 +112,7 @@ export default function Show({ auth, jobCard }) {
                                 <p className="text-sm text-slate-600">{jobCard.customer?.phone_number}</p>
                                 <p className="text-sm text-slate-600">{jobCard.customer?.email}</p>
                             </div>
-                            
+
                             <div>
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1">Device / Vehicle Details</h3>
                                 {jobCard.device ? (
@@ -146,7 +146,7 @@ export default function Show({ auth, jobCard }) {
                             </div>
                             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                                 <span className="block text-xs text-slate-500 uppercase">Est. Cost</span>
-                                <span className="font-semibold text-slate-800">{jobCard.estimated_cost ? `$${jobCard.estimated_cost}` : 'TBD'}</span>
+                                <span className="font-semibold text-slate-800">{jobCard.estimated_cost ? `LKR ${jobCard.estimated_cost}` : 'TBD'}</span>
                             </div>
                         </div>
 
@@ -155,7 +155,7 @@ export default function Show({ auth, jobCard }) {
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1">Photos Before Repair</h3>
                                 <div className="grid grid-cols-4 gap-4">
                                     {jobCard.photos.map((photo, index) => (
-                                        <img key={index} src={`/storage/${photo}`} alt={`Before repair ${index+1}`} className="w-full h-32 object-cover rounded-lg border border-slate-200" />
+                                        <img key={index} src={`/storage/${photo}`} alt={`Before repair ${index + 1}`} className="w-full h-32 object-cover rounded-lg border border-slate-200" />
                                     ))}
                                 </div>
                             </div>
@@ -165,7 +165,7 @@ export default function Show({ auth, jobCard }) {
                             <div className="flex justify-between items-end">
                                 <div>
                                     <p className="text-xs text-slate-500 mb-4">Customer Signature</p>
-                                    
+
                                     {jobCard.customer_signature ? (
                                         <div className="border-b border-slate-400 pb-2 mb-2 w-[300px]">
                                             <img src={jobCard.customer_signature} alt="Customer Signature" className="h-[100px] object-contain" />
@@ -173,7 +173,7 @@ export default function Show({ auth, jobCard }) {
                                     ) : (
                                         <div className="print:hidden">
                                             <div className="border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 mb-2">
-                                                <canvas 
+                                                <canvas
                                                     ref={canvasRef}
                                                     width={300}
                                                     height={100}
@@ -195,7 +195,7 @@ export default function Show({ auth, jobCard }) {
                                     )}
                                     <p className="text-sm font-bold text-slate-800">{jobCard.customer?.display_name}</p>
                                 </div>
-                                
+
                                 <div className="text-right">
                                     <div className="border-b border-slate-400 pb-2 mb-2 w-[250px] inline-block"></div>
                                     <p className="text-xs text-slate-500">Authorized Signature</p>

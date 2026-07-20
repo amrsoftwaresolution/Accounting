@@ -29,7 +29,7 @@ class UpdateChartOfAccRequest extends FormRequest
                 Rule::unique('chart_of_accs', 'account_code')
                     ->ignore($chartOfAccountId)
                     ->where(function ($query) {
-                        return $query->where('company_id', session('active_company_id'));
+                        return $query;
                     })
             ],
             'name' => [
@@ -37,8 +37,7 @@ class UpdateChartOfAccRequest extends FormRequest
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) use ($chartOfAccountId) {
-                    $companyId = session('active_company_id');
-                    $exists = ChartOfAcc::query()->where('company_id', '=', $companyId)
+                                        $exists = ChartOfAcc::query()
                         ->where('id', '!=', $chartOfAccountId)
                         ->whereRaw('LOWER(name) = ?', [Str::lower($value)])
                         ->exists();

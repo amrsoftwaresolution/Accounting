@@ -73,7 +73,6 @@ class CreditNoteController extends Controller
 
                 // 1. Business Details
                 $creditNote = CreditNote::create([
-                    'company_id' => session('active_company_id'),
                     'customer_id' => $request->customer,
                     'email' => $request->email,
                     'credit_note_date' => $request->creditNoteDate,
@@ -338,12 +337,12 @@ class CreditNoteController extends Controller
             $tableItems[] = [
                 $desc,
                 $item->quantity,
-                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
-                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
             ];
         }
 
-        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+        $printSetting = \App\Models\PrintSetting::query()
             ->where('document_type', 'credit_note')
             ->first();
 
@@ -374,7 +373,7 @@ class CreditNoteController extends Controller
 
     private function getNextNo()
     {
-        $last = CreditNote::where('company_id', session('active_company_id'))->latest()->first();
+        $last = CreditNote::query()->latest()->first();
         return $last ? (int)$last->creditNoteNo + 1 : 1001;
     }
 }

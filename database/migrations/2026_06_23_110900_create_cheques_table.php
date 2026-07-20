@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('cheques', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->uuid('payee_id')->nullable();
             $table->string('payee_type')->nullable(); // Customer or Supplier
             $table->uuid('bank_account_id');

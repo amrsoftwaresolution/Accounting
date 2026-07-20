@@ -47,7 +47,7 @@ class CustomerController extends Controller
             foreach ($request->devices as $deviceData) {
                 // If it doesn't have an ID, it's new
                 if (empty($deviceData['id'])) {
-                    $customer->devices()->create(array_merge($deviceData, ['company_id' => session('active_company_id')]));
+                    $customer->devices()->create(array_merge($deviceData, []));
                 }
             }
         }
@@ -94,7 +94,7 @@ class CustomerController extends Controller
                         $existingDeviceIds[] = $device->id;
                     }
                 } else {
-                    $newDevice = $customer->devices()->create(array_merge($deviceData, ['company_id' => session('active_company_id')]));
+                    $newDevice = $customer->devices()->create(array_merge($deviceData, []));
                     $existingDeviceIds[] = $newDevice->id;
                 }
             }

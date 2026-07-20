@@ -4,14 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Traits\HasCompany;
 
 class Supplier extends Model
 {
-    use HasUuids, HasCompany;
+    use HasUuids;
 
     protected $fillable = [
-        'company_id',
         'display_name',
         'first_name',
         'last_name',
@@ -36,7 +34,7 @@ class Supplier extends Model
     {
         // Calculate AP Balance for Supplier
         $apAccountIds = \App\Models\ChartOfAcc::where('sub_type', 'accounts-payable')
-            ->where('company_id', $this->company_id)
+            
             ->pluck('id');
             
         $debits = \App\Models\JournalEntryLine::where('payee_id', $this->id)

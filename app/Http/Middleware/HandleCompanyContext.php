@@ -18,14 +18,9 @@ class HandleCompanyContext
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check()) {
-            if (Auth::user()->role === 'super_admin') {
-                return redirect()->route('dashboard');
-            } else {
-                $currentCompany = \App\Models\Company::first();
-                if ($currentCompany) {
-                    session(['active_company_id' => $currentCompany->id]);
-                    Inertia::share('auth.company', $currentCompany);
-                }
+            $currentCompany = \App\Models\Company::first();
+            if ($currentCompany) {
+                Inertia::share('auth.company', $currentCompany);
             }
         }
 

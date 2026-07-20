@@ -12,8 +12,7 @@ class SalesSettingController extends Controller
     public function index(Request $request)
     {
         // Always ensure we have at least one record for the current company
-        $companyId = session('active_company_id');
-        $settings = SalesSetting::firstOrCreate(['company_id' => $companyId]);
+                $settings = SalesSetting::firstOrCreate([]);
 
         return Inertia::render('Settings/SalesSettings', [
             'settings' => $settings,
@@ -44,8 +43,7 @@ class SalesSettingController extends Controller
             $validated[$field] = $request->boolean($field);
         }
 
-        $companyId = session('active_company_id');
-        $settings = SalesSetting::firstOrCreate(['company_id' => $companyId]);
+                $settings = SalesSetting::firstOrCreate([]);
         $settings->update($validated);
 
         return back()->with('message', 'Sales settings updated successfully.');

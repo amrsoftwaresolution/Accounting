@@ -28,9 +28,9 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
         {
             title: "Customers",
             links: [
+                { name: "Cash Sale", href: route('receipt') },
                 { name: "Credit Sale", href: "/invoice" },
                 { name: "Receive Payment", href: "/payment" },
-                { name: "Cash Sale", href: route('receipt') },
                 { name: "Sales Return", href: route('credit-note') },
                 { name: "Add Customer", action: 'customer', isSolid: true },
             ]
@@ -41,10 +41,9 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
 
                 { name: "Payment", href: "/expense" },
                 { name: "Bill", href: "/bill" },
-               { name: "Pay Bill", href: route('pay-bill') },
-                // { name: "Purchase order", href: "#" },
+                { name: "Pay Bill", href: route('pay-bill') },
                 { name: "Supplier Return", href: "/supplier-return" },
-                {name: "Cheque", href: "/cheque"},
+                { name: "Cheque", href: "/cheque" },
                 { name: "Add Supplier", action: 'supplier', isSolid: true },
 
             ]

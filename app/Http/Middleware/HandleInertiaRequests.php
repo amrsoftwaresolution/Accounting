@@ -48,7 +48,6 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'company' => $request->user() ? $request->user()->currentCompany() : null,
-                'companies' => $request->user() ? $request->user()->cached_companies : [],
             ],
             'appName' => config('app.name'),
             'settings' => fn () => \App\Models\AdvancedSettings::first() ?? [],

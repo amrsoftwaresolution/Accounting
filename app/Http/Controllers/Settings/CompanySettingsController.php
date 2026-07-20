@@ -15,8 +15,7 @@ class CompanySettingsController extends Controller
      */
     private function getActiveCompany()
     {
-        $companyId = session('active_company_id');
-        return \App\Models\Company::find($companyId);
+        return \App\Models\Company::first();
     }
 
     private function getSettings()
@@ -26,7 +25,7 @@ class CompanySettingsController extends Controller
             // Fallback or handle error
             return null;
         }
-        return CompanySetting::firstOrCreate(['company_id' => $company->id]);
+        return CompanySetting::firstOrCreate([]);
     }
 
     public function index()
@@ -43,9 +42,9 @@ class CompanySettingsController extends Controller
                     'show_tags' => $settings->show_tags,
                     'bill_payment_terms' => $settings->bill_payment_terms,
                 ],
-                'sales' => \App\Models\SalesSetting::firstOrCreate(['company_id' => $company->id])->toArray(),
+                'sales' => \App\Models\SalesSetting::firstOrCreate([])->toArray(),
                 'advanced' => \App\Models\AdvancedSettings::first() ? \App\Models\AdvancedSettings::first()->toArray() : [],
-                'print_settings' => \App\Models\PrintSetting::where('company_id', $company->id)->get(),
+                'print_settings' => \App\Models\PrintSetting::query()->get(),
             ],
         ]);
 
@@ -122,15 +121,12 @@ class CompanySettingsController extends Controller
         }
 
         if ($request->hasFile('logo')) {
-            // Delete old logo if it exists
             if ($company->logo_path) {
                 Storage::disk('public')->delete($company->logo_path);
             }
 
-            // Generate path using slug
-            $path = $request->file('logo')->store('companies/' . $company->slug, 'public');
+            $path = $request->file('logo')->store($company->slug, 'public');
             
-            // Update company
             $company->update(['logo_path' => $path]);
         }
 

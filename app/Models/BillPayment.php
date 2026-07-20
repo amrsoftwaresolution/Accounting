@@ -10,7 +10,7 @@ class BillPayment extends Model
     use HasUuids;
 
     protected $fillable = [
-        'company_id', 'supplier_id', 'amount', 'payment_date',
+        'supplier_id', 'amount', 'payment_date',
         'payment_method_id', 'payment_account_id', 'reference_no', 'memo'
     ];
 

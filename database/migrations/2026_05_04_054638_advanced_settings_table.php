@@ -9,7 +9,6 @@ return new class extends Migration {
     {
         Schema::create('advanced_settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             // Accounting settings
             $table->string('acct_method', 50)->default('Accrual');
             $table->string('fin_year_start', 20)->default('January');
@@ -17,19 +16,6 @@ return new class extends Migration {
             $table->boolean('close_books')->default(false);
             $table->string('tax_form', 100)->default('Partnership or limited liability company');
 
-            // Chart of accounts
-            $table->boolean('enable_acct_nums')->default(false);
-            $table->string('discount_acct', 100)->default('Discounts given');
-
-            // Automation
-            $table->boolean('auto_prefill')->default(false);
-            $table->boolean('auto_invoice_groups')->default(false);
-            $table->boolean('auto_apply_bills')->default(false);
-
-            // Language and preferences
-            $table->string('language', 20)->default('English');
-            $table->string('date_format', 20)->default('mm/dd/yyyy');
-            $table->string('currency_format', 20)->default('$123,456.00');
 
             // Warnings
             $table->boolean('warn_dup_cheque')->default(false);

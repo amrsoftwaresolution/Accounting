@@ -11,7 +11,6 @@ class Cheque extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'company_id',
         'payee_id',
         'payee_type',
         'bank_account_id',

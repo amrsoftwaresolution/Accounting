@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class PrintSetting extends Model
 {
     protected $fillable = [
-        'company_id',
         'document_type',
         'custom_title',
         'header_alignment',

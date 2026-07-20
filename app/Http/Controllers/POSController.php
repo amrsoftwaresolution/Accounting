@@ -13,31 +13,25 @@ class POSController extends Controller
 {
     public function index()
     {
-        $companyId = session('active_company_id');
-
+        
         // Fetch Items (Inventory and Service)
-        $items = Item::where('company_id', $companyId)
+        $items = Item::query()
             ->whereIn('type', ['inventory', 'service'])
             ->orderBy('name')
             ->get();
 
         // Fetch Customers
-        $customers = Customer::where('company_id', $companyId)
+        $customers = Customer::query()
             ->orderBy('display_name')
             ->get();
 
-        // Fetch Payment Methods
         $paymentMethods = PaymentMethod::withoutGlobalScopes()
             ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id')
-                      ->orWhere('company_id', $companyId);
-            })
             ->orderBy('name')
             ->get();
 
         // Fetch Deposit Accounts (Bank / Cash)
-        $depositAccounts = ChartOfAcc::where('company_id', $companyId)
+        $depositAccounts = ChartOfAcc::query()
             ->whereIn('account_type', ['bank', 'asset'])
             ->orderBy('name')
             ->get();
@@ -58,9 +52,8 @@ class POSController extends Controller
 
     private function getNextReceiptNo()
     {
-        $companyId = session('active_company_id');
-        $lastReceipt = \App\Models\SalesReceipt::whereHas('journalEntry', function($q) use ($companyId) {
-            $q->where('company_id', $companyId);
+                $lastReceipt = \App\Models\SalesReceipt::whereHas('journalEntry', function($q) use ($companyId) {
+            $q;
         })->latest('id')->first();
         
         $number = 1;

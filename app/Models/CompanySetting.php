@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class CompanySetting extends Model
 {
     protected $fillable = [
-        'company_id',
         'low_stock_to_emails',
         'low_stock_cc_emails',
         'low_stock_bcc_emails',

@@ -20,10 +20,9 @@ class BillController extends Controller
 {
     public function create(Request $request)
     {
-        $companyId = session('active_company_id');
-
+        
         // Generate next Bill Number
-        $lastRef = JournalEntry::where('company_id', $companyId)
+        $lastRef = JournalEntry::query()
             ->where('transaction_type', 'bill')
             ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
             ->value('reference');
@@ -80,8 +79,7 @@ class BillController extends Controller
 
         try {
             $journalEntry = DB::transaction(function() use ($request) {
-                $companyId = session('active_company_id');
-
+                
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -106,7 +104,6 @@ class BillController extends Controller
 
                 // 1. Create the Bill
                 $bill = Bill::create([
-                    'company_id' => $companyId,
                     'supplier_id' => $request->supplier,
                     'bill_date' => $request->billDate,
                     'due_date' => $request->dueDate,
@@ -138,11 +135,11 @@ class BillController extends Controller
                     }
 
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     BillItem::create([
@@ -158,7 +155,6 @@ class BillController extends Controller
 
                 // 3. Create the Journal Entry
                 $journalEntry = JournalEntry::create([
-                    'company_id' => $companyId,
                     'date' => $request->billDate,
                     'reference' => $request->billNo,
                     'description' => $request->memo,
@@ -187,11 +183,11 @@ class BillController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'expense')->first()?->id);
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id;
                     }
 
                     JournalEntryLine::create([
@@ -204,7 +200,7 @@ class BillController extends Controller
                 }
 
                 // Credit (Accounts Payable)
-                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable');
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -282,8 +278,7 @@ class BillController extends Controller
 
         try {
             DB::transaction(function() use ($request, $journalEntry) {
-                $companyId = session('active_company_id');
-
+                
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -348,11 +343,11 @@ class BillController extends Controller
                         }
 
                         $chartOfAccId = $itemModel?->type === 'inventory'
-                            ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                            ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                         if (!$chartOfAccId) {
-                            $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                            $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                         }
 
                         BillItem::create([
@@ -393,11 +388,11 @@ class BillController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id);
+                        ? ($itemModel->inventory_account_id ?? ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id)
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'expense')->first()?->id);
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id;
                     }
 
                     JournalEntryLine::create([
@@ -410,7 +405,7 @@ class BillController extends Controller
                 }
 
                 // Credit (Accounts Payable)
-                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable');
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -489,12 +484,12 @@ class BillController extends Controller
             $tableItems[] = [
                 $desc,
                 $item->quantity,
-                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
-                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
             ];
         }
 
-        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+        $printSetting = \App\Models\PrintSetting::query()
             ->where('document_type', 'bill')
             ->first();
 

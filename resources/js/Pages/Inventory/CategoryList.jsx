@@ -60,7 +60,6 @@ export default function CategoryList({ categories }) {
                             <thead>
                                 <tr className="bg-slate-50/50 border-b border-slate-100">
                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category Name</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Parent Category</th>
                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -70,15 +69,7 @@ export default function CategoryList({ categories }) {
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-bold text-slate-900">{cat.name}</div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            {cat.parent ? (
-                                                <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md">
-                                                    {cat.parent.name}
-                                                </span>
-                                            ) : (
-                                                <span className="text-xs text-slate-400 italic">None</span>
-                                            )}
-                                        </td>
+
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
@@ -99,7 +90,7 @@ export default function CategoryList({ categories }) {
                                 ))}
                                 {categories.length === 0 && (
                                     <tr>
-                                        <td colSpan="3" className="px-6 py-12 text-center">
+                                        <td colSpan="2" className="px-6 py-12 text-center">
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
                                                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>

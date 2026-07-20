@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('bills', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->uuid('supplier_id');
             $table->string('email')->nullable();
             $table->date('bill_date');

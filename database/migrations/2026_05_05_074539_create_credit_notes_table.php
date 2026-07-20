@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('credit_notes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->uuid('customer_id');
             $table->string('email')->nullable();
             $table->date('credit_note_date');

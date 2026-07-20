@@ -11,9 +11,8 @@ class OnboardingController extends Controller
 {
     public function index()
     {
-        $companyId = session('active_company_id');
-        $company = \App\Models\Company::findOrFail($companyId);
-        $salesSettings = SalesSetting::where('company_id', $companyId)->first();
+                $company = \App\Models\Company::findOrFail($companyId);
+        $salesSettings = SalesSetting::query()->first();
         $currencies = [];
 
         return Inertia::render('Settings/Onboarding', [
@@ -25,8 +24,7 @@ class OnboardingController extends Controller
 
     public function complete()
     {
-        $companyId = session('active_company_id');
-        $company = \App\Models\Company::findOrFail($companyId);
+                $company = \App\Models\Company::findOrFail($companyId);
         
         $company->update(['is_onboarded' => true]);
 

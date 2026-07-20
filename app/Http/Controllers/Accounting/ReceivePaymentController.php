@@ -48,41 +48,15 @@ class ReceivePaymentController extends Controller
                 'memo' => $payment->memo,
             ];
 
-            $companyId = session('active_company_id');
-            $paymentMethods = PaymentMethod::withoutGlobalScopes()
-                ->where('is_active', true)
-                ->where(function ($query) use ($companyId) {
-                    $query->whereNull('company_id');
-                    if ($companyId) {
-                        $query->orWhere('company_id', $companyId);
-                    }
-                })
-                ->orderBy('name')
-                ->get();
-
             return Inertia::render('Transaction/ReceivePaymentForm', [
                 'payment' => $paymentData,
-                'paymentMethods' => $paymentMethods,
+                'paymentMethods' => $this->paymentMethods(),
                 'nextPaymentNo' => $nextPaymentNoLabel,
             ]);
         }
 
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Transaction/ReceivePaymentForm', [
-            'paymentMethods' => $paymentMethods,
+            'paymentMethods' => $this->paymentMethods(),
             'nextPaymentNo' => $nextPaymentNoLabel,
         ]);
     }
@@ -97,7 +71,6 @@ class ReceivePaymentController extends Controller
 
                 // 1. Create Business Document (Payment)
                 $payment = \App\Models\Payment::create([
-                    'company_id' => session('active_company_id'),
                     'customer_id' => $request->customer,
                     'amount' => $amount,
                     'payment_date' => $request->paymentDate,
@@ -166,18 +139,6 @@ class ReceivePaymentController extends Controller
                 return redirect()->route('payment')->with('success', 'Payment received successfully.');
             }
 
-            $companyId = session('active_company_id');
-            $paymentMethods = PaymentMethod::withoutGlobalScopes()
-                ->where('is_active', true)
-                ->where(function ($query) use ($companyId) {
-                    $query->whereNull('company_id');
-                    if ($companyId) {
-                        $query->orWhere('company_id', $companyId);
-                    }
-                })
-                ->orderBy('name')
-                ->get();
-
             return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment received successfully.');
 
         } catch (\Exception $e) {
@@ -207,23 +168,10 @@ class ReceivePaymentController extends Controller
             'memo' => $payment->memo,
         ];
 
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
 
         return Inertia::render('Transaction/ReceivePaymentForm', [
             'payment' => $paymentData,
-            'paymentMethods' => $paymentMethods
+            'paymentMethods' => $this->paymentMethods()
         ]);
     }
 
@@ -306,20 +254,8 @@ class ReceivePaymentController extends Controller
                 return redirect()->route('payment')->with('success', 'Payment updated successfully.');
             }
 
-            $companyId = session('active_company_id');
-            $paymentMethods = PaymentMethod::withoutGlobalScopes()
-                ->where('is_active', true)
-                ->where(function ($query) use ($companyId) {
-                    $query->whereNull('company_id');
-                    if ($companyId) {
-                        $query->orWhere('company_id', $companyId);
-                    }
-                })
-                ->orderBy('name')
-                ->get();
 
             return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment updated successfully.');
-
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -363,17 +299,17 @@ class ReceivePaymentController extends Controller
             foreach ($payment->allocations as $alloc) {
                 $tableItems[] = [
                     "Payment applied to Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
-                    ($company->home_currency_prefix ?? '$') . number_format($alloc->amount, 2),
+                    ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount, 2),
                 ];
             }
         } else {
             $tableItems[] = [
                 "Payment Received",
-                ($company->home_currency_prefix ?? '$') . number_format($payment->amount, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($payment->amount, 2),
             ];
         }
 
-        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+        $printSetting = \App\Models\PrintSetting::query()
             ->where('document_type', 'payment_receipt')
             ->first();
 

@@ -4,16 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Traits\HasCompany;
 use App\Models\ChartOfAcc;
 use App\Models\JournalEntryLine;
 
 class Customer extends Model
 {
-    use HasUuids, HasCompany;
+    use HasUuids;
 
     protected $fillable = [
-        'company_id',
         'display_name',
         'first_name',
         'last_name',
@@ -46,7 +44,7 @@ class Customer extends Model
     {
         // Calculate AR Balance for Customer
         $arAccountIds = ChartOfAcc::where('sub_type', 'accounts-receivable')
-            ->where('company_id', $this->company_id)
+            
             ->pluck('id');
             
         $debits = JournalEntryLine::where('payee_id', $this->id)

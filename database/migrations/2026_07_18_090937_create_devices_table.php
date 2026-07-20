@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('devices', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('company_id')->constrained()->onDelete('cascade');
             $table->uuid('customer_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['vehicle', 'electronics'])->default('vehicle');
             

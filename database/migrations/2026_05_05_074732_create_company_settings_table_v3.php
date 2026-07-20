@@ -13,17 +13,10 @@ return new class extends Migration
     {
         Schema::create('company_settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
-            
-            // Time Settings
-            $table->string('work_week_start', 20)->default('Monday');
-            $table->boolean('show_service_field')->default(true);
-            $table->boolean('allow_billable_time')->default(true);
-            $table->boolean('show_billing_rate')->default(false);
-
             // Expense Settings
-            $table->boolean('show_tags')->default(true);
-            $table->string('bill_payment_terms', 50)->default('Net 30');
+            $table->text('low_stock_to_emails')->nullable();
+            $table->text('low_stock_cc_emails')->nullable();
+            $table->text('low_stock_bcc_emails')->nullable();
 
             $table->timestamps();
         });

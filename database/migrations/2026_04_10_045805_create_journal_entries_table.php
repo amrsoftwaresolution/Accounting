@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('journal_entries', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->date('date');
             $table->date('due_date')->nullable();
             $table->string('reference')->nullable();

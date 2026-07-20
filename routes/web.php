@@ -1,181 +1,253 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\POSController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\JobCardController;
+
+// Accounting Controllers
+use App\Http\Controllers\Accounting\ExpenseController;
+use App\Http\Controllers\Accounting\PayBillController;
+use App\Http\Controllers\Accounting\JournalEntryController;
+use App\Http\Controllers\Accounting\TransferController;
+use App\Http\Controllers\Accounting\InvoiceController;
+use App\Http\Controllers\Accounting\BillController;
+use App\Http\Controllers\Accounting\ReceivePaymentController;
+use App\Http\Controllers\Accounting\SalesReceiptController;
+use App\Http\Controllers\Accounting\BankDepositController;
+use App\Http\Controllers\Accounting\CreditNoteController;
+use App\Http\Controllers\Accounting\SupplierCreditController;
+use App\Http\Controllers\Accounting\ChequeController;
+use App\Http\Controllers\Accounting\ChartOfAccController;
+use App\Http\Controllers\Accounting\ReportController;
+use App\Http\Controllers\Api\TransactionHistoryController;
+
+// Inventory Controllers
+use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\ItemCategoryController;
+use App\Http\Controllers\Inventory\InventoryQuantityAdjustmentController;
+
+// Contacts Controllers
+use App\Http\Controllers\Contacts\CustomerController;
+use App\Http\Controllers\Contacts\SupplierController;
+use App\Http\Controllers\Contacts\EmployeeController;
+
+// Settings Controllers
+use App\Http\Controllers\Settings\CompanySettingsController;
+use App\Http\Controllers\Settings\SalesSettingController;
+use App\Http\Controllers\Settings\AdvancedSettingsController;
+use App\Http\Controllers\Settings\PrintSettingController;
+use App\Http\Controllers\Settings\OnboardingController;
+
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', function () {
     return redirect()->route('login');
 })->name('welcome');
 
-Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Profile
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('/profile', 'edit')->name('profile.edit');
+        Route::patch('/profile', 'update')->name('profile.update');
+        Route::delete('/profile', 'destroy')->name('profile.destroy');
+    });
 
-    // Accounting Routes
-    Route::get('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'create'])->name('expense');
-    Route::post('/expense', [\App\Http\Controllers\Accounting\ExpenseController::class, 'store'])->name('expense.store');
-    Route::get('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'create'])->name('pay-bill');
-    Route::post('/pay-bill', [\App\Http\Controllers\Accounting\PayBillController::class, 'store'])->name('pay-bill.store');
-    Route::get('/pay-bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\PayBillController::class, 'edit'])->name('pay-bill.edit');
-    Route::get('/pay-bill/{journalEntry}/print', [\App\Http\Controllers\Accounting\PayBillController::class, 'print'])->name('pay-bill.print');
-    Route::patch('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'update'])->name('pay-bill.update');
-    Route::delete('/pay-bill/{journalEntry}', [\App\Http\Controllers\Accounting\PayBillController::class, 'destroy'])->name('pay-bill.destroy');
-    Route::get('/expense/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ExpenseController::class, 'edit'])->name('expense.edit');
-    Route::patch('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'update'])->name('expense.update');
-    Route::delete('/expense/{journalEntry}', [\App\Http\Controllers\Accounting\ExpenseController::class, 'destroy'])->name('expense.destroy');
+    // Accounting - Expense
+    Route::controller(ExpenseController::class)->prefix('expense')->group(function () {
+        Route::get('/', 'create')->name('expense');
+        Route::post('/', 'store')->name('expense.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('expense.edit');
+        Route::patch('/{journalEntry}', 'update')->name('expense.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('expense.destroy');
+    });
 
-    // API Lookups
-    Route::get('/api/payees', [\App\Http\Controllers\Api\LookupController::class, 'payees'])->name('api.payees');
-    Route::get('/api/accounts', [\App\Http\Controllers\Api\LookupController::class, 'accounts'])->name('api.accounts');
-    Route::get('/api/accounts/detail', [\App\Http\Controllers\Api\LookupController::class, 'accountDetails'])->name('api.accounts.detail');
-    Route::get('/api/accounts/next-code', [\App\Http\Controllers\Api\LookupController::class, 'nextCode'])->name('api.accounts.next-code');
-    Route::get('/api/expenses/next-ref', [\App\Http\Controllers\Api\LookupController::class, 'nextExpenseRef'])->name('api.expenses.next-ref');
-    Route::post('/api/accounts/save-date', [\App\Http\Controllers\Api\LookupController::class, 'saveOpeningBalanceDate'])->name('api.accounts.save-date');
-    Route::get('/api/items', [\App\Http\Controllers\Api\LookupController::class, 'items'])->name('api.items');
-    Route::get('/api/items/create-options', [\App\Http\Controllers\Api\LookupController::class, 'itemCreateOptions'])->name('api.items.create-options');
-    Route::get('/api/customers/{customer}', [\App\Http\Controllers\Api\LookupController::class, 'customerInfo'])->name('api.customers.info');
-    Route::get('/api/customers/{customer}/invoices', [\App\Http\Controllers\Api\LookupController::class, 'customerInvoices'])->name('api.customers.invoices');
-    Route::get('/api/suppliers/{supplier}', [\App\Http\Controllers\Api\LookupController::class, 'supplierInfo'])->name('api.suppliers.info');
-    Route::get('/api/suppliers/{supplier}/bills', [\App\Http\Controllers\Api\LookupController::class, 'supplierBills'])->name('api.suppliers.bills');
-    Route::get('/api/categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('api.categories');
-    Route::get('/api/payment-methods', [\App\Http\Controllers\Api\LookupController::class, 'paymentMethods'])->name('api.payment-methods');
-    Route::get('/api/history/{transactionType}', [\App\Http\Controllers\Api\TransactionHistoryController::class, 'index'])->name('api.history');
-    Route::get('/history/{transactionType}', [\App\Http\Controllers\Api\TransactionHistoryController::class, 'page'])->name('history.index');
+    // Accounting - Pay Bill
+    Route::controller(PayBillController::class)->prefix('pay-bill')->group(function () {
+        Route::get('/', 'create')->name('pay-bill');
+        Route::post('/', 'store')->name('pay-bill.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('pay-bill.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('pay-bill.print');
+        Route::patch('/{journalEntry}', 'update')->name('pay-bill.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('pay-bill.destroy');
+    });
+    
+    // Accounting - Journal Entries
+    Route::controller(JournalEntryController::class)->group(function () {
+        Route::get('/journal', 'create')->name('journal');
+        Route::post('/journal-entries/{journalEntry}/quick-update', 'quickUpdate')->name('journal-entries.quick-update');
+    });
+    Route::resource('journal-entries', JournalEntryController::class);
 
-    Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
-    Route::post('/journal-entries/{journalEntry}/quick-update', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'quickUpdate'])->name('journal-entries.quick-update');
-    Route::get('/journal', [\App\Http\Controllers\Accounting\JournalEntryController::class, 'create'])->name('journal');
+    // Accounting - Transfer
+    Route::controller(TransferController::class)->prefix('transfer')->group(function () {
+        Route::get('/', 'create')->name('transfer');
+        Route::post('/', 'store')->name('transfer.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('transfer.edit');
+        Route::patch('/{journalEntry}', 'update')->name('transfer.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('transfer.destroy');
+    });
 
-    Route::get('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'create'])->name('transfer');
-    Route::post('/transfer', [\App\Http\Controllers\Accounting\TransferController::class, 'store'])->name('transfer.store');
-    Route::get('/transfer/{journalEntry}/edit', [\App\Http\Controllers\Accounting\TransferController::class, 'edit'])->name('transfer.edit');
-    Route::patch('/transfer/{journalEntry}', [\App\Http\Controllers\Accounting\TransferController::class, 'update'])->name('transfer.update');
-    Route::delete('/transfer/{journalEntry}', [\App\Http\Controllers\Accounting\TransferController::class, 'destroy'])->name('transfer.destroy');
+    // Accounting - Invoice
+    Route::controller(InvoiceController::class)->prefix('invoice')->group(function () {
+        Route::get('/', 'create')->name('invoice');
+        Route::post('/', 'store')->name('invoice.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('invoice.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('invoice.print');
+        Route::patch('/{journalEntry}', 'update')->name('invoice.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('invoice.destroy');
+    });
 
-    Route::get('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'create'])->name('invoice');
-    Route::post('/invoice', [\App\Http\Controllers\Accounting\InvoiceController::class, 'store'])->name('invoice.store');
-    Route::get('/invoice/{journalEntry}/edit', [\App\Http\Controllers\Accounting\InvoiceController::class, 'edit'])->name('invoice.edit');
-    Route::get('/invoice/{journalEntry}/print', [\App\Http\Controllers\Accounting\InvoiceController::class, 'print'])->name('invoice.print');
-    Route::patch('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'update'])->name('invoice.update');
-    Route::delete('/invoice/{journalEntry}', [\App\Http\Controllers\Accounting\InvoiceController::class, 'destroy'])->name('invoice.destroy');
+    // Accounting - Bill
+    Route::controller(BillController::class)->prefix('bill')->group(function () {
+        Route::get('/', 'create')->name('bill');
+        Route::post('/', 'store')->name('bill.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('bill.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('bill.print');
+        Route::patch('/{journalEntry}', 'update')->name('bill.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('bill.destroy');
+    });
 
-    Route::get('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'create'])->name('bill');
-    Route::post('/bill', [\App\Http\Controllers\Accounting\BillController::class, 'store'])->name('bill.store');
-    Route::get('/bill/{journalEntry}/edit', [\App\Http\Controllers\Accounting\BillController::class, 'edit'])->name('bill.edit');
-    Route::get('/bill/{journalEntry}/print', [\App\Http\Controllers\Accounting\BillController::class, 'print'])->name('bill.print');
-    Route::patch('/bill/{journalEntry}', [\App\Http\Controllers\Accounting\BillController::class, 'update'])->name('bill.update');
-    Route::delete('/bill/{journalEntry}', [\App\Http\Controllers\Accounting\BillController::class, 'destroy'])->name('bill.destroy');
+    // Accounting - Receive Payment
+    Route::controller(ReceivePaymentController::class)->prefix('payment')->group(function () {
+        Route::get('/', 'create')->name('payment');
+        Route::post('/', 'store')->name('payment.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('payment.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('payment.print');
+        Route::patch('/{journalEntry}', 'update')->name('payment.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('payment.destroy');
+    });
 
-    Route::get('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'create'])->name('payment');
-    Route::post('/payment', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'store'])->name('payment.store');
-    Route::get('/payment/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'edit'])->name('payment.edit');
-    Route::get('/payment/{journalEntry}/print', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'print'])->name('payment.print');
-    Route::patch('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'update'])->name('payment.update');
-    Route::delete('/payment/{journalEntry}', [\App\Http\Controllers\Accounting\ReceivePaymentController::class, 'destroy'])->name('payment.destroy');
+    // Accounting - Sales Receipt
+    Route::controller(SalesReceiptController::class)->prefix('sales-receipt')->group(function () {
+        Route::get('/', 'create')->name('receipt');
+        Route::post('/', 'store')->name('receipt.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('receipt.edit');
+        Route::patch('/{journalEntry}', 'update')->name('receipt.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('receipt.destroy');
+    });
 
-    Route::get('/sales-receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'create'])->name('receipt');
-    Route::post('/sales-receipt', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'store'])->name('receipt.store');
-    Route::get('/sales-receipt/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'edit'])->name('receipt.edit');
-    Route::patch('/sales-receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'update'])->name('receipt.update');
-    Route::delete('/sales-receipt/{journalEntry}', [\App\Http\Controllers\Accounting\SalesReceiptController::class, 'destroy'])->name('receipt.destroy');
+    // Accounting - Bank Deposit
+    Route::controller(BankDepositController::class)->prefix('deposit')->group(function () {
+        Route::get('/', 'create')->name('deposit');
+        Route::post('/', 'store')->name('deposit.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('deposit.edit');
+        Route::patch('/{journalEntry}', 'update')->name('deposit.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('deposit.destroy');
+    });
 
-    // Bank Deposit
-    Route::get('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'create'])->name('deposit');
-    Route::post('/deposit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'store'])->name('deposit.store');
-    Route::get('/deposit/{journalEntry}/edit', [\App\Http\Controllers\Accounting\BankDepositController::class, 'edit'])->name('deposit.edit');
-    Route::patch('/deposit/{journalEntry}', [\App\Http\Controllers\Accounting\BankDepositController::class, 'update'])->name('deposit.update');
-    Route::delete('/deposit/{journalEntry}', [\App\Http\Controllers\Accounting\BankDepositController::class, 'destroy'])->name('deposit.destroy');
+    // Accounting - Credit Note (Sales Return)
+    Route::controller(CreditNoteController::class)->prefix('sales-return')->group(function () {
+        Route::get('/', 'create')->name('credit-note');
+        Route::post('/', 'store')->name('credit-note.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('credit-note.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('credit-note.print');
+        Route::patch('/{journalEntry}', 'update')->name('credit-note.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('credit-note.destroy');
+    });
 
-    Route::get('/sales-return', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'create'])->name('credit-note');
-    Route::post('/sales-return', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'store'])->name('credit-note.store');
-    Route::get('/sales-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'edit'])->name('credit-note.edit');
-    Route::get('/sales-return/{journalEntry}/print', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'print'])->name('credit-note.print');
-    Route::patch('/sales-return/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'update'])->name('credit-note.update');
-    Route::delete('/sales-return/{journalEntry}', [\App\Http\Controllers\Accounting\CreditNoteController::class, 'destroy'])->name('credit-note.destroy');
+    // Accounting - Supplier Credit (Supplier Return)
+    Route::controller(SupplierCreditController::class)->prefix('supplier-return')->group(function () {
+        Route::get('/', 'create')->name('supplier-credit');
+        Route::post('/', 'store')->name('supplier-credit.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('supplier-credit.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('supplier-credit.print');
+        Route::patch('/{journalEntry}', 'update')->name('supplier-credit.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('supplier-credit.destroy');
+    });
 
-    Route::get('/supplier-return', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'create'])->name('supplier-credit');
-    Route::post('/supplier-return', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'store'])->name('supplier-credit.store');
-    Route::get('/supplier-return/{journalEntry}/edit', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'edit'])->name('supplier-credit.edit');
-    Route::get('/supplier-return/{journalEntry}/print', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'print'])->name('supplier-credit.print');
-    Route::patch('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'update'])->name('supplier-credit.update');
-    Route::delete('/supplier-return/{journalEntry}', [\App\Http\Controllers\Accounting\SupplierCreditController::class, 'destroy'])->name('supplier-credit.destroy');
+    // Accounting - Cheque
+    Route::controller(ChequeController::class)->prefix('cheque')->group(function () {
+        Route::get('/list', 'index')->name('cheque.index');
+        Route::get('/', 'create')->name('cheque');
+        Route::post('/', 'store')->name('cheque.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('cheque.edit');
+        Route::patch('/{journalEntry}', 'update')->name('cheque.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('cheque.destroy');
+    });
 
-    Route::get('/cheque/list', [\App\Http\Controllers\Accounting\ChequeController::class, 'index'])->name('cheque.index');
-    Route::get('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'create'])->name('cheque');
-    Route::post('/cheque', [\App\Http\Controllers\Accounting\ChequeController::class, 'store'])->name('cheque.store');
-    Route::get('/cheque/{journalEntry}/edit', [\App\Http\Controllers\Accounting\ChequeController::class, 'edit'])->name('cheque.edit');
-    Route::patch('/cheque/{journalEntry}', [\App\Http\Controllers\Accounting\ChequeController::class, 'update'])->name('cheque.update');
-    Route::delete('/cheque/{journalEntry}', [\App\Http\Controllers\Accounting\ChequeController::class, 'destroy'])->name('cheque.destroy');
+    // Accounting - Chart of Accounts
+    Route::get('chart-of-account/{chart_of_account}/history', [ChartOfAccController::class, 'history'])->name('chart-of-account.history');
+    Route::resource('chart-of-account', ChartOfAccController::class);
 
-    // Inventory Routes
-    Route::resource('items', \App\Http\Controllers\Inventory\ItemController::class);
-    Route::resource('item-categories', \App\Http\Controllers\Inventory\ItemCategoryController::class);
-    Route::get('/inventory-adjustment', [\App\Http\Controllers\Inventory\InventoryQuantityAdjustmentController::class, 'create'])->name('inventory-adjustment');
-    Route::post('/inventory-adjustment', [\App\Http\Controllers\Inventory\InventoryQuantityAdjustmentController::class, 'store'])->name('inventory-adjustment.store');
+    // Reports
+    Route::controller(ReportController::class)->prefix('reports')->group(function () {
+        Route::get('/', 'index')->name('reports.index');
+        Route::get('/profit-loss', 'profitAndLoss')->name('reports.profit-loss');
+        Route::get('/balance-sheet', 'balanceSheet')->name('reports.balance-sheet');
+        Route::get('/customer-balance', 'customerBalance')->name('reports.customer-balance');
+        Route::get('/customer-balance-detail', 'customerBalanceDetailAll')->name('reports.customer-balance-detail');
+        Route::get('/customer-balance/{customer}', 'customerDetail')->name('reports.customer-detail');
+        Route::get('/supplier-balance', 'supplierBalance')->name('reports.supplier-balance');
+        Route::get('/supplier-balance-detail', 'supplierBalanceDetailAll')->name('reports.supplier-balance-detail');
+        Route::get('/supplier-balance/{supplier}', 'supplierDetail')->name('reports.supplier-detail');
+        Route::get('/inventory-summary', 'inventorySummary')->name('reports.inventory-summary');
+        Route::get('/inventory-detail-all', 'inventoryDetailAll')->name('reports.inventory-detail-all');
+        Route::get('/inventory-detail/{item}', 'inventoryDetail')->name('reports.inventory-detail');
+        Route::get('/sales-by-item', 'salesByItem')->name('reports.sales-by-item');
+        Route::get('/sales-by-customer', 'salesByCustomer')->name('reports.sales-by-customer');
+        Route::get('/purchase-by-item', 'purchaseByItem')->name('reports.purchase-by-item');
+        Route::get('/purchase-by-supplier', 'purchaseBySupplier')->name('reports.purchase-by-supplier');
+    });
 
-    // Contacts Routes
-    Route::resource('customers', \App\Http\Controllers\Contacts\CustomerController::class);
-    Route::resource('suppliers', \App\Http\Controllers\Contacts\SupplierController::class);
-    Route::resource('employees', \App\Http\Controllers\Contacts\EmployeeController::class);
+    // Inventory
+    Route::resource('items', ItemController::class);
+    Route::resource('item-categories', ItemCategoryController::class);
+    Route::controller(InventoryQuantityAdjustmentController::class)->prefix('inventory-adjustment')->group(function () {
+        Route::get('/', 'create')->name('inventory-adjustment');
+        Route::post('/', 'store')->name('inventory-adjustment.store');
+    });
+
+    // Contacts
+    Route::resource('customers', CustomerController::class);
+    Route::resource('suppliers', SupplierController::class);
+    Route::resource('employees', EmployeeController::class);
 
     // Job Cards
-    Route::resource('job-cards', \App\Http\Controllers\JobCardController::class);
+    Route::resource('job-cards', JobCardController::class);
 
-    // Chart of Accounts
-    Route::get('chart-of-account/{chart_of_account}/history', [\App\Http\Controllers\Accounting\ChartOfAccController::class, 'history'])->name('chart-of-account.history');
-    Route::resource('chart-of-account', \App\Http\Controllers\Accounting\ChartOfAccController::class);
+    // Settings
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [CompanySettingsController::class, 'index'])->name('settings.index');
+        
+        Route::controller(CompanySettingsController::class)->group(function () {
+            Route::post('/company', 'update')->name('company.update');
+            Route::post('/legal', 'updateLegal')->name('legal.update');
+            Route::post('/alerts', 'updateAlerts')->name('alerts.update');
+            Route::post('/time', 'updateTime')->name('time.settings.update');
+            Route::post('/logo', 'uploadLogo')->name('logo.upload');
+        });
 
-    // Settings (Admin Only)
-    Route::middleware(['admin'])->group(function () {
-        Route::get('/settings', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'index'])->name('settings.index');
-        Route::post('/settings/company', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'update'])->name('company.update');
-        Route::post('/settings/legal', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateLegal'])->name('legal.update');
-        Route::post('/settings/alerts', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateAlerts'])->name('alerts.update');
-        Route::post('/settings/time', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateTime'])->name('time.settings.update');
-        Route::post('/settings/sales', [\App\Http\Controllers\Settings\SalesSettingController::class, 'update'])->name('sales.settings.update');
-        Route::post('/settings/advanced', [\App\Http\Controllers\Settings\AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
-        Route::post('/settings/print-settings', [\App\Http\Controllers\Settings\PrintSettingController::class, 'update'])->name('print.settings.update');
-        Route::post('/settings/print-settings/preview', [\App\Http\Controllers\Settings\PrintSettingController::class, 'preview'])->name('print.settings.preview');
-        Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
+        Route::post('/sales', [SalesSettingController::class, 'update'])->name('sales.settings.update');
+        Route::post('/advanced', [AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
+        
+        Route::controller(PrintSettingController::class)->prefix('print-settings')->group(function () {
+            Route::post('/', 'update')->name('print.settings.update');
+            Route::post('/preview', 'preview')->name('print.settings.preview');
+        });
     });
 
     // Onboarding
-    Route::get('/onboarding', [\App\Http\Controllers\Settings\OnboardingController::class, 'index'])->name('onboarding');
-    Route::post('/onboarding/complete', [\App\Http\Controllers\Settings\OnboardingController::class, 'complete'])->name('onboarding.complete');
-
-    // Users (Admin Only)
-    Route::middleware(['admin'])->group(function () {
-        Route::resource('users', \App\Http\Controllers\UserController::class);
-        Route::post('/users/{user}/resend-invite', [\App\Http\Controllers\UserController::class, 'resendInvitation'])->name('users.resend-invite');
+    Route::controller(OnboardingController::class)->prefix('onboarding')->group(function () {
+        Route::get('/', 'index')->name('onboarding');
+        Route::post('/complete', 'complete')->name('onboarding.complete');
     });
 
-    // Reports (Admin Only)
-    Route::middleware(['admin'])->group(function () {
-        Route::get('/reports', [\App\Http\Controllers\Accounting\ReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
-        Route::get('/reports/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
-        Route::get('/reports/customer-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalance'])->name('reports.customer-balance');
-        Route::get('/reports/customer-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalanceDetailAll'])->name('reports.customer-balance-detail');
-        Route::get('/reports/customer-balance/{customer}', [\App\Http\Controllers\Accounting\ReportController::class, 'customerDetail'])->name('reports.customer-detail');
+    // Users
+    Route::resource('users', UserController::class);
+    Route::post('/users/{user}/resend-invite', [UserController::class, 'resendInvitation'])->name('users.resend-invite');
 
-        Route::get('/reports/supplier-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalance'])->name('reports.supplier-balance');
-        Route::get('/reports/supplier-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalanceDetailAll'])->name('reports.supplier-balance-detail');
-        Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
-        Route::get('/reports/inventory-summary', [\App\Http\Controllers\Accounting\ReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
-        Route::get('/reports/inventory-detail-all', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetailAll'])->name('reports.inventory-detail-all');
-        Route::get('/reports/inventory-detail/{item}', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
-        Route::get('/reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByItem'])->name('reports.sales-by-item');
-        Route::get('/reports/sales-by-customer', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByCustomer'])->name('reports.sales-by-customer');
-        Route::get('/reports/purchase-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseByItem'])->name('reports.purchase-by-item');
-        Route::get('/reports/purchase-by-supplier', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseBySupplier'])->name('reports.purchase-by-supplier');
-    });
-
-    Route::get('/pos', [\App\Http\Controllers\POSController::class, 'index'])->name('pos.index');
+    // POS
+    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+    
+    // History
+    Route::get('/history/{transactionType}', [TransactionHistoryController::class, 'page'])->name('history.index');
 });
 
 require __DIR__.'/auth.php';

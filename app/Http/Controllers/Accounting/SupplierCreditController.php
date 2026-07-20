@@ -23,7 +23,7 @@ class SupplierCreditController extends Controller
     {
         return Inertia::render('Transaction/SupplierCredit', [
             'credits' => SupplierCreditNote::with('supplier')
-                ->where('company_id', session('active_company_id'))
+                
                 ->latest()
                 ->get(),
             // Added this so the dropdown isn't empty on the index/list page if needed
@@ -85,8 +85,7 @@ class SupplierCreditController extends Controller
 
         try {
             $journalEntry = DB::transaction(function() use ($request) {
-                $companyId = session('active_company_id');
-
+                
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -107,7 +106,6 @@ class SupplierCreditController extends Controller
 
                 // 1. Create Credit Note
                 $creditNote = SupplierCreditNote::create([
-                    'company_id' => $companyId,
                     'supplier_id' => $request->supplier,
                     'credit_date' => $request->creditDate,
                     'total_amount' => $totalAmount,
@@ -136,11 +134,11 @@ class SupplierCreditController extends Controller
                     }
 
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     SupplierCreditNoteItem::create([
@@ -156,7 +154,6 @@ class SupplierCreditController extends Controller
 
                 // 2. Financial Entry
                 $journalEntry = JournalEntry::create([
-                    'company_id' => $companyId,
                     'date' => $request->creditDate,
                     'reference' => $request->creditNo,
                     'description' => $request->memo,
@@ -171,7 +168,7 @@ class SupplierCreditController extends Controller
                 ]);
 
                 // Debit Accounts Payable (Reducing what we owe)
-                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable');
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -196,11 +193,11 @@ class SupplierCreditController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     JournalEntryLine::create([
@@ -278,8 +275,7 @@ class SupplierCreditController extends Controller
 
         try {
             DB::transaction(function() use ($request, $journalEntry) {
-                $companyId = session('active_company_id');
-
+                
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -337,11 +333,11 @@ class SupplierCreditController extends Controller
                     }
 
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     SupplierCreditNoteItem::create([
@@ -367,7 +363,7 @@ class SupplierCreditController extends Controller
                 $journalEntry->lines->each->delete();
 
                 // Debit Accounts Payable (Reducing what we owe)
-                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable', $companyId);
+                $apAccount = ChartOfAcc::getOrCreateDefault('accounts-payable');
 
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
@@ -392,11 +388,11 @@ class SupplierCreditController extends Controller
                 foreach ($productItems as $productItem) {
                     $itemModel = Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
-                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id));
+                        ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::where('company_id', $companyId)->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense', $companyId)->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     JournalEntryLine::create([
@@ -472,12 +468,12 @@ class SupplierCreditController extends Controller
             $tableItems[] = [
                 $desc,
                 $item->quantity,
-                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
-                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
             ];
         }
 
-        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+        $printSetting = \App\Models\PrintSetting::query()
             ->where('document_type', 'supplier_credit')
             ->first();
 
@@ -508,7 +504,7 @@ class SupplierCreditController extends Controller
 
     private function getNextNo()
     {
-        $last = SupplierCreditNote::where('company_id', session('active_company_id'))->latest()->first();
+        $last = SupplierCreditNote::query()->latest()->first();
         return $last ? (int)filter_var($last->id, FILTER_SANITIZE_NUMBER_INT) + 1 : 1001;
     }
 }

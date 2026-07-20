@@ -74,23 +74,6 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'manager_id');
     }
 
-    public function companies()
-    {
-        return $this->belongsToMany(Company::class)->withPivot('role')->withTimestamps();
-    }
-
-    public function getCachedCompaniesAttribute()
-    {
-        $sessionCompanies = session('user_companies_data');
-        if ($sessionCompanies) {
-            return $sessionCompanies;
-        }
-
-        $companies = $this->companies()->get();
-        session(['user_companies_data' => $companies]);
-        return $companies;
-    }
-
     public function currentCompany()
     {
         return Company::first();

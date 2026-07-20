@@ -3,8 +3,7 @@ import { usePage } from '@inertiajs/react';
 const DEFAULT_DATE_FORMAT = 'MM/DD/YYYY';
 
 export function useDateFormat() {
-    const { settings } = usePage().props;
-    return settings?.date_format || DEFAULT_DATE_FORMAT;
+    return DEFAULT_DATE_FORMAT;
 }
 
 export function formatDate(value, format = null) {

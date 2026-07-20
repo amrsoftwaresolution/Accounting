@@ -34,7 +34,6 @@ class BankDepositController extends Controller
             $total = collect($items)->sum(fn($i) => (float)str_replace(',', '', $i['amount']));
 
             $deposit = BankDeposit::create([
-                'company_id' => session('active_company_id'),
                 'deposit_no' => $request->depositNo,
                 'deposit_date' => $request->depositDate,
                 'deposit_to_account_id' => $request->depositTo,
@@ -231,7 +230,7 @@ class BankDepositController extends Controller
 
     private function getNextDepositNo()
     {
-        $last = BankDeposit::where('company_id', session('active_company_id'))->latest()->first();
+        $last = BankDeposit::query()->latest()->first();
         return $last ? (int)filter_var($last->deposit_no, FILTER_SANITIZE_NUMBER_INT) + 1 : 1001;
     }
 }

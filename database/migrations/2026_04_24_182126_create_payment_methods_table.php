@@ -13,13 +13,10 @@ return new class extends Migration
     {
         Schema::create('payment_methods', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->string('slug');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->unique(['company_id', 'slug']);
         });
     }
 

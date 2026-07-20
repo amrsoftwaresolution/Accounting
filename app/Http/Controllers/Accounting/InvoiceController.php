@@ -76,7 +76,6 @@ class InvoiceController extends Controller
 
             // 1. Create Business Document (Invoice)
             $invoice = \App\Models\Invoice::create([
-                'company_id' => session('active_company_id'),
                 'customer_id' => $request->customer,
                 'email' => $request->email,
                 'billing_address' => $request->billingAddress,
@@ -238,12 +237,12 @@ class InvoiceController extends Controller
             $tableItems[] = [
                 $desc,
                 $item->quantity,
-                ($company->home_currency_prefix ?? '$') . number_format($item->rate, 2),
-                ($company->home_currency_prefix ?? '$') . number_format($item->amount, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
             ];
         }
 
-        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+        $printSetting = \App\Models\PrintSetting::query()
             ->where('document_type', 'invoice')
             ->first();
 

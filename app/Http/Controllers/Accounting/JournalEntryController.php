@@ -83,7 +83,7 @@ class JournalEntryController extends Controller
         $totalCredit = 0;
 
         $entry = JournalEntry::create([
-            'company_id' => session('active_company_id'), // FIX 1: Ensure company_id is set
+
             'date' => $request->date,
             'reference' => $request->reference_no,
             'description' => $request->description,

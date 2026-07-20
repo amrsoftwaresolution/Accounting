@@ -17,15 +17,14 @@ class InventoryQuantityAdjustmentController extends Controller
 {
     public function create()
     {
-        $companyId = session('active_company_id') ?? auth()->user()->company_id;
-
-        $items = Item::where('company_id', $companyId)
+        
+        $items = Item::query()
             ->where('track_inventory', true)
             ->get(['id', 'name', 'sku', 'description', 'quantity_on_hand']);
             
-        $accounts = ChartOfAcc::where('company_id', $companyId)->get(['id', 'name', 'account_code']);
+        $accounts = ChartOfAcc::query()->get(['id', 'name', 'account_code']);
 
-        $lastRef = InventoryQuantityAdjustment::where('company_id', $companyId)
+        $lastRef = InventoryQuantityAdjustment::query()
             ->whereNotNull('reference_number')
             ->orderByRaw('CAST(reference_number AS UNSIGNED) DESC')
             ->first();
@@ -55,13 +54,11 @@ class InventoryQuantityAdjustmentController extends Controller
             'items.*.change_in_qty' => 'required|numeric',
         ]);
 
-        $companyId = session('active_company_id') ?? auth()->user()->company_id;
-
+        
         try {
             $journalEntry = null;
-            DB::transaction(function () use ($validated, $companyId, &$journalEntry) {
+            DB::transaction(function () use ($validated, &$journalEntry) {
                 $adjustment = InventoryQuantityAdjustment::create([
-                    'company_id' => $companyId,
                     'adjustment_date' => $validated['adjustment_date'],
                     'reference_number' => $validated['reference_number'] ?? null,
                     'adjustment_reason' => $validated['adjustment_reason'],
@@ -82,7 +79,7 @@ class InventoryQuantityAdjustmentController extends Controller
                     ]);
 
                     // Update the quantity_on_hand in the Item model
-                    $item = Item::where('company_id', $companyId)->findOrFail($itemData['item_id']);
+                    $item = Item::query()->findOrFail($itemData['item_id']);
                     $item->quantity_on_hand = $itemData['new_qty'];
                     $item->save();
 
@@ -94,8 +91,8 @@ class InventoryQuantityAdjustmentController extends Controller
 
                         // Find the item's inventory asset account
                         $inventoryAccountId = $item->inventory_account_id ?? 
-                            (ChartOfAcc::where('company_id', $companyId)->where('sub_type', 'inventory')->first()?->id ?? 
-                             ChartOfAcc::getOrCreateDefault('inventory', $companyId)->id);
+                            (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? 
+                             ChartOfAcc::getOrCreateDefault('inventory')->id);
 
                         $lineMemo = "Inventory Qty Adj: " . $item->name . ($itemData['description'] ? ' (' . $itemData['description'] . ')' : '');
 
@@ -138,7 +135,6 @@ class InventoryQuantityAdjustmentController extends Controller
                 // Create the Journal Entry if there is any adjustment value
                 if ($totalAmount > 0) {
                     $journalEntry = JournalEntry::create([
-                        'company_id' => $companyId,
                         'date' => $validated['adjustment_date'],
                         'reference' => $validated['reference_number'] ?? 'ADJ-' . time(),
                         'description' => $validated['memo'] ?? ('Inventory quantity adjustment - ' . $validated['adjustment_reason']),

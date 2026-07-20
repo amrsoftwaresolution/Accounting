@@ -49,7 +49,8 @@ export default function ItemForm({
     expenseAccounts: initialExpenseAccounts = [],
     inventoryAccounts: initialInventoryAccounts = [],
     suppliers: initialSuppliers = [],
-    allItems: initialAllItems = []
+    allItems: initialAllItems = [],
+    nextSku = ''
 }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
@@ -95,7 +96,7 @@ export default function ItemForm({
     const { data, setData, post, put, processing, errors, transform } = useForm({
         type: item?.type || 'service',
         name: item?.name || '',
-        sku: item?.sku || '',
+        sku: item?.sku || nextSku,
         image: item?.image || '',
         description: item?.description || '',
         sale_price: item?.sale_price ? parseFloat(item.sale_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00',
@@ -482,11 +483,11 @@ export default function ItemForm({
                         </div>
                     </FormSection>
 
-                    {/* 3. Sales Information Section */}
+    {/* 3. Sales Information Section */}
                     <FormSection title="Sales Information" show={showSalesSection}>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Sales Price / Rate</label>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Sales Price / Rate (LKR)</label>
                                 <div className="relative">
                                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
                                     <input
@@ -538,6 +539,21 @@ export default function ItemForm({
                     <FormSection title="Purchasing Information" show={showPurchasingSection}>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Expense Account</label>
+                                <SearchableSelect
+                                    options={localExpenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
+                                    value={data.expense_account_id}
+                                    onChange={val => setData('expense_account_id', val)}
+                                    placeholder="Link to Expense Account"
+                                    onAddNew={() => {
+                                        setAccountModalType('expense');
+                                        setIsAccountModalOpen(true);
+                                    }}
+                                />
+                                {errors.expense_account_id && <p className="mt-1 text-xs text-red-600">{errors.expense_account_id}</p>}
+                            </div>
+
+                            <div>
                                 <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Purchase Cost</label>
                                 <div className="relative">
                                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
@@ -556,24 +572,7 @@ export default function ItemForm({
                                 </div>
                                 {errors.purchase_price && <p className="mt-1 text-xs text-red-600">{errors.purchase_price}</p>}
                             </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Expense Account</label>
-                                <SearchableSelect
-                                    options={localExpenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
-                                    value={data.expense_account_id}
-                                    onChange={val => setData('expense_account_id', val)}
-                                    placeholder="Link to Expense Account"
-                                    onAddNew={() => {
-                                        setAccountModalType('expense');
-                                        setIsAccountModalOpen(true);
-                                    }}
-                                />
-                                {errors.expense_account_id && <p className="mt-1 text-xs text-red-600">{errors.expense_account_id}</p>}
-                            </div>
                         </div>
-
-
 
                         <div className="space-y-1">
                             <label className="font-bold text-slate-600 ml-0.5 text-xs">Purchase Description</label>

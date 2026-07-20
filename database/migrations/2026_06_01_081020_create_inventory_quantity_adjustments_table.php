@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('inventory_quantity_adjustments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->date('adjustment_date');
             $table->string('reference_number')->nullable();
             $table->string('adjustment_reason')->nullable();

@@ -217,7 +217,7 @@ class LookupController extends Controller
             return response()->json(['next_ref' => '1']);
         }
 
-        $last = \App\Models\Expense::where('company_id', session('active_company_id'))
+        $last = \App\Models\Expense::query()
             ->where('payment_account_id', $accountId)
             ->whereNotNull('reference_no')
             ->whereRaw('reference_no REGEXP "^[0-9]+$"')
@@ -277,7 +277,7 @@ class LookupController extends Controller
         $paymentId = $request->query('payment_id');
         $invoices = \App\Models\Invoice::where('customer_id', $customer->id)
             ->where('status', 'posted')
-            ->where('company_id', session('active_company_id'))
+            
             ->get()
             ->map(function($invoice) use ($paymentId) {
                 $query = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id);
@@ -339,7 +339,7 @@ class LookupController extends Controller
         $paymentId = $request->query('payment_id');
         $bills = \App\Models\Bill::where('supplier_id', $supplier->id)
             ->where('status', 'posted')
-            ->where('company_id', session('active_company_id'))
+            
             ->get()
             ->map(function($bill) use ($paymentId) {
                 $query = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id);
@@ -375,9 +375,9 @@ class LookupController extends Controller
     public function itemCreateOptions()
     {
         $categories = \App\Models\ItemCategory::orderBy('name')->get();
-        $incomeAccounts = \App\Models\ChartOfAcc::where('account_type', 'Income')->orderBy('account_code')->get();
-        $expenseAccounts = \App\Models\ChartOfAcc::where('account_type', 'Expense')->orderBy('account_code')->get();
-        $inventoryAccounts = \App\Models\ChartOfAcc::where('account_type', 'asset')->orderBy('account_code')->get();
+        $incomeAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->orderBy('account_code')->get();
+        $expenseAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['expense', 'cost_of_goods_sold'])->orderBy('account_code')->get();
+        $inventoryAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->orderBy('account_code')->get();
         $suppliers = \App\Models\Supplier::orderBy('display_name')->get()
             ->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name]);
         $allItems = \App\Models\Item::where('type', '!=', 'bundle')->orderBy('name')->get();
@@ -395,19 +395,11 @@ class LookupController extends Controller
     /**
      * Endpoint to fetch payment methods
      */
-    public function paymentMethods(Request $request)
+    public function paymentMethods()
     {
-        $companyId = session('active_company_id');
-
+        
         $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
             ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
             ->orderBy('name')
             ->get()
             ->map(function($pm) {

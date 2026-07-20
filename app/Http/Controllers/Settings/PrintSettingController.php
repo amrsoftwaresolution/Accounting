@@ -20,10 +20,9 @@ class PrintSettingController extends Controller
             'block_styles' => 'nullable|array',
         ]);
 
-        $companyId = session('active_company_id');
-        
+                
         $setting = \App\Models\PrintSetting::updateOrCreate(
-            ['company_id' => $companyId, 'document_type' => $validated['document_type']],
+            ['document_type' => $validated['document_type']],
             [
                 'custom_title' => $validated['custom_title'] ?? null,
                 'static_footer_content' => $validated['static_footer_content'] ?? null,
@@ -40,7 +39,7 @@ class PrintSettingController extends Controller
 
     public function preview(Request $request)
     {
-        $company = \App\Models\Company::find(session('active_company_id')) ?? new \App\Models\Company(['company_name' => 'Demo Company', 'address' => "123 Main St\nCity, Country"]);
+        $company = \App\Models\Company::first() ?? new \App\Models\Company(['company_name' => 'Demo Company', 'address' => "123 Main St\nCity, Country"]);
         
         $title = $request->input('custom_title') ?: 'Document Preview';
         $staticFooterContent = $request->input('static_footer_content');

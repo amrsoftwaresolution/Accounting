@@ -12,7 +12,7 @@ class CompanySetupService
     public static function setup(Company $company)
     {
         // 1. Create Default Sales Settings
-        SalesSetting::firstOrCreate(['company_id' => $company->id]);
+        SalesSetting::firstOrCreate([]);
 
         // 2. Create Default Chart of Accounts
         $accounts = [
@@ -34,7 +34,7 @@ class CompanySetupService
 
         foreach ($accounts as $acc) {
             ChartOfAcc::firstOrCreate(
-                ['company_id' => $company->id, 'account_code' => $acc['code']],
+                ['account_code' => $acc['code']],
                 [
                     'name' => $acc['name'],
                     'account_type' => $acc['type'],
@@ -53,7 +53,7 @@ class CompanySetupService
         ];
         foreach ($methods as $method) {
             PaymentMethod::firstOrCreate(
-                ['company_id' => $company->id, 'slug' => $method['slug']],
+                ['slug' => $method['slug']],
                 ['name' => $method['name']]
             );
         }

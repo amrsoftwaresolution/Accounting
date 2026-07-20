@@ -60,7 +60,6 @@ export default function RecentTransactionHistory({ historyType = 'invoice', dirt
 
     const loadRecords = async () => {
         if (!normalizedType) return;
-        if (cache[normalizedType]) return;
 
         setLoading(true);
         try {

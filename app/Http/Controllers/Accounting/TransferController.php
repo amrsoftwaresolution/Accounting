@@ -30,7 +30,6 @@ class TransferController extends Controller
 
                 // 1. Create Business Document (Transfer)
                 $transfer = Transfer::create([
-                    'company_id'      => session('active_company_id'),
                     'from_account_id' => $request->transfer_from,
                     'to_account_id'   => $request->transfer_to,
                     'amount'          => $amount,

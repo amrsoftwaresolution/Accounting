@@ -58,17 +58,7 @@ export default function CategoryForm({ category, parents }) {
                             {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
                         </div>
 
-                        <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Parent Category (Optional)</label>
-                            <SearchableSelect
-                                options={parents.map(p => ({ value: p.id, label: p.name }))}
-                                value={data.parent_id}
-                                onChange={val => setData('parent_id', val)}
-                                placeholder="Select parent category"
-                            />
-                            <p className="mt-2 text-[10px] text-slate-400">Use this to create sub-categories (e.g. 'Web Design' under 'Services').</p>
-                            {errors.parent_id && <p className="mt-1 text-xs text-red-600">{errors.parent_id}</p>}
-                        </div>
+
                     </div>
 
                     <div className="pt-6 border-t border-slate-100 flex items-center justify-between">

@@ -2,8 +2,6 @@ import CommonInput from '@/Components/CommonInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { router } from '@inertiajs/react';
-
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -15,7 +13,7 @@ export default function Login({ status, canResetPassword }) {
     const submit = (e) => {
         e.preventDefault();
 
-        router.post(route('login'), data, {
+        post(route('login'), {
             onFinish: () => reset('password'),
         });
     };
@@ -69,8 +67,8 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div className="pt-2">
-                    <PrimaryButton 
-                        className="w-full justify-center py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow-lg shadow-green-600/20 uppercase tracking-widest text-xs transition-all duration-200" 
+                    <PrimaryButton
+                        className="w-full justify-center py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow-lg shadow-green-600/20 uppercase tracking-widest text-xs transition-all duration-200"
                         disabled={processing}
                     >
                         Sign In

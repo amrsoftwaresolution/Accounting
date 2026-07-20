@@ -11,7 +11,7 @@ class SupplierCreditNote extends Model
     use HasUuids;
 
     protected $fillable = [
-        'company_id', 'supplier_id', 'credit_date', 
+        'supplier_id', 'credit_date', 
         'total_amount', 'memo', 'status'
     ];
 

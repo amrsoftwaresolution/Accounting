@@ -5,14 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Traits\HasCompany;
 
 class Device extends Model
 {
-    use HasUuids, HasCompany;
+    use HasUuids;
 
     protected $fillable = [
-        'company_id',
         'customer_id',
         'type',
         'brand',

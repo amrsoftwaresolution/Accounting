@@ -11,7 +11,7 @@ class Bill extends Model
     use HasUuids;
 
     protected $fillable = [
-        'company_id', 'supplier_id', 'email', 'bill_date',
+        'supplier_id', 'email', 'bill_date',
         'due_date', 'bill_no', 'total_amount', 'memo', 'status'
     ];
 

@@ -19,21 +19,8 @@ class PayBillController extends Controller
 {
     public function create(Request $request)
     {
-        $companyId = session('active_company_id');
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->where(function ($query) use ($companyId) {
-                $query->whereNull('company_id');
-                if ($companyId) {
-                    $query->orWhere('company_id', $companyId);
-                }
-            })
-            ->orderBy('name')
-            ->get();
-
         return Inertia::render('Transaction/PayBill', [
-            'paymentMethods' => $paymentMethods
+            'paymentMethods' => $this->paymentMethods()
         ]);
     }
 
@@ -57,7 +44,6 @@ class PayBillController extends Controller
                 $amount = (float) $validated['amount'];
 
                 $payment = BillPayment::create([
-                    'company_id' => session('active_company_id'),
                     'supplier_id' => $request->supplier,
                     'amount' => $amount,
                     'payment_date' => $request->paymentDate,
@@ -102,8 +88,7 @@ class PayBillController extends Controller
                     'total_amount' => $amount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
-                    'company_id' => session('active_company_id'),
-                ]);
+                    ]);
 
                 // Credit Bank Account (Money leaving)
                 JournalEntryLine::create([
@@ -117,7 +102,7 @@ class PayBillController extends Controller
                 // Debit Accounts Payable
                 $apAccount = ChartOfAcc::where('account_type', 'liability')
                     ->where('name', 'like', '%Accounts Payable%')
-                    ->where('company_id', session('active_company_id'))
+                    
                     ->first();
 
                 if (!$apAccount) {
@@ -200,17 +185,17 @@ class PayBillController extends Controller
             foreach ($payment->allocations as $alloc) {
                 $tableItems[] = [
                     "Payment applied to Bill #" . ($alloc->bill->bill_no ?? 'Unknown'),
-                    ($company->home_currency_prefix ?? '$') . number_format($alloc->amount_applied, 2),
+                    ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount_applied, 2),
                 ];
             }
         } else {
             $tableItems[] = [
                 "Payment to Supplier",
-                ($company->home_currency_prefix ?? '$') . number_format($payment->amount, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($payment->amount, 2),
             ];
         }
 
-        $printSetting = \App\Models\PrintSetting::where('company_id', $company->id)
+        $printSetting = \App\Models\PrintSetting::query()
             ->where('document_type', 'payment_voucher')
             ->first();
 

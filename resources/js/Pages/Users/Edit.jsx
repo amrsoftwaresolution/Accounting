@@ -7,8 +7,8 @@ export default function Edit({ userToEdit }) {
     const { data, setData, put, processing, errors } = useForm({
         name: userToEdit?.name || '',
         email: userToEdit?.email || '',
-        role: userToEdit?.role || 'user',
-        phone: userToEdit?.phone || '+94 ',
+        role: userToEdit?.role || 'admin',
+        phone: userToEdit?.phone || '',
     });
 
     function submit(e) {
@@ -55,31 +55,14 @@ export default function Edit({ userToEdit }) {
                                     />
                                 </div>
 
-                                <CommonInput
-                                    label="Phone Number"
-                                    placeholder="+94 7X XXX XXXX"
-                                    value={data.phone}
-                                    onChange={(e) => {
-                                        let val = e.target.value;
-                                        if (!val.startsWith('+94')) {
-                                            val = '+94 ' + val.replace(/^\+?\d*/, '').trim();
-                                        }
-                                        setData('phone', val);
-                                    }}
-                                    error={errors.phone}
-                                />
-
-                                <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-1">Access Level</label>
-                                    <select
-                                        value={data.role}
-                                        onChange={(e) => setData('role', e.target.value)}
-                                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all outline-none appearance-none"
-                                    >
-                                        <option value="user">Standard User</option>
-                                        <option value="admin">Global Administrator</option>
-                                    </select>
-                                    {errors.role && <p className="text-red-500 text-[10px] mt-1 font-bold italic ml-1">{errors.role}</p>}
+                                <div className="col-span-2">
+                                    <CommonInput
+                                        label="Phone Number (Optional)"
+                                        placeholder="+94 7X XXX XXXX"
+                                        value={data.phone}
+                                        onChange={(e) => setData('phone', e.target.value)}
+                                        error={errors.phone}
+                                    />
                                 </div>
                             </div>
 

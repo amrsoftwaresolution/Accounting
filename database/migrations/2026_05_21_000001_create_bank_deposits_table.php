@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('bank_deposits', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->string('deposit_no')->nullable();
             $table->date('deposit_date');
             $table->uuid('deposit_to_account_id')->nullable();

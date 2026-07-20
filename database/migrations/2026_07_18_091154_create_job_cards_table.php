@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('job_cards', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('company_id')->constrained()->onDelete('cascade');
             $table->uuid('customer_id')->constrained()->onDelete('cascade');
             $table->uuid('device_id')->nullable()->constrained()->onDelete('set null');
             

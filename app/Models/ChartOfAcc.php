@@ -4,14 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Traits\HasCompany;
 
 class ChartOfAcc extends Model
 {
-    use HasUuids, HasCompany;
+    use HasUuids;
 
     protected $fillable = [
-        'company_id',
         'account_code',
         'name',
         'account_type',
@@ -66,7 +64,6 @@ class ChartOfAcc extends Model
 
     public static function getOrCreateDefault($subType, $companyId = null)
     {
-        $companyId = $companyId ?? session('active_company_id');
         $account = self::where('sub_type', $subType)->first();
         if ($account) {
             return $account;
@@ -132,7 +129,6 @@ class ChartOfAcc extends Model
         }
 
         return self::create([
-            'company_id' => $companyId,
             'account_code' => $code,
             'name' => $def['name'],
             'account_type' => $def['account_type'],

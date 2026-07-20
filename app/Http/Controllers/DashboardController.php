@@ -14,15 +14,14 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = session('active_company_id');
-        $today = Carbon::today();
+                $today = Carbon::today();
         
         // Service Center Metrics
-        $todaysJobs = \App\Models\JobCard::where('company_id', $companyId)
+        $todaysJobs = \App\Models\JobCard::query()
             ->whereDate('service_date', $today)
             ->count();
             
-        $pendingJobs = \App\Models\JobCard::where('company_id', $companyId)
+        $pendingJobs = \App\Models\JobCard::query()
             ->whereNotIn('status', ['Ready', 'Delivered', 'Cancelled'])
             ->count();
             
@@ -33,8 +32,8 @@ class DashboardController extends Controller
         $todaysRevenue = JournalEntryLine::whereHas('account', function($q) {
                 $q->whereIn('account_type', ['income', 'other_income']);
             })
-            ->whereHas('journalEntry', function($q) use ($companyId, $today) {
-                $q->where('company_id', $companyId)
+            ->whereHas('journalEntry', function($q) use ($today) {
+                $q
                   ->whereDate('date', $today);
             })
             ->sum(DB::raw('credit - debit'));
@@ -42,8 +41,8 @@ class DashboardController extends Controller
         $monthlyRevenue = JournalEntryLine::whereHas('account', function($q) {
                 $q->whereIn('account_type', ['income', 'other_income']);
             })
-            ->whereHas('journalEntry', function($q) use ($companyId, $currentMonth, $currentYear) {
-                $q->where('company_id', $companyId)
+            ->whereHas('journalEntry', function($q) use ($currentMonth, $currentYear) {
+                $q
                   ->whereYear('date', $currentYear)
                   ->whereMonth('date', $currentMonth);
             })
@@ -52,8 +51,8 @@ class DashboardController extends Controller
         $monthlyExpenses = JournalEntryLine::whereHas('account', function($q) {
                 $q->whereIn('account_type', ['expense', 'cost_of_goods_sold']);
             })
-            ->whereHas('journalEntry', function($q) use ($companyId, $currentMonth, $currentYear) {
-                $q->where('company_id', $companyId)
+            ->whereHas('journalEntry', function($q) use ($currentMonth, $currentYear) {
+                $q
                   ->whereYear('date', $currentYear)
                   ->whereMonth('date', $currentMonth);
             })
@@ -62,7 +61,7 @@ class DashboardController extends Controller
         $monthlyProfit = $monthlyRevenue - $monthlyExpenses;
 
         // Inventory Alerts (Items where qty < some threshold, say 5)
-        $lowStockItems = \App\Models\Item::where('company_id', $companyId)
+        $lowStockItems = \App\Models\Item::query()
             ->where('type', 'inventory')
             ->where('quantity_on_hand', '<=', 5)
             ->take(5)
@@ -70,7 +69,6 @@ class DashboardController extends Controller
 
         // Recent Jobs
         $recentJobs = \App\Models\JobCard::with(['customer', 'device'])
-            ->where('company_id', $companyId)
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();

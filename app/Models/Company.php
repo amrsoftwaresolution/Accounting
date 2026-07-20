@@ -24,25 +24,8 @@ class Company extends Model
         'legal_address',
         'is_onboarded',
     ];
-
-    protected static function booted()
-    {
-        static::updated(function ($company) {
-            if (session('active_company_id') === $company->id) {
-                session()->forget('active_company_data');
-            }
-            session()->forget('user_companies_data');
-        });
-
-        static::deleted(function ($company) {
-            if (session('active_company_id') === $company->id) {
-                session()->forget('active_company_id');
-                session()->forget('active_company_data');
-            }
-            session()->forget('user_companies_data');
-        });
-    }
     
+
     protected $appends = ['logo_url', 'slug'];
 
     public function getLogoUrlAttribute()
@@ -53,6 +36,11 @@ class Company extends Model
     public function getSlugAttribute()
     {
         return Str::slug($this->company_name);
+    }
+
+    public function getHomeCurrencyPrefixAttribute()
+    {
+        return 'LKR ';
     }
 
     public function users()

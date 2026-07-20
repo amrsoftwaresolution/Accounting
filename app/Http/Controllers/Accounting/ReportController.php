@@ -20,7 +20,7 @@ class ReportController extends Controller
     }
     private function buildAccountTree($types, $lines, $isBalanceSheet = false)
     {
-        $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
+        $allAccounts = ChartOfAcc::query()
             ->whereIn('account_type', $types)
             ->orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
             ->orderBy('sub_type')
@@ -97,7 +97,7 @@ class ReportController extends Controller
 
     private function buildPnLTree($types, $lines, $displayBy, $months)
     {
-        $allAccounts = ChartOfAcc::where('company_id', session('active_company_id'))
+        $allAccounts = ChartOfAcc::query()
             ->whereIn('account_type', $types)
             ->orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
             ->orderBy('sub_type')
@@ -217,7 +217,7 @@ class ReportController extends Controller
 
         $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->select(
                 'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
@@ -273,7 +273,7 @@ class ReportController extends Controller
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.date', '<=', $endDate)
             ->select(
                 'journal_entry_lines.chart_of_acc_id',
@@ -292,7 +292,7 @@ class ReportController extends Controller
         $priorNetIncomeResult = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.date', '<', $fiscalYearStart)
             ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
             ->select(
@@ -305,7 +305,7 @@ class ReportController extends Controller
         $currentNetIncomeResult = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->whereBetween('journal_entries.date', [$fiscalYearStart, $endDate])
             ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
             ->select(
@@ -369,12 +369,12 @@ class ReportController extends Controller
         $endDate = $request->query('end_date');
         $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
 
-        $customers = Customer::where('company_id', session('active_company_id'))->get();
+        $customers = Customer::query()->get();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.payee_type', Customer::class)
             ->where('chart_of_accs.sub_type', 'accounts-receivable')
             ->where('journal_entries.date', '<=', $endDate)
@@ -417,12 +417,12 @@ class ReportController extends Controller
     {
         $endDate = $request->query('end_date');
         $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
-        $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
+        $suppliers = Supplier::query()->get();
 
         $lines = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.payee_type', Supplier::class)
             ->where('chart_of_accs.sub_type', 'accounts-payable')
             ->where('journal_entries.date', '<=', $endDate)
@@ -470,7 +470,7 @@ class ReportController extends Controller
         $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.payee_type', Customer::class)
             ->where('journal_entries.payee_id', $customer->id)
             ->where('chart_of_accs.sub_type', 'accounts-receivable');
@@ -505,7 +505,7 @@ class ReportController extends Controller
         $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.payee_type', Supplier::class)
             ->where('journal_entries.payee_id', $supplier->id)
             ->where('chart_of_accs.sub_type', 'accounts-payable');
@@ -534,11 +534,10 @@ class ReportController extends Controller
 
     public function inventorySummary(Request $request)
     {
-        $companyId = session('active_company_id');
-        $startDate = $request->query('start_date');
+                $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $itemsQuery = \App\Models\Item::with('category')->where('company_id', $companyId)
+        $itemsQuery = \App\Models\Item::with('category')
             ->where('track_inventory', true)
             ->orderBy('name')
             ->get();
@@ -547,7 +546,7 @@ class ReportController extends Controller
             $query = DB::table('journal_entries')
                 ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
                 ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-                ->where('journal_entries.company_id', $companyId)
+                
                 ->where('chart_of_accs.sub_type', 'inventory')
                 ->where('journal_entries.date', '<=', $endDate);
 
@@ -608,8 +607,7 @@ class ReportController extends Controller
 
     public function inventoryDetail(Request $request, \App\Models\Item $item)
     {
-        $companyId = session('active_company_id');
-        if ($item->company_id !== $companyId || !$item->track_inventory) {
+                if (!$item->track_inventory) {
             abort(404);
         }
 
@@ -630,7 +628,7 @@ class ReportController extends Controller
         $query = DB::table('journal_entries')
             ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', $companyId)
+            
             ->where('chart_of_accs.sub_type', 'inventory')
             ->where('journal_entry_lines.memo', 'like', '%' . $item->name . '%');
 
@@ -683,11 +681,10 @@ class ReportController extends Controller
 
     public function inventoryDetailAll(Request $request)
     {
-        $companyId = session('active_company_id');
-        $startDate = $request->query('start_date');
+                $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
 
-        $items = \App\Models\Item::where('company_id', $companyId)
+        $items = \App\Models\Item::query()
             ->where('track_inventory', true)
             ->orderBy('name')
             ->get();
@@ -695,7 +692,7 @@ class ReportController extends Controller
         $query = DB::table('journal_entries')
             ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', $companyId)
+            
             ->where('chart_of_accs.sub_type', 'inventory');
 
         if ($startDate) {
@@ -763,8 +760,7 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
-        $companyId = session('active_company_id');
-
+        
         $query = DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->join('journal_entries', function($join) {
@@ -773,7 +769,7 @@ class ReportController extends Controller
             })
             ->join('items', 'invoice_items.item_id', '=', 'items.id')
             ->join('customers', 'invoices.customer_id', '=', 'customers.id')
-            ->where('invoices.company_id', $companyId)
+            
             ->where('invoices.status', 'posted');
 
         if ($startDate) {
@@ -841,11 +837,10 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
-        $companyId = session('active_company_id');
-
+        
         $query = DB::table('invoices')
             ->join('customers', 'invoices.customer_id', '=', 'customers.id')
-            ->where('invoices.company_id', $companyId)
+            
             ->where('invoices.status', 'posted');
 
         if ($startDate) {
@@ -877,8 +872,7 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
-        $companyId = session('active_company_id');
-
+        
         $billsQuery = DB::table('bill_items')
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
             ->join('journal_entries', function($join) {
@@ -887,7 +881,7 @@ class ReportController extends Controller
             })
             ->join('items', 'bill_items.item_id', '=', 'items.id')
             ->join('suppliers', 'bills.supplier_id', '=', 'suppliers.id')
-            ->where('bills.company_id', $companyId)
+            
             ->where('bills.status', 'posted');
 
         if ($startDate) {
@@ -920,7 +914,7 @@ class ReportController extends Controller
             })
             ->join('items', 'expense_items.item_id', '=', 'items.id')
             ->leftJoin('suppliers', 'expenses.payee_id', '=', 'suppliers.id')
-            ->where('expenses.company_id', $companyId)
+            
             ->where('expenses.status', 'posted');
 
         if ($startDate) {
@@ -989,12 +983,11 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
-        $companyId = session('active_company_id');
-
+        
         // Purchases by supplier usually includes Bills and Expenses
         $billsQuery = DB::table('bills')
             ->join('suppliers', 'bills.supplier_id', '=', 'suppliers.id')
-            ->where('bills.company_id', $companyId)
+            
             ->where('bills.status', 'posted');
 
         if ($startDate) {
@@ -1014,7 +1007,7 @@ class ReportController extends Controller
 
         $expensesQuery = DB::table('expenses')
             ->join('suppliers', 'expenses.payee_id', '=', 'suppliers.id')
-            ->where('expenses.company_id', $companyId)
+            
             ->where('expenses.payee_type', \App\Models\Supplier::class)
             ->where('expenses.status', 'posted');
 
@@ -1072,12 +1065,12 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date', now()->toDateString());
 
-        $customers = Customer::where('company_id', session('active_company_id'))->get();
+        $customers = Customer::query()->get();
 
         $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.payee_type', Customer::class)
             ->where('chart_of_accs.sub_type', 'accounts-receivable');
 
@@ -1119,12 +1112,12 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date', now()->toDateString());
 
-        $suppliers = Supplier::where('company_id', session('active_company_id'))->get();
+        $suppliers = Supplier::query()->get();
 
         $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->where('journal_entries.company_id', session('active_company_id'))
+            
             ->where('journal_entries.payee_type', Supplier::class)
             ->where('chart_of_accs.sub_type', 'accounts-payable');
 

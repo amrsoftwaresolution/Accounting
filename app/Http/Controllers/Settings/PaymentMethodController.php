@@ -16,7 +16,6 @@ class PaymentMethodController extends Controller
         ]);
 
         $paymentMethod = PaymentMethod::create([
-            'company_id' => session('active_company_id'),
             'name' => $validated['name'],
             'is_active' => $validated['is_active'] ?? true,
         ]);

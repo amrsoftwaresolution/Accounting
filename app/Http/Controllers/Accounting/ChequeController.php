@@ -64,7 +64,7 @@ class ChequeController extends Controller
 
     private function getNextChequeNo()
     {
-        $last = JournalEntry::where('company_id', session('active_company_id'))
+        $last = JournalEntry::query()
             ->where('transaction_type', 'cheque')
             ->orderByRaw('CAST(REGEXP_REPLACE(reference, "[^0-9]", "") AS UNSIGNED) DESC')
             ->first();
@@ -84,10 +84,9 @@ class ChequeController extends Controller
         $paymentDate = $request->input('date', $request->input('paymentDate'));
         $chequeNo = $request->input('cheque_no', $request->input('ref'));
 
-        $companyId = session('active_company_id');
-
+        
         try {
-            $journalEntry = DB::transaction(function() use ($request, $bankAccount, $paymentDate, $chequeNo, $companyId) {
+            $journalEntry = DB::transaction(function() use ($request, $bankAccount, $paymentDate, $chequeNo) {
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });
@@ -102,7 +101,6 @@ class ChequeController extends Controller
 
                 // 1. Create Business Document (Cheque)
                 $cheque = Cheque::create([
-                    'company_id' => $companyId,
                     'payee_id' => $request->payee,
                     'payee_type' => $request->payeeType,
                     'bank_account_id' => $bankAccount,
@@ -129,7 +127,6 @@ class ChequeController extends Controller
 
                 // 2. Create Financial Truth (Journal Entry)
                 $journalEntry = JournalEntry::create([
-                    'company_id' => $companyId,
                     'date' => $paymentDate,
                     'reference' => $chequeNo,
                     'description' => $request->memo,
@@ -220,10 +217,9 @@ class ChequeController extends Controller
         $paymentDate = $request->input('date', $request->input('paymentDate'));
         $chequeNo = $request->input('cheque_no', $request->input('ref'));
 
-        $companyId = session('active_company_id');
-
+        
         try {
-            DB::transaction(function() use ($request, $journalEntry, $bankAccount, $paymentDate, $chequeNo, $companyId) {
+            DB::transaction(function() use ($request, $journalEntry, $bankAccount, $paymentDate, $chequeNo) {
                 $categoryItems = collect($request->items)->filter(function($item) {
                     return !empty($item['category']) && (float)str_replace(',', '', $item['amount']) > 0;
                 });

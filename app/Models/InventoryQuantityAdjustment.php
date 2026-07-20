@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,10 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryQuantityAdjustment extends Model
 {
-    use HasUuids, HasCompany;
+    use HasUuids;
 
     protected $fillable = [
-        'company_id',
         'adjustment_date',
         'reference_number',
         'adjustment_reason',

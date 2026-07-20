@@ -21,9 +21,8 @@ class ItemController extends Controller
 {
     public function index(Request $request)
     {
-        $companyId = session('active_company_id');
-        $query = Item::with(['category', 'incomeAccount', 'expenseAccount', 'inventoryAccount', 'preferredSupplier', 'bundleComponents.item'])
-            ->where('items.company_id', $companyId);
+                $query = Item::with(['category', 'incomeAccount', 'expenseAccount', 'inventoryAccount', 'preferredSupplier', 'bundleComponents.item'])
+            ;
 
         // Calculate counts before pagination
         $lowStockCount = (clone $query)->where('items.track_inventory', true)
@@ -74,9 +73,32 @@ class ItemController extends Controller
         ]);
     }
 
+    private function getCommonItemProps()
+    {
+        return [
+            'categories' => ItemCategory::all(),
+            'incomeAccounts' => ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->get(),
+            'expenseAccounts' => ChartOfAcc::whereIn('account_type', ['expense', 'cost_of_goods_sold'])->get(),
+            'inventoryAccounts' => ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->get(),
+            'suppliers' => Supplier::all(),
+            'allItems' => Item::all(),
+        ];
+    }
+
+    private function getNextSku()
+    {
+        $lastItem = Item::orderBy('id', 'desc')->first();
+        if (!$lastItem) return '1';
+        
+        $num = (int) preg_replace('/[^0-9]/', '', $lastItem->sku ?? $lastItem->id);
+        return (string)($num + 1);
+    }
+
     public function create()
     {
-        return Inertia::render('Inventory/ItemForm');
+        $props = $this->getCommonItemProps();
+        $props['nextSku'] = $this->getNextSku();
+        return Inertia::render('Inventory/ItemForm', $props);
     }
 
     private function sanitizePrices(Request $request)
@@ -132,9 +154,7 @@ class ItemController extends Controller
             'bundle_items.*.quantity' => 'required_with:bundle_items|numeric|min:0.01',
         ]);
 
-        $companyId = session('active_company_id');
-        $validated['company_id'] = $companyId;
-        $validated['track_inventory'] = ($request->input('type') === 'inventory');
+                        $validated['track_inventory'] = ($request->input('type') === 'inventory');
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('items', 'public');
@@ -178,10 +198,10 @@ class ItemController extends Controller
     public function edit(Item $item)
     {
         $item->load('bundleComponents.item');
+        $props = $this->getCommonItemProps();
+        $props['item'] = $item;
 
-        return Inertia::render('Inventory/ItemForm', [
-            'item' => $item,
-        ]);
+        return Inertia::render('Inventory/ItemForm', $props);
     }
 
     public function update(Request $request, Item $item)

@@ -49,7 +49,7 @@ class JobCardController extends Controller
         ]);
 
         // Auto generate job card number
-        $latest = JobCard::where('company_id', session('active_company_id'))->latest('id')->first();
+        $latest = JobCard::query()->latest('id')->first();
         $nextId = $latest ? $latest->id + 1 : 1;
         $validated['job_card_number'] = 'JC-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
         
