@@ -19,10 +19,6 @@ class StoreTransferRequest extends FormRequest
             'amount'        => 'required|numeric|min:0.01',
             'date'          => 'required|date',
             'memo'          => 'nullable|string',
-            'from_currency_id' => 'nullable|exists:currencies,id',
-            'from_exchange_rate' => 'nullable|numeric|gt:0',
-            'to_currency_id' => 'nullable|exists:currencies,id',
-            'to_exchange_rate' => 'nullable|numeric|gt:0',
         ];
     }
 }

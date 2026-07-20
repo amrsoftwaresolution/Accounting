@@ -120,6 +120,32 @@ class UserController extends Controller
         return back()->with('success', 'Invitation resent successfully.');
     }
 
+    public function edit(User $user)
+    {
+        return Inertia::render('Users/Edit', [
+            'userToEdit' => $user,
+        ]);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'role' => 'required|in:admin,user',
+            'phone' => ['nullable', 'string', 'regex:/^\+94\s?[0-9\s]{9,15}$/', 'max:20'],
+        ]);
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+            'phone' => $request->phone,
+        ]);
+
+        return redirect()->route('users.index')->with('success', 'User updated successfully');
+    }
+
     /**
      * Delete a user
      */

@@ -56,7 +56,7 @@ export default function InventoryItemSidePanel({
     onSuccess = null
 }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || '$';
+    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
     const isEdit = !!item;
     const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
     const [localCategories, setLocalCategories] = useState(initialCategories);
@@ -124,8 +124,6 @@ export default function InventoryItemSidePanel({
     const itemTypes = [
         { id: 'service', name: 'Service' },
         { id: 'inventory', name: 'Inventory' },
-        { id: 'non-inventory', name: 'Non-inventory' },
-        { id: 'bundle', name: 'Bundle' },
     ];
 
     const fileInputRef = useRef(null);

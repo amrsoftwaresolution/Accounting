@@ -27,14 +27,7 @@ export default function CustomerIndex({ customers = [] }) {
             postal_code: '',
             country: '',
         },
-        shipping_address: {
-            address_line_1: '',
-            address_line_2: '',
-            city: '',
-            province: '',
-            postal_code: '',
-            country: '',
-        }
+        devices: []
     });
 
     const handleOpenCreate = () => {
@@ -68,14 +61,7 @@ export default function CustomerIndex({ customers = [] }) {
                 postal_code: billing.postal_code || '',
                 country: billing.country || '',
             },
-            shipping_address: {
-                address_line_1: shipping.address_line_1 || '',
-                address_line_2: shipping.address_line_2 || '',
-                city: shipping.city || '',
-                province: shipping.province || '',
-                postal_code: shipping.postal_code || '',
-                country: shipping.country || '',
-            }
+            devices: customer.devices || []
         });
         setIsCreateOpen(true);
     };
@@ -150,7 +136,7 @@ export default function CustomerIndex({ customers = [] }) {
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Customer / Company</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Contact Details</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Open Balance</th>
+
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
                                 </tr>
                             </thead>
@@ -168,9 +154,8 @@ export default function CustomerIndex({ customers = [] }) {
                                                 <span>{customer.email}</span>
                                                 <span>{customer.phone_number}</span>
                                             </div>
-                                        <td className="px-4 py-3 text-[11px] font-bold text-slate-800 text-right">
-                                            {(customer.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
+
                                         <td className="px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 <CommonButton
@@ -270,14 +255,98 @@ export default function CustomerIndex({ customers = [] }) {
                         </section>
 
                         <section className="bg-slate-50/50 -mx-6 px-6 py-6 border-y border-slate-100">
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-200 pb-2">Shipping Address</h3>
-                            <AddressForm
-                                data={data.shipping_address}
-                                setData={(key, val) => setData('shipping_address', { ...data.shipping_address, [key]: val })}
-                                errors={errors}
-                            />
-                        </section>
-                    </div>
+                            <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Devices / Vehicles</h3>
+                                <CommonButton 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="xs"
+                                    onClick={() => setData('devices', [...data.devices, { type: 'vehicle', brand: '', model: '', vehicle_number: '', serial_number: '' }])}
+                                >
+                                    + Add Device
+                                </CommonButton>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                {data.devices.map((device, index) => (
+                                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 relative">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => {
+                                                const newDevices = [...data.devices];
+                                                newDevices.splice(index, 1);
+                                                setData('devices', newDevices);
+                                            }}
+                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold"
+                                        >
+                                            &times;
+                                        </button>
+                                        
+                                        <div className="grid grid-cols-2 gap-4 mb-4">
+                                            <CommonInput
+                                                type="select"
+                                                label="Type"
+                                                value={device.type}
+                                                options={[
+                                                    { value: 'vehicle', label: 'Vehicle' },
+                                                    { value: 'electronics', label: 'Electronics' }
+                                                ]}
+                                                onChange={e => {
+                                                    const newDevices = [...data.devices];
+                                                    newDevices[index].type = e.target.value;
+                                                    setData('devices', newDevices);
+                                                }}
+                                            />
+                                            <CommonInput
+                                                label="Brand"
+                                                value={device.brand}
+                                                onChange={e => {
+                                                    const newDevices = [...data.devices];
+                                                    newDevices[index].brand = e.target.value;
+                                                    setData('devices', newDevices);
+                                                }}
+                                            />
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <CommonInput
+                                                label="Model"
+                                                value={device.model}
+                                                onChange={e => {
+                                                    const newDevices = [...data.devices];
+                                                    newDevices[index].model = e.target.value;
+                                                    setData('devices', newDevices);
+                                                }}
+                                            />
+                                            {device.type === 'vehicle' ? (
+                                                <CommonInput
+                                                    label="Vehicle Number"
+                                                    value={device.vehicle_number}
+                                                    onChange={e => {
+                                                        const newDevices = [...data.devices];
+                                                        newDevices[index].vehicle_number = e.target.value;
+                                                        setData('devices', newDevices);
+                                                    }}
+                                                />
+                                            ) : (
+                                                <CommonInput
+                                                    label="Serial Number / IMEI"
+                                                    value={device.serial_number}
+                                                    onChange={e => {
+                                                        const newDevices = [...data.devices];
+                                                        newDevices[index].serial_number = e.target.value;
+                                                        setData('devices', newDevices);
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {data.devices.length === 0 && (
+                                    <p className="text-xs text-slate-500 text-center italic">No devices added.</p>
+                                )}
+                            </div>
+                        </section>                    </div>
 
                     <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
                         <CommonButton variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</CommonButton>

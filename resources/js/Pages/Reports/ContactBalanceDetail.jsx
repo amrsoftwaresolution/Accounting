@@ -7,7 +7,7 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function ContactBalanceDetail({ contact, contactType, lines = [], filters = {} }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
+    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR ';
 
     const handleFilterChange = (newFilters) => {
         const routeName = contactType === 'Customer' ? 'reports.customer-detail' : 'reports.supplier-detail';

@@ -19,39 +19,11 @@ class HandleCompanyContext
     {
         if (Auth::check()) {
             if (Auth::user()->role === 'super_admin') {
-                $allowedRoutes = [
-                    'admin.companies.index',
-                    'packages.index',
-                    'packages.create',
-                    'packages.store',
-                    'packages.show',
-                    'packages.edit',
-                    'packages.update',
-                    'packages.destroy',
-                    'companies.show',
-                    'companies.edit',
-                    'companies.update',
-                    'profile.edit',
-                    'profile.update',
-                    'profile.destroy',
-                    'logout',
-                ];
-
-                $currentRouteName = $request->route() ? $request->route()->getName() : null;
-
-                if (!in_array($currentRouteName, $allowedRoutes)) {
-                    return redirect()->route('admin.companies.index');
-                }
+                return redirect()->route('dashboard');
             } else {
-                if (!session()->has('active_company_id')) {
-                    if (!$request->routeIs('companies.*') && !$request->routeIs('logout')) {
-                        return redirect()->route('companies.index');
-                    }
-                }
-
-                // Share current company with Inertia
-                if (session()->has('active_company_id')) {
-                    $currentCompany = Auth::user()->currentCompany();
+                $currentCompany = \App\Models\Company::first();
+                if ($currentCompany) {
+                    session(['active_company_id' => $currentCompany->id]);
                     Inertia::share('auth.company', $currentCompany);
                 }
             }

@@ -34,4 +34,8 @@ class InventoryQuantityAdjustment extends Model
     {
         return $this->hasMany(InventoryQuantityAdjustmentItem::class, 'inventory_quantity_adjustment_id');
     }
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
+    }
 }

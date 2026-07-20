@@ -104,29 +104,19 @@ class LookupController extends Controller
         }
 
         $currencyCode = $account->currency ?: 'LKR';
-        $currency = \App\Models\Currency::where('code', $currencyCode)->latest('updated_at')->first();
-
-        $currencySymbol = $currency?->symbol ?? ($currencyCode === 'LKR' ? 'Rs.' : '');
-        $latestRate = $currency?->exchange_rate ?? ($currencyCode === 'LKR' ? 1 : null);
+        $currencySymbol = 'Rs.';
 
         return response()->json([
-            'is_multi_currency' => $currencyCode !== 'LKR',
+            'is_multi_currency' => false,
             'currency_code' => $currencyCode,
             'currency_symbol' => $currencySymbol,
-            'currency_id' => $currency?->id,
             'flag' => $this->currencyFlagEmoji($currencyCode),
-            'latest_exchange_rate' => $latestRate,
         ]);
     }
 
     private function getCurrencySymbol(string $currencyCode): string
     {
-        if ($currencyCode === 'LKR') {
-            return 'Rs.';
-        }
-
-        $currency = \App\Models\Currency::where('code', $currencyCode)->first();
-        return $currency?->symbol ?? '';
+        return 'Rs.';
     }
 
     private function currencyFlagEmoji(string $code): string

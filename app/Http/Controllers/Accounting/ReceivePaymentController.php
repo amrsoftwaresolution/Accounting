@@ -103,8 +103,6 @@ class ReceivePaymentController extends Controller
                     'payment_date' => $request->paymentDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
                 ]);
@@ -249,8 +247,6 @@ class ReceivePaymentController extends Controller
                     'payment_date' => $request->paymentDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
                 ]);

@@ -11,7 +11,7 @@ import { Head, usePage, router } from "@inertiajs/react";
 export default function JournalEntryForm({ journalEntry = null, nextJournalNo = "" }) {
     const isEditing = Boolean(journalEntry?.id);
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
+    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);

@@ -4,8 +4,6 @@ import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
-import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
-import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { showToast } from "@/Components/ToastNotification";
 import axios from "axios";
 
@@ -28,21 +26,15 @@ export default function TransferForm({ transfer = null }) {
         date: transfer?.date || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
         memo: transfer?.memo || "",
         referenceNo: transfer?.referenceNo || "",
-        from_currency_id: transfer?.from_currency_id || null,
-        from_exchange_rate: transfer?.from_exchange_rate ? String(transfer.from_exchange_rate) : "",
-        to_currency_id: transfer?.to_currency_id || null,
-        to_exchange_rate: transfer?.to_exchange_rate ? String(transfer.to_exchange_rate) : ""
     });
 
     useEffect(() => {
         transform((data) => ({
             ...data,
             amount: String(data.amount).replace(/,/g, ''),
-            from_exchange_rate: data.from_exchange_rate ? String(data.from_exchange_rate).replace(/,/g, '') : null,
-            to_exchange_rate: data.to_exchange_rate ? String(data.to_exchange_rate).replace(/,/g, '') : null,
             action: currentAction,
         }));
-    }, [data.amount, data.from_exchange_rate, data.to_exchange_rate, currentAction, transform]);
+    }, [data.amount, currentAction, transform]);
 
     const fetchAccounts = (search = "") => {
         axios.get(route('api.accounts', { search })).then(res => {
@@ -57,29 +49,7 @@ export default function TransferForm({ transfer = null }) {
     const selectedFrom = accountOptions.find(opt => opt.value === data.transfer_from);
     const selectedTo = accountOptions.find(opt => opt.value === data.transfer_to);
 
-    const { accountCurrencyDetails: fromAccountCurrencyDetails } = useAccountCurrency({
-        accountId: data.transfer_from,
-        accountOptions,
-        exchangeRate: data.from_exchange_rate,
-        currencyId: data.from_currency_id,
-        setData,
-        apiDetailRoute: 'api.accounts.detail',
-        defaultCurrencyCode,
-        currencyIdField: 'from_currency_id',
-        exchangeRateField: 'from_exchange_rate'
-    });
 
-    const { accountCurrencyDetails: toAccountCurrencyDetails } = useAccountCurrency({
-        accountId: data.transfer_to,
-        accountOptions,
-        exchangeRate: data.to_exchange_rate,
-        currencyId: data.to_currency_id,
-        setData,
-        apiDetailRoute: 'api.accounts.detail',
-        defaultCurrencyCode,
-        currencyIdField: 'to_currency_id',
-        exchangeRateField: 'to_exchange_rate'
-    });
 
     const formatCurrency = (val) => {
         const num = parseFloat(String(val).replace(/,/g, "")) || 0;
@@ -169,13 +139,7 @@ export default function TransferForm({ transfer = null }) {
                                     <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
-                            <CurrencyConversionRow
-                                details={fromAccountCurrencyDetails}
-                                exchangeRate={data.from_exchange_rate}
-                                onExchangeRateChange={(value) => { setData('from_exchange_rate', value); setIsDirty(true); }}
-                                error={errors.from_exchange_rate}
-                            />
-                        </div>
+                                                    </div>
 
                         {/* TO ACCOUNT */}
                         <div className="w-[380px]">
@@ -199,13 +163,7 @@ export default function TransferForm({ transfer = null }) {
                                     <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
-                            <CurrencyConversionRow
-                                details={toAccountCurrencyDetails}
-                                exchangeRate={data.to_exchange_rate}
-                                onExchangeRateChange={(value) => { setData('to_exchange_rate', value); setIsDirty(true); }}
-                                error={errors.to_exchange_rate}
-                            />
-                        </div>
+                                                    </div>
                     </div>
 
                     <div className="text-right flex flex-col items-end">

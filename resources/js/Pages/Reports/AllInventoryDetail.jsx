@@ -6,7 +6,7 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function AllInventoryDetail({ reportData = [], filters = {} }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
+    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR ';
     const dateFormat = useDateFormat();
 
     const [collapsedGroups, setCollapsedGroups] = useState(new Set());

@@ -14,4 +14,8 @@ class Transfer extends Model
         'company_id', 'from_account_id', 'to_account_id',
         'amount', 'date', 'memo', 'reference_no'
     ];
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
+    }
 }

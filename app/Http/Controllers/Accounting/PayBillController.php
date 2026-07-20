@@ -45,8 +45,6 @@ class PayBillController extends Controller
             'paymentDate' => 'required|date',
             'paymentMethod' => 'nullable|uuid',
             'paymentAccount' => 'required|uuid',
-            'currency_id' => 'nullable|exists:currencies,id',
-            'exchange_rate' => 'nullable|numeric|gt:0',
             'referenceNo' => 'nullable|string|max:255',
             'memo' => 'nullable|string',
             'bills' => 'nullable|array',
@@ -65,8 +63,6 @@ class PayBillController extends Controller
                     'payment_date' => $request->paymentDate,
                     'payment_method_id' => $request->paymentMethod,
                     'payment_account_id' => $request->paymentAccount,
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
                 ]);

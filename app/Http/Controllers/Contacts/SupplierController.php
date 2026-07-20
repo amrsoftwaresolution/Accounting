@@ -34,7 +34,6 @@ class SupplierController extends Controller
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
             'billing_address' => 'nullable|array',
-            'shipping_address' => 'nullable|array',
         ]);
 
         $supplier = Supplier::create($validatedData);
@@ -43,9 +42,7 @@ class SupplierController extends Controller
             $supplier->addresses()->create(array_merge($request->billing_address, ['type' => 'billing']));
         }
 
-        if ($request->filled('shipping_address.address_line_1')) {
-            $supplier->addresses()->create(array_merge($request->shipping_address, ['type' => 'shipping']));
-        }
+
 
         return redirect()->back()->with([
             'success' => 'Supplier created successfully.',
@@ -67,7 +64,6 @@ class SupplierController extends Controller
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
             'billing_address' => 'nullable|array',
-            'shipping_address' => 'nullable|array',
         ]);
 
         $supplier->update($validatedData);
@@ -79,12 +75,7 @@ class SupplierController extends Controller
             );
         }
 
-        if ($request->filled('shipping_address.address_line_1')) {
-            $supplier->addresses()->updateOrCreate(
-                ['type' => 'shipping'],
-                $request->shipping_address
-            );
-        }
+
 
         return redirect()->back()->with('success', 'Supplier updated successfully.');
     }

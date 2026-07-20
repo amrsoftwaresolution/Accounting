@@ -7,13 +7,11 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
-import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
-import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { showToast } from "@/Components/ToastNotification";
 
 export default function BankDepositForm({ auth, nextDepositNo = "", deposit = null }) {
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
@@ -80,11 +78,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
         cashBackMemo: deposit?.cashBackMemo || "",
         cashBackAmount: deposit?.cashBackAmount ? parseFloat(deposit.cashBackAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
         memo: deposit?.memo || "",
-        currency_id: deposit?.currency_id || null,
-        exchange_rate: deposit?.exchange_rate ? String(deposit.exchange_rate) : "",
-        currency_id: deposit?.currency_id || null,
-        exchange_rate: deposit?.exchange_rate ? String(deposit.exchange_rate) : "",
-        action: 'save'
+                                        action: 'save'
     });
 
     useEffect(() => {
@@ -103,9 +97,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                 cashBackMemo: deposit.cashBackMemo || "",
                 cashBackAmount: deposit.cashBackAmount ? parseFloat(deposit.cashBackAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
                 memo: deposit.memo || "",
-                currency_id: deposit.currency_id || null,
-                exchange_rate: deposit.exchange_rate ? String(deposit.exchange_rate) : "",
-                action: 'save'
+                                                action: 'save'
             });
         }
         clearErrors();
@@ -115,16 +107,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
     const cashBackAmount = parseFloat(String(data.cashBackAmount).replace(/,/g, '')) || 0;
     const otherFundsTotal = cashBackAmount.toFixed(2);
 
-    const { accountCurrencyDetails } = useAccountCurrency({
-        accountId: data.depositTo,
-        accountOptions: depositAccountOptions,
-        exchangeRate: data.exchange_rate,
-        currencyId: data.currency_id,
-        setData,
-        apiDetailRoute: 'api.accounts.detail',
-        defaultCurrencyCode,
-    });
-
+    
     const handleItemChange = (index, field, value) => {
         const updated = [...data.items];
         updated[index][field] = value;
@@ -199,13 +182,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
                                 size="sm"
                                 error={errors.depositTo}
                             />
-                            <CurrencyConversionRow
-                                details={accountCurrencyDetails}
-                                exchangeRate={data.exchange_rate}
-                                onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
-                                error={errors.exchange_rate}
-                            />
-                        </div>
+                                                    </div>
 
                         <div className="w-[180px]">
                             <CommonInput

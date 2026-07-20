@@ -8,7 +8,7 @@ import axios from 'axios';
 
 export default function AccountHistory({ account, lines = [], accounts = [], filters = {} }) {
     const { auth } = usePage().props;
-    const currencyPrefix = account.currency || auth.company?.home_currency_prefix || auth.company?.home_currency || '$';
+    const currencyPrefix = account.currency || auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR ';
     const dateFormat = useDateFormat();
 
     const [startDate, setStartDate] = useState(filters.start_date || '');

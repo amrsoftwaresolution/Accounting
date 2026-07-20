@@ -6,7 +6,7 @@ import SearchableSelect from "@/Components/SearchableSelect";
 
 export default function CreditNoteForm({ customers = [] }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || "Rs.";
+    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
     // 1. Setup Options
     const customerOptions = customers.map(c => ({
         value: c.id,

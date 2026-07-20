@@ -18,7 +18,7 @@ export default function InvoiceForm({
 }) {
     const { props } = usePage();
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
     const dateFormat = useDateFormat();
 
     const [customerOptions, setCustomerOptions] = useState([]);

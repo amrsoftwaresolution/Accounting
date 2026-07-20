@@ -8,8 +8,6 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
-import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
-import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 
 export default function ReceivePaymentForm({ paymentMethods = [], payment = null, nextPaymentNo = "" }) {
@@ -40,9 +38,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         depositTo: payment?.depositTo || "",
         amountReceived: payment?.amountReceived ? parseFloat(payment.amountReceived).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
         memo: payment?.memo || "",
-        currency_id: payment?.currency_id || null,
-        exchange_rate: payment?.exchange_rate ? String(payment.exchange_rate) : "",
-        action: 'save',
+                        action: 'save',
     });
 
 
@@ -145,16 +141,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         return inv.invoice_no.toLowerCase().includes(searchQuery.toLowerCase());
     });
 
-    const { accountCurrencyDetails } = useAccountCurrency({
-        accountId: data.depositTo,
-        accountOptions,
-        exchangeRate: data.exchange_rate,
-        currencyId: data.currency_id,
-        setData,
-        apiDetailRoute: 'api.accounts.detail',
-        defaultCurrencyCode,
-    });
-
+    
     const handleSelectAllToggle = (isChecked) => {
         setInvoices(prev => {
             const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
@@ -239,9 +226,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 depositTo: payment.depositTo || "",
                 amountReceived: payment.amountReceived || "0.00",
                 memo: payment.memo || "",
-                currency_id: payment.currency_id || null,
-                exchange_rate: payment.exchange_rate ? String(payment.exchange_rate) : "",
-                action: 'save'
+                                                action: 'save'
             });
             if (payment.customer) {
                 axios.get(route('api.customers.invoices', payment.customer) + '?payment_id=' + payment.payment_id)
@@ -264,9 +249,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 depositTo: "",
                 amountReceived: "0.00",
                 memo: "",
-                currency_id: null,
-                exchange_rate: "",
-                action: 'save'
+                                                action: 'save'
             });
             setInvoices([]);
         }
@@ -453,13 +436,7 @@ const submit = (action = 'save') => {
                             size="sm"
                             error={errors.depositTo}
                         />
-                        <CurrencyConversionRow
-                            details={accountCurrencyDetails}
-                            exchangeRate={data.exchange_rate}
-                            onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
-                            error={errors.exchange_rate}
-                        />
-                    </div>
+                                            </div>
                     <div className="w-[180px]">
                         <CommonInput
                             type="text"

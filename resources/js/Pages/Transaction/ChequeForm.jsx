@@ -6,8 +6,6 @@ import SearchableSelect from "@/Components/SearchableSelect";
 import CommonInput from "@/Components/CommonInput";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import QuickAddPayee from "@/Components/QuickAddPayee";
-import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
-import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { showToast } from "@/Components/ToastNotification";
 import axios from "axios";
 
@@ -17,7 +15,7 @@ export default function ChequeForm({
     nextChequeNo = ""
 }) {
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '$';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
     const defaultCurrencyCode = company?.home_currency || 'LKR';
 
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
@@ -83,23 +81,12 @@ export default function ChequeForm({
         items: cheque?.items && cheque.items.length > 0 ? cheque.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
             { category: "", description: "", amount: "0.00", customer_id: "" },
         ],
-        exchange_rate: cheque?.exchange_rate ? String(cheque.exchange_rate) : "",
-        currency_id: cheque?.currency_id || null,
-        action: 'save'
+                        action: 'save'
     });
 
     const actionRef = useRef('save');
 
-    const { accountCurrencyDetails } = useAccountCurrency({
-        accountId: data.account,
-        accountOptions,
-        exchangeRate: data.exchange_rate,
-        currencyId: data.currency_id,
-        setData,
-        apiDetailRoute: 'api.accounts.detail',
-        defaultCurrencyCode,
-    });
-
+    
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0)
     ).toFixed(2);
@@ -118,9 +105,7 @@ export default function ChequeForm({
                 items: cheque.items && cheque.items.length > 0 ? cheque.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
                     { category: "", description: "", amount: "0.00", customer_id: "" }
                 ],
-                exchange_rate: cheque.exchange_rate ? String(cheque.exchange_rate) : "",
-                currency_id: cheque.currency_id || null,
-                action: 'save'
+                                                action: 'save'
             });
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -134,9 +119,7 @@ export default function ChequeForm({
                 items: [
                     { category: "", description: "", amount: "0.00", customer_id: "" },
                 ],
-                exchange_rate: "",
-                currency_id: null,
-                action: 'save'
+                                                action: 'save'
             });
         }
         clearErrors();
@@ -152,9 +135,7 @@ export default function ChequeForm({
                     ...item,
                     amount: String(item.amount).replace(/,/g, '')
                 })),
-            exchange_rate: data.exchange_rate ? String(data.exchange_rate).replace(/,/g, '') : null,
-            currency_id: data.currency_id || null,
-        }));
+                                }));
     }, [transform]);
 
     const handleItemChange = (index, field, value) => {
@@ -298,13 +279,7 @@ export default function ChequeForm({
                                         setIsAccountModalOpen(true);
                                     }}
                                 />
-                                <CurrencyConversionRow
-                                    details={accountCurrencyDetails}
-                                    exchangeRate={data.exchange_rate}
-                                    onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
-                                    error={errors.exchange_rate}
-                                />
-                            </div>
+                                                            </div>
                         </div>
                     </div>
 

@@ -77,17 +77,7 @@ export default function Login({ status, canResetPassword }) {
                     </PrimaryButton>
                 </div>
 
-                <div className="text-center pt-4 border-t border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Don't have an account?{' '}
-                        <Link
-                            href={route('register')}
-                            className="text-green-600 hover:text-green-700 transition-colors ml-1"
-                        >
-                            Sign Up
-                        </Link>
-                    </p>
-                </div>
+
             </form>
         </GuestLayout>
     );

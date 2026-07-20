@@ -14,17 +14,16 @@ class StoreSalesReceiptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer' => 'required',
+            'customer' => 'nullable',
             'receiptDate' => 'required|date',
             'receiptNo' => 'required',
             'paymentMethod' => 'nullable',
-            'depositTo' => 'required',
-            'currency_id' => 'nullable|exists:currencies,id',
-            'exchange_rate' => 'nullable|numeric|gt:0',
+            'depositTo' => 'required_unless:action,credit_sale',
             'items' => 'required|array|min:1',
             'items.*.product' => 'required',
             'items.*.amount' => 'required',
             'action' => 'nullable|string',
+            'repairingCost' => 'nullable|numeric',
         ];
     }
 }

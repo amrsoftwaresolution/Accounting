@@ -53,20 +53,6 @@ export default function AdvancedSettings() {
         warn_dup_bill: !!settings?.settings_metadata?.advanced?.warn_dup_bill,
         warn_dup_journal: !!settings?.settings_metadata?.advanced?.warn_dup_journal,
         sign_out_inactive: settings?.settings_metadata?.advanced?.sign_out_inactive || '1 hour',
-        
-        // Sales
-        preferred_invoice_terms: settings?.settings_metadata?.sales?.preferred_invoice_terms || 'Net 30',
-        preferred_delivery_method: settings?.settings_metadata?.sales?.preferred_delivery_method || 'None',
-        shipping_enabled: !!settings?.settings_metadata?.sales?.shipping_enabled,
-        custom_transaction_numbers_enabled: !!settings?.settings_metadata?.sales?.custom_transaction_numbers_enabled,
-        service_date_enabled: !!settings?.settings_metadata?.sales?.service_date_enabled,
-        discount_enabled: !!settings?.settings_metadata?.sales?.discount_enabled,
-        deposit_enabled: !!settings?.settings_metadata?.sales?.deposit_enabled,
-        tags_enabled: !!settings?.settings_metadata?.sales?.tags_enabled,
-        
-        // Expenses
-        show_tags: settings?.settings_metadata?.expenses?.show_tags ?? true,
-        bill_payment_terms: settings?.settings_metadata?.expenses?.bill_payment_terms ?? 'Net 30',
     });
 
     const [editingSection, setEditingSection] = useState(null);
@@ -201,7 +187,7 @@ export default function AdvancedSettings() {
                         <div className="flex justify-between items-center text-xs">
                             <span>Currency format</span>
                             <select value={data.currency_format} onChange={e => setData('currency_format', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
-                                <option>$123,456.00</option><option>123.456,00</option>
+                                <option>Rs. 123,456.00</option><option>123.456,00</option>
                             </select>
                         </div>
                         <Toggle label="Warn me if duplicate cheque number is used" field="warn_dup_cheque" />
@@ -218,73 +204,6 @@ export default function AdvancedSettings() {
                 )}
             </AdvancedSection>
 
-            {/* Sales form content (Moved from Sales tab) */}
-            <AdvancedSection
-                title="Sales form content"
-                isEditing={editingSection === 'sales_content'}
-                onEditClick={() => setEditingSection('sales_content')}
-            >
-                {editingSection !== 'sales_content' ? (
-                    <>
-                        <Row label="Preferred invoice terms" value={data.preferred_invoice_terms} />
-                        <Row label="Preferred delivery method" value={data.preferred_delivery_method} />
-                        <Row label="Shipping" value={data.shipping_enabled ? "On" : "Off"} />
-                        <div className="mt-3 font-bold text-[10px] uppercase text-gray-400 tracking-wider">Custom fields</div>
-                        <Row label="Custom transaction numbers" value={data.custom_transaction_numbers_enabled ? "On" : "Off"} />
-                        <Row label="Service date" value={data.service_date_enabled ? "On" : "Off"} />
-                        <Row label="Discount" value={data.discount_enabled ? "On" : "Off"} />
-                        <Row label="Deposit" value={data.deposit_enabled ? "On" : "Off"} />
-                        <Row label="Tags" value={data.tags_enabled ? "On" : "Off"} />
-                    </>
-                ) : (
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-600">Preferred invoice terms</span>
-                            <select value={data.preferred_invoice_terms} onChange={e => setData('preferred_invoice_terms', e.target.value)} className="border border-gray-300 rounded p-1.5 text-xs w-44 bg-white">
-                                <option>Net 30</option><option>Net 15</option><option>Due on receipt</option>
-                            </select>
-                        </div>
-                        <Toggle label="Shipping" field="shipping_enabled" />
-                        <div className="pt-2">
-                            <div className="font-bold text-xs text-gray-700 mb-2">Custom fields</div>
-                            <Toggle label="Custom transaction numbers" field="custom_transaction_numbers_enabled" />
-                            <Toggle label="Service date" field="service_date_enabled" />
-                            <Toggle label="Discount" field="discount_enabled" />
-                            <Toggle label="Deposit" field="deposit_enabled" />
-                            <Toggle label="Tags" field="tags_enabled" />
-                        </div>
-                        <ActionButtons />
-                    </div>
-                )}
-            </AdvancedSection>
-
-            {/* Expenses (Moved from Expenses tab) */}
-            <AdvancedSection
-                title="Bills and expenses"
-                isEditing={editingSection === 'expenses'}
-                onEditClick={() => setEditingSection('expenses')}
-            >
-                {editingSection !== 'expenses' ? (
-                    <>
-                        <Row label="Show Tags field on expense and purchase forms" value={data.show_tags ? "On" : "Off"} />
-                        <Row label="Default bill payment terms" value={data.bill_payment_terms} />
-                    </>
-                ) : (
-                    <div className="space-y-3">
-                        <Toggle label="Show Tags field on expense and purchase forms" field="show_tags" />
-                        <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-600">Default bill payment terms</span>
-                            <select value={data.bill_payment_terms} onChange={e => setData('bill_payment_terms', e.target.value)} className="w-44 border border-gray-300 rounded text-xs focus:border-green-500 bg-white">
-                                <option value="Due on receipt">Due on receipt</option>
-                                <option value="Net 15">Net 15</option>
-                                <option value="Net 30">Net 30</option>
-                                <option value="Net 60">Net 60</option>
-                            </select>
-                        </div>
-                        <ActionButtons />
-                    </div>
-                )}
-            </AdvancedSection>
 
         </form>
     );

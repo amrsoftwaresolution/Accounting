@@ -7,7 +7,7 @@ import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
 
 export default function ItemList({ items, filters, counts }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || '$';
+    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
     const { delete: destroy } = useForm();
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
@@ -150,9 +150,7 @@ export default function ItemList({ items, filters, counts }) {
                         >
                             <option value="all">All Types</option>
                             <option value="inventory">Inventory</option>
-                            <option value="non-inventory">Non-Inventory</option>
                             <option value="service">Service</option>
-                            <option value="bundle">Bundle</option>
                         </CommonInput>
                     </div>
                     <button onClick={handleSearch} className="px-4 py-1.5 bg-slate-900 text-white rounded-md text-xs font-bold mt-1">Filter</button>

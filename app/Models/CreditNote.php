@@ -11,7 +11,7 @@ class CreditNote extends Model
     use HasUuids;
 
     protected $fillable = [
-        'company_id', 'customer_id', 'email', 'credit_note_date', 
+        'customer_id', 'email', 'credit_note_date', 
         'total_amount', 'memo', 'statement_message', 'status'
     ];
 
@@ -28,5 +28,9 @@ class CreditNote extends Model
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
     }
 }

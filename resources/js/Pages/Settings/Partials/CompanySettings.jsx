@@ -36,21 +36,17 @@ export default function CompanySettings({ settings, currencies = [] }) {
         });
     };
 
-    const [isEditingCurrency, setIsEditingCurrency] = useState(false);
-    const currencyForm = useForm({
-        currency_id: settings?.currency_id || '',
-        multicurrency: settings?.multicurrency || false,
+    const [isEditingAlerts, setIsEditingAlerts] = useState(false);
+    const alertsForm = useForm({
+        low_stock_to_emails: settings?.low_stock_to_emails || '',
+        low_stock_cc_emails: settings?.low_stock_cc_emails || '',
+        low_stock_bcc_emails: settings?.low_stock_bcc_emails || '',
     });
 
-    const currentCurrency = currencies.find(c => c.id == currencyForm.data.currency_id) || settings?.currency;
-
-    const handleCurrencyChange = (e) => {
-        currencyForm.setData('currency_id', e.target.value);
-    };
-    const handleCurrencySubmit = (e) => {
+    const handleAlertsSubmit = (e) => {
         e.preventDefault();
-        currencyForm.post(route('currency.update'), {
-            onSuccess: () => setIsEditingCurrency(false),
+        alertsForm.post(route('alerts.update'), {
+            onSuccess: () => setIsEditingAlerts(false),
         });
     };
     // ------------------------------------
@@ -257,58 +253,52 @@ export default function CompanySettings({ settings, currencies = [] }) {
                 )}
             </div>
 
-            {/* Currency Card */}
+            {/* Alerts Card */}
             <div className="bg-white rounded shadow-sm border border-gray-200">
-                {!isEditingCurrency ? (
+                {!isEditingAlerts ? (
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="text-sm font-bold text-gray-800">Currency</h2>
-                            <button onClick={() => setIsEditingCurrency(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
+                            <h2 className="text-sm font-bold text-gray-800">Alerts & Notifications</h2>
+                            <button onClick={() => setIsEditingAlerts(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
-                                <div className="col-span-4 text-gray-500 text-xs font-bold">Home Currency</div>
-                                <div className="col-span-8 text-xs text-gray-800">{currentCurrency ? `${currentCurrency.code} (${currentCurrency.symbol})` : 'Not set'}</div>
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Low Stock Alert (To)</div>
+                                <div className="col-span-8 text-xs text-gray-800">{settings?.low_stock_to_emails || 'Not set'}</div>
+                            </div>
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Low Stock Alert (CC)</div>
+                                <div className="col-span-8 text-xs text-gray-800">{settings?.low_stock_cc_emails || 'Not set'}</div>
                             </div>
                             <div className="grid grid-cols-12 pb-2">
-                                <div className="col-span-4 text-gray-500 text-xs font-bold">Multicurrency</div>
-                                <div className="col-span-8 text-xs text-gray-800 flex items-center gap-2">
-                                    {currencyForm.data.multicurrency ? 'On' : 'Off'}
-                                    <button type="button" className="text-primary-600 hover:underline text-[10px]">Manage Currencies</button>
-                                </div>
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Low Stock Alert (BCC)</div>
+                                <div className="col-span-8 text-xs text-gray-800">{settings?.low_stock_bcc_emails || 'Not set'}</div>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleCurrencySubmit} className="p-6">
-                        <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Currency info</h2>
+                    <form onSubmit={handleAlertsSubmit} className="p-6">
+                        <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Alerts Configuration</h2>
                         <div className="space-y-3">
-                            <div className="grid grid-cols-1 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Home Currency</label>
-                                    <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5 bg-white" value={currencyForm.data.currency_id} onChange={handleCurrencyChange}>
-                                        <option value="">Select a currency</option>
-                                        {currencies.map(c => (
-                                            <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alert To Emails</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={alertsForm.data.low_stock_to_emails} onChange={e => alertsForm.setData('low_stock_to_emails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
+                                <p className="text-[10px] text-gray-500 mt-1">Separate multiple emails with commas</p>
                             </div>
-                            <div className="flex items-center gap-2.5 pt-1">
-                                <input
-                                    type="checkbox"
-                                    id="multicurrency"
-                                    className="rounded border-gray-300 text-green-600 focus:ring-0 h-3.5 w-3.5"
-                                    checked={currencyForm.data.multicurrency}
-                                    onChange={e => currencyForm.setData('multicurrency', e.target.checked)}
-                                />
-                                <label htmlFor="multicurrency" className="text-xs text-gray-700">Multicurrency</label>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alert CC Emails</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={alertsForm.data.low_stock_cc_emails} onChange={e => alertsForm.setData('low_stock_cc_emails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
+                                <p className="text-[10px] text-gray-500 mt-1">Separate multiple emails with commas</p>
                             </div>
-                            <p className="text-[10px] text-gray-400 italic">Once you turn on multicurrency, you can't turn it off.</p>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alert BCC Emails</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={alertsForm.data.low_stock_bcc_emails} onChange={e => alertsForm.setData('low_stock_bcc_emails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
+                                <p className="text-[10px] text-gray-500 mt-1">Separate multiple emails with commas</p>
+                            </div>
                         </div>
                         <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                            <button type="button" onClick={() => setIsEditingCurrency(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
-                            <button type="submit" disabled={currencyForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
+                            <button type="button" onClick={() => setIsEditingAlerts(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
+                            <button type="submit" disabled={alertsForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
                         </div>
                     </form>
                 )}

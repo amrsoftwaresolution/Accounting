@@ -6,12 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 })->name('welcome');
 
 Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
@@ -128,59 +123,59 @@ Route::middleware('auth')->group(function () {
     Route::resource('suppliers', \App\Http\Controllers\Contacts\SupplierController::class);
     Route::resource('employees', \App\Http\Controllers\Contacts\EmployeeController::class);
 
+    // Job Cards
+    Route::resource('job-cards', \App\Http\Controllers\JobCardController::class);
+
     // Chart of Accounts
     Route::get('chart-of-account/{chart_of_account}/history', [\App\Http\Controllers\Accounting\ChartOfAccController::class, 'history'])->name('chart-of-account.history');
     Route::resource('chart-of-account', \App\Http\Controllers\Accounting\ChartOfAccController::class);
 
-    // Settings
-    Route::get('/settings', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings/company', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'update'])->name('company.update');
-    Route::post('/settings/legal', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateLegal'])->name('legal.update');
-    Route::post('/settings/currency', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateCurrency'])->name('currency.update');
-    Route::post('/settings/time', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateTime'])->name('time.settings.update');
-    Route::post('/settings/expense', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateExpense'])->name('expense.settings.update');
-    Route::post('/settings/sales', [\App\Http\Controllers\Settings\SalesSettingController::class, 'update'])->name('sales.settings.update');
-    Route::post('/settings/advanced', [\App\Http\Controllers\Settings\AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
-    Route::post('/settings/print-settings', [\App\Http\Controllers\Settings\PrintSettingController::class, 'update'])->name('print.settings.update');
-    Route::post('/settings/print-settings/preview', [\App\Http\Controllers\Settings\PrintSettingController::class, 'preview'])->name('print.settings.preview');
-    Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
+    // Settings (Admin Only)
+    Route::middleware(['admin'])->group(function () {
+        Route::get('/settings', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings/company', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'update'])->name('company.update');
+        Route::post('/settings/legal', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateLegal'])->name('legal.update');
+        Route::post('/settings/alerts', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateAlerts'])->name('alerts.update');
+        Route::post('/settings/time', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'updateTime'])->name('time.settings.update');
+        Route::post('/settings/sales', [\App\Http\Controllers\Settings\SalesSettingController::class, 'update'])->name('sales.settings.update');
+        Route::post('/settings/advanced', [\App\Http\Controllers\Settings\AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
+        Route::post('/settings/print-settings', [\App\Http\Controllers\Settings\PrintSettingController::class, 'update'])->name('print.settings.update');
+        Route::post('/settings/print-settings/preview', [\App\Http\Controllers\Settings\PrintSettingController::class, 'preview'])->name('print.settings.preview');
+        Route::post('/settings/logo', [\App\Http\Controllers\Settings\CompanySettingsController::class, 'uploadLogo'])->name('logo.upload');
+    });
 
     // Onboarding
     Route::get('/onboarding', [\App\Http\Controllers\Settings\OnboardingController::class, 'index'])->name('onboarding');
     Route::post('/onboarding/complete', [\App\Http\Controllers\Settings\OnboardingController::class, 'complete'])->name('onboarding.complete');
 
-    // Users
-    Route::resource('users', \App\Http\Controllers\UserController::class);
-    Route::post('/users/{user}/resend-invite', [\App\Http\Controllers\UserController::class, 'resendInvitation'])->name('users.resend-invite');
-
-    // Reports
-    Route::get('/reports', [\App\Http\Controllers\Accounting\ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
-    Route::get('/reports/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
-    Route::get('/reports/customer-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalance'])->name('reports.customer-balance');
-    Route::get('/reports/customer-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalanceDetailAll'])->name('reports.customer-balance-detail');
-    Route::get('/reports/customer-balance/{customer}', [\App\Http\Controllers\Accounting\ReportController::class, 'customerDetail'])->name('reports.customer-detail');
-
-    Route::get('/reports/supplier-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalance'])->name('reports.supplier-balance');
-    Route::get('/reports/supplier-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalanceDetailAll'])->name('reports.supplier-balance-detail');
-    Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
-    Route::get('/reports/inventory-summary', [\App\Http\Controllers\Accounting\ReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
-    Route::get('/reports/inventory-detail-all', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetailAll'])->name('reports.inventory-detail-all');
-    Route::get('/reports/inventory-detail/{item}', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
-    Route::get('/reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByItem'])->name('reports.sales-by-item');
-    Route::get('/reports/sales-by-customer', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByCustomer'])->name('reports.sales-by-customer');
-    Route::get('/reports/purchase-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseByItem'])->name('reports.purchase-by-item');
-    Route::get('/reports/purchase-by-supplier', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseBySupplier'])->name('reports.purchase-by-supplier');
-
-    // Companies
-    Route::resource('companies', \App\Http\Controllers\CompanyController::class);
-    Route::post('/companies/{company}/switch', [\App\Http\Controllers\CompanyController::class, 'switch'])->name('companies.switch');
-
-    Route::middleware(['auth', 'super.admin'])->group(function () {
-        Route::resource('packages', \App\Http\Controllers\PackageController::class);
-        Route::get('/Company/AdminIndex', [\App\Http\Controllers\CompanyController::class, 'adminIndex'])->name('admin.companies.index');
+    // Users (Admin Only)
+    Route::middleware(['admin'])->group(function () {
+        Route::resource('users', \App\Http\Controllers\UserController::class);
+        Route::post('/users/{user}/resend-invite', [\App\Http\Controllers\UserController::class, 'resendInvitation'])->name('users.resend-invite');
     });
 
+    // Reports (Admin Only)
+    Route::middleware(['admin'])->group(function () {
+        Route::get('/reports', [\App\Http\Controllers\Accounting\ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
+        Route::get('/reports/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('reports.balance-sheet');
+        Route::get('/reports/customer-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalance'])->name('reports.customer-balance');
+        Route::get('/reports/customer-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'customerBalanceDetailAll'])->name('reports.customer-balance-detail');
+        Route::get('/reports/customer-balance/{customer}', [\App\Http\Controllers\Accounting\ReportController::class, 'customerDetail'])->name('reports.customer-detail');
+
+        Route::get('/reports/supplier-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalance'])->name('reports.supplier-balance');
+        Route::get('/reports/supplier-balance-detail', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierBalanceDetailAll'])->name('reports.supplier-balance-detail');
+        Route::get('/reports/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\ReportController::class, 'supplierDetail'])->name('reports.supplier-detail');
+        Route::get('/reports/inventory-summary', [\App\Http\Controllers\Accounting\ReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
+        Route::get('/reports/inventory-detail-all', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetailAll'])->name('reports.inventory-detail-all');
+        Route::get('/reports/inventory-detail/{item}', [\App\Http\Controllers\Accounting\ReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
+        Route::get('/reports/sales-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByItem'])->name('reports.sales-by-item');
+        Route::get('/reports/sales-by-customer', [\App\Http\Controllers\Accounting\ReportController::class, 'salesByCustomer'])->name('reports.sales-by-customer');
+        Route::get('/reports/purchase-by-item', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseByItem'])->name('reports.purchase-by-item');
+        Route::get('/reports/purchase-by-supplier', [\App\Http\Controllers\Accounting\ReportController::class, 'purchaseBySupplier'])->name('reports.purchase-by-supplier');
+    });
+
+    Route::get('/pos', [\App\Http\Controllers\POSController::class, 'index'])->name('pos.index');
 });
 
 require __DIR__.'/auth.php';

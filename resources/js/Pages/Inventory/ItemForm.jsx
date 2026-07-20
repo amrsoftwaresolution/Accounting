@@ -52,7 +52,7 @@ export default function ItemForm({
     allItems: initialAllItems = []
 }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || '$';
+    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
     const [localCategories, setLocalCategories] = useState(initialCategories);
     const [localInventoryAccounts, setLocalInventoryAccounts] = useState(initialInventoryAccounts);
     const [localIncomeAccounts, setLocalIncomeAccounts] = useState(initialIncomeAccounts);
@@ -215,9 +215,7 @@ export default function ItemForm({
 
     const itemTypes = [
         { id: 'service', name: 'Service' },
-        { id: 'inventory', name: 'Inventory Item' },
-        { id: 'non-inventory', name: 'Non-inventory' },
-        { id: 'bundle', name: 'Bundle' },
+        { id: 'inventory', name: 'Inventory Item' }
     ];
 
     const handleTypeChange = (newType) => {
@@ -302,9 +300,9 @@ export default function ItemForm({
                                 key={type.id}
                                 type="button"
                                 onClick={() => handleTypeChange(type.id)}
-                                className={`px-2 py-1.5 rounded-sm border text-[10px] font-bold transition-all text-center ${data.type === type.id
-                                        ? 'bg-primary-50/80 border-primary-500 text-primary-700 shadow-sm'
-                                        : 'bg-white border-slate-200 text-slate-500 hover:border-primary-200 hover:text-slate-700'
+                                className={`flex-1 px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition-all text-center ${data.type === type.id
+                                        ? 'bg-blue-600 text-white shadow-md'
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
                                     }`}
                             >
                                 {type.name}

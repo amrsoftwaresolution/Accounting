@@ -11,7 +11,7 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 
 export default function SupplierCreditForm({ auth, nextCreditNo = "", credit = null }) {
-    const currencyPrefix = auth.company?.home_currency_prefix || 'Rs.';
+    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
 
     const [supplierOptions, setSupplierOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);

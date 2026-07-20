@@ -8,13 +8,11 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
-import CurrencyConversionRow from "@/Components/CurrencyConversionRow";
-import { useAccountCurrency } from "@/Utils/useAccountCurrency";
 import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 
 export default function PayBill({ paymentMethods = [], payment = null }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || '$';
+    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || 'LKR ';
     const dateFormat = useDateFormat();
     const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
 
@@ -37,9 +35,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         referenceNo: payment?.referenceNo || "0001",
         paymentAccount: payment?.paymentAccount || "",
         amount: payment?.amount || "0.00",
-        currency_id: payment?.currency_id || null,
-        exchange_rate: payment?.exchange_rate ? String(payment.exchange_rate) : "",
-        memo: payment?.memo || "",
+                        memo: payment?.memo || "",
         action: 'save',
     });
 
@@ -196,16 +192,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         fetchAccounts();
     }, []);
 
-    const { accountCurrencyDetails } = useAccountCurrency({
-        accountId: data.paymentAccount,
-        accountOptions,
-        exchangeRate: data.exchange_rate,
-        currencyId: data.currency_id,
-        setData,
-        apiDetailRoute: 'api.accounts.detail',
-        defaultCurrencyCode,
-    });
-
+    
     useEffect(() => {
         if (payment) {
             setData({
@@ -215,9 +202,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 referenceNo: payment.referenceNo || "",
                 paymentAccount: payment.paymentAccount || "",
                 amount: payment.amount || "0.00",
-                currency_id: payment.currency_id || null,
-                exchange_rate: payment.exchange_rate ? String(payment.exchange_rate) : "",
-                memo: payment.memo || "",
+                                                memo: payment.memo || "",
                 action: 'save'
             });
             if (payment.supplier) {
@@ -239,9 +224,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 referenceNo: "0001",
                 paymentAccount: "",
                 amount: "0.00",
-                currency_id: null,
-                exchange_rate: "",
-                memo: "",
+                                                memo: "",
                 action: 'save'
             });
             setBills([]);
@@ -406,13 +389,7 @@ const submit = (action = 'save') => {
                             size="sm"
                             error={errors.paymentAccount}
                         />
-                        <CurrencyConversionRow
-                            details={accountCurrencyDetails}
-                            exchangeRate={data.exchange_rate}
-                            onExchangeRateChange={(value) => { setData('exchange_rate', value); setIsDirty(true); }}
-                            error={errors.exchange_rate}
-                        />
-                    </div>
+                                            </div>
                     <div className="w-[180px]">
                         <CommonInput
                             type="text"

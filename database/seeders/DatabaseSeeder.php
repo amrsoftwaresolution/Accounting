@@ -32,83 +32,8 @@ class DatabaseSeeder extends Seeder
         DB::table('journal_entries')->truncate();
         DB::table('journal_entry_lines')->truncate();
         DB::table('users')->truncate();
-        DB::table('packages')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 1. Create 4 packages dummy data
-        $packages = [
-            [
-                'id' => 1,
-                'name' => 'Basic Plan',
-                'description' => 'Great for small startups and freelancers.',
-                'price' => 10.00,
-                'billing_period' => 'monthly',
-                'max_companies' => 1,
-                'max_chart_of_accounts' => 50,
-                'max_products' => 20,
-                'max_users' => 2,
-                'is_active' => true,
-            ],
-            [
-                'id' => 2,
-                'name' => 'Standard Plan',
-                'description' => 'Ideal for growing businesses needing more capacity.',
-                'price' => 29.00,
-                'billing_period' => 'monthly',
-                'max_companies' => 3,
-                'max_chart_of_accounts' => 150,
-                'max_products' => 100,
-                'max_users' => 5,
-                'is_active' => true,
-            ],
-            [
-                'id' => 3,
-                'name' => 'Professional Plan',
-                'description' => 'Advanced features and limits for established teams.',
-                'price' => 79.00,
-                'billing_period' => 'monthly',
-                'max_companies' => 10,
-                'max_chart_of_accounts' => 500,
-                'max_products' => 1000,
-                'max_users' => 15,
-                'is_active' => true,
-            ],
-            [
-                'id' => 4,
-                'name' => 'Enterprise Plan',
-                'description' => 'Unlimited scaling and priority support for large corporations.',
-                'price' => 199.00,
-                'billing_period' => 'yearly',
-                'max_companies' => 100,
-                'max_chart_of_accounts' => 5000,
-                'max_products' => 10000,
-                'max_users' => 100,
-                'is_active' => true,
-            ],
-        ];
-
-        foreach ($packages as $pkg) {
-            Package::updateOrCreate(
-                ['id' => $pkg['id']],
-                $pkg
-            );
-        }
-
-        // Seed Currencies
-        $lkr = \App\Models\Currency::updateOrCreate(
-            ['code' => 'LKR'],
-            ['name' => 'Sri Lankan Rupee', 'symbol' => 'Rs.', 'exchange_rate' => 1.0, 'is_base_currency' => true]
-        );
-        $usd = \App\Models\Currency::updateOrCreate(
-            ['code' => 'USD'],
-            ['name' => 'US Dollar', 'symbol' => '$', 'exchange_rate' => 300.0, 'is_base_currency' => false]
-        );
-        $eur = \App\Models\Currency::updateOrCreate(
-            ['code' => 'EUR'],
-            ['name' => 'Euro', 'symbol' => '€', 'exchange_rate' => 320.0, 'is_base_currency' => false]
-        );
-
-        // 2. Create only one company dummy data
         $testCompany = Company::updateOrCreate(
             ['id' => 1],
             [
@@ -118,8 +43,6 @@ class DatabaseSeeder extends Seeder
                 'address' => '123 Business Road, Colombo, Sri Lanka',
                 'website' => 'https://testcompany.example.com',
                 'industry' => 'Financial Services',
-                'currency_id' => $lkr->id,
-                'package_id' => 2, // Assign Standard Plan
             ]
         );
 
@@ -134,63 +57,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $caderammar = User::updateOrCreate(
-            ['email' => 'ammargrowdigitec@gmail.com'],
-            [
-                'name' => 'Ammar',
-                'password' => Hash::make('ammar123'),
-                'role' => 'admin',
-                'is_active' => 1,
-            ]
-        );
-
-        $amrasacc = User::updateOrCreate(
-            ['email' => 'amrasacc@gmail.com'],
-            [
-                'name' => 'Rasly',
-                'password' => Hash::make('123manager'),
-                'role' => 'admin',
-                'is_active' => 1,
-            ]
-        );
-
-        $staff02 = User::updateOrCreate(
-            ['email' => 'growdigitec.staff02@gmail.com'],
-            [
-                'name' => 'Jafees',
-                'password' => Hash::make('staff02@'),
-                'role' => 'user',
-                'is_active' => 1,
-            ]
-        );
-
-        $staff01 = User::updateOrCreate(
-            ['email' => 'growdigitec.staff01@gmail.com'],
-            [
-                'name' => 'Rusthi',
-                'password' => Hash::make('staff01@'),
-                'role' => 'user',
-                'is_active' => 1,
-            ]
-        );
-
-        // Create Super Admin User for system administration
-        $super_admin = User::updateOrCreate(
-            ['email' => 'superadmin@growdigitec.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => Hash::make('password'),
-                'role' => 'super_admin',
-                'is_active' => 1,
-            ]
-        );
 
         // Link users to company
         $ilhamsadath->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
-        $caderammar->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
-        $amrasacc->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'admin']]);
-        $staff02->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'user']]);
-        $staff01->companies()->syncWithoutDetaching([$testCompany->id => ['role' => 'user']]);
 
         // 4. Create Chart of Accounts for the single company
         $accounts = [
@@ -226,7 +95,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PaymentMethodSeeder::class,
             AdvancedSettingsSeeder::class,
-            CurrencyMetadataSeeder::class,
             ItemSeeder::class,
         ]);
     }

@@ -1,8 +1,6 @@
 // resources/js/Pages/Settings/Index.jsx
 import SettingsLayout from './Layout/SettingsLayout';
 import CompanySettings from './Partials/CompanySettings';
-import SalesSettings from './Partials/SalesSettings';
-import ExpenseSettings from './Partials/ExpenseSettings';
 import AdvancedSettings from './Partials/AdvancedSettings';
 import TimeSettings from './Partials/TimeSettings';
 

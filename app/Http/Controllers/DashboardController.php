@@ -15,102 +15,77 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $companyId = session('active_company_id');
+        $today = Carbon::today();
         
-        // 1. Bank Accounts
-        $bankAccounts = ChartOfAcc::where('company_id', $companyId)
-            ->whereIn('account_type', ['bank', 'credit_card'])
-            ->get()
-            ->map(function ($account) {
-                // Calculate balance from journal entry lines
-                // Debit increases Bank, Credit decreases Bank. Credit Card is opposite.
-                $balance = JournalEntryLine::where('chart_of_acc_id', $account->id)
-                    ->whereHas('journalEntry', function($q) use ($companyId) {
-                        $q->where('company_id', $companyId);
-                    })
-                    ->get()
-                    ->reduce(function ($carry, $line) use ($account) {
-                        if ($account->account_type === 'bank') {
-                            return $carry + ($line->debit - $line->credit);
-                        } else {
-                            // Credit Card
-                            return $carry + ($line->credit - $line->debit);
-                        }
-                    }, 0);
-                    
-                return [
-                    'id' => $account->id,
-                    'name' => $account->name,
-                    'type' => $account->account_type,
-                    'balance' => $balance
-                ];
-            });
-
-        // 2. Profit & Loss (Income vs Expenses) for current year grouped by month
+        // Service Center Metrics
+        $todaysJobs = \App\Models\JobCard::where('company_id', $companyId)
+            ->whereDate('service_date', $today)
+            ->count();
+            
+        $pendingJobs = \App\Models\JobCard::where('company_id', $companyId)
+            ->whereNotIn('status', ['Ready', 'Delivered', 'Cancelled'])
+            ->count();
+            
+        // Financial Metrics (simplified for Service Center)
+        $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
-        
-        // Income lines
-        $incomeData = JournalEntryLine::whereHas('account', function($q) {
+
+        $todaysRevenue = JournalEntryLine::whereHas('account', function($q) {
                 $q->whereIn('account_type', ['income', 'other_income']);
             })
-            ->whereHas('journalEntry', function($q) use ($companyId, $currentYear) {
+            ->whereHas('journalEntry', function($q) use ($companyId, $today) {
                 $q->where('company_id', $companyId)
-                  ->whereYear('date', $currentYear);
+                  ->whereDate('date', $today);
             })
-            ->selectRaw('MONTH(journal_entries.date) as month, SUM(journal_entry_lines.credit - journal_entry_lines.debit) as total')
-            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->groupBy('month')
-            ->pluck('total', 'month')->toArray();
+            ->sum(DB::raw('credit - debit'));
 
-        // Expense lines
-        $expenseData = JournalEntryLine::whereHas('account', function($q) {
-                $q->whereIn('account_type', ['expense', 'cost_of_goods_sold']);
+        $monthlyRevenue = JournalEntryLine::whereHas('account', function($q) {
+                $q->whereIn('account_type', ['income', 'other_income']);
             })
-            ->whereHas('journalEntry', function($q) use ($companyId, $currentYear) {
-                $q->where('company_id', $companyId)
-                  ->whereYear('date', $currentYear);
-            })
-            ->selectRaw('MONTH(journal_entries.date) as month, SUM(journal_entry_lines.debit - journal_entry_lines.credit) as total')
-            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->groupBy('month')
-            ->pluck('total', 'month')->toArray();
-
-        $monthlyPnL = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $monthName = Carbon::create()->month($i)->shortMonthName;
-            $income = isset($incomeData[$i]) ? (float)$incomeData[$i] : 0;
-            $expense = isset($expenseData[$i]) ? (float)$expenseData[$i] : 0;
-            
-            $monthlyPnL[] = [
-                'name' => $monthName,
-                'Income' => $income,
-                'Expenses' => $expense,
-                'Profit' => $income - $expense
-            ];
-        }
-
-        // 3. Expenses Breakdown for current month
-        $currentMonth = Carbon::now()->month;
-        $expensesBreakdown = JournalEntryLine::whereHas('account', function($q) {
-                $q->whereIn('account_type', ['expense', 'cost_of_goods_sold']);
-            })
-            ->whereHas('journalEntry', function($q) use ($companyId, $currentYear, $currentMonth) {
+            ->whereHas('journalEntry', function($q) use ($companyId, $currentMonth, $currentYear) {
                 $q->where('company_id', $companyId)
                   ->whereYear('date', $currentYear)
                   ->whereMonth('date', $currentMonth);
             })
-            ->selectRaw('chart_of_accs.name as name, SUM(journal_entry_lines.debit - journal_entry_lines.credit) as value')
-            ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->groupBy('chart_of_accs.name')
-            ->havingRaw('value > 0')
-            ->orderByDesc('value')
-            ->take(5) // Top 5 expenses
+            ->sum(DB::raw('credit - debit'));
+
+        $monthlyExpenses = JournalEntryLine::whereHas('account', function($q) {
+                $q->whereIn('account_type', ['expense', 'cost_of_goods_sold']);
+            })
+            ->whereHas('journalEntry', function($q) use ($companyId, $currentMonth, $currentYear) {
+                $q->where('company_id', $companyId)
+                  ->whereYear('date', $currentYear)
+                  ->whereMonth('date', $currentMonth);
+            })
+            ->sum(DB::raw('debit - credit'));
+
+        $monthlyProfit = $monthlyRevenue - $monthlyExpenses;
+
+        // Inventory Alerts (Items where qty < some threshold, say 5)
+        $lowStockItems = \App\Models\Item::where('company_id', $companyId)
+            ->where('type', 'inventory')
+            ->where('quantity_on_hand', '<=', 5)
+            ->take(5)
+            ->get(['id', 'name', 'quantity_on_hand']);
+
+        // Recent Jobs
+        $recentJobs = \App\Models\JobCard::with(['customer', 'device'])
+            ->where('company_id', $companyId)
+            ->orderBy('created_at', 'desc')
+            ->take(5)
             ->get();
 
         return Inertia::render('Dashboard', [
-            'bankAccounts' => $bankAccounts,
-            'monthlyPnL' => $monthlyPnL,
-            'expensesBreakdown' => $expensesBreakdown
+            'metrics' => [
+                'todays_jobs' => $todaysJobs,
+                'pending_jobs' => $pendingJobs,
+                'todays_revenue' => $todaysRevenue,
+                'monthly_revenue' => $monthlyRevenue,
+                'monthly_expenses' => $monthlyExpenses,
+                'monthly_profit' => $monthlyProfit,
+            ],
+            'lowStockItems' => $lowStockItems,
+            'recentJobs' => $recentJobs
         ]);
     }
 }

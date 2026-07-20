@@ -9,7 +9,7 @@ import ToastNotification from '@/Components/ToastNotification';
 import QuickAddPayee from '@/Components/QuickAddPayee';
 import QuickAddAccount from '@/Components/QuickAddAccount';
 
-export default function AuthenticatedLayout({ header, children }) {
+export default function AuthenticatedLayout({ header, children, hideSidebar = false }) {
     const page = usePage();
     const user = page.props.auth.user;
     const activeCompany = page.props.auth.company;
@@ -36,18 +36,16 @@ export default function AuthenticatedLayout({ header, children }) {
     const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
     const [quickAddType, setQuickAddType] = useState(null);
 
-    const navigation = user.role === 'super_admin' ? [
-        { name: 'Packages', href: route('packages.index'), icon: 'inventory' },
-        { name: 'All Companies', href: route('admin.companies.index'), icon: 'company' },
-    ] : [
+    const navigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
         { name: 'Chart of Accounts', href: route('chart-of-account.index'), icon: 'accounting' },
         { name: 'Customers', href: route('customers.index'), icon: 'users' },
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
+        // { name: 'POS Billing', href: route('pos.index'), icon: 'inventory' },
+        { name: 'Job Registrations', href: route('job-cards.index'), icon: 'document' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
-        { name: 'Employees', href: route('employees.index'), icon: 'team' },
         { name: 'User Management', href: route('users.index'), adminOnly: true, icon: 'users' },
-        { name: 'Reports', href: route('reports.index'), icon: 'finance' },
+        { name: 'Reports', href: route('reports.index'), adminOnly: true, icon: 'finance' },
     ];
 
     return (
@@ -69,7 +67,7 @@ export default function AuthenticatedLayout({ header, children }) {
             )}
 
             {/* Desktop Sidebar */}
-            {isSidebarVisible && (
+            {isSidebarVisible && !hideSidebar && (
                 <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-56 print:hidden">
                     <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl print:hidden">
                         <SidebarContent
@@ -81,7 +79,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             )}
 
-            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible ? 'lg:pl-56' : ''} print:pl-0`}>
+            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible && !hideSidebar ? 'lg:pl-56' : ''} print:pl-0`}>
                 {/* Header / Top Bar */}
                 <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 print:hidden">
                     <div className="flex items-center gap-3">
@@ -92,14 +90,16 @@ export default function AuthenticatedLayout({ header, children }) {
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
 
-                        <button
-                            onClick={() => setIsSidebarVisible(!isSidebarVisible)}
-                            className="hidden lg:flex p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
-                        >
-                            <svg className={`h-4 w-4 transition-transform duration-300 ${isSidebarVisible ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                            </svg>
-                        </button>
+                        {!hideSidebar && (
+                            <button
+                                onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+                                className="hidden lg:flex p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                            >
+                                <svg className={`h-4 w-4 transition-transform duration-300 ${isSidebarVisible ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                                </svg>
+                            </button>
+                        )}
 
                         <div className="h-5 w-px bg-slate-200 hidden sm:block mx-1" />
 
@@ -118,60 +118,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             />
                         )}
 
-                        {/* Company Switcher */}
-                        {user.role !== 'super_admin' && usePage().props.auth.company && (
-                            <Dropdown>
-                                <Dropdown.Trigger>
-                                    <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-all group">
-                                        {usePage().props.auth.company.logo_url ? (
-                                            <img src={usePage().props.auth.company.logo_url} className="w-5 h-5 rounded object-contain" />
-                                        ) : (
-                                            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                                                {usePage().props.auth.company.company_name[0]}
-                                            </div>
-                                        )}
-                                        <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">
-                                            {usePage().props.auth.company.company_name}
-                                        </span>
-                                        <svg className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </Dropdown.Trigger>
 
-                                <Dropdown.Content align="right" width="60" contentClasses="py-1 bg-white ring-1 ring-black ring-opacity-5 rounded-xl shadow-xl overflow-hidden mt-2">
-                                    <div className="px-4 py-2 border-b border-slate-50">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Switch Company</p>
-                                    </div>
-                                    <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
-                                        {usePage().props.auth.companies.map((c) => (
-                                            <button
-                                                key={c.id}
-                                                onClick={() => router.post(route('companies.switch', c.id))}
-                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-slate-50 ${usePage().props.auth.company.id === c.id ? 'bg-primary/5 text-primary' : 'text-slate-600'}`}
-                                            >
-                                                {c.logo_url ? (
-                                                    <img src={c.logo_url} className="w-6 h-6 rounded object-contain" />
-                                                ) : (
-                                                    <div className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${usePage().props.auth.company.id === c.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                                        {c.company_name[0]}
-                                                    </div>
-                                                )}
-                                                <span className="font-medium flex-1 truncate">{c.company_name}</span>
-                                                {usePage().props.auth.company.id === c.id && (
-                                                    <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <Dropdown.Link href={route('companies.index')} className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 !text-[9px] font-bold uppercase tracking-wider transition-colors border-t border-slate-50 text-center">
-                                        Manage Companies
-                                    </Dropdown.Link>
-                                </Dropdown.Content>
-                            </Dropdown>
-                        )}
                         {/* Notifications (Mock) */}
                         <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
                             <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-primary-500 border-2 border-white" />
@@ -179,9 +126,11 @@ export default function AuthenticatedLayout({ header, children }) {
                         </button>
 
                         {/* Settings */}
-                        <Link href={route('settings.index')} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        </Link>
+                        {user.role === 'admin' && (
+                            <Link href={route('settings.index')} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </Link>
+                        )}
 
                         {/* User Profile Dropdown */}
                         <Dropdown>
@@ -301,19 +250,17 @@ function SidebarContent({ navigation, user, onQuickMenuOpen }) {
             </div>
 
             {/* Quick Action Button (QuickBooks Style) */}
-            {user.role !== 'super_admin' && (
-                <div className="px-6 py-2">
-                    <button
-                        onClick={onQuickMenuOpen}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#00713D] text-white font-bold text-[11px] rounded-lg hover:bg-[#005a30] transition-all shadow-sm group uppercase tracking-wider"
-                    >
-                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
-                        </svg>
-                        Create New
-                    </button>
-                </div>
-            )}
+            <div className="px-6 py-2">
+                <button
+                    onClick={onQuickMenuOpen}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#00713D] text-white font-bold text-[11px] rounded-lg hover:bg-[#005a30] transition-all shadow-sm group uppercase tracking-wider"
+                >
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create New
+                </button>
+            </div>
 
             {/* Navigation Groups */}
             <div
@@ -353,14 +300,8 @@ function SidebarContent({ navigation, user, onQuickMenuOpen }) {
             {/* Bottom Footer Section */}
             <div className="p-3">
                 <div className="bg-slate-800/10 rounded-xl p-2.5 border border-slate-800 transition-all group">
-                    <div className="relative z-10 flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-[#00713D]/10 flex items-center justify-center text-[#00713D] ring-1 ring-[#00713D]/10">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-bold text-white uppercase tracking-wider">Enterprise</span>
-                            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-tight">Support Active</span>
-                        </div>
+                    <div className="relative z-10 flex items-center justify-center">
+                        <span className="text-[9px] font-bold text-white uppercase tracking-wider">JobAlign Software Solutions</span>
                     </div>
                 </div>
             </div>

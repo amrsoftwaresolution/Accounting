@@ -34,6 +34,14 @@ class Customer extends Model
         return $this->morphMany(Address::class, 'addressable');
     }
 
+    /**
+     * Get all of the customer's devices.
+     */
+    public function devices()
+    {
+        return $this->hasMany(Device::class);
+    }
+
     public function getBalanceAttribute()
     {
         // Calculate AR Balance for Customer

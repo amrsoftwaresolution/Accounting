@@ -19,8 +19,6 @@ class UpdateSalesReceiptRequest extends FormRequest
             'receiptNo' => 'required',
             'paymentMethod' => 'nullable',
             'depositTo' => 'required',
-            'currency_id' => 'nullable|exists:currencies,id',
-            'exchange_rate' => 'nullable|numeric|gt:0',
             'items' => 'required|array|min:1',
             'items.*.product' => 'required',
             'items.*.amount' => 'required',

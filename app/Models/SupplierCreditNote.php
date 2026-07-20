@@ -29,4 +29,8 @@ class SupplierCreditNote extends Model
     {
         return $this->belongsTo(Company::class);
     }
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
+    }
 }

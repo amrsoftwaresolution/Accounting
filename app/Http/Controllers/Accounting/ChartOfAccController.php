@@ -35,7 +35,7 @@ class ChartOfAccController extends Controller
         };
         $buildTree(null);
 
-        $currencies = \App\Models\Currency::orderBy('code')->get();
+        $currencies = [];
 
         $chartOfAccounts = $chartOfAccounts->map(function ($account) {
             $account->currency_code = $account->currency ? $account->currency : null;

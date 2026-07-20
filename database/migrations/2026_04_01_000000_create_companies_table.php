@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('company_name');
             $table->string('company_email')->nullable();
-            $table->foreignId('package_id')->nullable()->constrained('packages')->nullOnDelete();
+
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->string('website')->nullable();
@@ -25,9 +25,7 @@ return new class extends Migration
             $table->string('tax_id')->nullable();
             $table->string('business_type')->nullable();
             $table->text('legal_address')->nullable();
-            $table->string('home_currency')->default('LKR');
-            $table->string('home_currency_prefix')->default('Rs.');
-            $table->boolean('multicurrency')->default(false);
+
             $table->boolean('is_onboarded')->default(false);
             
             $table->timestamps();

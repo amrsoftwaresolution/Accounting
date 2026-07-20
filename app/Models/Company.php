@@ -22,10 +22,7 @@ class Company extends Model
         'tax_id',
         'business_type',
         'legal_address',
-        'currency_id',
-        'multicurrency',
         'is_onboarded',
-        'package_id',
     ];
 
     protected static function booted()
@@ -46,32 +43,7 @@ class Company extends Model
         });
     }
     
-    protected $appends = ['logo_url', 'slug', 'home_currency', 'home_currency_prefix'];
-
-    public function currency()
-    {
-        return $this->belongsTo(Currency::class);
-    }
-
-    protected static $allCurrencies = null;
-
-    private static function getAllCurrencies()
-    {
-        if (self::$allCurrencies === null) {
-            self::$allCurrencies = \App\Models\Currency::all()->keyBy('id');
-        }
-        return self::$allCurrencies;
-    }
-
-    public function getHomeCurrencyAttribute()
-    {
-        return self::getAllCurrencies()->get($this->currency_id)?->code;
-    }
-
-    public function getHomeCurrencyPrefixAttribute()
-    {
-        return self::getAllCurrencies()->get($this->currency_id)?->symbol;
-    }
+    protected $appends = ['logo_url', 'slug'];
 
     public function getLogoUrlAttribute()
     {
@@ -101,10 +73,5 @@ class Company extends Model
     public function suppliers()
     {
         return $this->hasMany(Supplier::class);
-    }
-
-    public function package()
-    {
-        return $this->belongsTo(Package::class);
     }
 }

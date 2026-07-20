@@ -150,7 +150,7 @@ export default function SupplierIndex({ suppliers = [] }) {
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Supplier / Company</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Contact Details</th>
-                                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Balance</th>
+
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
                                 </tr>
                             </thead>
@@ -168,9 +168,8 @@ export default function SupplierIndex({ suppliers = [] }) {
                                                 <span>{supplier.email}</span>
                                                 <span>{supplier.phone_number}</span>
                                             </div>
-                                        <td className="px-4 py-3 text-[11px] font-bold text-slate-800 text-right">
-                                            {(supplier.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
+
                                         <td className="px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 <CommonButton
@@ -269,14 +268,7 @@ export default function SupplierIndex({ suppliers = [] }) {
                             />
                         </section>
 
-                        <section className="bg-slate-50/50 -mx-6 px-6 py-6 border-y border-slate-100">
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-200 pb-2">Shipping Address</h3>
-                            <AddressForm
-                                data={data.shipping_address}
-                                setData={(key, val) => setData('shipping_address', { ...data.shipping_address, [key]: val })}
-                                errors={errors}
-                            />
-                        </section>
+
                     </div>
 
                     <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">

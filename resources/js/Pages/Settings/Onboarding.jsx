@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import CompanySettings from './Partials/CompanySettings';
-import SalesSettings from './Partials/SalesSettings';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Onboarding({ company, salesSettings, currencies = [] }) {
@@ -9,8 +8,7 @@ export default function Onboarding({ company, salesSettings, currencies = [] }) 
 
     const steps = [
         { id: 1, name: 'Company Profile', icon: 'business' },
-        { id: 2, name: 'Sales Preferences', icon: 'receipt_long' },
-        { id: 3, name: 'Finish', icon: 'celebration' },
+        { id: 2, name: 'Finish', icon: 'celebration' },
     ];
 
     return (
@@ -64,34 +62,6 @@ export default function Onboarding({ company, salesSettings, currencies = [] }) 
                                         onClick={() => setStep(2)}
                                         className="px-8 py-3 bg-[#00713D] text-white font-bold rounded-2xl hover:bg-[#005a30] transition-all hover:-translate-y-0.5 shadow-lg shadow-emerald-200 flex items-center gap-2"
                                     >
-                                        Next: Sales Settings
-                                        <span className="material-icons text-sm">arrow_forward</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 2 && (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="mb-8 text-center">
-                                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Configure your sales</h1>
-                                <p className="text-slate-500 text-sm font-medium">How would you like to handle your invoices and payments?</p>
-                            </div>
-                            <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
-                                <SalesSettings settings={salesSettings} />
-                                <div className="p-8 bg-slate-50 border-t border-slate-200 flex justify-between">
-                                    <button
-                                        onClick={() => setStep(1)}
-                                        className="px-6 py-3 text-slate-600 font-bold hover:text-slate-900 transition-colors flex items-center gap-2"
-                                    >
-                                        <span className="material-icons text-sm">arrow_back</span>
-                                        Back
-                                    </button>
-                                    <button
-                                        onClick={() => setStep(3)}
-                                        className="px-8 py-3 bg-[#00713D] text-white font-bold rounded-2xl hover:bg-[#005a30] transition-all hover:-translate-y-0.5 shadow-lg shadow-emerald-200 flex items-center gap-2"
-                                    >
                                         Next: Ready to go
                                         <span className="material-icons text-sm">arrow_forward</span>
                                     </button>
@@ -100,7 +70,7 @@ export default function Onboarding({ company, salesSettings, currencies = [] }) 
                         </div>
                     )}
 
-                    {step === 3 && (
+                    {step === 2 && (
                         <div className="animate-in zoom-in fade-in duration-700">
                             <div className="max-w-md mx-auto text-center py-12">
                                 <div className="w-24 h-24 bg-emerald-100 text-[#00713D] rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">

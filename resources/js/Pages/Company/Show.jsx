@@ -96,7 +96,7 @@ export default function Show({ company, packages }) {
                                             {company.package.billing_period}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-primary-800 font-semibold mb-1">${company.package.price}</p>
+                                    <p className="text-sm text-primary-800 font-semibold mb-1">Rs. {company.package.price}</p>
                                     <p className="text-xs text-primary-600 line-clamp-2">{company.package.description}</p>
                                 </div>
                             ) : (

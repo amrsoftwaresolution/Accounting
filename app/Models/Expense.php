@@ -20,4 +20,8 @@ class Expense extends Model
     {
         return $this->hasMany(ExpenseItem::class);
     }
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
+    }
 }

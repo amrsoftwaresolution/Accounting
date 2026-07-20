@@ -22,8 +22,6 @@ class UpdateExpenseRequest extends FormRequest
             'memo' => 'nullable|string',
             'items' => 'nullable|array',
             'itemDetails' => 'nullable|array',
-            'exchange_rate' => 'nullable|numeric|gt:0',
-            'currency_id' => 'nullable|exists:currencies,id',
         ];
     }
 }

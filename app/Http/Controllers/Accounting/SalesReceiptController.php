@@ -58,8 +58,6 @@ class SalesReceiptController extends Controller
                 'receiptNo' => $this->getNextReceiptNo(),
                 'paymentMethod' => $receipt->payment_method_id,
                 'depositTo' => $receipt->deposit_to_account_id,
-                'currency_id' => $receipt->currency_id,
-                'exchange_rate' => $receipt->exchange_rate ? String($receipt->exchange_rate) : "",
                 'memo' => $receipt->memo,
                 'statementMessage' => $receipt->statement_message,
                 'items' => $receipt->items->map(function ($item) {
@@ -127,35 +125,73 @@ class SalesReceiptController extends Controller
                     throw new \Exception('At least one item with product and amount is required.');
                 }
 
+                $repairingCost = (float)($request->repairingCost ?? 0);
+                
                 $totalAmount = collect($items)->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
-                });
+                }) + $repairingCost;
+
+                // Handle Walk-in Customer
+                $customerId = $request->customer;
+                if (!$customerId) {
+                    $walkInCustomer = \App\Models\Customer::firstOrCreate(
+                        ['company_id' => session('active_company_id'), 'display_name' => 'Walk-in Customer'],
+                        ['first_name' => 'Walk-in', 'last_name' => 'Customer', 'is_active' => true]
+                    );
+                    $customerId = $walkInCustomer->id;
+                }
 
                 // 1. Save Document (Business Details)
-                $receipt = SalesReceipt::create([
-                    'company_id' => session('active_company_id'),
-                    'receipt_no' => $request->receiptNo,
-                    'customer_id' => $request->customer,
-                    'email' => $request->email,
-                    'receipt_date' => $request->receiptDate,
-                    'payment_method_id' => $request->paymentMethod,
-                    'deposit_to_account_id' => $request->depositTo,
-                    'total_amount' => $totalAmount,
-                    'memo' => $request->memo,
-                    'statement_message' => $request->statementMessage,
-                    'status' => 'posted',
-                ]);
-
-                foreach ($items as $itemData) {
-                    SalesReceiptItem::create([
-                        'sales_receipt_id' => $receipt->id,
-                        'item_id' => $itemData['product'],
-                        'description' => $itemData['description'] ?? '',
-                        'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
-                        'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
-                        'amount' => (float) str_replace(',', '', $itemData['amount']),
-                        'service_date' => $itemData['serviceDate'] ?? null,
+                if ($request->action === 'credit_sale') {
+                    $receipt = \App\Models\Invoice::create([
+                        'company_id' => session('active_company_id'),
+                        'invoice_no' => $request->receiptNo,
+                        'customer_id' => $customerId,
+                        'email' => $request->email,
+                        'invoice_date' => $request->receiptDate,
+                        'due_date' => $request->receiptDate,
+                        'total_amount' => $totalAmount,
+                        'memo' => $request->memo,
+                        'status' => 'posted',
                     ]);
+
+                    foreach ($items as $itemData) {
+                        \App\Models\InvoiceItem::create([
+                            'invoice_id' => $receipt->id,
+                            'item_id' => $itemData['product'],
+                            'description' => $itemData['description'] ?? '',
+                            'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
+                            'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
+                            'amount' => (float) str_replace(',', '', $itemData['amount']),
+                            'service_date' => $itemData['serviceDate'] ?? null,
+                        ]);
+                    }
+                } else {
+                    $receipt = SalesReceipt::create([
+                        'company_id' => session('active_company_id'),
+                        'receipt_no' => $request->receiptNo,
+                        'customer_id' => $customerId,
+                        'email' => $request->email,
+                        'receipt_date' => $request->receiptDate,
+                        'payment_method_id' => $request->paymentMethod,
+                        'deposit_to_account_id' => $request->depositTo,
+                        'total_amount' => $totalAmount,
+                        'memo' => $request->memo,
+                        'statement_message' => $request->statementMessage,
+                        'status' => 'posted',
+                    ]);
+
+                    foreach ($items as $itemData) {
+                        SalesReceiptItem::create([
+                            'sales_receipt_id' => $receipt->id,
+                            'item_id' => $itemData['product'],
+                            'description' => $itemData['description'] ?? '',
+                            'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
+                            'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
+                            'amount' => (float) str_replace(',', '', $itemData['amount']),
+                            'service_date' => $itemData['serviceDate'] ?? null,
+                        ]);
+                    }
                 }
 
                 // 2. Save Financial Truth (Journal Entry)
@@ -163,35 +199,47 @@ class SalesReceiptController extends Controller
                     'date' => $request->receiptDate,
                     'reference' => $request->receiptNo,
                     'description' => $request->memo,
-                    'transaction_type' => 'sales_receipt',
-                    'payee_id' => $request->customer,
+                    'transaction_type' => $request->action === 'credit_sale' ? 'invoice' : 'sales_receipt',
+                    'payee_id' => $customerId,
                     'payee_type' => Customer::class,
                     'total_amount' => $totalAmount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
                     'transactionable_id' => $receipt->id,
-                    'transactionable_type' => SalesReceipt::class,
+                    'transactionable_type' => $request->action === 'credit_sale' ? \App\Models\Invoice::class : SalesReceipt::class,
                 ]);
 
-                // Debit Cash/Bank (Deposit To)
-                JournalEntryLine::create([
-                    'journal_entry_id' => $journalEntry->id,
-                    'chart_of_acc_id' => $request->depositTo,
-                    'debit' => $totalAmount,
-                    'credit' => 0,
-                    'memo' => $request->memo,
-                ]);
+                if ($request->action === 'credit_sale') {
+                    $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $arAccount->id,
+                        'debit' => $totalAmount,
+                        'credit' => 0,
+                        'memo' => $request->memo,
+                    ]);
+                } else {
+                    // Debit Cash/Bank (Deposit To)
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $request->depositTo,
+                        'debit' => $totalAmount,
+                        'credit' => 0,
+                        'memo' => $request->memo,
+                    ]);
+                }
 
                 // Credit Income accounts
                 foreach ($items as $itemData) {
                     $itemModel = Item::find($itemData['product']);
                     $incomeAccount = $itemModel?->income_account_id ?? (ChartOfAcc::where('account_type', 'income')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-income')->id);
+                    $lineAmount = (float) str_replace(',', '', $itemData['amount']);
 
                     JournalEntryLine::create([
                         'journal_entry_id' => $journalEntry->id,
                         'chart_of_acc_id' => $incomeAccount,
                         'debit' => 0,
-                        'credit' => (float) str_replace(',', '', $itemData['amount']),
+                        'credit' => $lineAmount,
                         'memo' => $itemData['description'] ?? $request->memo,
                     ]);
 
@@ -221,6 +269,17 @@ class SalesReceiptController extends Controller
                             ]);
                         }
                     }
+                }
+
+                if ($repairingCost > 0) {
+                    $serviceIncomeAcc = ChartOfAcc::getOrCreateDefault('service-income')->id;
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $serviceIncomeAcc,
+                        'debit' => 0,
+                        'credit' => $repairingCost,
+                        'memo' => 'Additional Repairing Cost',
+                    ]);
                 }
 
                 return $journalEntry;
@@ -283,8 +342,6 @@ class SalesReceiptController extends Controller
             'receiptNo' => $receipt->receipt_no,
             'paymentMethod' => $receipt->payment_method_id,
             'depositTo' => $receipt->deposit_to_account_id,
-            'currency_id' => $receipt->currency_id,
-            'exchange_rate' => $receipt->exchange_rate ? String($receipt->exchange_rate) : "",
             'memo' => $receipt->memo,
             'statementMessage' => $receipt->statement_message,
             'items' => $receipt->items->map(function ($item) {
@@ -352,8 +409,6 @@ class SalesReceiptController extends Controller
                     'receipt_date' => $request->receiptDate,
                     'payment_method_id' => $request->paymentMethod,
                     'deposit_to_account_id' => $request->depositTo,
-                    'currency_id' => $request->currency_id,
-                    'exchange_rate' => $request->exchange_rate,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,

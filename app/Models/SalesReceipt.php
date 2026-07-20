@@ -24,4 +24,9 @@ class SalesReceipt extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
+    }
 }

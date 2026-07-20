@@ -4,7 +4,7 @@ import SlideOver from './SlideOver';
 import CommonInput from './CommonInput';
 import CommonButton from './CommonButton';
 
-export default function QuickAddPayee({ isOpen, onClose, onSuccess, initialType = 'customer' }) {
+export default function QuickAddPayee({ isOpen, onClose, onSuccess, initialType = 'customer', hideEmployeeTab = false }) {
     const [type, setType] = useState(initialType);
 
     useEffect(() => {
@@ -94,13 +94,15 @@ export default function QuickAddPayee({ isOpen, onClose, onSuccess, initialType 
                 >
                     Supplier
                 </button>
-                <button
-                    type="button"
-                    onClick={() => handleTypeChange('employee')}
-                    className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${type === 'employee' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                    Employee
-                </button>
+                {!hideEmployeeTab && (
+                    <button
+                        type="button"
+                        onClick={() => handleTypeChange('employee')}
+                        className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${type === 'employee' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Employee
+                    </button>
+                )}
             </div>
 
             <form onSubmit={submit} className="space-y-6">

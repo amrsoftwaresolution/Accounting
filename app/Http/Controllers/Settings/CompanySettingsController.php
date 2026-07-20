@@ -35,7 +35,6 @@ class CompanySettingsController extends Controller
         if (!$company) return redirect()->route('dashboard');
 
         $settings = $this->getSettings();
-        $currencies = \App\Models\Currency::all();
 
         // Merge company info and specific settings
         $mergedData = array_merge($company->toArray(), $settings->toArray(), [
@@ -52,7 +51,6 @@ class CompanySettingsController extends Controller
 
         return Inertia::render('Settings/Index', [
             'settings' => $mergedData,
-            'currencies' => $currencies,
             'tab' => request('tab', 'company'),
         ]);
     }
@@ -94,34 +92,19 @@ class CompanySettingsController extends Controller
     }
 
     /**
-     * Update Currency Settings
+     * Update Alerts Settings
      */
-    public function updateCurrency(Request $request)
+    public function updateAlerts(Request $request)
     {
         $validated = $request->validate([
-            'currency_id' => 'required|exists:currencies,id',
-            'multicurrency' => 'required|boolean',
-        ]);
-
-        $this->getActiveCompany()->update($validated);
-
-        return back()->with('message', 'Currency settings updated successfully.');
-    }
-
-
-    /**
-     * Update Expense Settings
-     */
-    public function updateExpense(Request $request)
-    {
-        $validated = $request->validate([
-            'show_tags' => 'required|boolean',
-            'bill_payment_terms' => 'required|string|max:50',
+            'low_stock_to_emails' => 'nullable|string',
+            'low_stock_cc_emails' => 'nullable|string',
+            'low_stock_bcc_emails' => 'nullable|string',
         ]);
 
         $this->getSettings()->update($validated);
 
-        return back()->with('message', 'Expense settings updated successfully.');
+        return back()->with('message', 'Alerts settings updated successfully.');
     }
 
     /**

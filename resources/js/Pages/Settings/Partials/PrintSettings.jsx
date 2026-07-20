@@ -210,7 +210,7 @@ export default function PrintSettings({ printSettings = [], companySettings = {}
     const [selectedDocType, setSelectedDocType] = useState('invoice');
     const [editingSection, setEditingSection] = useState('layout'); // Default to layout editing
     const [selectedBlock, setSelectedBlock] = useState(null);
-    const currencyPrefix = companySettings?.home_currency_prefix || '$';
+    const currencyPrefix = companySettings?.home_currency_prefix || 'LKR ';
 
     const docTypes = [
         { value: 'invoice', label: 'Sales Invoice' },

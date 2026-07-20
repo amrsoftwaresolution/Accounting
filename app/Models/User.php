@@ -93,20 +93,6 @@ class User extends Authenticatable
 
     public function currentCompany()
     {
-        $companyId = session('active_company_id');
-        if (!$companyId) {
-            return null;
-        }
-
-        $sessionCompany = session('active_company_data');
-        if ($sessionCompany && $sessionCompany->id === $companyId) {
-            return $sessionCompany;
-        }
-
-        $company = Company::find($companyId);
-        if ($company) {
-            session(['active_company_data' => $company]);
-        }
-        return $company;
+        return Company::first();
     }
 }
