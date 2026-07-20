@@ -49,8 +49,6 @@ export default function TransferForm({ transfer = null }) {
     const selectedFrom = accountOptions.find(opt => opt.value === data.transfer_from);
     const selectedTo = accountOptions.find(opt => opt.value === data.transfer_to);
 
-
-
     const formatCurrency = (val) => {
         const num = parseFloat(String(val).replace(/,/g, "")) || 0;
         return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -79,13 +77,14 @@ export default function TransferForm({ transfer = null }) {
         method(url, {
             preserveScroll: true,
             preserveState: type === 'save',
+            replace: true,
             onSuccess: (page) => {
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
 
                 const newId = page.props?.flash?.journal_entry_id
-                           || page.props?.transfer?.id
-                           || page.props?.record?.id;
+                    || page.props?.transfer?.id
+                    || page.props?.record?.id;
                 if (newId && !savedEntryId) {
                     setSavedEntryId(newId);
                 }
@@ -103,7 +102,7 @@ export default function TransferForm({ transfer = null }) {
     return (
         <TransactionLayout
             historyType="transfer"
-            title={transfer?.id ? `Edit Transfer no.${data.referenceNo || transfer.id}` : "Transfer Funds"}
+            title="Transfer Funds"
             amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => handleSave('save')}
             onSaveAndClose={() => handleSave('close')}
@@ -139,7 +138,7 @@ export default function TransferForm({ transfer = null }) {
                                     <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
-                                                    </div>
+                        </div>
 
                         {/* TO ACCOUNT */}
                         <div className="w-[380px]">
@@ -163,7 +162,7 @@ export default function TransferForm({ transfer = null }) {
                                     <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
-                                                    </div>
+                        </div>
                     </div>
 
                     <div className="text-right flex flex-col items-end">

@@ -28,28 +28,30 @@ export default function TransactionLayout({
         const currentPath = window.location.pathname;
 
         if (currentPath.startsWith('/journal-entries/')) {
-            return { 
-                copyRoute: 'journal-entries.create', 
-                deleteRoute: 'journal-entries.destroy', 
-                recordId: props.journalEntry?.id ?? props.journalEntry?.journalEntry?.id, 
+            return {
+                copyRoute: 'journal-entries.create',
+                deleteRoute: 'journal-entries.destroy',
+                recordId: props.journalEntry?.id ?? props.journalEntry?.journalEntry?.id,
                 listRoute: 'journal-entries.index'
-             };
+            };
         }
         if (currentPath.startsWith('/invoice/')) {
-            return { 
-                copyRoute: 'invoice', 
-                deleteRoute: 'invoice.destroy', 
+            return {
+                copyRoute: 'invoice',
+                deleteRoute: 'invoice.destroy',
                 printRoute: 'invoice.print',
-                recordId: props.invoice?.id, 
-                listRoute: 'dashboard' };
+                recordId: props.invoice?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/bill/')) {
-            return { 
-                copyRoute: 'bill', 
-                deleteRoute: 'bill.destroy', 
+            return {
+                copyRoute: 'bill',
+                deleteRoute: 'bill.destroy',
                 printRoute: 'bill.print',
-                recordId: props.bill?.id, 
-                listRoute: 'dashboard' };
+                recordId: props.bill?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/chart-of-account/') && currentPath.includes('/history')) {
             const parts = currentPath.split('/');
@@ -71,12 +73,13 @@ export default function TransactionLayout({
             };
         }
         if (currentPath.startsWith('/pay-bill/')) {
-            return { 
-                copyRoute: null, 
-                deleteRoute: 'pay-bill.destroy', 
+            return {
+                copyRoute: null,
+                deleteRoute: 'pay-bill.destroy',
                 printRoute: 'pay-bill.print',
-                recordId: props.payment?.id || props.journalEntry?.id, 
-                listRoute: 'dashboard' };
+                recordId: props.payment?.id || props.journalEntry?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/cheque/')) {
             const chequeId = currentPath.split('/')[2];
@@ -88,42 +91,47 @@ export default function TransactionLayout({
             };
         }
         if (currentPath.startsWith('/payment/')) {
-            return { 
-                copyRoute: 'payment', 
-                deleteRoute: 'payment.destroy', 
+            return {
+                copyRoute: 'payment',
+                deleteRoute: 'payment.destroy',
                 printRoute: 'payment.print',
-                recordId: props.payment?.id, 
-                listRoute: 'dashboard' };
+                recordId: props.payment?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/receipt/')) {
-            return { 
-                copyRoute: 'receipt', 
-                deleteRoute: 'receipt.destroy', 
-                recordId: props.receipt?.id, 
-                listRoute: 'dashboard' };
+            return {
+                copyRoute: 'receipt',
+                deleteRoute: 'receipt.destroy',
+                recordId: props.receipt?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/credit-note/')) {
-            return { 
-                copyRoute: 'credit-note', 
-                deleteRoute: 'credit-note.destroy', 
+            return {
+                copyRoute: 'credit-note',
+                deleteRoute: 'credit-note.destroy',
                 printRoute: 'credit-note.print',
-                recordId: props.creditNote?.id, 
-                listRoute: 'dashboard' };
+                recordId: props.creditNote?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/SupplierCredit/') || currentPath.startsWith('/supplier-return/')) {
-            return { 
-                copyRoute: 'supplier-credit', 
-                deleteRoute: 'supplier-credit.destroy', 
+            return {
+                copyRoute: 'supplier-credit',
+                deleteRoute: 'supplier-credit.destroy',
                 printRoute: 'supplier-credit.print',
-                recordId: props.credit?.id, 
-                listRoute: 'dashboard' };
+                recordId: props.credit?.id,
+                listRoute: 'dashboard'
+            };
         }
         if (currentPath.startsWith('/deposit/')) {
-            return { 
-                copyRoute: 'deposit', 
-                deleteRoute: 'deposit.destroy', 
-                recordId: props.deposit?.id, 
-                listRoute: 'dashboard' };
+            return {
+                copyRoute: 'deposit',
+                deleteRoute: 'deposit.destroy',
+                recordId: props.deposit?.id,
+                listRoute: 'dashboard'
+            };
         }
 
         return null;
@@ -145,23 +153,26 @@ export default function TransactionLayout({
     //     };
     // }, []);
 
-   const handleClose = () => {
-    const goBack = () => {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            router.get(route(resolvedMoreOptions?.listRoute || 'dashboard'));
-        }
-    };
+    const handleClose = () => {
+        const goBack = () => {
+            if (window.history.length > 1) {
+                window.history.back();
+                setTimeout(() => {
+                    router.reload();
+                }, 50);
+            } else {
+                router.get(route(resolvedMoreOptions?.listRoute || 'dashboard'));
+            }
+        };
 
-    if (hasUnsavedChanges) {
-        if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+        if (hasUnsavedChanges) {
+            if (confirm('You have unsaved changes. Are you sure you want to close?')) {
+                goBack();
+            }
+        } else {
             goBack();
         }
-    } else {
-        goBack();
-    }
-};
+    };
 
     return (
         <div className="flex flex-col h-screen bg-slate-50">

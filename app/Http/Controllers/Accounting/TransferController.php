@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\ChartOfAcc;
 use App\Models\JournalEntry;
-use App\Models\JournalEntryLine; // FIX 1: Add this missing import
-use App\Models\Transfer;         // FIX 2: Better to import the model
+use App\Models\JournalEntryLine;
+use App\Models\Transfer; 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +25,7 @@ class TransferController extends Controller
         $validated = $request->validated();
 
         try {
-            DB::transaction(function() use ($request) {
+            $journalEntry = DB::transaction(function() use ($request) {
                 $amount = (float) $request->amount;
 
                 // 1. Create Business Document (Transfer)
@@ -68,9 +68,20 @@ class TransferController extends Controller
                     'credit'           => 0,
                     'memo'             => $request->memo,
                 ]);
+                return $journalEntry;
             });
 
-            return redirect()->back()->with('success', 'Transfer saved successfully.');
+            $action = $request->input('action', 'save');
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Transfer saved successfully.');
+            }
+
+            if ($action === 'new') {
+                return redirect()->route('transfer')->with('success', 'Transfer saved successfully.');
+            }
+
+            return redirect()->route('transfer.edit', $journalEntry)->with('success', 'Transfer saved successfully.');
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Database error: ' . $e->getMessage()], 500);
@@ -146,7 +157,17 @@ class TransferController extends Controller
                 ]);
             });
 
-            return redirect()->back()->with('success', 'Transfer updated successfully.');
+            $action = $request->input('action', 'save');
+
+            if ($action === 'close') {
+                return redirect()->route('dashboard')->with('success', 'Transfer updated successfully.');
+            }
+
+            if ($action === 'new') {
+                return redirect()->route('transfer')->with('success', 'Transfer updated successfully.');
+            }
+
+            return redirect()->route('transfer.edit', $journalEntry)->with('success', 'Transfer updated successfully.');
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Database error: ' . $e->getMessage()], 500);

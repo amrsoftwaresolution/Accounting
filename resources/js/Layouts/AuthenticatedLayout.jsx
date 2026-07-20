@@ -238,15 +238,14 @@ function SidebarContent({ navigation, user, onQuickMenuOpen }) {
         <div className="flex flex-col h-full">
             {/* Sidebar Branding */}
             <div className="px-6 pt-6 pb-4 border-b border-slate-800/50">
-                <Link href="/" className="flex items-center gap-3 group">
-                    <div className="p-1.5 rounded-xl bg-white/10 border border-white/20 group-hover:bg-[#00713D] group-hover:border-[#00713D] transition-all flex items-center justify-center overflow-hidden w-9 h-9">
-                        <ApplicationLogo className="h-6 w-auto filter invert brightness-200" type="icon" />
+                <div className="flex items-center gap-3 group">
+                    <div className="rounded-xl bg-white/10 border border-white/20 transition-all flex items-center justify-center overflow-hidden w-9 h-9">
+                        <ApplicationLogo className="h-8 w-auto filter invert brightness-200" type="icon" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-white text-sm font-black tracking-tight leading-none">JobAlign</span>
-                        <span className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5">Books</span>
+                        <span className="text-white text-sm font-black tracking-tight leading-none">JBooks</span>
                     </div>
-                </Link>
+                </div>
             </div>
 
             {/* Quick Action Button (QuickBooks Style) */}
