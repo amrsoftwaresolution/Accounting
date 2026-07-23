@@ -2,64 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use App\Models\Vehicle;
+use Inertia\Inertia;
 
 class VehicleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $vehicles = Vehicle::orderBy('brand')->get();
+        return Inertia::render('vehicle/Index', [
+            'vehicles' => $vehicles
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return Inertia::render('vehicle/Form');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'vehicle_type' => 'required|string|max:100',
+            'brand' => 'required|string|max:100',
+            'model' => 'required|string|max:100',
+            'fuel_type' => 'required|string|max:100',
+        ]);
+
+        Vehicle::create($validated);
+
+        return redirect()->route('vehicles.index')->with('success', 'Vehicle registered successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Vehicle $vehicle)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Vehicle $vehicle)
     {
-        //
+        return Inertia::render('vehicle/Form', [
+            'vehicle' => $vehicle,
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Vehicle $vehicle)
     {
-        //
+        $validated = $request->validate([
+            'vehicle_type' => 'required|string|max:100',
+            'brand' => 'required|string|max:100',
+            'model' => 'required|string|max:100',
+            'fuel_type' => 'required|string|max:100',
+        ]);
+
+        $vehicle->update($validated);
+
+        return redirect()->route('vehicles.index')->with('success', 'Vehicle updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Vehicle $vehicle)
     {
-        //
+        $vehicle->delete();
+        return redirect()->back()->with('success', 'Vehicle deleted successfully.');
     }
 }

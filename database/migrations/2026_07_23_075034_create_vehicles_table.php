@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('vehicles', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-            $table->string('vehicle_type'); // Car, Bike, Van, Truck
-            $table->string('brand');        // Toyota, Honda, Suzuki
-            $table->string('model');
-            $table->string('fuel_type');    // Petrol, Diesel, Electric, Hybrid
+    $table->id();
 
-            $table->timestamps();
-        });
+    $table->string('vehicle_type');
+    $table->string('brand');
+    $table->string('model');
+    $table->string('fuel_type');
+
+    $table->timestamps(); // only once
+});
 
 
     

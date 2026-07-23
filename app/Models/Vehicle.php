@@ -8,7 +8,6 @@ class Vehicle extends Model
 {
     
 protected $fillable = [
-    'registration_number',
     'vehicle_type',
     'brand',
     'model',

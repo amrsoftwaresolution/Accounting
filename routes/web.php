@@ -38,7 +38,8 @@ use App\Http\Controllers\Settings\CompanySettingsController;
 use App\Http\Controllers\Settings\SalesSettingController;
 use App\Http\Controllers\Settings\PrintSettingController;
 use App\Http\Controllers\Settings\OnboardingController;
-
+use App\Http\Controllers\VehicleController;
+// ...
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -210,6 +211,10 @@ Route::middleware('auth')->group(function () {
 
     // Job Cards
     Route::resource('job-cards', JobCardController::class);
+
+    //Vehicles
+    Route::resource('vehicles', VehicleController::class);
+
 
     // Settings
     Route::prefix('settings')->group(function () {
