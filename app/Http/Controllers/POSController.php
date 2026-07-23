@@ -52,12 +52,9 @@ class POSController extends Controller
 
     private function getNextReceiptNo()
     {
-                $lastReceipt = \App\Models\SalesReceipt::whereHas('journalEntry', function($q) use ($companyId) {
-            $q;
-        })->latest('id')->first();
-        
+        $lastReceipt = \App\Models\SalesReceipt::query()->latest()->first();
         $number = 1;
-        if ($lastReceipt && preg_match('/\d+/', $lastReceipt->receipt_number, $matches)) {
+        if ($lastReceipt && preg_match('/\d+/', $lastReceipt->receipt_no, $matches)) {
             $number = (int)$matches[0] + 1;
         }
         return 'RCPT-' . str_pad($number, 4, '0', STR_PAD_LEFT);

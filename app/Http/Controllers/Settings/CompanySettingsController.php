@@ -57,39 +57,35 @@ class CompanySettingsController extends Controller
     /**
      * Update General Company Info
      */
-    public function update(Request $request)
-    {
-        $validated = $request->validate([
-            'company_name' => 'required|string|max:255',
-            'company_email' => 'nullable|email',
-            'phone' => 'nullable|string',
-            'address' => 'nullable|string',
-            'website' => 'nullable|string',
-            'industry' => 'nullable|string',
-        ]);
+public function update(Request $request)
+{
+    $validated = $request->validate([
+        'company_name' => 'required|string|max:255',
+        'company_email' => 'nullable|email',
+        'phone' => 'nullable|string',
+        'address' => 'nullable|string',
+        'website' => 'nullable|string',
+        'industry' => 'nullable|string',
+    ]);
 
-        $this->getActiveCompany()->update($validated);
-
-        return back()->with('message', 'Company information updated successfully.');
-    }
-
+    $this->getActiveCompany()->update($validated);
+    return back()->with('message', 'Company information updated successfully.');
+}
     /**
      * Update Legal & Tax Info
      */
-    public function updateLegal(Request $request)
-    {
-        $validated = $request->validate([
-            'legal_name' => 'nullable|string|max:255',
-            'tax_id' => 'nullable|string|max:100',
-            'business_type' => 'nullable|string',
-            'legal_address' => 'nullable|string',
-        ]);
+public function updateLegal(Request $request)
+{
+    $validated = $request->validate([
+        'legal_name' => 'nullable|string|max:255',
+        'tax_id' => 'nullable|string|max:100',
+        'business_type' => 'nullable|string',
+        'legal_address' => 'nullable|string',
+    ]);
 
-        $this->getActiveCompany()->update($validated);
-
-        return back()->with('message', 'Legal information updated successfully.');
-    }
-
+    $this->getActiveCompany()->update($validated);
+    return back()->with('message', 'Legal information updated successfully.');
+}
     /**
      * Update Alerts Settings
      */
@@ -105,6 +101,22 @@ class CompanySettingsController extends Controller
 
         return back()->with('message', 'Alerts settings updated successfully.');
     }
+
+// Update Accounting Settings
+
+public function updateAccounting(Request $request)
+{
+    $validated = $request->validate([
+        'acct_method' => 'required|string|max:50',
+        'fin_year_start' => 'required|string|max:20',
+        'tax_year_start' => 'required|string|max:50',
+        'close_books' => 'required|boolean',
+        'tax_form' => 'required|string|max:100',
+    ]);
+
+    $this->getSettings()->update($validated);
+    return back()->with('message', 'Accounting settings updated successfully.');
+}
 
     /**
      * Handle Logo Upload

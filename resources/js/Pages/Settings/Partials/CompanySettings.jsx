@@ -72,6 +72,22 @@ export default function CompanySettings({ settings, currencies = [] }) {
         }
     };
 
+    const [isEditingAccounting, setIsEditingAccounting] = useState(false);
+const accountingForm = useForm({
+    acct_method: settings?.acct_method || 'Accrual',
+    fin_year_start: settings?.fin_year_start || 'January',
+    tax_year_start: settings?.tax_year_start || 'Same as financial year',
+    close_books: !!settings?.close_books,
+    tax_form: settings?.tax_form || 'Partnership or limited liability company',
+});
+
+const handleAccountingSubmit = (e) => {
+    e.preventDefault();
+    accountingForm.post(route('accounting.update'), {
+        onSuccess: () => setIsEditingAccounting(false),
+    });
+};
+
     return (
         <div className="space-y-4">
             {/* Logo Section */}
@@ -188,6 +204,83 @@ export default function CompanySettings({ settings, currencies = [] }) {
                     </form>
                 )}
             </div>
+
+            {/* Accounting Section */}
+           {/* Accounting Card */}
+<div className="bg-white rounded shadow-sm border border-gray-200">
+    {!isEditingAccounting ? (
+        <div className="p-6">
+            <div className="flex justify-between items-center mb-3">
+                <div>
+                    <h2 className="text-sm font-bold text-gray-800">Accounting</h2>
+                    <p className="text-gray-400 text-[10px]">These settings affect how your books are kept.</p>
+                </div>
+                <button onClick={() => setIsEditingAccounting(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
+            </div>
+            <div className="space-y-3">
+                <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                    <div className="col-span-4 text-gray-500 text-xs font-bold">First month of financial year</div>
+                    <div className="col-span-8 text-xs text-gray-800">{accountingForm.data.fin_year_start}</div>
+                </div>
+                <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                    <div className="col-span-4 text-gray-500 text-xs font-bold">First month of tax year</div>
+                    <div className="col-span-8 text-xs text-gray-800">{accountingForm.data.tax_year_start}</div>
+                </div>
+                <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
+                    <div className="col-span-4 text-gray-500 text-xs font-bold">Accounting method</div>
+                    <div className="col-span-8 text-xs text-gray-800">{accountingForm.data.acct_method}</div>
+                </div>
+                <div className="grid grid-cols-12 pb-2">
+                    <div className="col-span-4 text-gray-500 text-xs font-bold">Close the books</div>
+                    <div className="col-span-8 text-xs text-gray-800">{accountingForm.data.close_books ? 'On' : 'Off'}</div>
+                </div>
+            </div>
+        </div>
+    ) : (
+        <form onSubmit={handleAccountingSubmit} className="p-6">
+            <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Accounting</h2>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                    <span>First month of financial year</span>
+                    <select value={accountingForm.data.fin_year_start} onChange={e => accountingForm.setData('fin_year_start', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
+                        <option>January</option><option>February</option><option>March</option>
+                        <option>April</option><option>May</option><option>June</option>
+                        <option>July</option><option>August</option><option>September</option>
+                        <option>October</option><option>November</option><option>December</option>
+                    </select>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                    <span>First month of tax year</span>
+                    <select value={accountingForm.data.tax_year_start} onChange={e => accountingForm.setData('tax_year_start', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
+                        <option>Same as financial year</option><option>January</option>
+                    </select>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                    <span>Accounting method</span>
+                    <select value={accountingForm.data.acct_method} onChange={e => accountingForm.setData('acct_method', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
+                        <option>Accrual</option><option>Cash</option>
+                    </select>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                    <span>Close the books</span>
+                    <label className="relative inline-flex items-center cursor-pointer scale-90">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={accountingForm.data.close_books}
+                            onChange={e => accountingForm.setData('close_books', e.target.checked)}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                <button type="button" onClick={() => setIsEditingAccounting(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
+                <button type="submit" disabled={accountingForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
+            </div>
+        </form>
+    )}
+</div>
 
             {/* Legal Info Card */}
             <div className="bg-white rounded shadow-sm border border-gray-200">

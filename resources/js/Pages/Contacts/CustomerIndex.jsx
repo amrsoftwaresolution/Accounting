@@ -1,93 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { useForm, Head } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import SlideOver from '@/Components/SlideOver';
-import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
-import AddressForm from '@/Components/AddressForm';
 
 export default function CustomerIndex({ customers = [] }) {
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [isEdit, setIsEdit] = useState(false);
-    const [selectedId, setSelectedId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-
-    const { data, setData, post, patch, delete: destroy, processing, errors, reset, clearErrors } = useForm({
-        display_name: '',
-        first_name: '',
-        last_name: '',
-        company_name: '',
-        email: '',
-        phone_number: '',
-        billing_address: {
-            address_line_1: '',
-            address_line_2: '',
-            city: '',
-            province: '',
-            postal_code: '',
-            country: '',
-        },
-        devices: []
-    });
-
-    const handleOpenCreate = () => {
-        setIsEdit(false);
-        setSelectedId(null);
-        reset();
-        clearErrors();
-        setIsCreateOpen(true);
-    };
-
-    const handleEdit = (customer) => {
-        setIsEdit(true);
-        setSelectedId(customer.id);
-
-        // Find billing and shipping addresses from the customer object
-        const billing = customer.addresses?.find(a => a.type === 'billing') || {};
-        const shipping = customer.addresses?.find(a => a.type === 'shipping') || {};
-
-        setData({
-            display_name: customer.display_name || '',
-            first_name: customer.first_name || '',
-            last_name: customer.last_name || '',
-            company_name: customer.company_name || '',
-            email: customer.email || '',
-            phone_number: customer.phone_number || '',
-            billing_address: {
-                address_line_1: billing.address_line_1 || '',
-                address_line_2: billing.address_line_2 || '',
-                city: billing.city || '',
-                province: billing.province || '',
-                postal_code: billing.postal_code || '',
-                country: billing.country || '',
-            },
-            devices: customer.devices || []
-        });
-        setIsCreateOpen(true);
-    };
 
     const handleDelete = (id) => {
         if (confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
-            destroy(route('customers.destroy', id));
-        }
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
-        if (isEdit) {
-            patch(route('customers.update', selectedId), {
-                onSuccess: () => {
-                    setIsCreateOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post(route('customers.store'), {
-                onSuccess: () => {
-                    setIsCreateOpen(false);
-                    reset();
-                },
-            });
+            router.delete(route('customers.destroy', id));
         }
     };
 
@@ -121,12 +42,9 @@ export default function CustomerIndex({ customers = [] }) {
                             />
                         </div>
 
-                        <CommonButton
-                            variant="primary"
-                            onClick={handleOpenCreate}
-                        >
-                            New customer
-                        </CommonButton>
+                        <Link href={route('customers.create')}>
+                            <CommonButton variant="primary">New customer</CommonButton>
+                        </Link>
                     </div>
 
                     {/* Table */}
@@ -136,7 +54,6 @@ export default function CustomerIndex({ customers = [] }) {
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Customer / Company</th>
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Contact Details</th>
-
                                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Action</th>
                                 </tr>
                             </thead>
@@ -155,16 +72,13 @@ export default function CustomerIndex({ customers = [] }) {
                                                 <span>{customer.phone_number}</span>
                                             </div>
                                         </td>
-
                                         <td className="px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                <CommonButton
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    onClick={() => handleEdit(customer)}
-                                                >
-                                                    Edit
-                                                </CommonButton>
+                                                <Link href={route('customers.edit', customer.id)}>
+                                                    <CommonButton variant="ghost" size="xs">
+                                                        Edit
+                                                    </CommonButton>
+                                                </Link>
                                                 <div className="h-3 w-px bg-slate-200" />
                                                 <CommonButton
                                                     variant="ghost"
@@ -180,7 +94,7 @@ export default function CustomerIndex({ customers = [] }) {
                                 ))}
                                 {filteredCustomers.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
+                                        <td colSpan={3} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
                                             No customers found. Click "New customer" to get started.
                                         </td>
                                     </tr>
@@ -190,172 +104,6 @@ export default function CustomerIndex({ customers = [] }) {
                     </div>
                 </div>
             </div>
-
-            <SlideOver
-                isOpen={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
-                title={isEdit ? "Edit Customer" : "New Customer"}
-            >
-                <form onSubmit={submit} className="space-y-8">
-                    <div className="space-y-6">
-                        <section>
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Primary Info</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <CommonInput
-                                    label="First Name"
-                                    value={data.first_name}
-                                    onChange={e => setData('first_name', e.target.value)}
-                                />
-                                <CommonInput
-                                    label="Last Name"
-                                    value={data.last_name}
-                                    onChange={e => setData('last_name', e.target.value)}
-                                />
-                            </div>
-                            <div className="mt-4">
-                                <CommonInput
-                                    label="Display Name (REQUIRED)"
-                                    value={data.display_name}
-                                    onChange={e => setData('display_name', e.target.value)}
-                                    required
-                                    error={errors.display_name}
-                                />
-                            </div>
-                        </section>
-
-                        <section>
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Business Details</h3>
-                            <CommonInput
-                                label="Company Name"
-                                value={data.company_name}
-                                onChange={e => setData('company_name', e.target.value)}
-                            />
-                            <div className="grid grid-cols-2 gap-4 mt-4">
-                                <CommonInput
-                                    label="Email Address"
-                                    type="email"
-                                    value={data.email}
-                                    onChange={e => setData('email', e.target.value)}
-                                />
-                                <CommonInput
-                                    label="Phone Number"
-                                    value={data.phone_number}
-                                    onChange={e => setData('phone_number', e.target.value)}
-                                />
-                            </div>
-                        </section>
-
-                        <section>
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Billing Address</h3>
-                            <AddressForm
-                                data={data.billing_address}
-                                setData={(key, val) => setData('billing_address', { ...data.billing_address, [key]: val })}
-                                errors={errors}
-                            />
-                        </section>
-
-                        <section className="bg-slate-50/50 -mx-6 px-6 py-6 border-y border-slate-100">
-                            <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
-                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Devices / Vehicles</h3>
-                                <CommonButton 
-                                    type="button" 
-                                    variant="ghost" 
-                                    size="xs"
-                                    onClick={() => setData('devices', [...data.devices, { type: 'vehicle', brand: '', model: '', vehicle_number: '', serial_number: '' }])}
-                                >
-                                    + Add Device
-                                </CommonButton>
-                            </div>
-                            
-                            <div className="space-y-4">
-                                {data.devices.map((device, index) => (
-                                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 relative">
-                                        <button 
-                                            type="button" 
-                                            onClick={() => {
-                                                const newDevices = [...data.devices];
-                                                newDevices.splice(index, 1);
-                                                setData('devices', newDevices);
-                                            }}
-                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold"
-                                        >
-                                            &times;
-                                        </button>
-                                        
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                            <CommonInput
-                                                type="select"
-                                                label="Type"
-                                                value={device.type}
-                                                options={[
-                                                    { value: 'vehicle', label: 'Vehicle' },
-                                                    { value: 'electronics', label: 'Electronics' }
-                                                ]}
-                                                onChange={e => {
-                                                    const newDevices = [...data.devices];
-                                                    newDevices[index].type = e.target.value;
-                                                    setData('devices', newDevices);
-                                                }}
-                                            />
-                                            <CommonInput
-                                                label="Brand"
-                                                value={device.brand}
-                                                onChange={e => {
-                                                    const newDevices = [...data.devices];
-                                                    newDevices[index].brand = e.target.value;
-                                                    setData('devices', newDevices);
-                                                }}
-                                            />
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <CommonInput
-                                                label="Model"
-                                                value={device.model}
-                                                onChange={e => {
-                                                    const newDevices = [...data.devices];
-                                                    newDevices[index].model = e.target.value;
-                                                    setData('devices', newDevices);
-                                                }}
-                                            />
-                                            {device.type === 'vehicle' ? (
-                                                <CommonInput
-                                                    label="Vehicle Number"
-                                                    value={device.vehicle_number}
-                                                    onChange={e => {
-                                                        const newDevices = [...data.devices];
-                                                        newDevices[index].vehicle_number = e.target.value;
-                                                        setData('devices', newDevices);
-                                                    }}
-                                                />
-                                            ) : (
-                                                <CommonInput
-                                                    label="Serial Number / IMEI"
-                                                    value={device.serial_number}
-                                                    onChange={e => {
-                                                        const newDevices = [...data.devices];
-                                                        newDevices[index].serial_number = e.target.value;
-                                                        setData('devices', newDevices);
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                                {data.devices.length === 0 && (
-                                    <p className="text-xs text-slate-500 text-center italic">No devices added.</p>
-                                )}
-                            </div>
-                        </section>                    </div>
-
-                    <div className="sticky bottom-0 bg-white pt-6 flex items-center justify-end gap-3 border-t border-slate-100">
-                        <CommonButton variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</CommonButton>
-                        <CommonButton variant="primary" type="submit" processing={processing}>
-                            {isEdit ? "Update Customer" : "Save Customer"}
-                        </CommonButton>
-                    </div>
-                </form>
-            </SlideOver>
         </AuthenticatedLayout>
     );
 }

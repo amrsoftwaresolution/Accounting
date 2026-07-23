@@ -36,7 +36,6 @@ use App\Http\Controllers\Contacts\EmployeeController;
 // Settings Controllers
 use App\Http\Controllers\Settings\CompanySettingsController;
 use App\Http\Controllers\Settings\SalesSettingController;
-use App\Http\Controllers\Settings\AdvancedSettingsController;
 use App\Http\Controllers\Settings\PrintSettingController;
 use App\Http\Controllers\Settings\OnboardingController;
 
@@ -217,20 +216,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [CompanySettingsController::class, 'index'])->name('settings.index');
         
         Route::controller(CompanySettingsController::class)->group(function () {
-            Route::post('/company', 'update')->name('company.update');
-            Route::post('/legal', 'updateLegal')->name('legal.update');
-            Route::post('/alerts', 'updateAlerts')->name('alerts.update');
-            Route::post('/time', 'updateTime')->name('time.settings.update');
-            Route::post('/logo', 'uploadLogo')->name('logo.upload');
-        });
-
+        Route::post('/company', 'update')->name('company.update');
+        Route::post('/legal', 'updateLegal')->name('legal.update');
+        Route::post('/accounting', 'updateAccounting')->name('accounting.update');
+        Route::post('/alerts', 'updateAlerts')->name('alerts.update');
+        Route::post('/time', 'updateTime')->name('time.settings.update');
+        Route::post('/logo', 'uploadLogo')->name('logo.upload');
+    });
         Route::post('/sales', [SalesSettingController::class, 'update'])->name('sales.settings.update');
-        Route::post('/advanced', [AdvancedSettingsController::class, 'update'])->name('advanced.settings.update');
         
-        Route::controller(PrintSettingController::class)->prefix('print-settings')->group(function () {
-            Route::post('/', 'update')->name('print.settings.update');
-            Route::post('/preview', 'preview')->name('print.settings.preview');
-        });
     });
 
     // Onboarding

@@ -1,111 +1,141 @@
-import { useState } from "react";
-import { useForm } from "@inertiajs/react";
+import { useForm, Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
 
-export default function CustomerForm() {
-    const { data, setData, post, processing, errors } = useForm({
-        display_name: "",
-        first_name: "",
-        last_name: "",
-        company_name: "",
-        email: "",
-        phone_number: "",
+export default function CustomerForm({ auth, customer, nextCustomerNumber }) {
+    const isEdit = !!customer;
+    const displayNumber = isEdit ? customer.customer_number : nextCustomerNumber;
+
+    const { data, setData, post, put, processing, errors } = useForm({
+        display_name: customer?.display_name || '',
+        first_name: customer?.first_name || '',
+        last_name: customer?.last_name || '',
+        company_name: customer?.company_name || '',
+        email: customer?.email || '',
+        phone_number: customer?.phone_number || '',
+        nic: customer?.nic || '',
+        passport: customer?.passport || '',
+        address: customer?.address || '',
+        vehicle_id: customer?.vehicle_id || '',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("customers.store"));
+        if (isEdit) {
+            put(route('customers.update', customer.id));
+        } else {
+            post(route('customers.store'));
+        }
     };
 
     return (
-        <AuthenticatedLayout header="New Customer">
-            <div className="max-w-2xl mx-auto py-10 px-6">
-                <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-                    <div className="p-8 border-b border-slate-100">
-                        <h2 className="text-xl font-bold text-slate-800">Customer Details</h2>
-                        <p className="text-sm text-slate-500 mt-1">Add a new customer to your contact list.</p>
-                    </div>
-                    
-                    <form onSubmit={submit} className="p-8 space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="col-span-2">
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Display Name *</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
-                                    value={data.display_name}
-                                    onChange={(e) => setData("display_name", e.target.value)}
-                                    placeholder="e.g. John Doe"
-                                />
-                                {errors.display_name && <p className="text-red-500 text-xs mt-1 font-bold">{errors.display_name}</p>}
-                            </div>
-                            
-                            <div>
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">First Name</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
-                                    value={data.first_name}
-                                    onChange={(e) => setData("first_name", e.target.value)}
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Last Name</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
-                                    value={data.last_name}
-                                    onChange={(e) => setData("last_name", e.target.value)}
-                                />
+        <AuthenticatedLayout user={auth.user} header={isEdit ? "Edit Customer" : "New Customer"}>
+            <Head title={isEdit ? "Edit Customer" : "New Customer"} />
+
+            <div className="py-8">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <form onSubmit={submit} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="p-6 space-y-6">
+
+                            <div className="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-lg px-4 py-2">
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Customer Number</span>
+                                <span className="text-sm font-bold text-slate-800">{displayNumber}</span>
                             </div>
 
-                            <div className="col-span-2">
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Company Name</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
+                            <section>
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Primary Info</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <CommonInput
+                                        label="First Name"
+                                        value={data.first_name}
+                                        onChange={e => setData('first_name', e.target.value)}
+                                        error={errors.first_name}
+                                    />
+                                    <CommonInput
+                                        label="Last Name"
+                                        value={data.last_name}
+                                        onChange={e => setData('last_name', e.target.value)}
+                                        error={errors.last_name}
+                                    />
+                                </div>
+                                <div className="mt-4">
+                                    <CommonInput
+                                        label="Display Name (REQUIRED)"
+                                        value={data.display_name}
+                                        onChange={e => setData('display_name', e.target.value)}
+                                        required
+                                        error={errors.display_name}
+                                    />
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Identification</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <CommonInput
+                                        label="NIC"
+                                        value={data.nic}
+                                        onChange={e => setData('nic', e.target.value)}
+                                        required
+                                        error={errors.nic}
+                                    />
+                                    <CommonInput
+                                        label="Passport (optional)"
+                                        value={data.passport}
+                                        onChange={e => setData('passport', e.target.value)}
+                                        error={errors.passport}
+                                    />
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">Business Details</h3>
+                                <CommonInput
+                                    label="Company Name"
                                     value={data.company_name}
-                                    onChange={(e) => setData("company_name", e.target.value)}
+                                    onChange={e => setData('company_name', e.target.value)}
+                                    error={errors.company_name}
                                 />
-                            </div>
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <CommonInput
+                                        label="Email Address"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={e => setData('email', e.target.value)}
+                                        error={errors.email}
+                                    />
+                                    <CommonInput
+                                        label="Phone Number"
+                                        value={data.phone_number}
+                                        onChange={e => setData('phone_number', e.target.value)}
+                                        error={errors.phone_number}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <CommonInput
+                                        label="Address"
+                                        value={data.address}
+                                        onChange={e => setData('address', e.target.value)}
+                                        error={errors.address}
+                                    />
+                                    <CommonInput
+                                        label="Vehicle ID"
+                                        value={data.vehicle_id}
+                                        onChange={e => setData('vehicle_id', e.target.value)}
+                                        error={errors.vehicle_id}
+                                    />
+                                </div>
+                            </section>
 
-                            <div>
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Email</label>
-                                <input
-                                    type="email"
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
-                                    value={data.email}
-                                    onChange={(e) => setData("email", e.target.value)}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Phone</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
-                                    value={data.phone_number}
-                                    onChange={(e) => setData("phone_number", e.target.value)}
-                                />
-                            </div>
                         </div>
-
-                        <div className="pt-6 border-t border-slate-100 flex justify-end gap-4">
-                            <button
-                                type="button"
-                                onClick={() => window.history.back()}
-                                className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="px-8 py-2.5 bg-[#00713D] text-white font-bold rounded-xl hover:bg-[#005a30] transition-all shadow-lg shadow-[#00713D]/20 disabled:opacity-50"
-                            >
-                                {processing ? "Saving..." : "Create Customer"}
-                            </button>
+                        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                            <Link href={route('customers.index')}>
+                                <CommonButton variant="ghost" type="button">Cancel</CommonButton>
+                            </Link>
+                            <CommonButton variant="primary" type="submit" processing={processing}>
+                                {isEdit ? 'Update' : 'Save'} Customer
+                            </CommonButton>
                         </div>
                     </form>
                 </div>

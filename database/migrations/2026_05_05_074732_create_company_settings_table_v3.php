@@ -18,6 +18,12 @@ return new class extends Migration
             $table->text('low_stock_cc_emails')->nullable();
             $table->text('low_stock_bcc_emails')->nullable();
 
+            $table->string('acct_method', 50)->default('Accrual');
+            $table->string('fin_year_start', 20)->default('January');
+            $table->string('tax_year_start', 50)->default('Same as financial year');
+            $table->boolean('close_books')->default(false);
+            $table->string('tax_form', 100)->default('Partnership or limited liability company');
+
             $table->timestamps();
         });
     }

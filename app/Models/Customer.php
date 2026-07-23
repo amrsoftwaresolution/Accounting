@@ -12,15 +12,20 @@ class Customer extends Model
     use HasUuids;
 
     protected $fillable = [
-        'display_name',
-        'first_name',
-        'last_name',
-        'company_name',
-        'email',
-        'phone_number',
-        'tax_id',
-        'opening_balance',
-    ];
+    'display_name',
+    'first_name',
+    'last_name',
+    'company_name',
+    'email',
+    'phone_number',
+    'nic',
+    'passport',
+    'address',
+    'vehicle_id',
+    'customer_number',
+    'tax_id',
+    'opening_balance',
+];
 
     protected $appends = ['balance'];
 

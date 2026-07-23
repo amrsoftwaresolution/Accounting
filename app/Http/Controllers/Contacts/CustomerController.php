@@ -4,16 +4,23 @@ namespace App\Http\Controllers\Contacts;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
 use App\Models\Customer;
-use App\Models\Address;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
+    // First customer gets this number; every one after increments by 1.
+    private const STARTING_CUSTOMER_NUMBER = 1211;
+
+    private function nextCustomerNumber(): int
+    {
+        $max = Customer::max('customer_number');
+        return $max ? $max + 1 : self::STARTING_CUSTOMER_NUMBER;
+    }
+
     public function index()
     {
-        $customers = Customer::with(['addresses', 'devices'])->orderBy('display_name')->get();
+        $customers = Customer::orderBy('display_name')->get();
         return Inertia::render('Contacts/CustomerIndex', [
             'customers' => $customers
         ]);
@@ -21,7 +28,16 @@ class CustomerController extends Controller
 
     public function create()
     {
-        return Inertia::render('Contacts/CustomerForm');
+        return Inertia::render('Contacts/CustomerForm', [
+            'nextCustomerNumber' => $this->nextCustomerNumber(),
+        ]);
+    }
+
+    public function edit(Customer $customer)
+    {
+        return Inertia::render('Contacts/CustomerForm', [
+            'customer' => $customer,
+        ]);
     }
 
     public function store(Request $request)
@@ -33,33 +49,19 @@ class CustomerController extends Controller
             'company_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
-            'billing_address' => 'nullable|array',
-            'devices' => 'nullable|array',
+            'nic' => 'required|string|max:50',
+            'passport' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
+            'vehicle_id' => 'nullable|string|max:100',
         ]);
+
+        // Assigned here, not trusted from the frontend, to avoid race conditions
+        // between two people creating a customer at the same time.
+        $validatedData['customer_number'] = $this->nextCustomerNumber();
 
         $customer = Customer::create($validatedData);
 
-        if ($request->filled('billing_address.address_line_1')) {
-            $customer->addresses()->create(array_merge($request->billing_address, ['type' => 'billing']));
-        }
-
-        if ($request->has('devices') && is_array($request->devices)) {
-            foreach ($request->devices as $deviceData) {
-                // If it doesn't have an ID, it's new
-                if (empty($deviceData['id'])) {
-                    $customer->devices()->create(array_merge($deviceData, []));
-                }
-            }
-        }
-
-        return redirect()->back()->with([
-            'success' => 'Customer created successfully.',
-            'new_customer' => [
-                'value' => $customer->id,
-                'label' => $customer->display_name,
-                'type' => 'Customer'
-            ]
-        ]);
+        return redirect()->route('customers.index')->with('success', 'Customer created successfully.');
     }
 
     public function update(Request $request, Customer $customer)
@@ -71,38 +73,16 @@ class CustomerController extends Controller
             'company_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
-            'billing_address' => 'nullable|array',
-            'devices' => 'nullable|array',
+            'nic' => 'required|string|max:50',
+            'passport' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
+            'vehicle_id' => 'nullable|string|max:100',
         ]);
+        // customer_number is intentionally excluded — it's assigned once at creation and never changes.
 
         $customer->update($validatedData);
 
-        if ($request->filled('billing_address.address_line_1')) {
-            $customer->addresses()->updateOrCreate(
-                ['type' => 'billing'],
-                $request->billing_address
-            );
-        }
-
-        if ($request->has('devices') && is_array($request->devices)) {
-            $existingDeviceIds = [];
-            foreach ($request->devices as $deviceData) {
-                if (!empty($deviceData['id'])) {
-                    $device = $customer->devices()->find($deviceData['id']);
-                    if ($device) {
-                        $device->update($deviceData);
-                        $existingDeviceIds[] = $device->id;
-                    }
-                } else {
-                    $newDevice = $customer->devices()->create(array_merge($deviceData, []));
-                    $existingDeviceIds[] = $newDevice->id;
-                }
-            }
-            // Optional: delete devices that were removed from the form
-            // $customer->devices()->whereNotIn('id', $existingDeviceIds)->delete();
-        }
-
-        return redirect()->back()->with('success', 'Customer updated successfully.');
+        return redirect()->route('customers.index')->with('success', 'Customer updated successfully.');
     }
 
     public function destroy(Customer $customer)

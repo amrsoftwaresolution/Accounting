@@ -55,6 +55,15 @@ class DatabaseSeeder extends Seeder
                 'is_active' => 1,
             ]
         );
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin User',
+                'password' => Hash::make('admin123'),
+                'role' => 'admin',
+                'is_active' => 1,
+            ]
+        );
 
 
         // 4. Create Chart of Accounts for the single company

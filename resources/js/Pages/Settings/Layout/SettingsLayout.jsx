@@ -5,9 +5,6 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 export default function SettingsLayout({ children, activeTab }) {
     const navItems = [
         { name: 'Company', id: 'company' },
-        { name: 'Advanced', id: 'advanced' },
-        { name: 'Print', id: 'print' },
-
     ];
 
     return (
