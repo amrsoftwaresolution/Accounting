@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Garage;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use Inertia\Inertia;

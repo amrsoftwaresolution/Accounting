@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Mail\UserInvitationMail;
 use App\Models\User;
 use Illuminate\Http\Request;
