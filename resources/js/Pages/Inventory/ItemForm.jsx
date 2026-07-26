@@ -216,7 +216,9 @@ export default function ItemForm({
 
     const itemTypes = [
         { id: 'service', name: 'Service' },
-        { id: 'inventory', name: 'Inventory Item' }
+        { id: 'inventory', name: 'Inventory Item' },
+        { id: 'non-inventory', name: 'Non-Inventory' },
+        { id: 'bundle', name: 'Bundle' }
     ];
 
     const handleTypeChange = (newType) => {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Garage;
 
 use App\Models\JobCard;
 use App\Models\Customer;

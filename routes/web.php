@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\POSController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\JobCardController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Garage\JobCardController;
 
 // Accounting Controllers
 use App\Http\Controllers\Accounting\ExpenseController;
@@ -35,10 +35,8 @@ use App\Http\Controllers\Contacts\EmployeeController;
 
 // Settings Controllers
 use App\Http\Controllers\Settings\CompanySettingsController;
-use App\Http\Controllers\Settings\SalesSettingController;
 use App\Http\Controllers\Settings\PrintSettingController;
-use App\Http\Controllers\Settings\OnboardingController;
-use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\Garage\VehicleController;
 // ...
 use Illuminate\Support\Facades\Route;
 
@@ -208,35 +206,23 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('suppliers', SupplierController::class);
     Route::resource('employees', EmployeeController::class);
-
-    // Job Cards
     Route::resource('job-cards', JobCardController::class);
-
-    //Vehicles
     Route::resource('vehicles', VehicleController::class);
-
 
     // Settings
     Route::prefix('settings')->group(function () {
         Route::get('/', [CompanySettingsController::class, 'index'])->name('settings.index');
         
         Route::controller(CompanySettingsController::class)->group(function () {
-        Route::post('/company', 'update')->name('company.update');
-        Route::post('/legal', 'updateLegal')->name('legal.update');
-        Route::post('/accounting', 'updateAccounting')->name('accounting.update');
-        Route::post('/alerts', 'updateAlerts')->name('alerts.update');
-        Route::post('/time', 'updateTime')->name('time.settings.update');
-        Route::post('/logo', 'uploadLogo')->name('logo.upload');
-    });
-        Route::post('/sales', [SalesSettingController::class, 'update'])->name('sales.settings.update');
-        
+            Route::post('/company', 'update')->name('company.update');
+            Route::post('/legal', 'updateLegal')->name('legal.update');
+            Route::post('/accounting', 'updateAccounting')->name('accounting.update');
+            Route::post('/alerts', 'updateAlerts')->name('alerts.update');
+            Route::post('/time', 'updateTime')->name('time.settings.update');
+            Route::post('/logo', 'uploadLogo')->name('logo.upload');
+        });
     });
 
-    // Onboarding
-    Route::controller(OnboardingController::class)->prefix('onboarding')->group(function () {
-        Route::get('/', 'index')->name('onboarding');
-        Route::post('/complete', 'complete')->name('onboarding.complete');
-    });
 
     // Users
     Route::resource('users', UserController::class);

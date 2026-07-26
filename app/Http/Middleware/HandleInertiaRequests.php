@@ -47,10 +47,8 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                'company' => $request->user() ? $request->user()->currentCompany() : null,
             ],
             'appName' => config('app.name'),
-            'settings' => fn () => \App\Models\AdvancedSettings::first() ?? [],
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
