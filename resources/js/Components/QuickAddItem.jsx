@@ -188,12 +188,12 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                         </div>
 
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Expense Account</label>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Payment Account</label>
                             <SearchableSelect
                                 options={expenseAccounts}
                                 value={data.expense_account_id}
                                 onChange={val => setData('expense_account_id', val)}
-                                placeholder="Link to Expense Account"
+                                placeholder="Link to Payment Account"
                             />
                         </div>
                     </div>
@@ -205,7 +205,7 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                             onChange={e => setData('description', e.target.value)}
                             rows="3"
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all resize-none outline-none"
-                            placeholder="Brief description for invoices..."
+                            placeholder="Brief description for credit_invoices..."
                         />
                     </div>
                 </div>

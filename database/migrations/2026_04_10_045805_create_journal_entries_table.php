@@ -18,12 +18,12 @@ return new class extends Migration
             $table->string('reference')->nullable();
             $table->text('description')->nullable();
             
-            // Payee & Payment Method
+            // Payee & ReceivePayment Method
             $table->uuid('payee_id')->nullable();
             $table->string('payee_type')->nullable();
             $table->uuid('payment_method_id')->nullable();
 
-            $table->string('transaction_type')->nullable(); // e.g., 'invoice', 'expense', 'bill'
+            $table->string('transaction_type')->nullable(); // e.g., 'invoice', 'payment', 'bill'
             $table->nullableUuidMorphs('transactionable'); // Link to the specific transaction record
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->string('status')->default('draft');

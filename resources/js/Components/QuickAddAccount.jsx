@@ -286,7 +286,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                         <option value="liability">Liability</option>
                         <option value="equity">Equity</option>
                         <option value="income">Income</option>
-                        <option value="expense">Expense</option>
+                        <option value="payment">Expense</option>
                     </CommonInput>
 
                     <CommonInput

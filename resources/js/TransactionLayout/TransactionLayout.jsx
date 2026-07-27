@@ -66,7 +66,7 @@ export default function TransactionLayout({
         if (currentPath.startsWith('/expense/')) {
             const expenseId = currentPath.split('/')[2];
             return {
-                copyRoute: 'expense',
+                copyRoute: 'payment',
                 deleteRoute: 'expense.destroy',
                 recordId: expenseId,
                 listRoute: 'dashboard'
@@ -92,7 +92,7 @@ export default function TransactionLayout({
         }
         if (currentPath.startsWith('/payment/')) {
             return {
-                copyRoute: 'payment',
+                copyRoute: 'receive_payment',
                 deleteRoute: 'payment.destroy',
                 printRoute: 'payment.print',
                 recordId: props.payment?.id,
@@ -141,17 +141,30 @@ export default function TransactionLayout({
         setHasUnsavedChanges(dirty);
     }, [dirty]);
 
-    // useEffect(() => {
-    //     const markDirty = () => setHasUnsavedChanges(true);
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (document.querySelector('[role="dialog"]') || document.querySelector('.fixed.inset-0')) {
+                    return; // a modal is open, let it handle the escape
+                }
+                
+                // If it's focused in an input/textarea, blurring it or allowing form to cancel is better, 
+                // but closing the whole page is what they asked for, so we call handleClose()
+                const activeEl = document.activeElement;
+                if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {
+                    // Let inputs lose focus first instead of instantly closing the whole form if they press ESC?
+                    // Actually, standard behavior is to blur.
+                    activeEl.blur();
+                    return;
+                }
 
-    //     document.addEventListener('input', markDirty, true);
-    //     document.addEventListener('change', markDirty, true);
+                handleClose();
+            }
+        };
 
-    //     return () => {
-    //         document.removeEventListener('input', markDirty, true);
-    //         document.removeEventListener('change', markDirty, true);
-    //     };
-    // }, []);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [hasUnsavedChanges]);
 
     const handleClose = () => {
         const goBack = () => {

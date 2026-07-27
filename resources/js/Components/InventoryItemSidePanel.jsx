@@ -287,7 +287,7 @@ export default function InventoryItemSidePanel({
                         setData('inventory_account_id', newAcc.value);
                     } else if (type === 'income') {
                         setData('income_account_id', newAcc.value);
-                    } else if (type === 'expense') {
+                    } else if (type === 'payment') {
                         setData('expense_account_id', newAcc.value);
                     }
                 }
@@ -550,7 +550,7 @@ export default function InventoryItemSidePanel({
                                 checked={data.is_sold}
                                 onChange={val => setData('is_sold', val)}
                                 label="I sell this to my customers"
-                                description="Enable this if the item is sold in invoices or receipts."
+                                description="Enable this if the item is sold in credit_invoices or receipts."
                             />
                             <Toggle
                                 checked={data.is_purchased}
@@ -678,7 +678,7 @@ export default function InventoryItemSidePanel({
                                 onChange={e => setData('description', e.target.value)}
                                 rows="2"
                                 className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all resize-none"
-                                placeholder="Description for invoices..."
+                                placeholder="Description for credit_invoices..."
                             />
                             {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
                         </div>
@@ -708,14 +708,14 @@ export default function InventoryItemSidePanel({
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Expense Account</label>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Payment Account</label>
                                 <SearchableSelect
                                     options={localExpenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
                                     value={data.expense_account_id}
                                     onChange={val => setData('expense_account_id', val)}
-                                    placeholder="Link to Expense Account"
+                                    placeholder="Link to Payment Account"
                                     onAddNew={() => {
-                                        setAccountModalType('expense');
+                                        setAccountModalType('payment');
                                         setIsAccountModalOpen(true);
                                     }}
                                 />
@@ -831,7 +831,7 @@ export default function InventoryItemSidePanel({
                             />
                             <label htmlFor="update_historical" className="ml-2 text-xs text-amber-800">
                                 <span className="font-bold block">Update historical transactions?</span>
-                                Check this if you want past invoices and bills to use the new accounts. (Warning: This will change past financial reports).
+                                Check this if you want past credit_invoices and bills to use the new accounts. (Warning: This will change past financial reports).
                             </label>
                         </div>
                     )} */}
@@ -849,7 +849,7 @@ export default function InventoryItemSidePanel({
                             <h3 className="text-sm font-bold text-slate-800">Update Historical Transactions?</h3>
                         </div>
                         <p className="text-xs text-slate-600 mb-5 leading-relaxed">
-                            Do you want past invoices and bills to use the new account?
+                            Do you want past credit_invoices and bills to use the new account?
                             <span className="block mt-1 text-amber-700 font-semibold">Warning: This will affect past financial reports.</span>
                         </p>
                         <div className="flex justify-end gap-2">

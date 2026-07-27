@@ -17,7 +17,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
 
     const [customerOptions, setCustomerOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
-    const [invoices, setInvoices] = useState([]);
+    const [credit_invoices, setInvoices] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
 
     // Modal States
@@ -52,17 +52,17 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 }
             }).catch(err => console.error("Failed to fetch customer info:", err));
 
-            // Fetch outstanding invoices
-            const url = payment?.payment_id
-                ? route('api.customers.invoices', val) + '?payment_id=' + payment.payment_id
-                : route('api.customers.invoices', val);
+            // Fetch outstanding credit_invoices
+            const url = payment?.receive_payment_id
+                ? route('api.customers.credit_invoices', val) + '?receive_payment_id=' + payment.receive_payment_id
+                : route('api.customers.credit_invoices', val);
             axios.get(url).then(res => {
                 setInvoices(res.data.map(inv => ({
                     ...inv,
                     applied: inv.applied || 0,
                     checked: inv.applied > 0
                 })));
-            }).catch(err => console.error("Failed to fetch customer invoices:", err));
+            }).catch(err => console.error("Failed to fetch customer credit_invoices:", err));
         } else {
             setInvoices([]);
             setData(prev => ({ ...prev, customer: "", email: "" }));
@@ -136,7 +136,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         });
     };
 
-    const filteredInvoices = invoices.filter(inv => {
+    const filteredInvoices = credit_invoices.filter(inv => {
         if (!searchQuery) return true;
         return inv.invoice_no.toLowerCase().includes(searchQuery.toLowerCase());
     });
@@ -194,7 +194,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         setData("amountReceived", "0.00");
     };
 
-    const amountToApply = invoices.reduce((sum, inv) => sum + (parseFloat(inv.applied) || 0), 0);
+    const amountToApply = credit_invoices.reduce((sum, inv) => sum + (parseFloat(inv.applied) || 0), 0);
     const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
     const amountToCredit = Math.max(0, amountReceivedVal - amountToApply);
 
@@ -229,7 +229,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                                                 action: 'save'
             });
             if (payment.customer) {
-                axios.get(route('api.customers.invoices', payment.customer) + '?payment_id=' + payment.payment_id)
+                axios.get(route('api.customers.credit_invoices', payment.customer) + '?receive_payment_id=' + payment.receive_payment_id)
                     .then(res => {
                         setInvoices(res.data.map(inv => ({
                             ...inv,
@@ -237,7 +237,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                             checked: inv.applied > 0
                         })));
                     })
-                    .catch(err => console.error("Failed to fetch customer invoices:", err));
+                    .catch(err => console.error("Failed to fetch customer credit_invoices:", err));
             }
         } else {
             setData({
@@ -263,14 +263,14 @@ useEffect(() => {
     transform((data) => ({
         ...data,
         amountReceived: String(data.amountReceived).replace(/,/g, ''),
-        invoices: invoices
+        credit_invoices: credit_invoices
             .filter(inv => inv.applied > 0)
             .map(inv => ({
                 id: inv.id,
                 amount: String(inv.applied)
             }))
     }));
-}, [data.amountReceived, invoices]);
+}, [data.amountReceived, credit_invoices]);
 
 const submit = (action = 'save') => {
     const currentId = savedEntryId || payment?.id;
@@ -283,7 +283,7 @@ const submit = (action = 'save') => {
         ...d,
         action: action,
         amountReceived: String(d.amountReceived).replace(/,/g, ''),
-        invoices: invoices
+        credit_invoices: credit_invoices
             .filter(inv => inv.applied > 0)
             .map(inv => ({
                 id: inv.id,
@@ -327,7 +327,7 @@ const submit = (action = 'save') => {
     return (
         <TransactionLayout
             historyType="recivepayment"
-            title={payment?.id ? `Edit Payment no.${data.referenceNo}` : "Receive Payment"}
+            title={payment?.id ? `Edit ReceivePayment no.${data.referenceNo}` : "Receive Payment"}
             amount={parseFloat(String(data.amountReceived || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
@@ -373,13 +373,13 @@ const submit = (action = 'save') => {
                     </div>
                 </div>
 
-                {/* ROW 2: Payment Details */}
+                {/* ROW 2: ReceivePayment Details */}
                 <div className="flex items-end gap-6">
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
                             placeholder={formatDate(new Date(), dateFormat)}
-                            label="Payment Date"
+                            label="ReceivePayment Date"
                             value={data.paymentDate}
                             onChange={(e) => {
                                 const newDate = e.target.value;
@@ -393,7 +393,7 @@ const submit = (action = 'save') => {
                     </div>
                     <div className="w-[220px]">
                         <SearchableSelect
-                            label="Payment Method"
+                            label="ReceivePayment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
                             onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}
@@ -457,7 +457,7 @@ const submit = (action = 'save') => {
                                     num = parseFloat(e.target.value.replace(/,/g, '')) || 0;
                                 }
                                 setData("amountReceived", num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                                autoApplyAmount(num); // ADD THIS - auto-distribute across invoices
+                                autoApplyAmount(num); // ADD THIS - auto-distribute across credit_invoices
                             }}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
@@ -546,7 +546,7 @@ const submit = (action = 'save') => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                     {filteredInvoices.map((inv) => {
-                                        const originalIdx = invoices.findIndex(i => i.id === inv.id);
+                                        const originalIdx = credit_invoices.findIndex(i => i.id === inv.id);
                                         return (
                                             <tr key={inv.id} className={`hover:bg-slate-50/20 transition-colors ${inv.checked ? 'bg-green-50/10' : ''}`}>
                                                 <td className="p-3 text-center">
@@ -592,7 +592,7 @@ const submit = (action = 'save') => {
                             </table>
                         </div>
 
-                        {invoices.length > 0 && (
+                        {credit_invoices.length > 0 && (
                             <div className="flex justify-between items-start pt-4">
                                 <button
                                     type="button"

@@ -11,7 +11,7 @@ use App\Models\Customer;
 use App\Models\Supplier;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
-use App\Models\SalesReceipt;
+use App\Models\SalesInvoice;
 
 class ReportController extends Controller
 {
@@ -37,7 +37,7 @@ class ReportController extends Controller
             $type = strtolower($account->account_type);
             if ($type === 'income' || $type === 'liability' || $type === 'equity') {
                 $balance = $total_credit - $total_debit;
-            } else if ($type === 'expense' || $type === 'asset') {
+            } else if ($type === 'payment' || $type === 'asset') {
                 $balance = $total_debit - $total_credit;
             } else {
                 $balance = 0;
@@ -254,7 +254,7 @@ class ReportController extends Controller
             }
         }
 
-        $reportData = $this->buildPnLTree(['income', 'expense'], $lines, $displayBy, $months);
+        $reportData = $this->buildPnLTree(['income', 'payment'], $lines, $displayBy, $months);
 
         return Inertia::render('Reports/ProfitAndLoss', [
             'reportData' => $reportData,
@@ -295,7 +295,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             
             ->where('journal_entries.date', '<', $fiscalYearStart)
-            ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
+            ->whereIn('chart_of_accs.account_type', ['income', 'payment'])
             ->select(
                 DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as retained_earnings')
             )->first();
@@ -308,7 +308,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             
             ->whereBetween('journal_entries.date', [$fiscalYearStart, $endDate])
-            ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
+            ->whereIn('chart_of_accs.account_type', ['income', 'payment'])
             ->select(
                 DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as net_income')
             )->first();
@@ -576,15 +576,76 @@ class ReportController extends Controller
             $items = $itemsQuery;
         }
 
-        $mappedItems = $items->map(function ($item) {
+        $billData = DB::table('bill_items')
+            ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->where('bills.status', 'posted')
+            ->groupBy('item_id')
+            ->selectRaw('item_id, SUM(quantity) as qty, SUM(quantity * rate) as val')
+            ->get()->keyBy('item_id');
+
+        $expenseData = DB::table('payment_items')
+            ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
+            ->where('payments.status', 'posted')
+            ->groupBy('item_id')
+            ->selectRaw('item_id, SUM(quantity) as qty, SUM(quantity * rate) as val')
+            ->get()->keyBy('item_id');
+
+        $invoiceData = DB::table('credit_invoice_items')
+            ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
+            ->where('credit_invoices.status', 'posted')
+            ->groupBy('item_id')
+            ->selectRaw('item_id, SUM(quantity) as qty')
+            ->get()->keyBy('item_id');
+
+        $receiptData = DB::table('sales_invoice_items')
+            ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
+            ->where('sales_invoices.status', 'posted')
+            ->groupBy('item_id')
+            ->selectRaw('item_id, SUM(quantity) as qty')
+            ->get()->keyBy('item_id');
+
+        $creditData = DB::table('supplier_credit_items')
+            ->join('supplier_credits', 'supplier_credit_items.supplier_credit_id', '=', 'supplier_credits.id')
+            ->where('supplier_credits.status', 'posted')
+            ->groupBy('item_id')
+            ->selectRaw('item_id, SUM(quantity) as qty')
+            ->get()->keyBy('item_id');
+
+        $adjData = DB::table('inventory_quantity_adjustment_items')
+            ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
+            ->where('inventory_quantity_adjustments.status', 'posted')
+            ->groupBy('item_id')
+            ->selectRaw('item_id, SUM(change_in_qty) as qty')
+            ->get()->keyBy('item_id');
+
+        $mappedItems = $items->map(function ($item) use ($billData, $expenseData, $invoiceData, $receiptData, $creditData, $adjData) {
+            $purchasedQty = ($billData[$item->id]->qty ?? 0) + ($expenseData[$item->id]->qty ?? 0);
+            $purchasedVal = ($billData[$item->id]->val ?? 0) + ($expenseData[$item->id]->val ?? 0);
+
+            $soldQty = ($invoiceData[$item->id]->qty ?? 0) + ($receiptData[$item->id]->qty ?? 0) + ($creditData[$item->id]->qty ?? 0);
+            
+            $adjQty = $adjData[$item->id]->qty ?? 0;
+            if ($adjQty > 0) {
+                $purchasedQty += $adjQty;
+                $purchasedVal += ($adjQty * $item->purchase_price);
+            }
+
+            $initialQty = $item->quantity_on_hand + $soldQty - $purchasedQty - ($adjQty < 0 ? $adjQty : 0);
+            if ($initialQty > 0) {
+                $purchasedQty += $initialQty;
+                $purchasedVal += ($initialQty * $item->purchase_price);
+            }
+
+            $calculatedAvgCost = $purchasedQty > 0 ? ($purchasedVal / $purchasedQty) : $item->purchase_price;
+
             return [
                 'id' => $item->id,
                 'name' => $item->name,
                 'sku' => $item->sku,
                 'category' => $item->category ? $item->category->name : 'Uncategorized',
                 'qty_on_hand' => (float)$item->quantity_on_hand,
-                'avg_cost' => (float)$item->purchase_price,
-                'asset_value' => (float)($item->quantity_on_hand * $item->purchase_price),
+                'avg_cost' => (float)$calculatedAvgCost,
+                'asset_value' => (float)($item->quantity_on_hand * $calculatedAvgCost),
             ];
         });
 
@@ -617,7 +678,7 @@ class ReportController extends Controller
 
         // To get the inventory detail, we look for JournalEntryLines that touch the Inventory Asset account
         // However, we didn't tag the specific item on JournalEntryLines currently in this system (we rely on Item models).
-        // Wait, looking at InventoryQuantityAdjustment, it saves the items. Bill and Invoice save the items. 
+        // Wait, looking at InventoryQuantityAdjustment, it saves the items. Bill and CreditInvoice save the items. 
         // We can just query `journal_entry_lines` for `transactionable` ? No, journal lines are tied to JournalEntry.
         // Actually, the simplest way to get inventory transactions is from Journal Entries of types:
         // bill, invoice, supplier_credit, credit_note, inventory_adjustment where they contain the item.
@@ -762,37 +823,37 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
         
-        $query = DB::table('invoice_items')
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+        $query = DB::table('credit_invoice_items')
+            ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
             ->join('journal_entries', function($join) {
-                $join->on('journal_entries.transactionable_id', '=', 'invoices.id')
-                     ->where('journal_entries.transactionable_type', '=', \App\Models\Invoice::class);
+                $join->on('journal_entries.transactionable_id', '=', 'credit_invoices.id')
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\CreditInvoice::class);
             })
-            ->join('items', 'invoice_items.item_id', '=', 'items.id')
-            ->join('customers', 'invoices.customer_id', '=', 'customers.id')
+            ->join('items', 'credit_invoice_items.item_id', '=', 'items.id')
+            ->join('customers', 'credit_invoices.customer_id', '=', 'customers.id')
             
-            ->where('invoices.status', 'posted');
+            ->where('credit_invoices.status', 'posted');
 
         if ($startDate) {
-            $query->whereBetween('invoices.invoice_date', [$startDate, $endDate]);
+            $query->whereBetween('credit_invoices.invoice_date', [$startDate, $endDate]);
         } else {
-            $query->where('invoices.invoice_date', '<=', $endDate);
+            $query->where('credit_invoices.invoice_date', '<=', $endDate);
         }
 
         $allLines = $query->select(
-                'invoice_items.id as line_id',
-                'invoice_items.quantity',
-                'invoice_items.rate',
-                'invoice_items.amount',
-                'invoices.invoice_number as reference',
-                'invoices.invoice_date as date',
+                'credit_invoice_items.id as line_id',
+                'credit_invoice_items.quantity',
+                'credit_invoice_items.rate',
+                'credit_invoice_items.amount',
+                'credit_invoices.invoice_number as reference',
+                'credit_invoices.invoice_date as date',
                 'items.id as item_id',
                 'items.name as item_name',
                 'items.sku as item_sku',
                 'customers.display_name as customer_name',
                 'journal_entries.id as journal_entry_id'
             )
-            ->orderBy('invoices.invoice_date', 'asc')
+            ->orderBy('credit_invoices.invoice_date', 'asc')
             ->get();
             
         // Group by item_id
@@ -839,21 +900,21 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
         
-        $query = DB::table('invoices')
-            ->join('customers', 'invoices.customer_id', '=', 'customers.id')
+        $query = DB::table('credit_invoices')
+            ->join('customers', 'credit_invoices.customer_id', '=', 'customers.id')
             
-            ->where('invoices.status', 'posted');
+            ->where('credit_invoices.status', 'posted');
 
         if ($startDate) {
-            $query->whereBetween('invoices.invoice_date', [$startDate, $endDate]);
+            $query->whereBetween('credit_invoices.invoice_date', [$startDate, $endDate]);
         } else {
-            $query->where('invoices.invoice_date', '<=', $endDate);
+            $query->where('credit_invoices.invoice_date', '<=', $endDate);
         }
 
         $reportData = $query->select(
                 'customers.display_name as customer_name',
-                DB::raw('COUNT(invoices.id) as invoice_count'),
-                DB::raw('SUM(invoices.total_amount) as total_amount')
+                DB::raw('COUNT(credit_invoices.id) as invoice_count'),
+                DB::raw('SUM(credit_invoices.total_amount) as total_amount')
             )
             ->groupBy('customers.id', 'customers.display_name')
             ->orderByDesc('total_amount')
@@ -907,30 +968,30 @@ class ReportController extends Controller
             )->get();
 
         // Expenses
-        $expensesQuery = DB::table('expense_items')
-            ->join('expenses', 'expense_items.expense_id', '=', 'expenses.id')
+        $expensesQuery = DB::table('payment_items')
+            ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
             ->join('journal_entries', function($join) {
-                $join->on('journal_entries.transactionable_id', '=', 'expenses.id')
-                     ->where('journal_entries.transactionable_type', '=', \App\Models\Expense::class);
+                $join->on('journal_entries.transactionable_id', '=', 'payments.id')
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Payment::class);
             })
-            ->join('items', 'expense_items.item_id', '=', 'items.id')
-            ->leftJoin('suppliers', 'expenses.payee_id', '=', 'suppliers.id')
+            ->join('items', 'payment_items.item_id', '=', 'items.id')
+            ->leftJoin('suppliers', 'payments.payee_id', '=', 'suppliers.id')
             
-            ->where('expenses.status', 'posted');
+            ->where('payments.status', 'posted');
 
         if ($startDate) {
-            $expensesQuery->whereBetween('expenses.payment_date', [$startDate, $endDate]);
+            $expensesQuery->whereBetween('payments.payment_date', [$startDate, $endDate]);
         } else {
-            $expensesQuery->where('expenses.payment_date', '<=', $endDate);
+            $expensesQuery->where('payments.payment_date', '<=', $endDate);
         }
 
         $expensesData = $expensesQuery->select(
-                'expense_items.id as line_id',
-                'expense_items.quantity',
-                'expense_items.rate',
-                'expense_items.amount',
-                'expenses.expense_number as reference',
-                'expenses.payment_date as date',
+                'payment_items.id as line_id',
+                'payment_items.quantity',
+                'payment_items.rate',
+                'payment_items.amount',
+                'payments.expense_number as reference',
+                'payments.payment_date as date',
                 'items.id as item_id',
                 'items.name as item_name',
                 'items.sku as item_sku',
@@ -1006,23 +1067,23 @@ class ReportController extends Controller
             ->groupBy('suppliers.id', 'suppliers.display_name')
             ->get();
 
-        $expensesQuery = DB::table('expenses')
-            ->join('suppliers', 'expenses.payee_id', '=', 'suppliers.id')
+        $expensesQuery = DB::table('payments')
+            ->join('suppliers', 'payments.payee_id', '=', 'suppliers.id')
             
-            ->where('expenses.payee_type', \App\Models\Supplier::class)
-            ->where('expenses.status', 'posted');
+            ->where('payments.payee_type', \App\Models\Supplier::class)
+            ->where('payments.status', 'posted');
 
         if ($startDate) {
-            $expensesQuery->whereBetween('expenses.payment_date', [$startDate, $endDate]);
+            $expensesQuery->whereBetween('payments.payment_date', [$startDate, $endDate]);
         } else {
-            $expensesQuery->where('expenses.payment_date', '<=', $endDate);
+            $expensesQuery->where('payments.payment_date', '<=', $endDate);
         }
 
         $expensesData = $expensesQuery->select(
                 'suppliers.id as supplier_id',
                 'suppliers.display_name as supplier_name',
-                DB::raw('COUNT(expenses.id) as tx_count'),
-                DB::raw('SUM(expenses.total_amount) as total_amount')
+                DB::raw('COUNT(payments.id) as tx_count'),
+                DB::raw('SUM(payments.total_amount) as total_amount')
             )
             ->groupBy('suppliers.id', 'suppliers.display_name')
             ->get();
@@ -1161,7 +1222,7 @@ class ReportController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        $query = SalesReceipt::with(['items.item', 'vehicle', 'customer'])
+        $query = SalesInvoice::with(['items.item', 'vehicle', 'customer'])
             ->whereNotNull('vehicle_id');
 
         if ($vehicleId) {

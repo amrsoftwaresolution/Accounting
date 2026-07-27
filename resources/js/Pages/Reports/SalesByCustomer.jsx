@@ -35,7 +35,7 @@ export default function SalesByCustomer({ reportData, filters, auth }) {
         const companyName = auth.company?.company_name || 'Company';
         let csvContent = `"${companyName}"\n"Sales By Customer Report"\n`;
         csvContent += `"Date Range: ${filters.start_date} to ${filters.end_date}"\n\n`;
-        csvContent += `"Customer Name","Invoice Count","Total Amount (${homeCurrency})"\n`;
+        csvContent += `"Customer Name","CreditInvoice Count","Total Amount (${homeCurrency})"\n`;
 
         customers.forEach(item => {
             csvContent += `"${item.customer_name}",${item.invoice_count},${item.total_amount}\n`;
@@ -80,7 +80,7 @@ export default function SalesByCustomer({ reportData, filters, auth }) {
                     <thead>
                         <tr className="border-y-2 border-gray-300">
                             <th className="py-2.5 px-3 font-semibold text-gray-900">Customer Name</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">Invoice Count</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">CreditInvoice Count</th>
                             <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">Amount</th>
                         </tr>
                     </thead>

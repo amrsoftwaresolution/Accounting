@@ -407,7 +407,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                             <td className="py-2.5 px-3 text-right tabular-nums text-gray-900"><Currency value={grossProfit} /></td>
                         </tr>
 
-                        {/* Expense Section */}
+                        {/* Payment Section */}
                         <tr 
                             className="bg-gray-50 border-y border-gray-300 cursor-pointer hover:bg-gray-100"
                             onClick={() => toggleGroup('Expense')}

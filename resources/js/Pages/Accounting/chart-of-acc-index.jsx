@@ -100,7 +100,7 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
                                 <option value="liability">Liabilities</option>
                                 <option value="equity">Equity</option>
                                 <option value="income">Income</option>
-                                <option value="expense">Expenses</option>
+                                <option value="payment">Expenses</option>
                             </select>
                         </div>
 

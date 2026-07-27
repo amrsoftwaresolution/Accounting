@@ -78,15 +78,15 @@ export default function ChequeForm({
         cheque_no: cheque?.cheque_no || nextChequeNo || "",
         mailing_address: cheque?.mailing_address || "",
         memo: cheque?.memo || "",
-        items: cheque?.items && cheque.items.length > 0 ? cheque.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
+        items: cheque?.items && cheque.items.length > 0 ? cheque.items.map(i => ({ ...i, amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })) : [
             { category: "", description: "", amount: "0.00", customer_id: "" },
         ],
-                        action: 'save'
+        action: 'save'
     });
 
     const actionRef = useRef('save');
 
-    
+
     const totalAmount = (
         data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0)
     ).toFixed(2);
@@ -102,10 +102,10 @@ export default function ChequeForm({
                 cheque_no: cheque.cheque_no || "",
                 mailing_address: cheque.mailing_address || "",
                 memo: cheque.memo || "",
-                items: cheque.items && cheque.items.length > 0 ? cheque.items.map(i => ({...i, amount: parseFloat(i.amount||0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})) : [
+                items: cheque.items && cheque.items.length > 0 ? cheque.items.map(i => ({ ...i, amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })) : [
                     { category: "", description: "", amount: "0.00", customer_id: "" }
                 ],
-                                                action: 'save'
+                action: 'save'
             });
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -119,7 +119,7 @@ export default function ChequeForm({
                 items: [
                     { category: "", description: "", amount: "0.00", customer_id: "" },
                 ],
-                                                action: 'save'
+                action: 'save'
             });
         }
         clearErrors();
@@ -135,7 +135,7 @@ export default function ChequeForm({
                     ...item,
                     amount: String(item.amount).replace(/,/g, '')
                 })),
-                                }));
+        }));
     }, [transform]);
 
     const handleItemChange = (index, field, value) => {
@@ -171,8 +171,8 @@ export default function ChequeForm({
                 setIsDirty(false);
 
                 const newId = page.props?.flash?.journal_entry_id
-                           || page.props?.cheque?.id
-                           || page.props?.record?.id;
+                    || page.props?.cheque?.id
+                    || page.props?.record?.id;
                 if (newId && !savedEntryId) {
                     setSavedEntryId(newId);
                 }
@@ -207,7 +207,7 @@ export default function ChequeForm({
             type: "select",
             width: "280px",
             onAddNew: () => {
-                setAccountModalType('expense');
+                setAccountModalType('payment');
                 setIsAccountModalOpen(true);
             }
         },
@@ -279,7 +279,7 @@ export default function ChequeForm({
                                         setIsAccountModalOpen(true);
                                     }}
                                 />
-                                                            </div>
+                            </div>
                         </div>
                     </div>
 
@@ -296,22 +296,10 @@ export default function ChequeForm({
 
                 {/* ROW 2 */}
                 <div className="flex items-end gap-6">
-                    <div className="w-[380px]">
-                        <CommonInput
-                            type="textarea"
-                            label="Mailing address"
-                            placeholder="Enter address"
-                            value={data.mailing_address}
-                            onChange={(e) => { setData("mailing_address", e.target.value); setIsDirty(true); }}
-                            className="h-20"
-                            size="sm"
-                            error={errors.mailing_address}
-                        />
-                    </div>
                     <div className="w-[200px]">
                         <CommonInput
                             type="date"
-                            label="Payment Date"
+                            label="ReceivePayment Date"
                             value={data.date}
                             onChange={(e) => handlePaymentDateChange(e.target.value)}
                             size="sm"

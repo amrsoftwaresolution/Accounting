@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\Accounting\StoreTransferRequest;
+use App\Http\Requests\Accounting\TransferRequest;
 
 class TransferController extends Controller
 {
@@ -20,7 +20,7 @@ class TransferController extends Controller
         return Inertia::render('Transaction/TransferForm');
     }
 
-    public function store(StoreTransferRequest $request)
+    public function store(TransferRequest $request)
     {
         $validated = $request->validated();
 
@@ -108,7 +108,7 @@ class TransferController extends Controller
         ]);
     }
 
-    public function update(StoreTransferRequest $request, JournalEntry $journalEntry)
+    public function update(TransferRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();
 

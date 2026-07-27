@@ -11,8 +11,7 @@ use App\Models\Customer;
 use App\Models\Supplier;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
-use App\Http\Requests\Accounting\StoreChequeRequest;
-use App\Http\Requests\Accounting\UpdateChequeRequest;
+use App\Http\Requests\Accounting\ChequeRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -76,7 +75,7 @@ class ChequeController extends Controller
         return 'CHQ-0001';
     }
 
-    public function store(StoreChequeRequest $request)
+    public function store(ChequeRequest $request)
     {
         $validated = $request->validated();
 
@@ -209,7 +208,7 @@ class ChequeController extends Controller
         ]);
     }
 
-    public function update(UpdateChequeRequest $request, JournalEntry $journalEntry)
+    public function update(ChequeRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();
 

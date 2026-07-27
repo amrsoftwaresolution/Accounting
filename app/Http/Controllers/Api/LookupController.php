@@ -185,7 +185,7 @@ class LookupController extends Controller
             'liability' => 2000,
             'equity' => 3000,
             'income' => 4000,
-            'expense' => 5000,
+            'payment' => 5000,
         ];
 
         $defaultCode = $defaults[strtolower($type)] ?? 1000;
@@ -217,7 +217,7 @@ class LookupController extends Controller
             return response()->json(['next_ref' => '1']);
         }
 
-        $last = \App\Models\Expense::query()
+        $last = \App\Models\Payment::query()
             ->where('payment_account_id', $accountId)
             ->whereNotNull('reference_no')
             ->whereRaw('reference_no REGEXP "^[0-9]+$"')
@@ -274,32 +274,32 @@ class LookupController extends Controller
 
     public function customerInvoices(Customer $customer, Request $request)
     {
-        $paymentId = $request->query('payment_id');
-        $invoices = \App\Models\Invoice::where('customer_id', $customer->id)
+        $paymentId = $request->query('receive_payment_id');
+        $credit_invoices = \App\Models\CreditInvoice::where('customer_id', $customer->id)
             ->where('status', 'posted')
             
             ->get()
-            ->map(function($invoice) use ($paymentId) {
-                $query = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id);
+            ->map(function($creditInvoice) use ($paymentId) {
+                $query = \App\Models\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id);
                 if ($paymentId) {
-                    $query->where('payment_id', '!=', $paymentId);
+                    $query->where('receive_payment_id', '!=', $paymentId);
                 }
                 $allocatedAmount = $query->sum('amount');
-                $openBalance = $invoice->total_amount - $allocatedAmount;
+                $openBalance = $creditInvoice->total_amount - $allocatedAmount;
 
                 $applied = 0;
                 if ($paymentId) {
-                    $applied = \App\Models\PaymentAllocation::where('invoice_id', $invoice->id)
-                        ->where('payment_id', $paymentId)
+                    $applied = \App\Models\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id)
+                        ->where('receive_payment_id', $paymentId)
                         ->sum('amount');
                 }
 
                 return [
-                    'id' => $invoice->id,
-                    'invoice_no' => $invoice->invoice_no,
-                    'invoice_date' => $invoice->invoice_date,
-                    'due_date' => $invoice->due_date,
-                    'total_amount' => $invoice->total_amount,
+                    'id' => $creditInvoice->id,
+                    'invoice_no' => $creditInvoice->invoice_no,
+                    'invoice_date' => $creditInvoice->invoice_date,
+                    'due_date' => $creditInvoice->due_date,
+                    'total_amount' => $creditInvoice->total_amount,
                     'open_balance' => $openBalance,
                     'applied' => (float)$applied
                 ];
@@ -307,7 +307,7 @@ class LookupController extends Controller
             ->filter(fn($inv) => $inv['open_balance'] > 0.01 || $inv['applied'] > 0.01)
             ->values();
 
-        return response()->json($invoices);
+        return response()->json($credit_invoices);
     }
 
     public function supplierInfo(Supplier $supplier)
@@ -336,7 +336,7 @@ class LookupController extends Controller
 
     public function supplierBills(Supplier $supplier, Request $request)
     {
-        $paymentId = $request->query('payment_id');
+        $paymentId = $request->query('receive_payment_id');
         $bills = \App\Models\Bill::where('supplier_id', $supplier->id)
             ->where('status', 'posted')
             
@@ -376,7 +376,7 @@ class LookupController extends Controller
     {
         $categories = \App\Models\ItemCategory::orderBy('name')->get();
         $incomeAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->orderBy('account_code')->get();
-        $expenseAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['expense', 'cost_of_goods_sold'])->orderBy('account_code')->get();
+        $expenseAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['payment', 'cost_of_goods_sold'])->orderBy('account_code')->get();
         $inventoryAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->orderBy('account_code')->get();
         $suppliers = \App\Models\Supplier::orderBy('display_name')->get()
             ->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name]);

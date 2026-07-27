@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\BillItem;
-use App\Models\InvoiceItem;
-use App\Models\ExpenseItem;
+use App\Models\CreditInvoiceItem;
+use App\Models\PaymentItem;
 use App\Models\JournalEntryLine;
 
 class ItemController extends Controller
@@ -78,7 +78,7 @@ class ItemController extends Controller
         return [
             'categories' => ItemCategory::all(),
             'incomeAccounts' => ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->get(),
-            'expenseAccounts' => ChartOfAcc::whereIn('account_type', ['expense', 'cost_of_goods_sold'])->get(),
+            'expenseAccounts' => ChartOfAcc::whereIn('account_type', ['payment', 'cost_of_goods_sold'])->get(),
             'inventoryAccounts' => ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->get(),
             'suppliers' => Supplier::all(),
             'allItems' => Item::all(),
@@ -300,7 +300,7 @@ class ItemController extends Controller
                     }
 
                     // Update ExpenseItems and their JournalEntryLines
-                    $expenseItems = ExpenseItem::where('item_id', $item->id)->where('chart_of_acc_id', $oldExpenseAccount)->get();
+                    $expenseItems = PaymentItem::where('item_id', $item->id)->where('chart_of_acc_id', $oldExpenseAccount)->get();
                     foreach ($expenseItems as $ei) {
                         $ei->update(['chart_of_acc_id' => $item->expense_account_id]);
                         $je = $ei->expense->journalEntry;
@@ -312,12 +312,12 @@ class ItemController extends Controller
                     }
                 }
 
-                // Update Invoices (they don't store chart_of_acc_id directly on invoice_items, they rely on item accounts)
+                // Update Invoices (they don't store chart_of_acc_id directly on credit_invoice_items, they rely on item accounts)
                 if (($oldIncomeAccount && $oldIncomeAccount !== $item->income_account_id) || 
                     ($oldExpenseAccount && $oldExpenseAccount !== $item->expense_account_id) ||
                     ($oldInventoryAccount && $oldInventoryAccount !== $item->inventory_account_id)) {
                     
-                    $invoiceItems = InvoiceItem::where('item_id', $item->id)->get();
+                    $invoiceItems = CreditInvoiceItem::where('item_id', $item->id)->get();
                     foreach ($invoiceItems as $ii) {
                         $je = $ii->invoice->journalEntry;
                         if ($je) {

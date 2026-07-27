@@ -5,11 +5,11 @@ import axios from 'axios';
 const TYPE_MAP = {
     creditsale: 'invoice',
     'credit sale': 'invoice',
-    recivepayment: 'payment',
-    'received payment': 'payment',
+    recivepayment: 'receive_payment',
+    'received payment': 'receive_payment',
     'cash sale': 'sales_receipt',
     'sales return': 'credit_note',
-    payment: 'payment',
+    payment: 'receive_payment',
     bill: 'bill',
     'supplier return': 'supplier_credit',
     suppliercredit: 'supplier_credit',
@@ -33,9 +33,9 @@ const getEditRoute = (type) => {
             return 'invoice.edit';
         case 'bill':
             return 'bill.edit';
-        case 'expense':
-            return 'expense.edit';
         case 'payment':
+            return 'expense.edit';
+        case 'receive_payment':
             return 'payment.edit';
         case 'bank_deposit':
             return 'deposit.edit';

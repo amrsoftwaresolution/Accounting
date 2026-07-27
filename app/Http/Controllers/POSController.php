@@ -9,15 +9,15 @@ use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\ChartOfAcc;
 use App\Models\JournalEntry;
-use App\Models\SalesReceipt;
+use App\Models\SalesInvoice;
 
 class POSController extends Controller
 {
     public function index()
     {
-        // Fetch Items (Inventory and Service)
+        // Fetch Items (Inventory, Service, Bundle, Non-Inventory)
         $items = Item::query()
-            ->whereIn('type', ['inventory', 'service'])
+            ->whereIn('type', ['inventory', 'service', 'bundle', 'non-inventory'])
             ->orderBy('name')
             ->get();
 
@@ -34,15 +34,15 @@ class POSController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $receipt = SalesReceipt::find($journalEntry->transactionable_id);
+        $receipt = SalesInvoice::find($journalEntry->transactionable_id);
 
         if (!$receipt) {
-            abort(404, 'Sales receipt not found');
+            abort(404, 'Sales invoice not found');
         }
 
-        // Fetch Items (Inventory and Service)
+        // Fetch Items (Inventory, Service, Bundle, Non-Inventory)
         $items = Item::query()
-            ->whereIn('type', ['inventory', 'service'])
+            ->whereIn('type', ['inventory', 'service', 'bundle', 'non-inventory'])
             ->orderBy('name')
             ->get();
 
@@ -89,7 +89,7 @@ class POSController extends Controller
 
     private function getNextReceiptNo()
     {
-        $lastReceipt = \App\Models\SalesReceipt::query()->latest()->first();
+        $lastReceipt = \App\Models\SalesInvoice::query()->latest()->first();
         $number = 1;
         if ($lastReceipt && preg_match('/\d+/', $lastReceipt->receipt_no, $matches)) {
             $number = (int)$matches[0] + 1;

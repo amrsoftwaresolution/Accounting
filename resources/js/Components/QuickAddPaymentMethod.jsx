@@ -25,11 +25,11 @@ export default function QuickAddPaymentMethod({ isOpen, onClose, onSuccess }) {
         <SlideOver
             isOpen={isOpen}
             onClose={onClose}
-            title="Add Payment Method"
+            title="Add ReceivePayment Method"
         >
             <form onSubmit={submit} className="space-y-6">
                 <CommonInput
-                    label="Payment Method Name"
+                    label="ReceivePayment Method Name"
                     placeholder="e.g. Cash, Credit Card, Bank Transfer"
                     value={data.name}
                     onChange={(e) => setData("name", e.target.value)}

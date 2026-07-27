@@ -38,7 +38,7 @@ class CompanySettingsController extends Controller
         // Merge company info and specific settings
         $mergedData = array_merge($company->toArray(), $settings->toArray(), [
             'settings_metadata' => [
-                'expenses' => [
+                'payments' => [
                     'show_tags' => $settings->show_tags,
                     'bill_payment_terms' => $settings->bill_payment_terms,
                 ],

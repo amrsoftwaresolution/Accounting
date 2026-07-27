@@ -12,14 +12,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use App\Http\Requests\Accounting\StoreReceivePaymentRequest;
-use App\Http\Requests\Accounting\UpdateReceivePaymentRequest;
+use App\Http\Requests\Accounting\ReceivePaymentRequest;
 
 class ReceivePaymentController extends Controller
 {
     public function create(Request $request)
     {
-        $lastRef = JournalEntry::where('transaction_type', 'payment')
+        $lastRef = JournalEntry::where('transaction_type', 'receive_payment')
             ->whereNotNull('reference')
             ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
             ->first();
@@ -29,27 +28,27 @@ class ReceivePaymentController extends Controller
 
         if ($copyId = $request->query('copy')) {
             $journalEntry = JournalEntry::findOrFail($copyId);
-            $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+            $receivePayment = \App\Models\ReceivePayment::find($journalEntry->transactionable_id);
 
-            if (!$payment) {
-                abort(404, 'Payment not found');
+            if (!$receivePayment) {
+                abort(404, 'ReceivePayment not found');
             }
 
             $paymentData = [
                 'id' => null,
-                'payment_id' => null,
-                'customer' => $payment->customer_id,
-                'email' => $payment->customer->email ?? '',
-                'amountReceived' => number_format($payment->amount, 2, '.', ''),
-                'paymentDate' => $payment->payment_date,
-                'paymentMethod' => $payment->payment_method_id,
-                'depositTo' => $payment->deposit_to_account_id,
+                'receive_payment_id' => null,
+                'customer' => $receivePayment->customer_id,
+                'email' => $receivePayment->customer->email ?? '',
+                'amountReceived' => number_format($receivePayment->amount, 2, '.', ''),
+                'paymentDate' => $receivePayment->payment_date,
+                'paymentMethod' => $receivePayment->payment_method_id,
+                'depositTo' => $receivePayment->deposit_to_account_id,
                 'referenceNo' => $nextPaymentNoLabel,
-                'memo' => $payment->memo,
+                'memo' => $receivePayment->memo,
             ];
 
             return Inertia::render('Transaction/ReceivePaymentForm', [
-                'payment' => $paymentData,
+                'receive_payment' => $paymentData,
                 'paymentMethods' => $this->paymentMethods(),
                 'nextPaymentNo' => $nextPaymentNoLabel,
             ]);
@@ -61,7 +60,7 @@ class ReceivePaymentController extends Controller
         ]);
     }
 
-    public function store(StoreReceivePaymentRequest $request)
+    public function store(ReceivePaymentRequest $request)
     {
         $validated = $request->validated();
 
@@ -70,7 +69,7 @@ class ReceivePaymentController extends Controller
                 $amount = (float) str_replace(',', '', $request->amountReceived);
 
                 // 1. Create Business Document (Payment)
-                $payment = \App\Models\Payment::create([
+                $receivePayment = \App\Models\ReceivePayment::create([
                     'customer_id' => $request->customer,
                     'amount' => $amount,
                     'payment_date' => $request->paymentDate,
@@ -81,12 +80,12 @@ class ReceivePaymentController extends Controller
                 ]);
 
                 // Allocations (Business Details)
-                if ($request->has('invoices')) {
-                    foreach ($request->invoices as $inv) {
+                if ($request->has('credit_invoices')) {
+                    foreach ($request->credit_invoices as $inv) {
                         if ((float)$inv['amount'] > 0) {
-                            \App\Models\PaymentAllocation::create([
-                                'payment_id' => $payment->id,
-                                'invoice_id' => $inv['id'],
+                            \App\Models\ReceivePaymentAllocation::create([
+                                'receive_payment_id' => $receivePayment->id,
+                                'credit_invoice_id' => $inv['id'],
                                 'amount' => (float)$inv['amount'],
                             ]);
                         }
@@ -98,14 +97,14 @@ class ReceivePaymentController extends Controller
                     'date' => $request->paymentDate,
                     'reference' => $request->referenceNo,
                     'description' => $request->memo,
-                    'transaction_type' => 'payment',
+                    'transaction_type' => 'receive_payment',
                     'payee_id' => $request->customer,
                     'payee_type' => Customer::class,
                     'total_amount' => $amount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
-                    'transactionable_id' => $payment->id,
-                    'transactionable_type' => \App\Models\Payment::class,
+                    'transactionable_id' => $receivePayment->id,
+                    'transactionable_type' => \App\Models\ReceivePayment::class,
                 ]);
 
                 // Cash/Bank Account (Debit)
@@ -132,14 +131,14 @@ class ReceivePaymentController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Payment received successfully.');
+                return redirect()->route('dashboard')->with('success', 'ReceivePayment received successfully.');
             }
 
             if ($action === 'new') {
-                return redirect()->route('receive-payment')->with('success', 'Payment received successfully.');
+                return redirect()->route('receive-payment')->with('success', 'ReceivePayment received successfully.');
             }
 
-            return redirect()->route('receive-payment.edit', $journalEntry->id)->with('success', 'Payment received successfully.');
+            return redirect()->route('receive-payment.edit', $journalEntry->id)->with('success', 'ReceivePayment received successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -149,33 +148,33 @@ class ReceivePaymentController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+        $receivePayment = \App\Models\ReceivePayment::find($journalEntry->transactionable_id);
 
-        if (!$payment) {
-            abort(404, 'Payment not found');
+        if (!$receivePayment) {
+            abort(404, 'ReceivePayment not found');
         }
 
         $paymentData = [
             'id' => $journalEntry->id,
-            'payment_id' => $payment->id,
-            'customer' => $payment->customer_id,
-            'email' => $payment->customer->email ?? '',
-            'amountReceived' => number_format($payment->amount, 2, '.', ''),
-            'paymentDate' => $payment->payment_date,
-            'paymentMethod' => $payment->payment_method_id,
-            'depositTo' => $payment->deposit_to_account_id,
-            'referenceNo' => $payment->reference_no,
-            'memo' => $payment->memo,
+            'receive_payment_id' => $receivePayment->id,
+            'customer' => $receivePayment->customer_id,
+            'email' => $receivePayment->customer->email ?? '',
+            'amountReceived' => number_format($receivePayment->amount, 2, '.', ''),
+            'paymentDate' => $receivePayment->payment_date,
+            'paymentMethod' => $receivePayment->payment_method_id,
+            'depositTo' => $receivePayment->deposit_to_account_id,
+            'referenceNo' => $receivePayment->reference_no,
+            'memo' => $receivePayment->memo,
         ];
 
 
         return Inertia::render('Transaction/ReceivePaymentForm', [
-            'payment' => $paymentData,
+            'receive_payment' => $paymentData,
             'paymentMethods' => $this->paymentMethods()
         ]);
     }
 
-    public function update(UpdateReceivePaymentRequest $request, JournalEntry $journalEntry)
+    public function update(ReceivePaymentRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();
 
@@ -184,12 +183,12 @@ class ReceivePaymentController extends Controller
                 $amount = (float) str_replace(',', '', $request->amountReceived);
 
                 // 1. Update Business Document (Payment)
-                $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
-                if (!$payment) {
-                    throw new \Exception('Payment document not found');
+                $receivePayment = \App\Models\ReceivePayment::find($journalEntry->transactionable_id);
+                if (!$receivePayment) {
+                    throw new \Exception('ReceivePayment document not found');
                 }
 
-                $payment->update([
+                $receivePayment->update([
                     'customer_id' => $request->customer,
                     'amount' => $amount,
                     'payment_date' => $request->paymentDate,
@@ -200,13 +199,13 @@ class ReceivePaymentController extends Controller
                 ]);
 
                 // 2. Re-create Allocations
-                $payment->allocations()->delete();
-                if ($request->has('invoices')) {
-                    foreach ($request->invoices as $inv) {
+                $receivePayment->allocations()->delete();
+                if ($request->has('credit_invoices')) {
+                    foreach ($request->credit_invoices as $inv) {
                         if ((float)$inv['amount'] > 0) {
-                            \App\Models\PaymentAllocation::create([
-                                'payment_id' => $payment->id,
-                                'invoice_id' => $inv['id'],
+                            \App\Models\ReceivePaymentAllocation::create([
+                                'receive_payment_id' => $receivePayment->id,
+                                'credit_invoice_id' => $inv['id'],
                                 'amount' => (float)$inv['amount'],
                             ]);
                         }
@@ -247,15 +246,15 @@ class ReceivePaymentController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Payment updated successfully.');
+                return redirect()->route('dashboard')->with('success', 'ReceivePayment updated successfully.');
             }
 
             if ($action === 'new') {
-                return redirect()->route('receive-payment')->with('success', 'Payment updated successfully.');
+                return redirect()->route('receive-payment')->with('success', 'ReceivePayment updated successfully.');
             }
 
 
-            return redirect()->route('receive-payment.edit', $journalEntry->id)->with('success', 'Payment updated successfully.');
+            return redirect()->route('receive-payment.edit', $journalEntry->id)->with('success', 'ReceivePayment updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -268,11 +267,11 @@ class ReceivePaymentController extends Controller
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {
-            $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+            $receivePayment = \App\Models\ReceivePayment::find($journalEntry->transactionable_id);
 
-            if ($payment) {
-                $payment->allocations()->delete();
-                $payment->delete();
+            if ($receivePayment) {
+                $receivePayment->allocations()->delete();
+                $receivePayment->delete();
             }
 
             $journalEntry->lines->each->delete();
@@ -281,31 +280,31 @@ class ReceivePaymentController extends Controller
 
         if ($chartOfAccountId) {
             return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
-                ->with('success', 'Payment deleted successfully.');
+                ->with('success', 'ReceivePayment deleted successfully.');
         }
 
         return redirect()->route('dashboard')
-            ->with('success', 'Payment deleted successfully.');
+            ->with('success', 'ReceivePayment deleted successfully.');
     }
 
     public function print(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $payment = \App\Models\Payment::with('customer', 'company', 'allocations.invoice')->findOrFail($journalEntry->transactionable_id);
-        $company = $payment->company;
+        $receivePayment = \App\Models\ReceivePayment::with('customer', 'company', 'allocations.invoice')->findOrFail($journalEntry->transactionable_id);
+        $company = $receivePayment->company;
 
         $tableItems = [];
-        if ($payment->allocations && $payment->allocations->count() > 0) {
-            foreach ($payment->allocations as $alloc) {
+        if ($receivePayment->allocations && $receivePayment->allocations->count() > 0) {
+            foreach ($receivePayment->allocations as $alloc) {
                 $tableItems[] = [
-                    "Payment applied to Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
+                    "ReceivePayment applied to CreditInvoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
                     ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount, 2),
                 ];
             }
         } else {
             $tableItems[] = [
-                "Payment Received",
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($payment->amount, 2),
+                "ReceivePayment Received",
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($receivePayment->amount, 2),
             ];
         }
 
@@ -314,7 +313,7 @@ class ReceivePaymentController extends Controller
             ->first();
 
         return view('print.document', [
-            'title' => $printSetting?->custom_title ?: 'Payment Receipt',
+            'title' => $printSetting?->custom_title ?: 'ReceivePayment Receipt',
             'headerAlignment' => $printSetting?->header_alignment ?: 'left',
             'staticFooterContent' => $printSetting?->static_footer_content ?: null,
             'layoutConfig' => $printSetting?->layout_config,
@@ -322,17 +321,17 @@ class ReceivePaymentController extends Controller
             'textColor' => $printSetting?->text_color,
             'pageSetup' => $printSetting?->page_setup,
             'blockStyles' => $printSetting?->block_styles,
-            'documentNo' => $payment->reference_no,
-            'date' => $payment->payment_date,
+            'documentNo' => $receivePayment->reference_no,
+            'date' => $receivePayment->payment_date,
             'dueDate' => null,
             'partyLabel' => 'Received From',
-            'partyName' => $payment->customer->display_name ?? $payment->customer->company_name,
+            'partyName' => $receivePayment->customer->display_name ?? $receivePayment->customer->company_name,
             'partyAddress' => '',
-            'partyEmail' => $payment->customer->email ?? '',
+            'partyEmail' => $receivePayment->customer->email ?? '',
             'tableHeaders' => ['Description', 'Amount'],
             'tableItems' => $tableItems,
-            'totalAmount' => $payment->amount,
-            'memo' => $payment->memo,
+            'totalAmount' => $receivePayment->amount,
+            'memo' => $receivePayment->memo,
             'statementMessage' => null,
             'company' => $company,
         ]);

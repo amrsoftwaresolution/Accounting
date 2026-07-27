@@ -9,8 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\ChartOfAcc;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\Accounting\StoreChartOfAccRequest;
-use App\Http\Requests\Accounting\UpdateChartOfAccRequest;
+use App\Http\Requests\Accounting\ChartOfAccRequest;
 
 
 class ChartOfAccController extends Controller
@@ -20,7 +19,7 @@ class ChartOfAccController extends Controller
     {
         $accounts = ChartOfAcc::withSum('journalLines', 'debit')
             ->withSum('journalLines', 'credit')
-            ->orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "expense")')
+            ->orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "payment")')
             ->orderBy('sub_type')
             ->orderBy('name')
             ->get();
@@ -50,7 +49,7 @@ class ChartOfAccController extends Controller
         ]);
     }
 
-    public function store(StoreChartOfAccRequest $request)
+    public function store(ChartOfAccRequest $request)
     {
         // Strip commas from opening_balance if present
         if ($request->has('opening_balance')) {
@@ -118,7 +117,7 @@ class ChartOfAccController extends Controller
 
             // Asset and Expense: Debit increases, Credit decreases
             // Liability, Equity, Income: Credit increases, Debit decreases
-            $isDebitSide = in_array($account->account_type, ['asset', 'expense']);
+            $isDebitSide = in_array($account->account_type, ['asset', 'payment']);
 
             if ($openingBalance > 0) {
                 $accountDebit = $isDebitSide ? $openingBalance : 0;
@@ -158,7 +157,7 @@ class ChartOfAccController extends Controller
         ]);
     }
 
-    public function update(UpdateChartOfAccRequest $request, ChartOfAcc $chartOfAccount)
+    public function update(ChartOfAccRequest $request, ChartOfAcc $chartOfAccount)
     {
         if ($chartOfAccount->isSystemAccount()) {
             if ($request->has('is_locked') && !$request->boolean('is_locked')) {

@@ -133,24 +133,24 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
     };
 
     const getBalanceTargetIndex = (updatedRows, currentIndex, changedField) => {
-    const oppositeField = changedField === "debit" ? "credit" : "debit";
-    const sameField = changedField;
+        const oppositeField = changedField === "debit" ? "credit" : "debit";
+        const sameField = changedField;
 
-    // First pass: find empty row after current
-    for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
-        if (!updatedRows[i][oppositeField] || parseCurrency(updatedRows[i][oppositeField]) === 0) {
-            return i;
+        // First pass: find empty row after current
+        for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
+            if (!updatedRows[i][oppositeField] || parseCurrency(updatedRows[i][oppositeField]) === 0) {
+                return i;
+            }
         }
-    }
 
-    // Second pass: find any row after current with no same-field value
-    for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
-        if (!updatedRows[i][sameField] || parseCurrency(updatedRows[i][sameField]) === 0) {
-            return i;
+        // Second pass: find any row after current with no same-field value
+        for (let i = currentIndex + 1; i < updatedRows.length; i += 1) {
+            if (!updatedRows[i][sameField] || parseCurrency(updatedRows[i][sameField]) === 0) {
+                return i;
+            }
         }
-    }
 
-    return -1;
+        return -1;
     };
 
     const addJournalLine = () => {
@@ -167,110 +167,110 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         setIsDirty(true);
     };
 
-// Handles live typing - NO auto-balance
-const handleItemChangeRaw = (index, field, value) => {
-    setItems((prev) => {
-        const updated = prev.map((row, rowIndex) =>
-            rowIndex === index ? { ...row, [field]: value } : row
-        );
-        const numVal = parseCurrency(value);
-        if (field === "debit" && numVal > 0) updated[index].credit = "";
-        if (field === "credit" && numVal > 0) updated[index].debit = "";
-        return updated;
-    });
-    setIsDirty(true);
-};
-
-// Handles blur (after formatting) - WITH auto-balance
-const handleItemChange = (index, field, value) => {
-    setItems((prev) => {
-        const updated = prev.map((row, rowIndex) =>
-            rowIndex === index ? { ...row, [field]: value } : row
-        );
-
-        const numVal = parseCurrency(value);
-        if (field === "debit" && numVal > 0) updated[index].credit = "";
-        if (field === "credit" && numVal > 0) updated[index].debit = "";
-
-        const suggestion = getSuggestedBalance(updated);
-        const targetIndex = getBalanceTargetIndex(updated, index, field);
-
-        if (index === 0 && prev.length === 2) {
-            const oppositeField = field === "debit" ? "credit" : "debit";
-            if (suggestion) {
-                updated[1][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
-                updated[1][field] = "";
-            }
-        } else if (suggestion && targetIndex >= 0) {
-            const oppositeField = field === "debit" ? "credit" : "debit";
-            updated[targetIndex][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
-        }
-
-        return updated;
-    });
-    setIsDirty(true);
-};
-
-const handleSave = (type = 'save') => {
-    if (Math.abs(totals.debit - totals.credit) > 0.001) {
-        alert("Debits and Credits must balance to save this entry.");
-        return;
-    }
-
-    const currentRefNo = form.journalNo;
-
-    const payload = {
-        action: type,
-        date: form.date,
-        reference_no: form.journalNo,
-        description: form.memo,
-        lines: items
-            .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
-            .map(i => ({
-                ...i,
-                debit: parseCurrency(i.debit),
-                credit: parseCurrency(i.credit)
-            }))
+    // Handles live typing - NO auto-balance
+    const handleItemChangeRaw = (index, field, value) => {
+        setItems((prev) => {
+            const updated = prev.map((row, rowIndex) =>
+                rowIndex === index ? { ...row, [field]: value } : row
+            );
+            const numVal = parseCurrency(value);
+            if (field === "debit" && numVal > 0) updated[index].credit = "";
+            if (field === "credit" && numVal > 0) updated[index].debit = "";
+            return updated;
+        });
+        setIsDirty(true);
     };
 
-    // Use savedEntryId if we already saved once this session
-    const currentId = savedEntryId || journalEntry?.id;
-    const method = currentId ? 'patch' : 'post';
-    const url = currentId ? `/journal-entries/${currentId}` : "/journal-entries";
+    // Handles blur (after formatting) - WITH auto-balance
+    const handleItemChange = (index, field, value) => {
+        setItems((prev) => {
+            const updated = prev.map((row, rowIndex) =>
+                rowIndex === index ? { ...row, [field]: value } : row
+            );
 
-    router[method](url, payload, {
-        preserveState: true,   // STAY ON SAME PAGE
-        preserveScroll: true,
-        onSuccess: (page) => {
-            showToast('success', 'Record saved successfully.');
-            setIsDirty(false);
+            const numVal = parseCurrency(value);
+            if (field === "debit" && numVal > 0) updated[index].credit = "";
+            if (field === "credit" && numVal > 0) updated[index].debit = "";
 
-            // Capture the new entry ID from flash or response
-            if (!savedEntryId && page.props?.flash?.journal_entry_id) {
-                setSavedEntryId(page.props.flash.journal_entry_id);
+            const suggestion = getSuggestedBalance(updated);
+            const targetIndex = getBalanceTargetIndex(updated, index, field);
+
+            if (index === 0 && prev.length === 2) {
+                const oppositeField = field === "debit" ? "credit" : "debit";
+                if (suggestion) {
+                    updated[1][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
+                    updated[1][field] = "";
+                }
+            } else if (suggestion && targetIndex >= 0) {
+                const oppositeField = field === "debit" ? "credit" : "debit";
+                updated[targetIndex][oppositeField] = formatCurrencyValue(suggestion[oppositeField] ?? 0);
             }
 
-            if (type === 'new') {
-                setSavedEntryId(null); // reset for new entry
-                setItems([createBlankLine(), createBlankLine()]);
-                const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
-                const nextNo = String(num + 1).padStart(4, '0');
-                setForm({
-                    date: getInitialDate(),
-                    journalNo: nextNo,
-                    memo: ""
-                });
-            }
-        },
-        onError: (errors) => {
-            alert(Object.values(errors).join('\n') || "Error saving entry ❌");
+            return updated;
+        });
+        setIsDirty(true);
+    };
+
+    const handleSave = (type = 'save') => {
+        if (Math.abs(totals.debit - totals.credit) > 0.001) {
+            alert("Debits and Credits must balance to save this entry.");
+            return;
         }
-    });
-};
+
+        const currentRefNo = form.journalNo;
+
+        const payload = {
+            action: type,
+            date: form.date,
+            reference_no: form.journalNo,
+            description: form.memo,
+            lines: items
+                .filter(i => i.account_id && (parseCurrency(i.debit) > 0 || parseCurrency(i.credit) > 0))
+                .map(i => ({
+                    ...i,
+                    debit: parseCurrency(i.debit),
+                    credit: parseCurrency(i.credit)
+                }))
+        };
+
+        // Use savedEntryId if we already saved once this session
+        const currentId = savedEntryId || journalEntry?.id;
+        const method = currentId ? 'patch' : 'post';
+        const url = currentId ? `/journal-entries/${currentId}` : "/journal-entries";
+
+        router[method](url, payload, {
+            preserveState: true,   // STAY ON SAME PAGE
+            preserveScroll: true,
+            onSuccess: (page) => {
+                showToast('success', 'Record saved successfully.');
+                setIsDirty(false);
+
+                // Capture the new entry ID from flash or response
+                if (!savedEntryId && page.props?.flash?.journal_entry_id) {
+                    setSavedEntryId(page.props.flash.journal_entry_id);
+                }
+
+                if (type === 'new') {
+                    setSavedEntryId(null); // reset for new entry
+                    setItems([createBlankLine(), createBlankLine()]);
+                    const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
+                    const nextNo = String(num + 1).padStart(4, '0');
+                    setForm({
+                        date: getInitialDate(),
+                        journalNo: nextNo,
+                        memo: ""
+                    });
+                }
+            },
+            onError: (errors) => {
+                alert(Object.values(errors).join('\n') || "Error saving entry ❌");
+            }
+        });
+    };
     return (
         <TransactionLayout
             historyType="journal entry"
-            title={isEditing ? `Edit Journal Entry #${form.journalNo || journalEntry?.reference || ''}` : `New Journal Entry`}
+            title={`Journal Entry #${form.journalNo}`}
             amount={totals.debit.toFixed(2)}
             dirty={isDirty}
             onSave={() => handleSave('save')}
@@ -313,7 +313,7 @@ const handleSave = (type = 'save') => {
                         }}
 
                         onFocus={(e) => {
-                        setTimeout(() => e.target.select(), 0);
+                            setTimeout(() => e.target.select(), 0);
                         }}
                         size="sm"
                         inputClass="font-mono"

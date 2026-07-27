@@ -14,7 +14,7 @@ const getEditRoute = (type) => {
             return 'invoice.edit';
         case 'bill':
             return 'bill.edit';
-        case 'expense':
+        case 'payment':
             return 'expense.edit';
         case 'sales_receipt':
             return 'pos.edit';

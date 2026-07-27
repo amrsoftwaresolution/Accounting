@@ -3,10 +3,10 @@ import { getDetailTypeOptions } from './accountDetailTypeOptions';
 
 describe('getDetailTypeOptions', () => {
     it('returns only expense-related detail types for expense accounts', () => {
-        const options = getDetailTypeOptions('expense');
+        const options = getDetailTypeOptions('payment');
 
         expect(options.map(option => option.value)).toEqual([
-            'expense',
+            'payment',
             'cost-of-goods-sold',
         ]);
 

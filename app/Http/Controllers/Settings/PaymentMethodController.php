@@ -27,6 +27,6 @@ class PaymentMethodController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Payment method created successfully.');
+        return redirect()->back()->with('success', 'ReceivePayment method created successfully.');
     }
 }

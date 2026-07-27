@@ -10,8 +10,7 @@ use App\Models\ChartOfAcc;
 use App\Models\Supplier;
 use App\Models\Bill;
 use App\Models\BillItem;
-use App\Http\Requests\Accounting\StoreBillRequest;
-use App\Http\Requests\Accounting\UpdateBillRequest;
+use App\Http\Requests\Accounting\BillRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -73,7 +72,7 @@ class BillController extends Controller
         ]);
     }
 
-    public function store(StoreBillRequest $request)
+    public function store(BillRequest $request)
     {
         $request->validated();
 
@@ -136,10 +135,10 @@ class BillController extends Controller
 
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
-                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
+                        : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
                     BillItem::create([
@@ -184,10 +183,10 @@ class BillController extends Controller
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'expense')->first()?->id);
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'payment')->first()?->id);
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id;
                     }
 
                     JournalEntryLine::create([
@@ -272,7 +271,7 @@ class BillController extends Controller
         ]);
     }
 
-    public function update(UpdateBillRequest $request, JournalEntry $journalEntry)
+    public function update(BillRequest $request, JournalEntry $journalEntry)
     {
         $request->validated();
 
@@ -344,10 +343,10 @@ class BillController extends Controller
 
                         $chartOfAccId = $itemModel?->type === 'inventory'
                             ? ($itemModel->inventory_account_id ?? (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? ChartOfAcc::getOrCreateDefault('inventory')->id))
-                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
+                            : ($itemModel?->expense_account_id ?? (ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id));
 
                         if (!$chartOfAccId) {
-                            $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
+                            $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                         }
 
                         BillItem::create([
@@ -389,10 +388,10 @@ class BillController extends Controller
                     $itemModel = \App\Models\Item::find($productItem['product']);
                     $chartOfAccId = $itemModel?->type === 'inventory'
                         ? ($itemModel->inventory_account_id ?? ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id)
-                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'expense')->first()?->id);
+                        : ($itemModel?->expense_account_id ?? ChartOfAcc::query()->where('account_type', 'payment')->first()?->id);
 
                     if (!$chartOfAccId) {
-                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'expense')->first()?->id;
+                        $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id;
                     }
 
                     JournalEntryLine::create([

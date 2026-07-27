@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sales_receipts', function (Blueprint $table) {
+        Schema::table('sales_invoices', function (Blueprint $table) {
             $table->foreignId('vehicle_id')->nullable()->after('customer_id')->constrained('vehicles')->onDelete('set null');
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sales_receipts', function (Blueprint $table) {
+        Schema::table('sales_invoices', function (Blueprint $table) {
             $table->dropForeign(['vehicle_id']);
             $table->dropColumn('vehicle_id');
         });

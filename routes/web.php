@@ -7,17 +7,17 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Garage\JobCardController;
 
 // Accounting Controllers
-use App\Http\Controllers\Accounting\ExpenseController;
+use App\Http\Controllers\Accounting\PaymentController;
 use App\Http\Controllers\Accounting\PayBillController;
 use App\Http\Controllers\Accounting\JournalEntryController;
 use App\Http\Controllers\Accounting\TransferController;
-use App\Http\Controllers\Accounting\InvoiceController;
+use App\Http\Controllers\Accounting\CreditInvoiceController;
 use App\Http\Controllers\Accounting\BillController;
 use App\Http\Controllers\Accounting\ReceivePaymentController;
-use App\Http\Controllers\Accounting\SalesReceiptController;
+use App\Http\Controllers\Accounting\SalesInvoiceController;
 use App\Http\Controllers\Accounting\BankDepositController;
-use App\Http\Controllers\Accounting\CreditNoteController;
-use App\Http\Controllers\Accounting\SupplierCreditController;
+use App\Http\Controllers\Accounting\InvoiceReturnController;
+use App\Http\Controllers\Accounting\BillReturnController;
 use App\Http\Controllers\Accounting\ChequeController;
 use App\Http\Controllers\Accounting\ChartOfAccController;
 use App\Http\Controllers\Accounting\ReportController;
@@ -58,12 +58,12 @@ Route::middleware('auth')->group(function () {
     });
 
     // Accounting - Expense
-    Route::controller(ExpenseController::class)->prefix('expense')->group(function () {
-        Route::get('/', 'create')->name('expense');
-        Route::post('/', 'store')->name('expense.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('expense.edit');
-        Route::patch('/{journalEntry}', 'update')->name('expense.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('expense.destroy');
+    Route::controller(PaymentController::class)->prefix('receive_payment')->group(function () {
+        Route::get('/', 'create')->name('receive_payment');
+        Route::post('/', 'store')->name('payment.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('payment.edit');
+        Route::patch('/{journalEntry}', 'update')->name('payment.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('payment.destroy');
     });
 
     // Accounting - Pay Bill
@@ -92,8 +92,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{journalEntry}', 'destroy')->name('transfer.destroy');
     });
 
-    // Accounting - Credit Invoice (formerly Invoice)
-    Route::controller(InvoiceController::class)->prefix('credit-invoice')->group(function () {
+    // Accounting - Credit CreditInvoice (formerly Invoice)
+    Route::controller(CreditInvoiceController::class)->prefix('credit-invoice')->group(function () {
         Route::get('/', 'create')->name('credit-invoice');
         Route::post('/', 'store')->name('credit-invoice.store');
         Route::get('/{journalEntry}/edit', 'edit')->name('credit-invoice.edit');
@@ -122,8 +122,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{journalEntry}', 'destroy')->name('receive-payment.destroy');
     });
 
-    // Accounting - Sales Invoice (formerly Sales Receipt)
-    Route::controller(SalesReceiptController::class)->prefix('sales-invoice')->group(function () {
+    // Accounting - Sales CreditInvoice (formerly Sales invoice)
+    Route::controller(SalesInvoiceController::class)->prefix('sales-invoice')->group(function () {
         Route::get('/', 'create')->name('sales-invoice');
         Route::post('/', 'store')->name('sales-invoice.store');
         Route::get('/{journalEntry}/edit', 'edit')->name('sales-invoice.edit');
@@ -132,16 +132,16 @@ Route::middleware('auth')->group(function () {
     });
 
     // Accounting - Bank Deposit
-    Route::controller(BankDepositController::class)->prefix('deposit')->group(function () {
-        Route::get('/', 'create')->name('deposit');
-        Route::post('/', 'store')->name('deposit.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('deposit.edit');
-        Route::patch('/{journalEntry}', 'update')->name('deposit.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('deposit.destroy');
+    Route::controller(BankDepositController::class)->prefix('bank-deposit')->group(function () {
+        Route::get('/', 'create')->name('bank-deposit');
+        Route::post('/', 'store')->name('bank-deposit.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('bank-deposit.edit');
+        Route::patch('/{journalEntry}', 'update')->name('bank-deposit.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('bank-deposit.destroy');
     });
 
     // Accounting - Credit Note (Sales Return)
-    Route::controller(CreditNoteController::class)->prefix('sales-return')->group(function () {
+    Route::controller(InvoiceReturnController::class)->prefix('sales-return')->group(function () {
         Route::get('/', 'create')->name('credit-note');
         Route::post('/', 'store')->name('credit-note.store');
         Route::get('/{journalEntry}/edit', 'edit')->name('credit-note.edit');
@@ -151,7 +151,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Accounting - Supplier Credit (Supplier Return)
-    Route::controller(SupplierCreditController::class)->prefix('supplier-return')->group(function () {
+    Route::controller(BillReturnController::class)->prefix('supplier-return')->group(function () {
         Route::get('/', 'create')->name('supplier-credit');
         Route::post('/', 'store')->name('supplier-credit.store');
         Route::get('/{journalEntry}/edit', 'edit')->name('supplier-credit.edit');

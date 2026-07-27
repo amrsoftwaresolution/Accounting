@@ -73,7 +73,7 @@ class TransactionHistoryController extends Controller
                     'ref_no' => $refNo,
                     'payee_account' => $payeeName,
                     'memo' => $memo,
-                    'debit' => in_array($normalizedType, ['invoice', 'payment', 'bank_deposit', 'expense', 'supplier_credit', 'journal_entry', 'inventory_adjustment']) ? $amount : 0,
+                    'debit' => in_array($normalizedType, ['invoice', 'receive_payment', 'bank_deposit', 'payment', 'supplier_credit', 'journal_entry', 'inventory_adjustment']) ? $amount : 0,
                     'credit' => in_array($normalizedType, ['bill', 'credit_note', 'sales_receipt']) ? $amount : 0,
                     'amount' => $amount,
                 ];
@@ -87,11 +87,11 @@ class TransactionHistoryController extends Controller
         $map = [
             'creditsale' => 'invoice',
             'credit sale' => 'invoice',
-            'recivepayment' => 'payment',
-            'received payment' => 'payment',
+            'recivepayment' => 'receive_payment',
+            'received payment' => 'receive_payment',
             'cash sale' => 'sales_receipt',
             'sales return' => 'credit_note',
-            'payment' => 'payment',
+            'receive_payment' => 'receive_payment',
             'bill' => 'bill',
             'supplier return' => 'supplier_credit',
             'suppliercredit' => 'supplier_credit',

@@ -24,8 +24,8 @@ export default function PurchaseByItem({ reportData, filters, auth }) {
         switch (type) {
             case 'invoice': return 'invoice.edit';
             case 'bill': return 'bill.edit';
-            case 'expense': return 'expense.edit';
-            case 'payment': return 'payment.edit';
+            case 'payment': return 'expense.edit';
+            case 'receive_payment': return 'payment.edit';
             case 'bank_deposit': return 'deposit.edit';
             case 'supplier_credit': return 'supplier-credit.edit';
             case 'credit_note': return 'credit-note.edit';

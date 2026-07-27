@@ -37,7 +37,7 @@ export default function Dashboard({ auth, metrics, lowStockItems, recentJobs }) 
                                 <p className="text-2xl font-black text-slate-900">LKR {parseFloat(metrics.todays_revenue || 0).toFixed(2)}</p>
                             </div>
                             <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center text-green-500">
-                                <span className="material-symbols-outlined">payments</span>
+                                <span className="material-symbols-outlined">receive_payments</span>
                             </div>
                         </div>
 

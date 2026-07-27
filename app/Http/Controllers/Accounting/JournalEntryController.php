@@ -11,9 +11,8 @@ use App\Models\ChartOfAcc;
 use App\Models\Supplier;
 use App\Models\Customer;
 use App\Models\Employee;
-use App\Http\Requests\Accounting\StoreJournalEntryRequest;
-use App\Http\Requests\Accounting\UpdateJournalEntryRequest;
-use App\Http\Requests\Accounting\QuickUpdateJournalEntryRequest;
+use App\Http\Requests\Accounting\JournalEntryRequest;
+use App\Http\Requests\Accounting\QuickJournalEntryRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
@@ -74,7 +73,7 @@ class JournalEntryController extends Controller
         ]);
     }
 
-    public function store(StoreJournalEntryRequest $request)
+    public function store(JournalEntryRequest $request)
 {
     $request->validated();
 
@@ -149,7 +148,7 @@ class JournalEntryController extends Controller
         ]);
     }
 
-    public function update(UpdateJournalEntryRequest $request, JournalEntry $journalEntry)
+    public function update(JournalEntryRequest $request, JournalEntry $journalEntry)
     {
         $request->validated();
 
@@ -206,7 +205,7 @@ class JournalEntryController extends Controller
     /**
      * Quick update a JournalEntry from the Account History register.
      */
-    public function quickUpdate(QuickUpdateJournalEntryRequest $request, JournalEntry $journalEntry)
+    public function quickUpdate(QuickJournalEntryRequest $request, JournalEntry $journalEntry)
     {
         $request->validated();
 

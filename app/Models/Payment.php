@@ -11,22 +11,17 @@ class Payment extends Model
     use HasUuids;
 
     protected $fillable = [
-        'customer_id', 'amount', 'payment_date',
-        'payment_method_id', 'deposit_to_account_id', 'reference_no', 'memo'
+        'payee_id', 'payee_type', 'payment_account_id',
+        'payment_date', 'payment_method_id', 'reference_no',
+        'total_amount', 'memo', 'status'
     ];
 
-    public function allocations()
+    public function items()
     {
-        return $this->hasMany(PaymentAllocation::class);
+        return $this->hasMany(PaymentItem::class);
     }
-
-    public function customer()
+    public function journalEntry()
     {
-        return $this->belongsTo(Customer::class);
-    }
-
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
+        return $this->morphOne(JournalEntry::class, 'transactionable');
     }
 }

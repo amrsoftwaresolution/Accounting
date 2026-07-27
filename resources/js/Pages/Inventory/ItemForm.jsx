@@ -191,7 +191,7 @@ export default function ItemForm({
                         setData('inventory_account_id', newAcc.value);
                     } else if (type === 'income') {
                         setData('income_account_id', newAcc.value);
-                    } else if (type === 'expense') {
+                    } else if (type === 'payment') {
                         setData('expense_account_id', newAcc.value);
                     }
                 }
@@ -421,7 +421,7 @@ export default function ItemForm({
                                 checked={data.is_sold}
                                 onChange={val => setData('is_sold', val)}
                                 label="I sell this to my customers"
-                                description="Enable this if the item is sold in invoices or receipts."
+                                description="Enable this if the item is sold in credit_invoices or receipts."
                             />
                             <Toggle
                                 checked={data.is_purchased}
@@ -542,7 +542,7 @@ export default function ItemForm({
                                 onChange={e => setData('description', e.target.value)}
                                 rows="3"
                                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-sm text-xs focus:border-green-500 focus:ring-2 focus:ring-green-500/20 shadow-sm transition-all resize-none"
-                                placeholder="Description for invoices..."
+                                placeholder="Description for credit_invoices..."
                             />
                             {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
                         </div>
@@ -552,14 +552,14 @@ export default function ItemForm({
                     <FormSection title="Purchasing Information" show={showPurchasingSection}>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Expense Account</label>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Payment Account</label>
                                 <SearchableSelect
                                     options={localExpenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
                                     value={data.expense_account_id}
                                     onChange={val => setData('expense_account_id', val)}
-                                    placeholder="Link to Expense Account"
+                                    placeholder="Link to Payment Account"
                                     onAddNew={() => {
-                                        setAccountModalType('expense');
+                                        setAccountModalType('payment');
                                         setIsAccountModalOpen(true);
                                     }}
                                 />

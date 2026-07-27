@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('company_settings', function (Blueprint $table) {
             $table->id();
-            // Expense Settings
+            // Payment Settings
             $table->text('low_stock_to_emails')->nullable();
             $table->text('low_stock_cc_emails')->nullable();
             $table->text('low_stock_bcc_emails')->nullable();

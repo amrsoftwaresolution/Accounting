@@ -15,11 +15,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/accounts/detail', [LookupController::class, 'accountDetails'])->name('api.accounts.detail');
     Route::get('/accounts/next-code', [LookupController::class, 'nextCode'])->name('api.accounts.next-code');
     Route::post('/accounts/save-date', [LookupController::class, 'saveOpeningBalanceDate'])->name('api.accounts.save-date');
-    Route::get('/expenses/next-ref', [LookupController::class, 'nextExpenseRef'])->name('api.expenses.next-ref');
+    Route::get('/payments/next-ref', [LookupController::class, 'nextExpenseRef'])->name('api.payments.next-ref');
     Route::get('/items', [LookupController::class, 'items'])->name('api.items');
     Route::get('/items/create-options', [LookupController::class, 'itemCreateOptions'])->name('api.items.create-options');
     Route::get('/customers/{customer}', [LookupController::class, 'customerInfo'])->name('api.customers.info');
-    Route::get('/customers/{customer}/invoices', [LookupController::class, 'customerInvoices'])->name('api.customers.invoices');
+    Route::get('/customers/{customer}/credit_invoices', [LookupController::class, 'customerInvoices'])->name('api.customers.credit_invoices');
     Route::get('/suppliers/{supplier}', [LookupController::class, 'supplierInfo'])->name('api.suppliers.info');
     Route::get('/suppliers/{supplier}/bills', [LookupController::class, 'supplierBills'])->name('api.suppliers.bills');
     Route::get('/categories', [LookupController::class, 'categories'])->name('api.categories');

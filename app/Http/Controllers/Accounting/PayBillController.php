@@ -43,7 +43,7 @@ class PayBillController extends Controller
             $journalEntry = DB::transaction(function() use ($request, $validated) {
                 $amount = (float) $validated['amount'];
 
-                $payment = BillPayment::create([
+                $receivePayment = BillPayment::create([
                     'supplier_id' => $request->supplier,
                     'amount' => $amount,
                     'payment_date' => $request->paymentDate,
@@ -59,7 +59,7 @@ class PayBillController extends Controller
                         $allocAmount = (float) $billData['amount'];
                         if ($allocAmount > 0) {
                             BillPaymentAllocation::create([
-                                'bill_payment_id' => $payment->id,
+                                'bill_payment_id' => $receivePayment->id,
                                 'bill_id' => $billData['id'],
                                 'amount_applied' => $allocAmount,
                             ]);
@@ -84,7 +84,7 @@ class PayBillController extends Controller
                     'description' => $request->memo ?? 'Bill Payment',
                     'transaction_type' => 'pay_bill',
                     'transactionable_type' => BillPayment::class,
-                    'transactionable_id' => $payment->id,
+                    'transactionable_id' => $receivePayment->id,
                     'total_amount' => $amount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
@@ -112,7 +112,7 @@ class PayBillController extends Controller
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
                     'chart_of_acc_id' => $apAccount->id ?? ChartOfAcc::first()->id,
-                    'description' => 'Payment for Bill(s)',
+                    'description' => 'ReceivePayment for Bill(s)',
                     'debit' => $amount,
                     'credit' => 0,
                 ]);
@@ -138,10 +138,10 @@ class PayBillController extends Controller
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {
-            $payment = BillPayment::find($journalEntry->transactionable_id);
+            $receivePayment = BillPayment::find($journalEntry->transactionable_id);
 
-            if ($payment) {
-                $allocations = BillPaymentAllocation::where('bill_payment_id', $payment->id)->get();
+            if ($receivePayment) {
+                $allocations = BillPaymentAllocation::where('bill_payment_id', $receivePayment->id)->get();
 
                 foreach ($allocations as $allocation) {
                     $billId = $allocation->bill_id;
@@ -158,7 +158,7 @@ class PayBillController extends Controller
                         }
                     }
                 }
-                $payment->delete();
+                $receivePayment->delete();
             }
 
             $journalEntry->lines()->delete();
@@ -167,31 +167,31 @@ class PayBillController extends Controller
 
         if ($chartOfAccountId) {
             return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
-                ->with('success', 'Bill Payment deleted successfully.');
+                ->with('success', 'Bill ReceivePayment deleted successfully.');
         }
 
         return redirect()->route('dashboard')
-            ->with('success', 'Bill Payment deleted successfully.');
+            ->with('success', 'Bill ReceivePayment deleted successfully.');
     }
 
     public function print(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $payment = BillPayment::with('supplier', 'company', 'allocations.bill')->findOrFail($journalEntry->transactionable_id);
-        $company = $payment->company;
+        $receivePayment = BillPayment::with('supplier', 'company', 'allocations.bill')->findOrFail($journalEntry->transactionable_id);
+        $company = $receivePayment->company;
 
         $tableItems = [];
-        if ($payment->allocations && $payment->allocations->count() > 0) {
-            foreach ($payment->allocations as $alloc) {
+        if ($receivePayment->allocations && $receivePayment->allocations->count() > 0) {
+            foreach ($receivePayment->allocations as $alloc) {
                 $tableItems[] = [
-                    "Payment applied to Bill #" . ($alloc->bill->bill_no ?? 'Unknown'),
+                    "ReceivePayment applied to Bill #" . ($alloc->bill->bill_no ?? 'Unknown'),
                     ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount_applied, 2),
                 ];
             }
         } else {
             $tableItems[] = [
-                "Payment to Supplier",
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($payment->amount, 2),
+                "ReceivePayment to Supplier",
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($receivePayment->amount, 2),
             ];
         }
 
@@ -200,7 +200,7 @@ class PayBillController extends Controller
             ->first();
 
         return view('print.document', [
-            'title' => $printSetting?->custom_title ?: 'Payment Voucher',
+            'title' => $printSetting?->custom_title ?: 'ReceivePayment Voucher',
             'headerAlignment' => $printSetting?->header_alignment ?: 'left',
             'staticFooterContent' => $printSetting?->static_footer_content ?: null,
             'layoutConfig' => $printSetting?->layout_config,
@@ -208,17 +208,17 @@ class PayBillController extends Controller
             'textColor' => $printSetting?->text_color,
             'pageSetup' => $printSetting?->page_setup,
             'blockStyles' => $printSetting?->block_styles,
-            'documentNo' => $payment->reference_no,
-            'date' => $payment->payment_date,
+            'documentNo' => $receivePayment->reference_no,
+            'date' => $receivePayment->payment_date,
             'dueDate' => null,
             'partyLabel' => 'Paid To',
-            'partyName' => $payment->supplier->display_name ?? $payment->supplier->company_name,
+            'partyName' => $receivePayment->supplier->display_name ?? $receivePayment->supplier->company_name,
             'partyAddress' => '',
-            'partyEmail' => $payment->supplier->email ?? '',
+            'partyEmail' => $receivePayment->supplier->email ?? '',
             'tableHeaders' => ['Description', 'Amount'],
             'tableItems' => $tableItems,
-            'totalAmount' => $payment->amount,
-            'memo' => $payment->memo,
+            'totalAmount' => $receivePayment->amount,
+            'memo' => $receivePayment->memo,
             'statementMessage' => null,
             'company' => $company,
         ]);

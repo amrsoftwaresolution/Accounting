@@ -1,7 +1,5 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import CommonInput from '@/Components/CommonInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 
@@ -38,9 +36,8 @@ export default function UpdateProfileInformation({
 
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
-
-                    <TextInput
+                    <CommonInput
+                        label="Name"
                         id="name"
                         className="mt-1 block w-full"
                         value={data.name}
@@ -48,15 +45,13 @@ export default function UpdateProfileInformation({
                         required
                         isFocused
                         autoComplete="name"
+                        error={errors.name}
                     />
-
-                    <InputError className="mt-2" message={errors.name} />
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
+                    <CommonInput
+                        label="Email"
                         id="email"
                         type="email"
                         className="mt-1 block w-full"
@@ -64,9 +59,8 @@ export default function UpdateProfileInformation({
                         onChange={(e) => setData('email', e.target.value)}
                         required
                         autoComplete="username"
+                        error={errors.email}
                     />
-
-                    <InputError className="mt-2" message={errors.email} />
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (

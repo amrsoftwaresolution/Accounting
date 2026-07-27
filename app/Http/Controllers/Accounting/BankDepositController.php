@@ -13,7 +13,7 @@ use App\Models\BankDeposit;
 use App\Models\BankDepositItem;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
-use App\Http\Requests\Accounting\StoreBankDepositRequest;
+use App\Http\Requests\Accounting\BankDepositRequest;
 
 class BankDepositController extends Controller
 {
@@ -24,7 +24,7 @@ class BankDepositController extends Controller
         ]);
     }
 
-    public function store(StoreBankDepositRequest $request)
+    public function store(BankDepositRequest $request)
     {
         $validated = $request->validated();
 
@@ -99,7 +99,7 @@ class BankDepositController extends Controller
         }
 
         if ($action === 'new') {
-            return redirect()->route('deposit')->with('success', 'Bank deposit saved successfully.');
+            return redirect()->route('bank-deposit')->with('success', 'Bank deposit saved successfully.');
         }
 
         return redirect()->back()->with('success', 'Bank deposit saved successfully.');
@@ -134,7 +134,7 @@ class BankDepositController extends Controller
         ]);
     }
 
-    public function update(StoreBankDepositRequest $request, JournalEntry $journalEntry)
+    public function update(BankDepositRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();
         $deposit = BankDeposit::find($journalEntry->transactionable_id);
@@ -207,7 +207,7 @@ class BankDepositController extends Controller
         }
 
         if ($action === 'new') {
-            return redirect()->route('deposit')->with('success', 'Bank deposit updated successfully.');
+            return redirect()->route('bank-deposit')->with('success', 'Bank deposit updated successfully.');
         }
 
         return redirect()->back()->with('success', 'Bank deposit updated successfully.');

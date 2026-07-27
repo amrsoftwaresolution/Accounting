@@ -59,7 +59,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
         { key: "receivedFrom", label: "Received From", placeholder: "Select payee", options: payeeOptions, type: 'select', onAddNew: () => setIsPayeeModalOpen(true) },
         { key: "account", label: "Account", placeholder: "Select account", options: accountOptions, type: 'select', onAddNew: (index) => openAccountModal('item', index) },
         { key: "description", label: "Description", placeholder: "Enter description" },
-        { key: "paymentMethod", label: "Payment Method", placeholder: "Select method", options: paymentMethodOptions, type: 'select' },
+        { key: "paymentMethod", label: "ReceivePayment Method", placeholder: "Select method", options: paymentMethodOptions, type: 'select' },
         { key: "refNo", label: "Ref no.", placeholder: "Reference" },
         { key: "amount", label: "Amount", type: "currency", className: "text-right", inputClass: "text-right" },
     ];
@@ -117,7 +117,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
 
     const handleSave = (action = 'save') => {
         transform((d) => ({ ...d, action }));
-        const url = deposit?.id ? route('deposit.update', deposit.id) : route('deposit.store');
+        const url = deposit?.id ? route('bank-deposit.update', deposit.id) : route('bank-deposit.store');
         const method = deposit?.id ? patch : post;
 
         method(url, {
@@ -160,7 +160,7 @@ export default function BankDepositForm({ auth, nextDepositNo = "", deposit = nu
             onSaveAndNew={() => handleSave('new')}
             onDelete={deposit?.id ? () => {
                 if (confirm('Are you sure you want to delete this deposit?')) {
-                    router.delete(route('deposit.destroy', deposit.id));
+                    router.delete(route('bank-deposit.destroy', deposit.id));
                 }
             } : undefined}
             onAddLine={() => { setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}

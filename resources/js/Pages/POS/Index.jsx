@@ -103,6 +103,13 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                 buffer = '';
             }
 
+            if (e.key === 'Escape') {
+                if (!document.querySelector('[role="dialog"]') && !document.querySelector('.fixed.inset-0')) {
+                    window.location.href = route('dashboard');
+                }
+                return;
+            }
+
             if (e.key === 'Enter') {
                 if (buffer.length > 2) { // Valid barcode should be > 2 chars
                     const scannedItem = items.find(i => i.sku && i.sku.toLowerCase() === buffer.toLowerCase());
@@ -476,7 +483,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => restoreDraft(draft.id)} className="flex-1 bg-primary-50 text-primary-700 text-xs font-bold py-1.5 rounded hover:bg-primary-100">
-                                                        Invoice It
+                                                        CreditInvoice It
                                                     </button>
                                                     <button onClick={() => deleteDraft(draft.id)} className="px-3 bg-red-50 text-red-600 text-xs font-bold py-1.5 rounded hover:bg-red-100">
                                                         Delete

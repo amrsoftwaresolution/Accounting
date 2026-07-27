@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, usePage, Head } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import { showToast } from "@/Components/ToastNotification";
@@ -34,7 +34,7 @@ export default function BillForm({
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [isTermModalOpen, setIsTermModalOpen] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-    const [accountModalType, setAccountModalType] = useState('expense');
+    const [accountModalType, setAccountModalType] = useState('payment');
     const [addingItemRowIndex, setAddingItemRowIndex] = useState(null);
     const actionRef = useRef('save');
     const [payeeOptions, setPayeeOptions] = useState([]);
@@ -205,26 +205,26 @@ export default function BillForm({
         }
     }, [errors.error]);
 
-useEffect(() => {
-    transform((data) => ({
-        ...data,
-        action: actionRef.current,  // ADD THIS LINE
-        items: data.items
-            .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
-            .map(item => ({
-                ...item,
-                amount: String(item.amount).replace(/,/g, '')
-            })),
-        itemDetails: data.itemDetails
-            .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
-            .map(item => ({
-                ...item,
-                qty: String(item.qty).replace(/,/g, ''),
-                rate: String(item.rate).replace(/,/g, ''),
-                amount: String(item.amount).replace(/,/g, '')
-            }))
-    }));
-}, [transform]);;
+    useEffect(() => {
+        transform((data) => ({
+            ...data,
+            action: actionRef.current,  // ADD THIS LINE
+            items: data.items
+                .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .map(item => ({
+                    ...item,
+                    amount: String(item.amount).replace(/,/g, '')
+                })),
+            itemDetails: data.itemDetails
+                .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .map(item => ({
+                    ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
+        }));
+    }, [transform]);;
 
     const totalAmount = (
         data.items.reduce(
@@ -325,8 +325,8 @@ useEffect(() => {
                 setIsDirty(false);
 
                 const newId = page.props?.flash?.journal_entry_id
-                           || page.props?.bill?.id
-                           || page.props?.record?.id;
+                    || page.props?.bill?.id
+                    || page.props?.record?.id;
                 if (newId && !savedEntryId) {
                     setSavedEntryId(newId);
                 }
@@ -368,7 +368,7 @@ useEffect(() => {
             type: "select",
             width: "280px",
             onAddNew: () => {
-                setAccountModalType('expense');
+                setAccountModalType('payment');
                 setIsAccountModalOpen(true);
             }
         },
@@ -437,16 +437,6 @@ useEffect(() => {
                                 size="sm"
                                 error={errors.supplier}
                                 onAddNew={() => setIsPayeeModalOpen(true)}
-                            />
-                        </div>
-                        <div className="w-[380px]">
-                            <CommonInput
-                                type="textarea"
-                                label="Mailing address"
-                                value={data.mailingAddress}
-                                onChange={(e) => { setData("mailingAddress", e.target.value); setIsDirty(true); }}
-                                className="h-[74px]"
-                                size="sm"
                             />
                         </div>
                     </div>

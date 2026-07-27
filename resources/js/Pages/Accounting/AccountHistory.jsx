@@ -62,7 +62,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
             // Asset/Expense: Debit increases, Credit decreases
             // Liability/Equity/Income: Credit increases, Debit decreases
-            const isNormalDebit = ['asset', 'expense'].includes(account.account_type);
+            const isNormalDebit = ['asset', 'payment'].includes(account.account_type);
 
             if (isNormalDebit) {
                 currentBalance += (debit - credit);
@@ -77,7 +77,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         }).reverse(); // Reverse back to show newest first in the table
     }, [account, lines]);
 
-    const isNormalDebit = ['asset', 'expense'].includes(account.account_type);
+    const isNormalDebit = ['asset', 'payment'].includes(account.account_type);
     const isAssetOrExpense = isNormalDebit;
     const col1Label = isAssetOrExpense ? "Increase (Deposit)" : "Decrease (Payment)";
     const col2Label = isAssetOrExpense ? "Decrease (Payment)" : "Increase (Deposit)";
@@ -134,8 +134,8 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
     const getEditRoute = (tx) => {
         const type = tx.journal_entry?.transaction_type;
-        if (type === 'expense') {
-            return route('expense.edit', tx.journal_entry_id);
+        if (type === 'payment') {
+            return route('payment.edit', tx.journal_entry_id);
         }
         if (type === 'invoice') {
             return route('credit-invoice.edit', tx.journal_entry_id);
@@ -143,7 +143,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'bill') {
             return route('bill.edit', tx.journal_entry_id);
         }
-        if (type === 'payment') {
+        if (type === 'receive_payment') {
             return route('receive-payment.edit', tx.journal_entry_id);
         }
         if (type === 'sales_receipt') {
@@ -153,7 +153,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
             return route('transfer.edit', tx.journal_entry_id);
         }
         if (type === 'bank_deposit') {
-            return route('deposit.edit', tx.journal_entry_id);
+            return route('bank-deposit.edit', tx.journal_entry_id);
         }
         if (type === 'credit_note') {
             return route('credit-note.edit', tx.journal_entry_id);

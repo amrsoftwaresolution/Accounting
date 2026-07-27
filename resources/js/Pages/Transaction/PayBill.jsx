@@ -44,8 +44,8 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         setIsDirty(true);
         if (val) {
             // Fetch outstanding bills
-            const url = payment?.payment_id
-                ? route('api.suppliers.bills', val) + '?payment_id=' + payment.payment_id
+            const url = payment?.receive_payment_id
+                ? route('api.suppliers.bills', val) + '?receive_payment_id=' + payment.receive_payment_id
                 : route('api.suppliers.bills', val);
             axios.get(url).then(res => {
                 setBills(res.data.map(bill => ({
@@ -206,7 +206,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 action: 'save'
             });
             if (payment.supplier) {
-                axios.get(route('api.suppliers.bills', payment.supplier) + '?payment_id=' + payment.payment_id)
+                axios.get(route('api.suppliers.bills', payment.supplier) + '?receive_payment_id=' + payment.receive_payment_id)
                     .then(res => {
                         setBills(res.data.map(bill => ({
                             ...bill,
@@ -282,7 +282,7 @@ const submit = (action = 'save') => {
     return (
         <TransactionLayout
             historyType="pay_bill"
-            title={payment?.id ? `Edit Bill Payment no.${data.referenceNo}` : "Pay Bill"}
+            title={payment?.id ? `Edit Bill ReceivePayment no.${data.referenceNo}` : "Pay Bill"}
             amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
@@ -328,13 +328,13 @@ const submit = (action = 'save') => {
                     </div>
                 </div>
 
-                {/* ROW 2: Payment Details */}
+                {/* ROW 2: ReceivePayment Details */}
                 <div className="flex items-end gap-6">
                     <div className="w-[180px]">
                         <CommonInput
                             type="date"
                             placeholder={formatDate(new Date(), dateFormat)}
-                            label="Payment Date"
+                            label="ReceivePayment Date"
                             value={data.paymentDate}
                             onChange={(e) => {
                                 const newDate = e.target.value;
@@ -348,7 +348,7 @@ const submit = (action = 'save') => {
                     </div>
                     <div className="w-[220px]">
                         <SearchableSelect
-                            label="Payment Method"
+                            label="ReceivePayment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
                             onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}
@@ -379,7 +379,7 @@ const submit = (action = 'save') => {
                     </div>
                     <div className="w-[220px]">
                         <SearchableSelect
-                            label="Payment Account"
+                            label="ReceivePayment Account"
                             options={accountOptions}
                             onSearch={fetchAccounts}
                             onAddNew={() => setIsAccountModalOpen(true)}
