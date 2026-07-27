@@ -34,7 +34,7 @@ export default function CheckoutModal({
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Pay Method</label>
                         <select
-                            className="w-full text-sm py-2 border-slate-300 rounded shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                            className="w-full h-[30px] text-xs border-slate-300 rounded-sm shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 py-0 outline-none"
                             value={data.paymentMethod}
                             onChange={e => setData('paymentMethod', e.target.value)}
                             required

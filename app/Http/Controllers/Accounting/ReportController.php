@@ -37,7 +37,7 @@ class ReportController extends Controller
             $type = strtolower($account->account_type);
             if ($type === 'income' || $type === 'liability' || $type === 'equity') {
                 $balance = $total_credit - $total_debit;
-            } else if ($type === 'payment' || $type === 'asset') {
+            } else if ($type === 'expense' || $type === 'asset') {
                 $balance = $total_debit - $total_credit;
             } else {
                 $balance = 0;
@@ -254,7 +254,7 @@ class ReportController extends Controller
             }
         }
 
-        $reportData = $this->buildPnLTree(['income', 'payment'], $lines, $displayBy, $months);
+        $reportData = $this->buildPnLTree(['income', 'expense'], $lines, $displayBy, $months);
 
         return Inertia::render('Reports/ProfitAndLoss', [
             'reportData' => $reportData,
@@ -295,7 +295,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             
             ->where('journal_entries.date', '<', $fiscalYearStart)
-            ->whereIn('chart_of_accs.account_type', ['income', 'payment'])
+            ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
             ->select(
                 DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as retained_earnings')
             )->first();
@@ -308,7 +308,7 @@ class ReportController extends Controller
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             
             ->whereBetween('journal_entries.date', [$fiscalYearStart, $endDate])
-            ->whereIn('chart_of_accs.account_type', ['income', 'payment'])
+            ->whereIn('chart_of_accs.account_type', ['income', 'expense'])
             ->select(
                 DB::raw('SUM(CASE WHEN chart_of_accs.account_type = "income" THEN journal_entry_lines.credit - journal_entry_lines.debit ELSE journal_entry_lines.credit - journal_entry_lines.debit END) as net_income')
             )->first();
@@ -862,7 +862,7 @@ class ReportController extends Controller
                         'id' => $line->line_id,
                         'journal_entry_id' => $line->journal_entry_id,
                         'date' => $line->date,
-                        'transaction_type' => 'invoice',
+                        'transaction_type' => 'credit_invoice',
                         'reference' => $line->reference,
                         'contact_name' => $line->customer_name,
                         'qty' => (float)$line->quantity,
@@ -985,7 +985,7 @@ class ReportController extends Controller
                 'items.sku as item_sku',
                 'suppliers.display_name as supplier_name',
                 'journal_entries.id as journal_entry_id',
-                DB::raw("'Expense' as transaction_type")
+                DB::raw("'Payment' as transaction_type")
             )->get();
 
         $allLines = $billsData->concat($expensesData)->sortBy('date')->values();

@@ -99,7 +99,7 @@ class ChartOfAccController extends Controller
 
             // Asset and Expense: Debit increases, Credit decreases
             // Liability, Equity, Income: Credit increases, Debit decreases
-            $isDebitSide = in_array($account->account_type, ['asset', 'payment']);
+            $isDebitSide = in_array($account->account_type, ['asset', 'expense']);
 
             if ($openingBalance > 0) {
                 $accountDebit = $isDebitSide ? $openingBalance : 0;

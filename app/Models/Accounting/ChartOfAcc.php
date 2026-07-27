@@ -55,7 +55,7 @@ class ChartOfAcc extends Model
         }
 
         $type = strtolower($this->account_type);
-        if (in_array($type, ['asset', 'payment'])) {
+        if (in_array($type, ['asset', 'payment', 'expense'])) {
             return $debit - $credit;
         } else {
             return $credit - $debit;
@@ -87,7 +87,7 @@ class ChartOfAcc extends Model
             ],
             'cost-of-goods-sold' => [
                 'name' => 'Cost of Goods Sold',
-                'account_type' => 'payment',
+                'account_type' => 'expense',
                 'account_code' => '5100',
             ],
             'retained-earnings' => [
@@ -97,7 +97,7 @@ class ChartOfAcc extends Model
             ],
             'uncategorized-expense' => [
                 'name' => 'Uncategorized Expense',
-                'account_type' => 'payment',
+                'account_type' => 'expense',
                 'account_code' => '5800',
             ],
             'uncategorized-income' => [
@@ -114,7 +114,7 @@ class ChartOfAcc extends Model
 
         $def = $defaults[$subType] ?? [
             'name' => 'Default ' . ucfirst(str_replace('-', ' ', $subType)),
-            'account_type' => 'payment',
+            'account_type' => 'expense',
             'account_code' => '9999',
         ];
 

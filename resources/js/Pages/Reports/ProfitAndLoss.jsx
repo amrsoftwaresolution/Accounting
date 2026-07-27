@@ -50,7 +50,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
 
     const income = reportData.income || [];
     const cogs = reportData.cogs || [];
-    const expense = reportData.expense || [];
+    const expense = reportData.payment || reportData.expense || [];
 
     const totalIncome = income.reduce((sum, item) => sum + item.total_balance, 0);
     const totalCogs = cogs.reduce((sum, item) => sum + item.total_balance, 0);

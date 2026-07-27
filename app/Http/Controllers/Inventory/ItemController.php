@@ -78,7 +78,7 @@ class ItemController extends Controller
         return [
             'categories' => ItemCategory::all(),
             'incomeAccounts' => ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->get(),
-            'expenseAccounts' => ChartOfAcc::whereIn('account_type', ['payment', 'cost_of_goods_sold'])->get(),
+            'expenseAccounts' => ChartOfAcc::whereIn('account_type', ['expense', 'cost_of_goods_sold'])->get(),
             'inventoryAccounts' => ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->get(),
             'suppliers' => Supplier::all(),
             'allItems' => Item::all(),

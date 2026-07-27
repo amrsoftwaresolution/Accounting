@@ -4,6 +4,7 @@ namespace App\Models\Accounting;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Models\Supplier;
 
 class BillPayment extends Model
 {

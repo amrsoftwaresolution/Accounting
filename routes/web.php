@@ -104,9 +104,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('journal-entries', JournalEntryController::class);
 
     // POS
-    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-    Route::get('/pos/{journalEntry}/edit', [POSController::class, 'edit'])->name('pos.edit');
-    
+    Route::controller(POSController::class)
+        ->as('pos.')->prefix('pos')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
+    });
 
     // Accounting - Sales Invoice (formerly Sales invoice)
     Route::controller(SalesInvoiceController::class)

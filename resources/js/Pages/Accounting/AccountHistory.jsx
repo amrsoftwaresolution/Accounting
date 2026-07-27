@@ -62,7 +62,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
             // Asset/Expense: Debit increases, Credit decreases
             // Liability/Equity/Income: Credit increases, Debit decreases
-            const isNormalDebit = ['asset', 'payment'].includes(account.account_type);
+            const isNormalDebit = ['asset', 'expense'].includes(account.account_type);
 
             if (isNormalDebit) {
                 currentBalance += (debit - credit);
@@ -77,7 +77,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         }).reverse(); // Reverse back to show newest first in the table
     }, [account, lines]);
 
-    const isNormalDebit = ['asset', 'payment'].includes(account.account_type);
+    const isNormalDebit = ['asset', 'expense'].includes(account.account_type);
     const isAssetOrExpense = isNormalDebit;
     const col1Label = isAssetOrExpense ? "Increase (Deposit)" : "Decrease (Payment)";
     const col2Label = isAssetOrExpense ? "Decrease (Payment)" : "Increase (Deposit)";
@@ -147,7 +147,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
             return route('receive-payment.edit', tx.journal_entry_id);
         }
 
-        if (type === 'sales_receipt') {
+        if (type === 'sales_receipt' || type === 'pos') {
             return route('pos.edit', tx.journal_entry_id);
         }
 

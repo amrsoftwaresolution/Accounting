@@ -27,6 +27,10 @@ const normalizeType = (type = '') => {
 
 const getEditRoute = (type) => {
     switch (type) {
+        case 'pos':
+            return 'pos.edit';
+        case 'sales_receipt':
+            return 'pos.edit';
         case 'invoice':
             return 'credit-invoice.edit';
         case 'bill':

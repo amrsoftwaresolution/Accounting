@@ -95,11 +95,6 @@ export default function AllContactBalanceDetail({ reportData = [], contactType, 
             <Head title={`${contactType} Balance Detail`} />
 
             <div className="text-center mb-8 font-serif relative">
-                <div className="absolute left-0 top-0">
-                    <Link href={route(`reports.${contactType.toLowerCase()}-balance`)} className="text-xs text-blue-600 hover:underline font-sans">
-                        &larr; Back to {contactType} Balance Summary
-                    </Link>
-                </div>
                 <h2 className="text-xl font-bold text-gray-900">{auth.company?.company_name || 'Company'}</h2>
                 <h3 className="text-lg text-gray-800 mt-1">{contactType} Balance Detail</h3>
                 {filters.start_date && filters.end_date ? (

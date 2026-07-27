@@ -24,8 +24,8 @@ class InventoryQuantityAdjustmentItem extends Model
         return $this->belongsTo(InventoryQuantityAdjustment::class, 'inventory_quantity_adjustment_id');
     }
 
-    public function item(): BelongsTo
+    public function item()
     {
-        return $this->belongsTo(Item::class, 'item_id');
+        return $this->belongsTo(\App\Models\Item::class, 'item_id');
     }
 }

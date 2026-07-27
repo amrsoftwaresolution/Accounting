@@ -21,11 +21,11 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
     };
 
     const fetchAccounts = () => {
-        axios.get(route('api.accounts', { type: 'Income' })).then(res => setIncomeAccounts(res.data));
+        axios.get(route('api.accounts', { type: 'income' })).then(res => setIncomeAccounts(res.data));
     };
 
     const fetchExpenseAccounts = () => {
-        axios.get(route('api.accounts', { type: 'Expense' })).then(res => setExpenseAccounts(res.data));
+        axios.get(route('api.accounts', { type: 'expense' })).then(res => setExpenseAccounts(res.data));
     };
 
     useEffect(() => {
@@ -188,12 +188,12 @@ export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
                         </div>
 
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Payment Account</label>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Expense Account</label>
                             <SearchableSelect
                                 options={expenseAccounts}
                                 value={data.expense_account_id}
                                 onChange={val => setData('expense_account_id', val)}
-                                placeholder="Link to Payment Account"
+                                placeholder="Link to Expense Account"
                             />
                         </div>
                     </div>

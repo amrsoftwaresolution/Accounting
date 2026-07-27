@@ -1,5 +1,6 @@
 import { forwardRef, useState, useRef, useEffect, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
+import axios from "axios";
 
 const SearchableSelect = forwardRef(function SearchableSelect({
     options = [],
@@ -18,6 +19,7 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     hideChevron = false,
     tabIndex = 0,
     onKeyDown: externalOnKeyDown,
+    fetchUrl = null,
 }, ref) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -63,15 +65,24 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     }, [isOpen]);
 
 useEffect(() => {
-    if (!onSearch || !isOpen) return;
-    const result = onSearch(search);
-    if (result && typeof result.then === 'function') {
+    if (!isOpen) return;
+
+    if (onSearch) {
+        const result = onSearch(search);
+        if (result && typeof result.then === 'function') {
+            setIsAsyncMode(true);
+            result.then(data => setSearchResults(data || []));
+        } else {
+            setIsAsyncMode(false);
+        }
+    } else if (fetchUrl) {
         setIsAsyncMode(true);
-        result.then(data => setSearchResults(data || []));
-    } else {
-        setIsAsyncMode(false);
+        const separator = fetchUrl.includes('?') ? '&' : '?';
+        axios.get(`${fetchUrl}${separator}search=${encodeURIComponent(search)}`)
+            .then(res => setSearchResults(res.data || []))
+            .catch(() => setSearchResults([]));
     }
-}, [search, isOpen]);
+}, [search, isOpen, onSearch, fetchUrl]);
 
     useEffect(() => {
         const updatePosition = () => {
@@ -148,7 +159,8 @@ useEffect(() => {
             e.preventDefault();
             e.stopPropagation();
             const selected = displayOptions[activeIndex];
-            onChange(selected.value);
+            setSelectedLabel(selected.label);
+            onChange(selected.value, selected);
             setIsOpen(false);
             restoreFocus();
         }
@@ -261,7 +273,8 @@ useEffect(() => {
                                     key={opt.value}
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
-                                        onChange(opt.value);
+                                        setSelectedLabel(opt.label);
+                                        onChange(opt.value, opt);
                                         setIsOpen(false);
                                         setSearch("");
                                         restoreFocus();

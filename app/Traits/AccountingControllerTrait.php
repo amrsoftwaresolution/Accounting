@@ -21,9 +21,9 @@ trait AccountingControllerTrait
     {
         $action = $request->input('action', 'save');
         
-        if ($action === 'close') {
-            return redirect()->to(session('previous_url', route('dashboard')))->with('success', $successMessage);
-        }
+        // if ($action === 'close') {
+        //     return redirect()->route('journal-entries.index')->with('success', $successMessage);
+        // }
 
         if ($action === 'new') {
             return redirect()->route($routePrefix . '.create')->with('success', $successMessage);

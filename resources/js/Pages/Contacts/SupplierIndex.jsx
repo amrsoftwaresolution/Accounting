@@ -34,9 +34,7 @@ export default function SupplierIndex({ suppliers = [] }) {
         setIsEdit(true);
         setSelectedId(supplier.id);
 
-        // Find billing and shipping addresses from the supplier object
-        const billing = supplier.addresses?.find(a => a.type === 'billing') || {};
-        const shipping = supplier.addresses?.find(a => a.type === 'shipping') || {};
+
 
         setData({
             display_name: supplier.display_name || '',

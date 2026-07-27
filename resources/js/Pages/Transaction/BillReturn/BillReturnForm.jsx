@@ -275,7 +275,7 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
     return (
         <TransactionLayout
             historyType="bill_return"
-            title={`Bill Return ${data.reference}`}
+            title={`Bill Return #${data.reference}`}
             amount={totalAmount}
             currencyPrefix={currencyPrefix}
             processing={processing}

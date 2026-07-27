@@ -102,7 +102,7 @@ class TransactionHistoryController extends Controller
             'journal entry'     => 'journal_entry',
             'inventory qty adj' => 'inventory_adjustment',
             'inventory adjustment' => 'inventory_adjustment',
-_        ];
+        ];
 
         $normalized = strtolower(trim(str_replace(['_', ' ', '-'], ' ', $type)));
 

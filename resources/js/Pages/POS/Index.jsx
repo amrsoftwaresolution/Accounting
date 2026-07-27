@@ -20,7 +20,6 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
 
     // Checkout & UI States
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
-    const [checkoutAction, setCheckoutAction] = useState('cash_sale');
     const [isRepairCostExpanded, setIsRepairCostExpanded] = useState(false);
     const [selectedVehicleLabel, setSelectedVehicleLabel] = useState(isEditMode ? existingReceipt.vehicle?.vehicle_no : '');
 
@@ -46,6 +45,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
         memo: isEditMode ? existingReceipt.memo : 'POS Sale',
         statementMessage: isEditMode ? existingReceipt.statementMessage : '',
         repairingCost: isEditMode ? existingReceipt.repairingCost : 0,
+        source: 'pos',
         items: []
     });
 
@@ -169,7 +169,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
             alert("Cart is empty!");
             return;
         }
-        setCheckoutAction(action);
+        setData('action', action);
         setIsCheckoutModalOpen(true);
     };
 
@@ -186,14 +186,10 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
             amount: c.amount,
         }));
 
-        if (checkoutAction === 'credit_sale') {
-            data.action = 'credit_sale';
-        } else {
-            data.action = 'cash_sale';
-        }
+        // data.action is managed by the modal or handleCheckoutClick
 
         if (isEditMode) {
-            patch(route('sales-invoice.update', existingReceipt.id), {
+            patch(route('pos.update', existingReceipt.id), {
                 onSuccess: () => {
                     alert('Sale updated successfully!');
                     setIsCheckoutModalOpen(false);
@@ -201,7 +197,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                 preserveScroll: true
             });
         } else {
-            post(route('sales-invoice.store'), {
+            post(route('pos.store'), {
                 onSuccess: () => {
                     alert('Sale completed successfully! You can now print the bill.');
                     setCart([]);
@@ -483,7 +479,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => restoreDraft(draft.id)} className="flex-1 bg-primary-50 text-primary-700 text-xs font-bold py-1.5 rounded hover:bg-primary-100">
-                                                        CreditInvoice It
+                                                        Invoice It
                                                     </button>
                                                     <button onClick={() => deleteDraft(draft.id)} className="px-3 bg-red-50 text-red-600 text-xs font-bold py-1.5 rounded hover:bg-red-100">
                                                         Delete

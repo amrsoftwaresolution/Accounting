@@ -51,7 +51,7 @@ class ReceivePaymentController extends Controller
             ];
 
             return Inertia::render('Transaction/ReceivePayment/ReceivePaymentForm', [
-                'receive_payment' => $paymentData,
+                'payment' => $paymentData,
                 'paymentMethods' => $this->paymentMethods(),
                 'nextPaymentNo' => $nextPaymentNoLabel,
             ]);
@@ -163,7 +163,7 @@ class ReceivePaymentController extends Controller
 
 
         return Inertia::render('Transaction/ReceivePayment/ReceivePaymentForm', [
-            'receive_payment' => $paymentData,
+            'payment' => $paymentData,
             'paymentMethods' => $this->paymentMethods()
         ]);
     }
@@ -281,13 +281,13 @@ class ReceivePaymentController extends Controller
         if ($receivePayment->allocations && $receivePayment->allocations->count() > 0) {
             foreach ($receivePayment->allocations as $alloc) {
                 $tableItems[] = [
-                    "ReceivePayment applied to CreditInvoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
+                    "Receive Payment applied to Credit Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
                     ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount, 2),
                 ];
             }
         } else {
             $tableItems[] = [
-                "ReceivePayment Received",
+                "Receive Payment Received",
                 ($company->home_currency_prefix ?? 'LKR ') . number_format($receivePayment->amount, 2),
             ];
         }
@@ -297,7 +297,7 @@ class ReceivePaymentController extends Controller
             ->first();
 
         return view('print.document', [
-            'title' => $printSetting?->custom_title ?: 'ReceivePayment Receipt',
+            'title' => $printSetting?->custom_title ?: 'Receive Payment Receipt',
             'headerAlignment' => $printSetting?->header_alignment ?: 'left',
             'staticFooterContent' => $printSetting?->static_footer_content ?: null,
             'layoutConfig' => $printSetting?->layout_config,

@@ -29,10 +29,10 @@ export default function ItemList({ items, filters, counts }) {
     const handleFilterChange = (key, value) => {
         let newStock = stockFilter;
         let newType = typeFilter;
-        
+
         if (key === 'stock_status') newStock = newStock === value ? '' : value; // toggle
         if (key === 'type') newType = value;
-        
+
         if (key === 'stock_status') setStockFilter(newStock);
         if (key === 'type') setTypeFilter(newType);
 
@@ -112,23 +112,23 @@ export default function ItemList({ items, filters, counts }) {
 
                 {/* Top Cards for Inventory Status */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div 
+                    <div
                         onClick={() => handleFilterChange('stock_status', 'low')}
                         className={`bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center justify-center cursor-pointer transition-all ${stockFilter === 'low' ? 'border-orange-500 ring-1 ring-orange-500 bg-orange-50/30' : 'border-slate-200 hover:border-orange-300'}`}
                     >
                         <div className="h-10 w-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mb-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                         </div>
                         <span className="text-2xl font-bold text-slate-900">{counts?.low_stock || 0}</span>
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Low Stock</span>
                     </div>
 
-                    <div 
+                    <div
                         onClick={() => handleFilterChange('stock_status', 'out')}
                         className={`bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center justify-center cursor-pointer transition-all ${stockFilter === 'out' ? 'border-red-500 ring-1 ring-red-500 bg-red-50/30' : 'border-slate-200 hover:border-red-300'}`}
                     >
                         <div className="h-10 w-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         <span className="text-2xl font-bold text-slate-900">{counts?.out_of_stock || 0}</span>
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Out of Stock</span>
@@ -175,7 +175,7 @@ export default function ItemList({ items, filters, counts }) {
                                     <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-1/3">Item Info</th>
                                     <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-1/6">Type</th>
                                     <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest w-1/6">SKU</th>
-                                    <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Qty on Hand</th>
+                                    <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Qty</th>
                                     <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Sales Price</th>
                                     <th className="px-4 py-2.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
@@ -257,9 +257,8 @@ export default function ItemList({ items, filters, counts }) {
                                 <Link
                                     key={idx}
                                     href={link.url || '#'}
-                                    className={`px-3 py-1 text-xs border rounded-md transition-colors ${
-                                        link.active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                                    } ${!link.url ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                                    className={`px-3 py-1 text-xs border rounded-md transition-colors ${link.active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                        } ${!link.url ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                     preserveState preserveScroll
                                 />
@@ -269,10 +268,10 @@ export default function ItemList({ items, filters, counts }) {
                 </div>
             </div>
 
-            <InventoryItemSidePanel 
-                isOpen={isPanelOpen} 
-                onClose={() => setIsPanelOpen(false)} 
-                item={selectedItem} 
+            <InventoryItemSidePanel
+                isOpen={isPanelOpen}
+                onClose={() => setIsPanelOpen(false)}
+                item={selectedItem}
             />
 
             <PrintBarcodeModal

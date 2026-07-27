@@ -15,7 +15,7 @@ class BillReturnItem extends Model
 
     public function item()
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(\App\Models\Item::class);
     }
 
     public function chartOfAccount()

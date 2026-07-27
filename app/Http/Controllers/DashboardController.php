@@ -49,7 +49,7 @@ class DashboardController extends Controller
             ->sum(DB::raw('credit - debit'));
 
         $monthlyExpenses = JournalEntryLine::whereHas('account', function($q) {
-                $q->whereIn('account_type', ['payment', 'cost_of_goods_sold']);
+                $q->whereIn('account_type', ['expense', 'cost_of_goods_sold']);
             })
             ->whereHas('journalEntry', function($q) use ($currentMonth, $currentYear) {
                 $q

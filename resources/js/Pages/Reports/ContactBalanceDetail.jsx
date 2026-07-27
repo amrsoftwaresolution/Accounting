@@ -11,10 +11,10 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
 
     const handleFilterChange = (newFilters) => {
         const routeName = contactType === 'Customer' ? 'reports.customer-detail' : 'reports.supplier-detail';
-        router.get(route(routeName, contact.id), { 
-            start_date: newFilters.start_date, 
+        router.get(route(routeName, contact.id), {
+            start_date: newFilters.start_date,
             end_date: newFilters.end_date,
-            type: newFilters.type 
+            type: newFilters.type
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -46,7 +46,7 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
     }, [lines, contactType, contact.opening_balance]);
 
     const filterElements = (
-        <ReportDateFilter 
+        <ReportDateFilter
             currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
             onFilterChange={handleFilterChange}
         />
@@ -62,11 +62,6 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
             <Head title={`${contactType} Balance Detail - ${displayName}`} />
 
             <div className="text-center mb-8 font-serif relative">
-                <div className="absolute left-0 top-0">
-                    <Link href={route(`reports.${contactType.toLowerCase()}-balance`)} className="text-xs text-blue-600 hover:underline font-sans">
-                        &larr; Back to {contactType} Balance Summary
-                    </Link>
-                </div>
                 <h2 className="text-xl font-bold text-gray-900">{auth.company?.company_name || 'Company'}</h2>
                 <h3 className="text-lg text-gray-800 mt-1">{contactType} Balance Detail</h3>
                 {filters.start_date && filters.end_date ? (

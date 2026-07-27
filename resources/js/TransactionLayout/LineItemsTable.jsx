@@ -111,24 +111,22 @@ export default function LineItemsTable({
             }
         });
     };
-const handleCurrencyBlur = (index, key, rawValue) => {
-    const num = evaluateMathExpression(rawValue);
-    const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const handleCurrencyBlur = (index, key, rawValue) => {
+        const num = evaluateMathExpression(rawValue);
+        const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // Use onCurrencyBlur if provided, otherwise fall back to handleItemChange
-    const updateFn = onCurrencyBlur || handleItemChange;
-    updateFn(index, key, formatted);
+        const updateFn = onCurrencyBlur || handleItemChange;
+        updateFn(index, key, formatted);
 
-    // ADD THIS - if amount is edited directly, back-calculate qty from rate
-    if (key === 'amount') {
-        const item = items[index];
-        const rate = parseFloat(String(item.rate || 0).replace(/,/g, '')) || 0;
-        if (rate > 0) {
-            const newQty = num / rate;
-            updateFn(index, 'qty', String(newQty));
+        if (key === 'amount') {
+            const item = items[index];
+            const rate = parseFloat(String(item.rate || 0).replace(/,/g, '')) || 0;
+            if (rate > 0) {
+                const newQty = num / rate;
+                updateFn(index, 'qty', String(newQty));
+            }
         }
-    }
-};
+    };
 
     return (
         <div className="mt-6 bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
@@ -207,30 +205,30 @@ const handleCurrencyBlur = (index, key, rawValue) => {
                                                     size="sm"
                                                     value={item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : ""}
                                                     onChange={(e) => col.type === 'currency'
-    ? handleCurrencyChange(index, col.key, e.target.value)
-    : col.type === 'number'
-    ? handleItemChange(index, col.key, String(e.target.value).replace(/,/g, ''))
-    : handleItemChange(index, col.key, e.target.value)
-}
+                                                        ? handleCurrencyChange(index, col.key, e.target.value)
+                                                        : col.type === 'number'
+                                                            ? handleItemChange(index, col.key, String(e.target.value).replace(/,/g, ''))
+                                                            : handleItemChange(index, col.key, e.target.value)
+                                                    }
                                                     min={col.min}
                                                     onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
                                                     onFocus={col.type === 'currency'
-    ? handleCurrencyFocus
-    : col.type === 'number'
-    ? (e) => { e.target.value = String(e.target.value).replace(/,/g, ''); e.target.select(); }
-    : col.key === 'description'
-    ? handleDescriptionFocus
-    : undefined}
+                                                        ? handleCurrencyFocus
+                                                        : col.type === 'number'
+                                                            ? (e) => { e.target.value = String(e.target.value).replace(/,/g, ''); e.target.select(); }
+                                                            : col.key === 'description'
+                                                                ? handleDescriptionFocus
+                                                                : undefined}
                                                     onClick={col.key === 'description' ? (e) => e.currentTarget.select() : undefined}
                                                     onBlur={col.type === 'currency'
-    ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
-    : col.type === 'number'
-    ? (e) => {
-        const num = parseFloat(String(e.target.value).replace(/,/g, ''));
-        handleItemChange(index, col.key, isNaN(num) ? "" : String(num));
-    }
-    : undefined
-}
+                                                        ? (e) => handleCurrencyBlur(index, col.key, e.target.value)
+                                                        : col.type === 'number'
+                                                            ? (e) => {
+                                                                const num = parseFloat(String(e.target.value).replace(/,/g, ''));
+                                                                handleItemChange(index, col.key, isNaN(num) ? "" : String(num));
+                                                            }
+                                                            : undefined
+                                                    }
                                                     placeholder={col.placeholder || ""}
                                                     className={col.inputClass || ''}
                                                     tabIndex={col.tabIndex ?? 0}

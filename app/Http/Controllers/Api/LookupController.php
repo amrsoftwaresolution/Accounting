@@ -185,7 +185,7 @@ class LookupController extends Controller
             'liability' => 2000,
             'equity' => 3000,
             'income' => 4000,
-            'payment' => 5000,
+            'expense' => 5000,
         ];
 
         $defaultCode = $defaults[strtolower($type)] ?? 1000;
@@ -250,21 +250,7 @@ class LookupController extends Controller
 
     public function customerInfo(Customer $customer)
     {
-        $customer->load('addresses');
-        $billingAddress = $customer->addresses->where('type', 'billing')->first();
-
-        $addressString = '';
-        if ($billingAddress) {
-            $parts = array_filter([
-                $billingAddress->address_line_1,
-                $billingAddress->address_line_2,
-                $billingAddress->city,
-                $billingAddress->province,
-                $billingAddress->postal_code,
-                $billingAddress->country
-            ]);
-            $addressString = implode(", ", $parts);
-        }
+        $addressString = $customer->address ?? '';
 
         return response()->json([
             'email' => $customer->email,
@@ -313,21 +299,7 @@ class LookupController extends Controller
 
     public function supplierInfo(Supplier $supplier)
     {
-        $supplier->load('addresses');
-        $billingAddress = $supplier->addresses->where('type', 'billing')->first();
-
-        $addressString = '';
-        if ($billingAddress) {
-            $parts = array_filter([
-                $billingAddress->address_line_1,
-                $billingAddress->address_line_2,
-                $billingAddress->city,
-                $billingAddress->province,
-                $billingAddress->postal_code,
-                $billingAddress->country
-            ]);
-            $addressString = implode(", ", $parts);
-        }
+        $addressString = $supplier->address ?? '';
 
         return response()->json([
             'email' => $supplier->email,
@@ -378,7 +350,7 @@ class LookupController extends Controller
     {
         $categories = \App\Models\ItemCategory::orderBy('name')->get();
         $incomeAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->orderBy('account_code')->get();
-        $expenseAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['payment', 'cost_of_goods_sold'])->orderBy('account_code')->get();
+        $expenseAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['expense', 'cost_of_goods_sold'])->orderBy('account_code')->get();
         $inventoryAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->orderBy('account_code')->get();
         $suppliers = \App\Models\Supplier::orderBy('display_name')->get()
             ->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name]);

@@ -11,8 +11,7 @@ use App\Models\Accounting\InvoiceReturnItem;
 use App\Models\Customer;
 use App\Models\Accounting\ChartOfAcc;
 use App\Models\Item;
-use App\Http\Requests\Accounting\StoreInvoiceReturnRequest;
-use App\Http\Requests\Accounting\UpdateInvoiceReturnRequest;
+use App\Http\Requests\Accounting\InvoiceReturnRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -52,7 +51,7 @@ class InvoiceReturnController extends Controller
 
             return Inertia::render('Transaction/InvoiceReturn/InvoiceReturnForm', [
                 'invoiceReturn' => $invoiceReturnData,
-                'ref' => $this->getNextNo(),
+                'nextRef' => $this->getNextNo(),
             ]);
         }
 
@@ -61,7 +60,7 @@ class InvoiceReturnController extends Controller
         ]);
     }
 
-    public function store(StoreInvoiceReturnRequest $request)
+    public function store(InvoiceReturnRequest $request)
     {
         $validated = $request->validated();
 
@@ -185,13 +184,13 @@ class InvoiceReturnController extends Controller
             })->toArray(),
         ];
 
-        return Inertia::render('Transaction/InvoiceReturnForm', [
+        return Inertia::render('Transaction/InvoiceReturn/InvoiceReturnForm', [
             'invoiceReturn' => $invoiceReturnData,
             'nextRef' => $this->getNextNo()
         ]);
     }
 
-    public function update(UpdateInvoiceReturnRequest $request, JournalEntry $journalEntry)
+    public function update(InvoiceReturnRequest $request, JournalEntry $journalEntry)
     {
         $request->validated();
 

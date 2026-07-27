@@ -16,7 +16,7 @@ class InvoiceReturnRequest extends FormRequest
         return [
             'customer' => 'required',
             'date' => 'required|date',
-            'ref' => 'required',
+            'reference' => 'required',
             'items' => 'required|array|min:1',
         ];
     }

@@ -191,7 +191,7 @@ export default function ItemForm({
                         setData('inventory_account_id', newAcc.value);
                     } else if (type === 'income') {
                         setData('income_account_id', newAcc.value);
-                    } else if (type === 'payment') {
+                    } else if (type === 'expense') {
                         setData('expense_account_id', newAcc.value);
                     }
                 }
@@ -304,8 +304,8 @@ export default function ItemForm({
                                 type="button"
                                 onClick={() => handleTypeChange(type.id)}
                                 className={`flex-1 px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition-all text-center ${data.type === type.id
-                                        ? 'bg-blue-600 text-white shadow-md'
-                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                                    ? 'bg-blue-600 text-white shadow-md'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
                                     }`}
                             >
                                 {type.name}
@@ -332,7 +332,7 @@ export default function ItemForm({
                                     <div>
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="font-bold text-slate-600 ml-0.5 text-xs">SKU</label>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setData('sku', 'ITM-' + Math.floor(100000 + Math.random() * 900000))}
                                                 className="text-[10px] text-blue-600 hover:text-blue-800"
@@ -496,7 +496,7 @@ export default function ItemForm({
                         </div>
                     </FormSection>
 
-    {/* 3. Sales Information Section */}
+                    {/* 3. Sales Information Section */}
                     <FormSection title="Sales Information" show={showSalesSection}>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -552,14 +552,14 @@ export default function ItemForm({
                     <FormSection title="Purchasing Information" show={showPurchasingSection}>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Payment Account</label>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Expense Account</label>
                                 <SearchableSelect
                                     options={localExpenseAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
                                     value={data.expense_account_id}
                                     onChange={val => setData('expense_account_id', val)}
-                                    placeholder="Link to Payment Account"
+                                    placeholder="Link to Expense Account"
                                     onAddNew={() => {
-                                        setAccountModalType('payment');
+                                        setAccountModalType('expense');
                                         setIsAccountModalOpen(true);
                                     }}
                                 />

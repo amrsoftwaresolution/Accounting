@@ -32,23 +32,9 @@ class SalesInvoiceController extends Controller
                 abort(404, 'Sales invoice not found');
             }
 
-            $receipt->load('customer.addresses');
+            $receipt->load('customer');
             $customer = $receipt->customer;
-            $billingAddress = '';
-            if ($customer) {
-                $billingAddressModel = $customer->addresses->where('type', 'billing')->first();
-                if ($billingAddressModel) {
-                    $parts = array_filter([
-                        $billingAddressModel->address_line_1,
-                        $billingAddressModel->address_line_2,
-                        $billingAddressModel->city,
-                        $billingAddressModel->province,
-                        $billingAddressModel->postal_code,
-                        $billingAddressModel->country,
-                    ]);
-                    $billingAddress = implode(', ', $parts);
-                }
-            }
+            $billingAddress = $customer ? $customer->address : '';
 
             $receiptData = [
                 'id' => null,
@@ -100,14 +86,12 @@ class SalesInvoiceController extends Controller
                 if (empty($items)) {
                     throw new \Exception('At least one item with product and amount is required.');
                 }
-
-                $repairingCost = (float)($request->repairingCost ?? 0);
                 
                 $totalAmount = collect($items)->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
-                }) + $repairingCost;
+                });
 
-                $customerId = null;
+                $customerId = $request->customer;
                 if ($request->vehicle_id) {
                     $vehicle = \App\Models\Vehicle::find($request->vehicle_id);
                     if ($vehicle) {
@@ -115,65 +99,31 @@ class SalesInvoiceController extends Controller
                     }
                 }
 
-                // Handle Walk-in Customer fallback
-                if (!$customerId) {
-                    $walkInCustomer = \App\Models\Customer::firstOrCreate(
-                        ['display_name' => 'Walk-in Customer'],
-                        ['first_name' => 'Walk-in', 'last_name' => 'Customer', 'is_active' => true]
-                    );
-                    $customerId = $walkInCustomer->id;
-                }
-
                 // 1. Save Document (Business Details)
-                if ($request->action === 'credit_sale') {
-                    $receipt = \App\Models\Accounting\CreditInvoice::create([
-                        'invoice_no' => $request->receiptNo,
-                        'customer_id' => $customerId,
-                        'email' => $request->email,
-                        'invoice_date' => $request->receiptDate,
-                        'due_date' => $request->receiptDate,
-                        'total_amount' => $totalAmount,
-                        'memo' => $request->memo,
-                        'status' => 'posted',
-                    ]);
+                $receipt = SalesInvoice::create([
+                    'receipt_no' => $request->receiptNo,
+                    'customer_id' => $customerId,
+                    'vehicle_id' => $request->vehicle_id,
+                    'email' => $request->email,
+                    'receipt_date' => $request->receiptDate,
+                    'payment_method_id' => $request->paymentMethod,
+                    'deposit_to_account_id' => $request->depositTo,
+                    'total_amount' => $totalAmount,
+                    'memo' => $request->memo,
+                    'statement_message' => $request->statementMessage,
+                    'status' => 'posted',
+                ]);
 
-                    foreach ($items as $itemData) {
-                        \App\Models\Accounting\CreditInvoiceItem::create([
-                            'credit_invoice_id' => $receipt->id,
-                            'item_id' => $itemData['product'],
-                            'description' => $itemData['description'] ?? '',
-                            'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
-                            'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
-                            'amount' => (float) str_replace(',', '', $itemData['amount']),
-                            'service_date' => $itemData['serviceDate'] ?? null,
-                        ]);
-                    }
-                } else {
-                    $receipt = SalesInvoice::create([
-                        'receipt_no' => $request->receiptNo,
-                        'customer_id' => $customerId,
-                        'vehicle_id' => $request->vehicle_id,
-                        'email' => $request->email,
-                        'receipt_date' => $request->receiptDate,
-                        'payment_method_id' => $request->paymentMethod,
-                        'deposit_to_account_id' => $request->depositTo,
-                        'total_amount' => $totalAmount,
-                        'memo' => $request->memo,
-                        'statement_message' => $request->statementMessage,
-                        'status' => 'posted',
+                foreach ($items as $itemData) {
+                    SalesInvoiceItem::create([
+                        'sales_invoice_id' => $receipt->id,
+                        'item_id' => $itemData['product'],
+                        'description' => $itemData['description'] ?? '',
+                        'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
+                        'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
+                        'amount' => (float) str_replace(',', '', $itemData['amount']),
+                        'service_date' => $itemData['serviceDate'] ?? null,
                     ]);
-
-                    foreach ($items as $itemData) {
-                        SalesInvoiceItem::create([
-                            'sales_invoice_id' => $receipt->id,
-                            'item_id' => $itemData['product'],
-                            'description' => $itemData['description'] ?? '',
-                            'quantity' => (float)str_replace(',', '', $itemData['qty'] ?? 1),
-                            'rate' => (float)str_replace(',', '', $itemData['rate'] ?? 0),
-                            'amount' => (float) str_replace(',', '', $itemData['amount']),
-                            'service_date' => $itemData['serviceDate'] ?? null,
-                        ]);
-                    }
                 }
 
                 // 2. Save Financial Truth (Journal Entry)
@@ -181,35 +131,24 @@ class SalesInvoiceController extends Controller
                     'date' => $request->receiptDate,
                     'reference' => $request->receiptNo,
                     'description' => $request->memo,
-                    'transaction_type' => $request->action === 'credit_sale' ? 'invoice' : 'sales_invoice',
+                    'transaction_type' => 'sales_invoice',
                     'payee_id' => $customerId,
                     'payee_type' => Customer::class,
                     'total_amount' => $totalAmount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
                     'transactionable_id' => $receipt->id,
-                    'transactionable_type' => $request->action === 'credit_sale' ? \App\Models\Accounting\CreditInvoice::class : SalesInvoice::class,
+                    'transactionable_type' => SalesInvoice::class,
                 ]);
 
-                if ($request->action === 'credit_sale') {
-                    $arAccount = ChartOfAcc::getOrCreateDefault('accounts-receivable');
-                    JournalEntryLine::create([
-                        'journal_entry_id' => $journalEntry->id,
-                        'chart_of_acc_id' => $arAccount->id,
-                        'debit' => $totalAmount,
-                        'credit' => 0,
-                        'memo' => $request->memo,
-                    ]);
-                } else {
-                    // Debit Cash/Bank (Deposit To)
-                    JournalEntryLine::create([
-                        'journal_entry_id' => $journalEntry->id,
-                        'chart_of_acc_id' => $request->depositTo,
-                        'debit' => $totalAmount,
-                        'credit' => 0,
-                        'memo' => $request->memo,
-                    ]);
-                }
+                // Debit Cash/Bank (Deposit To)
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $request->depositTo,
+                    'debit' => $totalAmount,
+                    'credit' => 0,
+                    'memo' => $request->memo,
+                ]);
 
                 // Credit Income accounts
                 foreach ($items as $itemData) {
@@ -253,21 +192,10 @@ class SalesInvoiceController extends Controller
                     }
                 }
 
-                if ($repairingCost > 0) {
-                    $serviceIncomeAcc = ChartOfAcc::getOrCreateDefault('service-income')->id;
-                    JournalEntryLine::create([
-                        'journal_entry_id' => $journalEntry->id,
-                        'chart_of_acc_id' => $serviceIncomeAcc,
-                        'debit' => 0,
-                        'credit' => $repairingCost,
-                        'memo' => 'Additional Repairing Cost',
-                    ]);
-                }
-
                 return $journalEntry;
             });
 
-            return $this->handleActionRedirect($request, 'sales-invoice', $journalEntry->id, 'Cash sale saved successfully.');
+            return $this->handleActionRedirect($request, 'sales-invoice', $journalEntry->id, 'Sale saved successfully.');
         } catch (\Exception $e) {
             \Log::error('Sales invoice save error: ' . $e->getMessage(), [
                 'data' => $request->all(),
@@ -288,23 +216,9 @@ class SalesInvoiceController extends Controller
             abort(404, 'Sales invoice not found');
         }
 
-        $receipt->load('customer.addresses');
+        $receipt->load('customer');
         $customer = $receipt->customer;
-        $billingAddress = '';
-        if ($customer) {
-            $billingAddressModel = $customer->addresses->where('type', 'billing')->first();
-            if ($billingAddressModel) {
-                $parts = array_filter([
-                    $billingAddressModel->address_line_1,
-                    $billingAddressModel->address_line_2,
-                    $billingAddressModel->city,
-                    $billingAddressModel->province,
-                    $billingAddressModel->postal_code,
-                    $billingAddressModel->country
-                ]);
-                $billingAddress = implode(", ", $parts);
-            }
-        }
+        $billingAddress = $customer ? $customer->address : '';
 
         $receiptData = [
             'id' => $journalEntry->id,
@@ -356,12 +270,11 @@ class SalesInvoiceController extends Controller
                     return (float) str_replace(',', '', $item['amount']);
                 });
 
-                // 1. Update Business Document (SalesInvoice)
+                // 1. Update Business Document
                 $receipt = SalesInvoice::find($journalEntry->transactionable_id);
                 if (!$receipt) {
                     throw new \Exception('Sales invoice document not found');
                 }
-
                 $receipt->update([
                     'receipt_no' => $request->receiptNo,
                     'customer_id' => $request->customer,

@@ -17,7 +17,7 @@ class CreditInvoiceController extends Controller
 {
     public function create(Request $request)
     {
-        $lastRef = JournalEntry::where('transaction_type', 'invoice')
+        $lastRef = JournalEntry::where('transaction_type', 'credit_invoice')
             ->whereNotNull('reference')
             ->orderByRaw('CAST(reference AS UNSIGNED) DESC')
             ->first();
@@ -106,7 +106,7 @@ class CreditInvoiceController extends Controller
                 'due_date' => $request->dueDate,
                 'reference' => $request->invoiceNo,
                 'description' => $request->memo,
-                'transaction_type' => 'invoice',
+                'transaction_type' => 'credit_invoice',
                 'payee_id' => $request->customer,
                 'payee_type' => Customer::class,
                 'total_amount' => $totalAmount,
