@@ -34,7 +34,7 @@ export default function AllContactBalanceDetail({ reportData = [], contactType, 
             case 'bank_deposit': return 'deposit.edit';
             case 'supplier_credit': return 'supplier-credit.edit';
             case 'credit_note': return 'credit-note.edit';
-            case 'sales_receipt': return 'receipt.edit';
+            case 'sales_receipt': return 'pos.edit';
             case 'transfer': return 'transfer.edit';
             case 'cheque': return 'cheque.edit';
             default: return 'journal-entries.edit';

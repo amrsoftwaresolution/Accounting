@@ -1,37 +1,51 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import CommonButton from '@/Components/CommonButton';
-import QuickAddPayee from '@/Components/QuickAddPayee';
+import POSProductCard from './Partials/POSProductCard';
+import POSCartItem from './Partials/POSCartItem';
+import CheckoutModal from './Partials/CheckoutModal';
+import SearchableSelect from '@/Components/SearchableSelect';
 
-export default function POSIndex({ auth, items, customers, paymentMethods, depositAccounts, defaultDepositAccount, nextReceiptNo }) {
-    const [cart, setCart] = useState([]);
+export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, existingReceipt }) {
+    const isEditMode = !!existingReceipt;
+    const currency = auth.company?.home_currency_prefix || '{currency}';
+    const [cart, setCart] = useState(isEditMode ? existingReceipt.items : []);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' or 'service'
-    
-    // Quick Add
-    const [isQuickCustomerOpen, setIsQuickCustomerOpen] = useState(false);
-    
+
     // Drafts
     const [drafts, setDrafts] = useState([]);
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
 
+    // Checkout & UI States
+    const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+    const [checkoutAction, setCheckoutAction] = useState('cash_sale');
+    const [isRepairCostExpanded, setIsRepairCostExpanded] = useState(false);
+    const [selectedVehicleLabel, setSelectedVehicleLabel] = useState(isEditMode ? existingReceipt.vehicle?.vehicle_no : '');
+
     useEffect(() => {
         const savedDrafts = JSON.parse(localStorage.getItem('pos_drafts') || '[]');
         setDrafts(savedDrafts);
+
+        // Lock body scroll for POS
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
     }, []);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        customer: '',
-        email: '',
-        billingAddress: '',
-        receiptDate: new Date().toISOString().split('T')[0],
-        receiptNo: nextReceiptNo,
-        paymentMethod: paymentMethods.length > 0 ? paymentMethods[0].id : '',
-        depositTo: defaultDepositAccount ? defaultDepositAccount.id : '',
-        memo: 'POS Sale',
-        statementMessage: '',
-        repairingCost: 0,
+    const { data, setData, post, patch, processing, errors, reset } = useForm({
+        vehicle_id: isEditMode ? existingReceipt.vehicle_id : '',
+        email: isEditMode ? existingReceipt.email : '',
+        billingAddress: isEditMode ? existingReceipt.billingAddress : '',
+        receiptDate: isEditMode ? existingReceipt.receiptDate : new Date().toISOString().split('T')[0],
+        receiptNo: isEditMode ? existingReceipt.receiptNo : nextReceiptNo,
+        paymentMethod: isEditMode ? existingReceipt.paymentMethod : (paymentMethods.length > 0 ? paymentMethods[0].id : ''),
+        depositTo: isEditMode ? existingReceipt.depositTo : '',
+        memo: isEditMode ? existingReceipt.memo : 'POS Sale',
+        statementMessage: isEditMode ? existingReceipt.statementMessage : '',
+        repairingCost: isEditMode ? existingReceipt.repairingCost : 0,
         items: []
     });
 
@@ -46,7 +60,7 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
         });
     }, [items, searchQuery, activeTab]);
 
-    const addToCart = (item) => {
+    const addToCart = useCallback((item) => {
         setCart(prev => {
             const existing = prev.find(i => i.product === item.id);
             if (existing) {
@@ -67,10 +81,49 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
                 qty: 1,
                 rate: Number(item.sale_price),
                 discount: 0, // percentage
-                amount: Number(item.sale_price),
+                amount: Number(item.sale_price)
             }];
         });
-    };
+    }, []);
+
+    // Barcode Scanner Listener
+    useEffect(() => {
+        let buffer = '';
+        let lastKeyTime = Date.now();
+
+        const handleKeyDown = (e) => {
+            // Check if we are focusing an input
+            const target = e.target.tagName.toLowerCase();
+            const isInput = target === 'input' || target === 'textarea' || target === 'select';
+
+            const currentTime = Date.now();
+            // A scanner typically types very quickly (e.g., < 30ms per character). 
+            // If the time between keystrokes is too large, reset buffer (it's human typing).
+            if (currentTime - lastKeyTime > 50) {
+                buffer = '';
+            }
+
+            if (e.key === 'Enter') {
+                if (buffer.length > 2) { // Valid barcode should be > 2 chars
+                    const scannedItem = items.find(i => i.sku && i.sku.toLowerCase() === buffer.toLowerCase());
+                    if (scannedItem) {
+                        e.preventDefault(); // Prevent form submits if focusing search
+                        addToCart(scannedItem);
+                        setSearchQuery(''); // clear search if they scanned into the search box
+                    }
+                }
+                buffer = '';
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                buffer += e.key;
+            }
+
+            lastKeyTime = currentTime;
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [items, addToCart]);
+
 
     const updateCartQty = (productId, delta) => {
         setCart(prev => prev.map(i => {
@@ -100,15 +153,21 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
         setCart(prev => prev.filter(i => i.product !== productId));
     };
 
-    const cartSubtotal = cart.reduce((sum, item) => sum + item.amount, 0);
+    const cartSubtotal = cart.reduce((sum, item) => sum + Number(item.amount), 0);
     const repairingCostNum = Number(data.repairingCost) || 0;
     const totalAmount = cartSubtotal + repairingCostNum;
 
-    const handleCheckout = (action = 'cash_sale') => {
+    const handleCheckoutClick = (action = 'cash_sale') => {
         if (cart.length === 0 && repairingCostNum === 0) {
             alert("Cart is empty!");
             return;
         }
+        setCheckoutAction(action);
+        setIsCheckoutModalOpen(true);
+    };
+
+    const confirmCheckout = (e) => {
+        e.preventDefault();
 
         // Merge cart into form data
         data.items = cart.map(c => ({
@@ -120,29 +179,47 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
             amount: c.amount,
         }));
 
-        if (action === 'credit_sale') {
+        if (checkoutAction === 'credit_sale') {
             data.action = 'credit_sale';
+        } else {
+            data.action = 'cash_sale';
         }
 
-        post(route('receipt.store'), {
-            onSuccess: () => {
-                alert(action === 'credit_sale' ? 'Credit Sale completed successfully!' : 'Sale completed successfully!');
-                setCart([]);
-                reset('customer', 'email', 'billingAddress', 'repairingCost', 'action');
-            },
-            preserveScroll: true
-        });
+        if (isEditMode) {
+            patch(route('sales-invoice.update', existingReceipt.id), {
+                onSuccess: () => {
+                    alert('Sale updated successfully!');
+                    setIsCheckoutModalOpen(false);
+                },
+                preserveScroll: true
+            });
+        } else {
+            post(route('sales-invoice.store'), {
+                onSuccess: () => {
+                    alert('Sale completed successfully! You can now print the bill.');
+                    setCart([]);
+                    reset('vehicle_id', 'email', 'billingAddress', 'repairingCost', 'action');
+                    setIsCheckoutModalOpen(false);
+                },
+                preserveScroll: true
+            });
+        }
     };
 
     const saveDraft = () => {
         if (cart.length === 0 && repairingCostNum === 0) {
             alert("Nothing to hold.");
-            return;
+            return false;
+        }
+        if (!data.vehicle_id) {
+            alert("Please select a vehicle before holding the sale.");
+            return false;
         }
         const draft = {
             id: Date.now().toString(),
             date: new Date().toLocaleString(),
-            customer: data.customer,
+            vehicle_id: data.vehicle_id,
+            vehicle_label: selectedVehicleLabel,
             repairingCost: data.repairingCost,
             cart: cart,
             total: totalAmount
@@ -151,17 +228,37 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
         localStorage.setItem('pos_drafts', JSON.stringify(updatedDrafts));
         setDrafts(updatedDrafts);
         setCart([]);
-        reset('customer', 'repairingCost');
+        reset('vehicle_id', 'repairingCost');
         alert("Sale saved to Hold/Drafts.");
+        return true;
+    };
+
+    const handleClosePOS = (e) => {
+        e.preventDefault();
+        if (cart.length > 0 || repairingCostNum > 0) {
+            const wantsToHold = window.confirm("You have an active order. Would you like to put it on HOLD before leaving?\n\nClick OK to Hold, or Cancel to leave without saving.");
+            if (wantsToHold) {
+                if (saveDraft()) {
+                    router.get(route('dashboard'));
+                }
+            } else {
+                if (window.confirm("Are you sure you want to discard this order and leave?")) {
+                    router.get(route('dashboard'));
+                }
+            }
+        } else {
+            router.get(route('dashboard'));
+        }
     };
 
     const restoreDraft = (draftId) => {
         const draft = drafts.find(d => d.id === draftId);
         if (draft) {
-            setData('customer', draft.customer || '');
+            setData('vehicle_id', draft.vehicle_id || '');
+            setSelectedVehicleLabel(draft.vehicle_label || '');
             setData('repairingCost', draft.repairingCost || 0);
             setCart(draft.cart || []);
-            
+
             const updatedDrafts = drafts.filter(d => d.id !== draftId);
             localStorage.setItem('pos_drafts', JSON.stringify(updatedDrafts));
             setDrafts(updatedDrafts);
@@ -180,67 +277,66 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
             <Head title="Point of Sale" />
 
             {/* Top Bar inside the viewport (since sidebar is hidden, we have full width) */}
-            <div className="h-[calc(100vh-56px)] flex overflow-hidden bg-slate-100 relative">
-                
-                {/* Close Button overlay */}
-                <Link 
-                    href={route('dashboard')} 
-                    className="absolute top-4 right-[360px] z-50 bg-white border border-slate-200 text-slate-500 hover:text-red-500 p-2 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
-                    title="Close POS"
-                >
-                    <span className="material-symbols-outlined leading-none">close</span>
-                </Link>
+            <div className="flex-1 flex overflow-hidden bg-slate-100">
+
+                {/* Removed overlay Close button */}
 
                 {/* Left Side - Catalog */}
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <div className="p-3 bg-white border-b border-slate-200 shadow-sm z-10 flex gap-3 items-center justify-between">
-                        
+
                         {/* Tab Switcher */}
                         <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                            <button 
+                            <button
                                 onClick={() => setActiveTab('inventory')}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'inventory' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'inventory' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-800'}`}
                             >
                                 Products
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setActiveTab('service')}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'service' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'service' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-800'}`}
                             >
                                 Services
                             </button>
+                            <button
+                                onClick={() => setActiveTab('bundle')}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'bundle' ? 'bg-white shadow-sm text-primary-600' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                                Bundles
+                            </button>
                         </div>
 
-                        {/* Search */}
-                        <div className="relative flex-1 max-w-sm">
-                            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
-                            <input
-                                type="text"
-                                placeholder={`Search ${activeTab === 'inventory' ? 'products' : 'services'}...`}
-                                className="w-full pl-9 pr-3 py-1.5 text-sm border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                        {/* Search & Close */}
+                        <div className="relative flex-1 max-w-sm flex items-center gap-2 ml-auto">
+                            <div className="relative flex-1">
+                                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                                <input
+                                    type="text"
+                                    placeholder={`Search...`}
+                                    className="w-full pl-9 pr-3 py-1.5 text-sm border-slate-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                onClick={handleClosePOS}
+                                className="bg-white border border-slate-200 text-slate-500 hover:text-red-500 p-1.5 rounded-md shadow-sm transition-all flex items-center justify-center h-[34px] w-[34px]"
+                                title="Close POS"
+                            >
+                                <span className="material-symbols-outlined text-[20px] leading-none">close</span>
+                            </button>
                         </div>
                     </div>
-                    
+
                     <div className="flex-1 overflow-y-auto p-4">
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                             {filteredItems.map(item => (
-                                <div 
-                                    key={item.id} 
-                                    className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all flex flex-col h-full active:scale-95"
+                                <POSProductCard currency={currency}
+                                    key={item.id}
+                                    item={item}
                                     onClick={() => addToCart(item)}
-                                >
-                                    <div className="flex-1 mb-2">
-                                        <h3 className="font-bold text-sm text-slate-800 line-clamp-2 leading-snug">{item.name}</h3>
-                                        {item.sku && <p className="text-[10px] text-slate-400 mt-0.5">{item.sku}</p>}
-                                    </div>
-                                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                                        <span className="font-black text-blue-600 text-sm">Rs. {Number(item.sale_price).toFixed(2)}</span>
-                                        <span className="text-xl font-bold text-slate-300 group-hover:text-blue-500 leading-none">+</span>
-                                    </div>
-                                </div>
+                                />
                             ))}
                             {filteredItems.length === 0 && (
                                 <div className="col-span-full py-12 text-center text-slate-500">
@@ -252,147 +348,90 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
                 </div>
 
                 {/* Right Side - Cart & Checkout (Compact) */}
-                <div className="w-[340px] bg-white border-l border-slate-200 flex flex-col shadow-xl z-20">
-                    
+                <div className="w-[340px] bg-white border-l border-slate-200 flex flex-col overflow-hidden shadow-xl z-20">
+
                     <div className="p-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                         <h2 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                            Current Order <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{cart.length}</span>
+                            Current Order <span className="text-[10px] bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full">{cart.length}</span>
                         </h2>
                         <div className="flex gap-2">
                             <button onClick={() => setIsDraftsModalOpen(true)} className="text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-white border border-slate-200 px-2 py-1 rounded">
                                 View Holds ({drafts.length})
                             </button>
-                            <button onClick={saveDraft} className="text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 border border-blue-100 px-2 py-1 rounded">
+                            <button onClick={saveDraft} className="text-[10px] font-bold text-primary-600 hover:text-primary-800 bg-primary-50 border border-primary-100 px-2 py-1 rounded">
                                 Hold Sale
                             </button>
                         </div>
                     </div>
 
                     <div className="p-3 border-b border-slate-200 bg-white space-y-2">
-                        <div>
-                            <div className="flex justify-between items-center mb-1">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase">Customer (Optional)</label>
-                                <button onClick={() => setIsQuickCustomerOpen(true)} className="text-[10px] text-blue-600 font-bold hover:underline">
-                                    + Add New
-                                </button>
-                            </div>
-                            <select 
-                                className="w-full text-xs py-1 border-slate-300 rounded shadow-sm"
-                                value={data.customer}
-                                onChange={e => setData('customer', e.target.value)}
-                            >
-                                <option value="">Walk-in Customer</option>
-                                {customers.map(c => (
-                                    <option key={c.id} value={c.id}>{c.display_name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Pay Method</label>
-                                <select 
-                                    className="w-full text-xs py-1 border-slate-300 rounded"
-                                    value={data.paymentMethod}
-                                    onChange={e => setData('paymentMethod', e.target.value)}
-                                >
-                                    {paymentMethods.map(pm => <option key={pm.id} value={pm.id}>{pm.name}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Deposit To</label>
-                                <select 
-                                    className="w-full text-xs py-1 border-slate-300 rounded"
-                                    value={data.depositTo}
-                                    onChange={e => setData('depositTo', e.target.value)}
-                                >
-                                    {depositAccounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                                </select>
-                            </div>
+                        <div className="mb-2">
+                            <SearchableSelect
+                                placeholder="Select a vehicle"
+                                value={data.vehicle_id}
+                                onChange={(val, opt) => {
+                                    setData('vehicle_id', val);
+                                    setSelectedVehicleLabel(opt ? opt.label : '');
+                                }}
+                                fetchUrl={route('api.vehicles')}
+                                hideLabel={true}
+                            />
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2 bg-slate-50">
+                    <div className={`flex-1 p-2 bg-slate-50 min-h-0 ${cart.length === 0 ? 'flex flex-col items-center justify-center overflow-hidden' : 'overflow-y-auto'}`}>
                         {cart.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm">
+                            <div className="text-slate-400 text-sm">
                                 <p>Order is empty</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 {cart.map(item => (
-                                    <div key={item.product} className="bg-white p-2 rounded border border-slate-200 shadow-sm">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="flex-1">
-                                                <h4 className="font-bold text-xs text-slate-800 leading-tight">{item.name}</h4>
-                                                <p className="text-[10px] text-slate-500">Rs. {Number(item.rate).toFixed(2)}</p>
-                                            </div>
-                                            <button onClick={() => removeFromCart(item.product)} className="text-slate-300 hover:text-red-500 leading-none px-1">
-                                                &times;
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-1 bg-slate-100 rounded p-0.5">
-                                                <button onClick={() => updateCartQty(item.product, -1)} className="w-5 h-5 flex items-center justify-center bg-white rounded text-slate-600 text-xs shadow-sm">-</button>
-                                                <span className="text-xs font-bold w-5 text-center">{item.qty}</span>
-                                                <button onClick={() => updateCartQty(item.product, 1)} className="w-5 h-5 flex items-center justify-center bg-white rounded text-slate-600 text-xs shadow-sm">+</button>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[9px] text-slate-400">Disc %:</span>
-                                                <input 
-                                                    type="number" 
-                                                    className="w-12 text-xs py-0.5 px-1 border-slate-300 rounded text-right"
-                                                    value={item.discount}
-                                                    onChange={(e) => updateCartDiscount(item.product, e.target.value)}
-                                                    min="0" max="100"
-                                                />
-                                            </div>
-
-                                            <span className="font-bold text-xs text-slate-900">Rs. {item.amount.toFixed(2)}</span>
-                                        </div>
-                                    </div>
+                                    <POSCartItem currency={currency}
+                                        key={item.product}
+                                        item={item}
+                                        onRemove={removeFromCart}
+                                        onUpdateQty={updateCartQty}
+                                        onUpdateDiscount={updateCartDiscount}
+                                    />
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    <div className="p-3 bg-white border-t border-slate-200">
-                        <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase">Additional Repair Cost</label>
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs font-bold text-slate-400">Rs.</span>
-                                <input 
-                                    type="number" 
-                                    className="w-20 text-xs py-1 px-2 border-slate-300 rounded text-right font-bold"
-                                    value={data.repairingCost}
-                                    onChange={e => setData('repairingCost', e.target.value)}
-                                    min="0"
-                                />
+                    <div className="p-3 bg-white border-t border-slate-200 shrink-0">
+                        <div className="flex justify-between items-center mb-3">
+                            <div className="flex flex-col">
+                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</span>
+                                <button onClick={() => setIsRepairCostExpanded(!isRepairCostExpanded)} className="text-[9px] text-primary-500 hover:underline flex items-center gap-0.5 mt-0.5 text-left font-bold transition-all">
+                                    {isRepairCostExpanded ? '- Hide Repair Cost' : '+ Add Repair Cost'}
+                                </button>
                             </div>
+                            <span className="text-xl font-black text-primary-600">{currency} {Number(totalAmount).toFixed(2)}</span>
                         </div>
 
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</span>
-                            <span className="text-xl font-black text-blue-600">Rs. {totalAmount.toFixed(2)}</span>
-                        </div>
-                        
+                        {isRepairCostExpanded && (
+                            <div className="flex items-center justify-between mb-3 border-t border-slate-100 pt-3 bg-white">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Additional Repair Cost</label>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-xs font-bold text-slate-400">{currency}</span>
+                                    <input
+                                        type="number"
+                                        className="w-20 text-xs py-1 px-2 border-slate-300 rounded text-right font-bold bg-slate-50 focus:bg-white transition-colors shadow-sm"
+                                        value={data.repairingCost}
+                                        onChange={e => setData('repairingCost', e.target.value)}
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex gap-2">
-                            <CommonButton 
-                                variant="secondary" 
-                                className="w-1/3 py-2.5 text-xs justify-center font-bold border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100" 
-                                onClick={() => handleCheckout('credit_sale')}
+                            <CommonButton
+                                variant="primary"
+                                className="w-full py-1 text-sm justify-center font-bold"
+                                onClick={() => handleCheckoutClick('cash_sale')}
                                 disabled={cart.length === 0 && repairingCostNum === 0}
-                                processing={processing && data.action === 'credit_sale'}
-                            >
-                                Credit Sale
-                            </CommonButton>
-                            
-                            <CommonButton 
-                                variant="primary" 
-                                className="w-2/3 py-2.5 text-sm justify-center font-bold" 
-                                onClick={() => handleCheckout('cash_sale')}
-                                disabled={cart.length === 0 && repairingCostNum === 0}
-                                processing={processing && data.action !== 'credit_sale'}
                             >
                                 Complete Sale
                             </CommonButton>
@@ -409,21 +448,6 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
             </div>
 
             {/* Modals */}
-            <QuickAddPayee 
-                isOpen={isQuickCustomerOpen}
-                onClose={() => setIsQuickCustomerOpen(false)}
-                type="customer"
-                hideEmployeeTab={true}
-                onAdd={(newCustomer) => {
-                    router.reload({
-                        only: ['customers'],
-                        onSuccess: () => {
-                            setData('customer', newCustomer.id);
-                        }
-                    });
-                }}
-            />
-
             {isDraftsModalOpen && (
                 <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh]">
@@ -437,22 +461,22 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
                             ) : (
                                 <div className="space-y-3">
                                     {drafts.map(draft => {
-                                        const custName = draft.customer ? customers.find(c => c.id == draft.customer)?.display_name : 'Walk-in Customer';
+                                        const vehicleStr = draft.vehicle_label || (draft.vehicle_id ? `Vehicle #${draft.vehicle_id}` : 'Walk-in Customer');
                                         return (
-                                            <div key={draft.id} className="border border-slate-200 rounded-lg p-3 hover:border-blue-300 transition-colors">
+                                            <div key={draft.id} className="border border-slate-200 rounded-lg p-3 hover:border-primary-300 transition-colors">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
-                                                        <div className="font-bold text-sm text-slate-800">{custName}</div>
+                                                        <div className="font-bold text-sm text-slate-800">{vehicleStr}</div>
                                                         <div className="text-[10px] text-slate-500">{draft.date}</div>
                                                     </div>
-                                                    <div className="font-black text-blue-600 text-sm">Rs. {Number(draft.total).toFixed(2)}</div>
+                                                    <div className="font-black text-primary-600 text-sm">{currency} {Number(draft.total).toFixed(2)}</div>
                                                 </div>
                                                 <div className="text-xs text-slate-600 mb-3">
-                                                    {draft.cart.length} items {Number(draft.repairingCost) > 0 && `+ Repair Cost (Rs. ${draft.repairingCost})`}
+                                                    {draft.cart.length} items {Number(draft.repairingCost) > 0 && `+ Repair Cost ({currency} ${draft.repairingCost})`}
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => restoreDraft(draft.id)} className="flex-1 bg-blue-50 text-blue-700 text-xs font-bold py-1.5 rounded hover:bg-blue-100">
-                                                        Restore Sale
+                                                    <button onClick={() => restoreDraft(draft.id)} className="flex-1 bg-primary-50 text-primary-700 text-xs font-bold py-1.5 rounded hover:bg-primary-100">
+                                                        Invoice It
                                                     </button>
                                                     <button onClick={() => deleteDraft(draft.id)} className="px-3 bg-red-50 text-red-600 text-xs font-bold py-1.5 rounded hover:bg-red-100">
                                                         Delete
@@ -467,6 +491,18 @@ export default function POSIndex({ auth, items, customers, paymentMethods, depos
                     </div>
                 </div>
             )}
+
+            <CheckoutModal currency={currency}
+                isOpen={isCheckoutModalOpen}
+                onClose={() => setIsCheckoutModalOpen(false)}
+                onConfirm={confirmCheckout}
+                totalAmount={totalAmount}
+                data={data}
+                setData={setData}
+                paymentMethods={paymentMethods}
+                processing={processing}
+                isEditMode={isEditMode}
+            />
 
         </AuthenticatedLayout>
     );

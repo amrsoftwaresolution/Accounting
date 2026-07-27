@@ -293,7 +293,7 @@ const handleSave = (action = 'save') => {
     actionRef.current = action;
     const currentNo = data.invoiceNo;
     const currentId = savedEntryId || invoice?.id;
-    const url = currentId ? route('invoice.update', currentId) : route('invoice.store');
+    const url = currentId ? route('credit-invoice.update', currentId) : route('credit-invoice.store');
     const method = currentId ? patch : post;
 
     method(url, {

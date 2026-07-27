@@ -24,38 +24,39 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
 
     if (!isOpen) return null;
 
-    const categories = [
+        const categories = [
         {
             title: "Customers",
             links: [
-                { name: "Cash Sale", href: route('receipt') },
-                { name: "Credit Sale", href: "/invoice" },
-                { name: "Receive Payment", href: "/payment" },
-                { name: "Sales Return", href: route('credit-note') },
                 { name: "Add Customer", action: 'customer', isSolid: true },
+                { name: "POS Billing", href: route('pos.index') },
+                { name: "Sales Invoice", href: route('sales-invoice') },
+                { name: "Credit Invoice", href: route('credit-invoice') },
+                { name: "Receive Payment", href: route('receive-payment') },
+                { name: "Sales Return", href: route('credit-note') },
             ]
         },
         {
             title: "Suppliers",
             links: [
 
-                { name: "Payment", href: "/expense" },
+                { name: "Add Supplier", action: 'supplier', isSolid: true },
+                { name: "Payment", href: route('expense') },
                 { name: "Bill", href: "/bill" },
                 { name: "Pay Bill", href: route('pay-bill') },
                 { name: "Supplier Return", href: "/supplier-return" },
                 { name: "Cheque", href: "/cheque" },
-                { name: "Add Supplier", action: 'supplier', isSolid: true },
 
             ]
         },
         {
             title: "Other",
             links: [
-                { name: "Bank Deposit", href: "/deposit" },
+                { name: "Add Account", action: 'account', isSolid: true },
+                { name: "Bank Deposit", href: route('deposit') },
                 { name: "Transfer", href: "/transfer" },
                 { name: "Journal entry", href: "/journal" },
                 { name: "Inventory Qty Adj", href: "/inventory-adjustment" },
-                { name: "Add Account", action: 'account', isSolid: true },
             ]
         }
     ];
@@ -66,82 +67,47 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
                 ref={menuRef}
                 className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[600px] overflow-hidden animate-in zoom-in-95 duration-200"
             >
-                {/* Header */}
-                <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-primary-500 flex items-center justify-center text-white shadow-md">
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Create New Action</h2>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
-                    >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
                 {/* Content Grid */}
-                <div className="p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-6">
                     {categories.map((cat, idx) => (
-                        <div key={idx} className="flex flex-col space-y-4">
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[.25em] pb-1 border-b border-slate-50">
-                                {cat.title}
-                            </h3>
-                            <div className="flex flex-col space-y-1">
-                                {cat.links.map((link, lIdx) => (
-                                    link.href ? (
-                                        <Link
-                                            key={lIdx}
-                                            href={link.href}
-                                            onClick={onClose}
-                                            className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all group ${link.isSolid
-                                                ? 'text-primary hover:bg-primary/5 mt-2'
-                                                : 'text-slate-600 hover:text-primary hover:bg-primary/5'
-                                                }`}
-                                        >
-                                            {link.isSolid && <span className="mr-1.5">+</span>}
-                                            {link.name}
-                                        </Link>
-                                    ) : (
-                                        <button
-                                            key={lIdx}
-                                            type="button"
-                                            onClick={() => {
-                                                if (link.action && onOpenQuickAdd) {
-                                                    onOpenQuickAdd(link.action);
-                                                } else {
-                                                    onClose();
-                                                }
-                                            }}
-                                            className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-left group ${link.isSolid
-                                                ? 'text-primary hover:bg-primary/5 mt-2'
-                                                : 'text-slate-600 hover:text-primary hover:bg-primary/5'
-                                                }`}
-                                        >
-                                            {link.isSolid && <span className="mr-1.5">+</span>}
-                                            {link.name}
-                                        </button>
-                                    )
-                                ))}
-                            </div>
+                        <div key={idx} className="flex flex-col space-y-1.5">
+                            {cat.links.map((link, lIdx) => (
+                                link.href ? (
+                                    <Link
+                                        key={lIdx}
+                                        href={link.href}
+                                        onClick={onClose}
+                                        className={`block w-full text-left px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors ${link.isSolid
+                                            ? 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 mb-2'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                                            }`}
+                                    >
+                                        {link.isSolid && <span className="mr-1.5 font-bold">+</span>}
+                                        {link.name}
+                                    </Link>
+                                ) : (
+                                    <button
+                                        key={lIdx}
+                                        type="button"
+                                        onClick={() => {
+                                            if (link.action && onOpenQuickAdd) {
+                                                onOpenQuickAdd(link.action);
+                                            } else {
+                                                onClose();
+                                            }
+                                        }}
+                                        className={`block w-full text-left px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors ${link.isSolid
+                                            ? 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 mb-2'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                                            }`}
+                                    >
+                                        {link.isSolid && <span className="mr-1.5 font-bold">+</span>}
+                                        {link.name}
+                                    </button>
+                                )
+                            ))}
                         </div>
                     ))}
-                </div>
-
-                {/* Footer */}
-                <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors"
-                    >
-                        Show less
-                    </button>
                 </div>
             </div>
         </div>

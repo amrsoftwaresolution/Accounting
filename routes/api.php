@@ -24,5 +24,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/suppliers/{supplier}/bills', [LookupController::class, 'supplierBills'])->name('api.suppliers.bills');
     Route::get('/categories', [LookupController::class, 'categories'])->name('api.categories');
     Route::get('/payment-methods', [LookupController::class, 'paymentMethods'])->name('api.payment-methods');
+    Route::get('/vehicles', [LookupController::class, 'vehicles'])->name('api.vehicles');
     Route::get('/history/{transactionType}', [TransactionHistoryController::class, 'index'])->name('api.history');
 });

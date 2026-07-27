@@ -44,13 +44,12 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                 margin: [0.4, 0.4, 0.4, 0.4],
                 filename: `${cleanTitle}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 800 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
             html2pdf().set(opt).from(element).save();
         }).catch(err => {
             console.error('Failed to load html2pdf library:', err);
-            window.print();
         });
     };
 
@@ -80,13 +79,7 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
                         </button> */}
 
                         <div className="flex gap-2 ml-4 pl-4 border-l border-gray-300">
-                            <button
-                                onClick={() => window.print()}
-                                className="flex items-center gap-1.5 hover:text-gray-900 transition-colors"
-                                title="Print"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                            </button>
+
 
                             <div className="relative" ref={dropdownRef}>
                                 <button

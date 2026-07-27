@@ -68,7 +68,7 @@ export default function Login({ status, canResetPassword }) {
 
                 <div className="pt-2">
                     <PrimaryButton
-                        className="w-full justify-center py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow-lg shadow-green-600/20 uppercase tracking-widest text-xs transition-all duration-200"
+                        className="w-full justify-center py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow-lg shadow-green-600/20 uppercase tracking-widest text-xs transition-all duration-200"
                         disabled={processing}
                     >
                         Sign In

@@ -138,16 +138,16 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
             return route('expense.edit', tx.journal_entry_id);
         }
         if (type === 'invoice') {
-            return route('invoice.edit', tx.journal_entry_id);
+            return route('credit-invoice.edit', tx.journal_entry_id);
         }
         if (type === 'bill') {
             return route('bill.edit', tx.journal_entry_id);
         }
         if (type === 'payment') {
-            return route('payment.edit', tx.journal_entry_id);
+            return route('receive-payment.edit', tx.journal_entry_id);
         }
         if (type === 'sales_receipt') {
-            return route('receipt.edit', tx.journal_entry_id);
+            return route('pos.edit', tx.journal_entry_id);
         }
         if (type === 'transfer') {
             return route('transfer.edit', tx.journal_entry_id);

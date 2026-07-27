@@ -4,6 +4,7 @@ import { useState, useMemo, Fragment } from 'react';
 import CommonButton from '@/Components/CommonButton';
 import CommonInput from '@/Components/CommonInput';
 import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
+import PrintBarcodeModal from './Partials/PrintBarcodeModal';
 
 export default function ItemList({ items, filters, counts }) {
     const { auth } = usePage().props;
@@ -11,6 +12,7 @@ export default function ItemList({ items, filters, counts }) {
     const { delete: destroy } = useForm();
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
+    const [printModalItem, setPrintModalItem] = useState(null);
 
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [typeFilter, setTypeFilter] = useState(filters?.type || 'all');
@@ -65,6 +67,10 @@ export default function ItemList({ items, filters, counts }) {
             case 'bundle': return 'bg-purple-100 text-purple-700';
             default: return 'bg-slate-100 text-slate-700';
         }
+    };
+
+    const handlePrintBarcode = (item, count) => {
+        window.open(route('items.print-barcode', { item: item.id, count }), '_blank');
     };
 
     // Group items by category (they are already sorted by category in the backend)
@@ -225,10 +231,13 @@ export default function ItemList({ items, filters, counts }) {
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={() => handleEdit(item)} className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-all">
+                                                            <button onClick={() => setPrintModalItem(item)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all" title="Print Barcode">
+                                                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                                                            </button>
+                                                            <button onClick={() => handleEdit(item)} className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-all" title="Edit">
                                                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                             </button>
-                                                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all">
+                                                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all" title="Delete">
                                                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                             </button>
                                                         </div>
@@ -260,10 +269,17 @@ export default function ItemList({ items, filters, counts }) {
                 </div>
             </div>
 
-            <InventoryItemSidePanel
-                isOpen={isPanelOpen}
-                onClose={() => setIsPanelOpen(false)}
-                item={selectedItem}
+            <InventoryItemSidePanel 
+                isOpen={isPanelOpen} 
+                onClose={() => setIsPanelOpen(false)} 
+                item={selectedItem} 
+            />
+
+            <PrintBarcodeModal
+                isOpen={!!printModalItem}
+                onClose={() => setPrintModalItem(null)}
+                onConfirm={handlePrintBarcode}
+                item={printModalItem}
             />
         </AuthenticatedLayout>
     );

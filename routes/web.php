@@ -92,14 +92,14 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{journalEntry}', 'destroy')->name('transfer.destroy');
     });
 
-    // Accounting - Invoice
-    Route::controller(InvoiceController::class)->prefix('invoice')->group(function () {
-        Route::get('/', 'create')->name('invoice');
-        Route::post('/', 'store')->name('invoice.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('invoice.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('invoice.print');
-        Route::patch('/{journalEntry}', 'update')->name('invoice.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('invoice.destroy');
+    // Accounting - Credit Invoice (formerly Invoice)
+    Route::controller(InvoiceController::class)->prefix('credit-invoice')->group(function () {
+        Route::get('/', 'create')->name('credit-invoice');
+        Route::post('/', 'store')->name('credit-invoice.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('credit-invoice.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('credit-invoice.print');
+        Route::patch('/{journalEntry}', 'update')->name('credit-invoice.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('credit-invoice.destroy');
     });
 
     // Accounting - Bill
@@ -113,22 +113,22 @@ Route::middleware('auth')->group(function () {
     });
 
     // Accounting - Receive Payment
-    Route::controller(ReceivePaymentController::class)->prefix('payment')->group(function () {
-        Route::get('/', 'create')->name('payment');
-        Route::post('/', 'store')->name('payment.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('payment.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('payment.print');
-        Route::patch('/{journalEntry}', 'update')->name('payment.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('payment.destroy');
+    Route::controller(ReceivePaymentController::class)->prefix('receive-payment')->group(function () {
+        Route::get('/', 'create')->name('receive-payment');
+        Route::post('/', 'store')->name('receive-payment.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('receive-payment.edit');
+        Route::get('/{journalEntry}/print', 'print')->name('receive-payment.print');
+        Route::patch('/{journalEntry}', 'update')->name('receive-payment.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('receive-payment.destroy');
     });
 
-    // Accounting - Sales Receipt
-    Route::controller(SalesReceiptController::class)->prefix('sales-receipt')->group(function () {
-        Route::get('/', 'create')->name('receipt');
-        Route::post('/', 'store')->name('receipt.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('receipt.edit');
-        Route::patch('/{journalEntry}', 'update')->name('receipt.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('receipt.destroy');
+    // Accounting - Sales Invoice (formerly Sales Receipt)
+    Route::controller(SalesReceiptController::class)->prefix('sales-invoice')->group(function () {
+        Route::get('/', 'create')->name('sales-invoice');
+        Route::post('/', 'store')->name('sales-invoice.store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('sales-invoice.edit');
+        Route::patch('/{journalEntry}', 'update')->name('sales-invoice.update');
+        Route::delete('/{journalEntry}', 'destroy')->name('sales-invoice.destroy');
     });
 
     // Accounting - Bank Deposit
@@ -177,6 +177,7 @@ Route::middleware('auth')->group(function () {
     // Reports
     Route::controller(ReportController::class)->prefix('reports')->group(function () {
         Route::get('/', 'index')->name('reports.index');
+        Route::get('/vehicle-history', 'vehicleHistory')->name('reports.vehicle-history');
         Route::get('/profit-loss', 'profitAndLoss')->name('reports.profit-loss');
         Route::get('/balance-sheet', 'balanceSheet')->name('reports.balance-sheet');
         Route::get('/customer-balance', 'customerBalance')->name('reports.customer-balance');
@@ -195,6 +196,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Inventory
+    Route::get('items/{item}/print-barcode', [ItemController::class, 'printBarcode'])->name('items.print-barcode');
     Route::resource('items', ItemController::class);
     Route::resource('item-categories', ItemCategoryController::class);
     Route::controller(InventoryQuantityAdjustmentController::class)->prefix('inventory-adjustment')->group(function () {
@@ -230,6 +232,7 @@ Route::middleware('auth')->group(function () {
 
     // POS
     Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+    Route::get('/pos/{journalEntry}/edit', [POSController::class, 'edit'])->name('pos.edit');
     
     // History
     Route::get('/history/{transactionType}', [TransactionHistoryController::class, 'page'])->name('history.index');

@@ -8,6 +8,8 @@ import MoreOptionsMenu from '@/Components/MoreOptionsMenu';
 import ToastNotification from '@/Components/ToastNotification';
 import QuickAddPayee from '@/Components/QuickAddPayee';
 import QuickAddAccount from '@/Components/QuickAddAccount';
+import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
+import Sidebar from './Partials/Sidebar';
 
 export default function AuthenticatedLayout({ header, children, hideSidebar = false }) {
     const page = usePage();
@@ -38,24 +40,23 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
 
     const navigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
-        { name: 'Chart of Accounts', href: route('chart-of-account.index'), icon: 'accounting' },
         { name: 'Customer Registrations', href: route('customers.index'), icon: 'users' },
-        { name: 'POS Billing', href: route('pos.index'), icon: 'inventory' },
-        { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
-        { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle'  },
+        { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle' },
         { name: 'Job Registrations', href: route('job-cards.index'), icon: 'document' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
-        { name: 'User Management', href: route('users.index'), adminOnly: true, icon: 'users' },
+        { name: 'Chart of Accounts', href: route('chart-of-account.index'), icon: 'accounting' },
+        { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
         { name: 'Reports', href: route('reports.index'), adminOnly: true, icon: 'finance' },
+        { name: 'User Management', href: route('users.index'), adminOnly: true, icon: 'users' },
     ];
 
     return (
-        <div className="min-h-screen bg-[#f8fafc]">
+        <div className={`bg-[#f8fafc] ${hideSidebar ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'}`}>
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
                 <div className="fixed inset-0 z-40 lg:hidden px-4 py-6 bg-slate-900/60 backdrop-blur-sm transition-opacity print:hidden" onClick={() => setSidebarOpen(false)}>
                     <div className="fixed inset-y-0 left-0 w-56 bg-slate-900 shadow-2xl print:hidden" onClick={e => e.stopPropagation()}>
-                        <SidebarContent
+                        <Sidebar
                             navigation={navigation}
                             user={user}
                             onQuickMenuOpen={() => {
@@ -71,7 +72,7 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
             {isSidebarVisible && !hideSidebar && (
                 <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-56 print:hidden">
                     <div className="flex flex-col w-full bg-slate-900 border-r border-slate-800 shadow-2xl print:hidden">
-                        <SidebarContent
+                        <Sidebar
                             navigation={navigation}
                             user={user}
                             onQuickMenuOpen={() => setIsQuickMenuOpen(true)}
@@ -80,7 +81,7 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                 </div>
             )}
 
-            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible && !hideSidebar ? 'lg:pl-56' : ''} print:pl-0`}>
+            <div className={`transition-all duration-300 ease-in-out ${isSidebarVisible && !hideSidebar ? 'lg:pl-56' : ''} print:pl-0 ${hideSidebar ? 'flex-1 flex flex-col min-h-0' : ''}`}>
                 {/* Header / Top Bar */}
                 <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-6 print:hidden">
                     <div className="flex items-center gap-3">
@@ -120,6 +121,11 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                         )}
 
 
+                        {/* POS Billing Shortcut */}
+                        <Link href={route('pos.index')} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative" title="POS Billing">
+                            <span className="material-symbols-outlined text-[20px] leading-none block">point_of_sale</span>
+                        </Link>
+
                         {/* Notifications (Mock) */}
                         <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
                             <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-primary-500 border-2 border-white" />
@@ -156,7 +162,7 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                 </header>
 
                 {/* Page Content */}
-                <main className="relative z-0 min-h-[calc(100vh-64px)]">
+                <main className={`relative z-0 ${hideSidebar ? 'flex-1 flex overflow-hidden min-h-0' : 'min-h-[calc(100vh-64px)]'}`}>
                     {children}
                 </main>
             </div>
@@ -181,153 +187,15 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                 onClose={() => setQuickAddType(null)}
             />
 
+            <InventoryItemSidePanel
+                isOpen={quickAddType === 'item'}
+                onClose={() => setQuickAddType(null)}
+                onSuccess={() => setQuickAddType(null)}
+            />
+
             <ToastNotification />
         </div>
     );
 }
 
-function SidebarContent({ navigation, user, onQuickMenuOpen }) {
-    const scrollContainerRef = useRef(null);
 
-    const getInitialOpenMenu = () => {
-        if (typeof window === 'undefined') return 'reports';
-        const stored = sessionStorage.getItem('sidebar_open_menu');
-        if (stored !== null) {
-            return stored === 'null' ? null : stored;
-        }
-
-        const currentUrl = window.location.href;
-        const currentPath = window.location.pathname;
-
-        const matchesPath = (href) => {
-            if (!href) return false;
-            if (href.startsWith('http://') || href.startsWith('https://')) {
-                return currentUrl.startsWith(href) || href.includes(currentPath);
-            }
-            return currentPath.startsWith(href) || href.startsWith(currentPath);
-        };
-
-        return null;
-    };
-
-    const [openMenu, setOpenMenu] = useState(getInitialOpenMenu);
-
-    useEffect(() => {
-        sessionStorage.setItem('sidebar_open_menu', openMenu === null ? 'null' : openMenu);
-    }, [openMenu]);
-
-    useEffect(() => {
-        const savedScrollPosition = sessionStorage.getItem('sidebar_scroll_position');
-        if (savedScrollPosition && scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = parseInt(savedScrollPosition, 10);
-
-            // Just in case elements haven't fully rendered or settled yet
-            const timeoutId = setTimeout(() => {
-                if (scrollContainerRef.current) {
-                    scrollContainerRef.current.scrollTop = parseInt(savedScrollPosition, 10);
-                }
-            }, 50);
-            return () => clearTimeout(timeoutId);
-        }
-    }, []);
-
-    const handleScroll = (e) => {
-        sessionStorage.setItem('sidebar_scroll_position', e.target.scrollTop);
-    };
-
-    return (
-        <div className="flex flex-col h-full">
-            {/* Sidebar Branding */}
-            <div className="px-6 pt-6 pb-4 border-b border-slate-800/50">
-                <div className="flex items-center gap-3 group">
-                    <div className="rounded-xl bg-white/10 border border-white/20 transition-all flex items-center justify-center overflow-hidden w-9 h-9">
-                        <ApplicationLogo className="h-8 w-auto filter invert brightness-200" type="icon" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-white text-sm font-black tracking-tight leading-none">JBooks</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Quick Action Button (QuickBooks Style) */}
-            <div className="px-6 py-2">
-                <button
-                    onClick={onQuickMenuOpen}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-[#00713D] text-white font-bold text-[11px] rounded-lg hover:bg-[#005a30] transition-all shadow-sm group uppercase tracking-wider"
-                >
-                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Create New
-                </button>
-            </div>
-
-            {/* Navigation Groups */}
-            <div
-                ref={scrollContainerRef}
-                onScroll={handleScroll}
-                className="flex-1 overflow-y-auto px-3 py-6 space-y-6 scrollbar-hide custom-scrollbar"
-            >
-                {/* Main Links */}
-                <div>
-                    <h3 className="px-3 mb-3 text-2xs font-bold text-slate-600 uppercase tracking-[.2em]">Menu</h3>
-                    <div className="space-y-0.5">
-                        {navigation.map((item) => (
-                            (!item.adminOnly || user.role === 'admin') && (
-                                <Link
-                                    key={`${item.name}-${item.href}`}
-                                    href={item.href}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${route().current(item.href.split('/').pop()) || (item.name === 'Dashboard' && route().current('dashboard'))
-                                        ? 'bg-[#00713D] text-white shadow-md shadow-[#00713D]/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                        }`}
-                                >
-                                    <span className={`transition-colors ${route().current() === item.href ? 'text-white' : 'group-hover:text-white'}`}>
-                                        <SidebarIcon name={item.icon} />
-                                    </span>
-                                    <span className="text-xs font-bold">{item.name}</span>
-                                </Link>
-                            )
-                        ))}
-                    </div>
-                </div>
-
-                {/* Team Group Removed */}
-
-                {/* Reports Group Removed */}
-            </div>
-
-            {/* Bottom Footer Section */}
-            <div className="p-3">
-                <div className="bg-slate-800/10 rounded-xl p-2.5 border border-slate-800 transition-all group">
-                    <div className="relative z-10 flex items-center justify-center">
-                        <span className="text-[9px] font-bold text-white uppercase tracking-wider">JobAlign Software Solutions</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function SidebarIcon({ name }) {
-    switch (name) {
-        case 'dashboard':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>;
-        case 'team':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
-        case 'inventory':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>;
-        case 'finance':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
-        case 'users':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09a10.116 10.116 0 001.283-3.562L7 14.839V11a5 5 0 0110 0v1.161l-.083.504a10.117 10.117 0 001.283 3.562l.054.09M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
-        case 'transactions':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>;
-        case 'supplier':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
-        case 'company':
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>;
-        default:
-            return <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;
-    }
-}

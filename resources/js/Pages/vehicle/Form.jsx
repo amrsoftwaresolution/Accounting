@@ -3,10 +3,12 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
 
-export default function Form({ auth, vehicle }) {
+export default function Form({ auth, vehicle, customers }) {
     const isEdit = !!vehicle;
 
     const { data, setData, post, put, processing, errors } = useForm({
+        vehicle_no: vehicle?.vehicle_no || '',
+        customer_id: vehicle?.customer_id || '',
         vehicle_type: vehicle?.vehicle_type || '',
         brand: vehicle?.brand || '',
         model: vehicle?.model || '',
@@ -30,6 +32,28 @@ export default function Form({ auth, vehicle }) {
                 <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
                     <form onSubmit={submit} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="p-6 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <CommonInput
+                                    type="select"
+                                    label="Customer (Owner)"
+                                    value={data.customer_id}
+                                    onChange={e => setData('customer_id', e.target.value)}
+                                    required
+                                    error={errors.customer_id}
+                                    options={[
+                                        { value: '', label: 'Select Customer' },
+                                        ...(customers || []).map(c => ({ value: c.id, label: c.display_name }))
+                                    ]}
+                                />
+                                <CommonInput
+                                    label="Vehicle No."
+                                    value={data.vehicle_no}
+                                    onChange={e => setData('vehicle_no', e.target.value)}
+                                    required
+                                    error={errors.vehicle_no}
+                                    placeholder="e.g. ABC-1234"
+                                />
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <CommonInput
                                     type="select"

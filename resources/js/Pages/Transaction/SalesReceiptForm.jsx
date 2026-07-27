@@ -189,7 +189,7 @@ receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)
         }));
 
         const currentId = savedEntryId || receipt?.id;
-        const url = currentId ? route('receipt.update', currentId) : route('receipt.store');
+        const url = currentId ? route('sales-invoice.update', currentId) : route('sales-invoice.store');
         const submitMethod = currentId ? patch : post;
 
         submitMethod(url, {

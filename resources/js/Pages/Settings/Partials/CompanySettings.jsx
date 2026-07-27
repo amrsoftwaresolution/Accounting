@@ -11,6 +11,7 @@ export default function CompanySettings({ settings, currencies = [] }) {
         industry: settings?.industry || '',
         address: settings?.address || '',
         website: settings?.website || '',
+        home_currency_prefix: settings?.home_currency_prefix || 'LKR ',
     });
 
     const handleInfoSubmit = (e) => {
@@ -164,9 +165,13 @@ const handleAccountingSubmit = (e) => {
                                 <div className="col-span-4 text-gray-500 text-xs font-bold">Address</div>
                                 <div className="col-span-8 text-xs text-gray-800">{infoForm.data.address || <span className="text-gray-300 italic">None listed</span>}</div>
                             </div>
-                            <div className="grid grid-cols-12 pb-2">
+                            <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
                                 <div className="col-span-4 text-gray-500 text-xs font-bold">Website</div>
                                 <div className="col-span-8 text-xs text-gray-800">{infoForm.data.website || <span className="text-gray-300 italic">None listed</span>}</div>
+                            </div>
+                            <div className="grid grid-cols-12 pb-2">
+                                <div className="col-span-4 text-gray-500 text-xs font-bold">Currency Prefix</div>
+                                <div className="col-span-8 text-xs text-gray-800">{infoForm.data.home_currency_prefix}</div>
                             </div>
                         </div>
                     </div>
@@ -195,6 +200,10 @@ const handleAccountingSubmit = (e) => {
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website</label>
                                 <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.website} onChange={e => infoForm.setData('website', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currency Prefix</label>
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.home_currency_prefix} onChange={e => infoForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. LKR " />
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">

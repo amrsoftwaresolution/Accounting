@@ -274,7 +274,7 @@ useEffect(() => {
 
 const submit = (action = 'save') => {
     const currentId = savedEntryId || payment?.id;
-    const url = currentId ? route('payment.update', currentId) : route('payment.store');
+    const url = currentId ? route('receive-payment.update', currentId) : route('receive-payment.store');
     const submitMethod = currentId ? patch : post;
 
     const currentRef = data.referenceNo || nextPaymentNo || '0001'; // capture BEFORE reset

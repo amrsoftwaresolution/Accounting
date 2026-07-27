@@ -16,6 +16,8 @@ const getEditRoute = (type) => {
             return 'bill.edit';
         case 'expense':
             return 'expense.edit';
+        case 'sales_receipt':
+            return 'pos.edit';
         default:
             return 'journal-entries.edit';
     }

@@ -12,14 +12,14 @@ export default function ReportsIndex() {
             reports: [
                 { name: 'Profit and Loss (PNL)', href: route('reports.profit-loss') },
                 { name: 'Balance Sheet', href: route('reports.balance-sheet') },
-                { name: 'Account History Report', href: route('chart-of-account.index') }, // Directs to COA to select an account for history
             ]
         },
         {
             category: 'Customers & Sales',
             reports: [
+                { name: 'Vehicle History', href: route('reports.vehicle-history') },
                 { name: 'Customer Balance Summary', href: route('reports.customer-balance') },
-                { name: 'Customer Balance Details', href: route('reports.customer-balance-detail') }, 
+                { name: 'Customer Balance Details', href: route('reports.customer-balance-detail') },
                 { name: 'Sales By Customer', href: route('reports.sales-by-customer') },
                 { name: 'Sales By Item', href: route('reports.sales-by-item') },
             ]
@@ -28,7 +28,7 @@ export default function ReportsIndex() {
             category: 'Suppliers & Purchases',
             reports: [
                 { name: 'Supplier Balance Summary', href: route('reports.supplier-balance') },
-                { name: 'Supplier Balance Details', href: route('reports.supplier-balance-detail') }, 
+                { name: 'Supplier Balance Details', href: route('reports.supplier-balance-detail') },
                 { name: 'Purchase by Supplier', href: route('reports.purchase-by-supplier') },
                 { name: 'Purchase by Item', href: route('reports.purchase-by-item') },
             ]
@@ -37,7 +37,7 @@ export default function ReportsIndex() {
             category: 'Inventory',
             reports: [
                 { name: 'Inventory Balance Summary', href: route('reports.inventory-summary') },
-                { name: 'Inventory Balance Details', href: route('reports.inventory-detail-all') }, 
+                { name: 'Inventory Balance Details', href: route('reports.inventory-detail-all') },
             ]
         }
     ];
@@ -93,19 +93,16 @@ export default function ReportsIndex() {
                                 <div className="px-6 py-4 border-b border-gray-100 bg-white rounded-t-xl">
                                     <h2 className="text-lg font-bold text-gray-800">{group.category}</h2>
                                 </div>
-                                <div className="p-6 flex-1">
-                                    <ul className="space-y-3">
-                                        {group.reports.map((item, rIdx) => (
-                                            <li key={rIdx}>
-                                                <Link
-                                                    href={item.href}
-                                                    className="text-sm font-medium text-slate-600 hover:text-primary-600 hover:underline transition-colors"
-                                                >
-                                                    {item.name}
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                <div className="p-6 flex-1 flex flex-col gap-2">
+                                    {group.reports.map((item, rIdx) => (
+                                        <Link
+                                            key={rIdx}
+                                            href={item.href}
+                                            className="block w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-primary-500 hover:bg-primary-50 text-sm font-medium text-gray-700 hover:text-primary-700 transition-all shadow-sm"
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ))}
                                 </div>
                             </div>
                         ))

@@ -43,6 +43,8 @@ const getEditRoute = (type) => {
             return 'supplier-credit.edit';
         case 'credit_note':
             return 'credit-note.edit';
+        case 'sales_receipt':
+            return 'pos.edit';
         default:
             return 'journal-entries.edit';
     }

@@ -329,13 +329,24 @@ export default function ItemForm({
                                 />
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <CommonInput
-                                        label="SKU"
-                                        value={data.sku}
-                                        onChange={e => setData('sku', e.target.value)}
-                                        error={errors.sku}
-                                        placeholder="Optional"
-                                    />
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="font-bold text-slate-600 ml-0.5 text-xs">SKU</label>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setData('sku', 'ITM-' + Math.floor(100000 + Math.random() * 900000))}
+                                                className="text-[10px] text-blue-600 hover:text-blue-800"
+                                            >
+                                                Generate
+                                            </button>
+                                        </div>
+                                        <CommonInput
+                                            value={data.sku}
+                                            onChange={e => setData('sku', e.target.value)}
+                                            error={errors.sku}
+                                            placeholder="Optional"
+                                        />
+                                    </div>
                                     <div>
                                         <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Category</label>
                                         <SearchableSelect
