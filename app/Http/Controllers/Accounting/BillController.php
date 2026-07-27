@@ -4,22 +4,24 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Supplier;
-use App\Models\Bill;
-use App\Models\BillItem;
+use App\Models\Accounting\Bill;
+use App\Models\Accounting\BillItem;
 use App\Http\Requests\Accounting\BillRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\AccountingControllerTrait;
 
 class BillController extends Controller
 {
+    use AccountingControllerTrait;
+
     public function create(Request $request)
     {
-        
         // Generate next Bill Number
         $lastRef = JournalEntry::query()
             ->where('transaction_type', 'bill')
@@ -32,7 +34,7 @@ class BillController extends Controller
         if ($copyId = $request->query('copy')) {
             $journalEntry = JournalEntry::findOrFail($copyId);
             $journalEntry->load('lines');
-            $bill = \App\Models\Bill::find($journalEntry->transactionable_id);
+            $bill = \App\Models\Accounting\Bill::find($journalEntry->transactionable_id);
 
             $billData = [
                 'id' => null,
@@ -61,13 +63,13 @@ class BillController extends Controller
                 })->values()->toArray() : [],
             ];
 
-            return Inertia::render('Transaction/BillForm', [
+            return Inertia::render('Transaction/Bill/BillForm', [
                 'bill' => $billData,
                 'nextBillNo' => $nextBillNoLabel,
             ]);
         }
 
-        return Inertia::render('Transaction/BillForm', [
+        return Inertia::render('Transaction/Bill/BillForm', [
             'nextBillNo' => $nextBillNoLabel
         ]);
     }
@@ -212,15 +214,8 @@ class BillController extends Controller
                 return $journalEntry;
             });
 
-            $action = $request->input('action', 'save');
+            return $this->handleActionRedirect($request, 'bill', $journalEntry->id, 'Bill saved successfully.');
 
-            if ($action === 'close') { return back()->with(['success' => 'Bill saved successfully.', 'close_window' => true]); }
-
-            if ($action === 'new') {
-                return redirect()->route('bill')->with('success', 'Bill saved successfully.');
-            }
-
-            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill saved successfully.');
 
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == '22003') {
@@ -235,7 +230,7 @@ class BillController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $bill = \App\Models\Bill::find($journalEntry->transactionable_id);
+        $bill = \App\Models\Accounting\Bill::find($journalEntry->transactionable_id);
 
         $billData = [
             'id' => $journalEntry->id,
@@ -264,7 +259,7 @@ class BillController extends Controller
             })->values()->toArray() : [],
         ];
 
-        return Inertia::render('Transaction/BillForm', [
+        return Inertia::render('Transaction/Bill/BillForm', [
             'bill' => $billData
         ]);
     }
@@ -413,14 +408,7 @@ class BillController extends Controller
                 ]);
             });
 
-            $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Bill updated successfully.', 'close_window' => true]); }
-
-            if ($action === 'new') {
-                return redirect()->route('bill')->with('success', 'Bill updated successfully.');
-            }
-
-            return redirect()->route('bill.edit', $journalEntry->id)->with('success', 'Bill updated successfully.');
+            return $this->handleActionRedirect($request, 'bill', $journalEntry->id, 'Bill updated successfully.');
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->getCode() == '22003') {
                 return redirect()->back()->withErrors(['error' => 'Total amount is too large. Please enter a smaller value.']);

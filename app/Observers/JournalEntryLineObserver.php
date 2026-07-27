@@ -2,8 +2,8 @@
 
 namespace App\Observers;
 
-use App\Models\JournalEntryLine;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\ChartOfAcc;
 
 class JournalEntryLineObserver
 {

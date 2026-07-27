@@ -5,7 +5,7 @@ export default function TopFormSection({ form, setForm }) {
         <div className="grid grid-cols-3 gap-x-8 gap-y-4 border-b pb-4">
 
             <div>
-                <SearchableSelect 
+                <SearchableSelect
                     label="Payee"
                     placeholder="Who did you pay?"
                     value={form.payee}
@@ -18,7 +18,7 @@ export default function TopFormSection({ form, setForm }) {
             </div>
 
             <div>
-                <SearchableSelect 
+                <SearchableSelect
                     label="ReceivePayment account"
                     value={form.account}
                     onChange={(val) => setForm({ ...form, account: val })}
@@ -45,8 +45,8 @@ export default function TopFormSection({ form, setForm }) {
             </div>
 
             <div>
-                <SearchableSelect 
-                    label="ReceivePayment method"
+                <SearchableSelect
+                    label="Payment method"
                     value={form.method}
                     onChange={(val) => setForm({ ...form, method: val })}
                     options={[

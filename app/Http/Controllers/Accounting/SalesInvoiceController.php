@@ -4,21 +4,24 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
-use App\Models\SalesInvoice;
-use App\Models\SalesInvoiceItem;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\SalesInvoice;
+use App\Models\Accounting\SalesInvoiceItem;
 use App\Models\Customer;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\PaymentMethod;
 use App\Models\Item;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\Accounting\SalesInvoiceRequest;
+use App\Traits\AccountingControllerTrait;
 
 class SalesInvoiceController extends Controller
 {
+    use AccountingControllerTrait;
+
     public function create(Request $request)
     {
         if ($copyId = $request->query('copy')) {
@@ -71,14 +74,14 @@ class SalesInvoiceController extends Controller
                 })->toArray(),
             ];
 
-            return Inertia::render('Transaction/SalesInvoiceForm', [
+            return Inertia::render('Transaction/SalesInvoice/SalesInvoiceForm', [
                 'receipt' => $receiptData,
                 'paymentMethods' => $this->paymentMethods(),
                 'nextReceiptNo' => $this->getNextReceiptNo(),
             ]);
         }
 
-        return Inertia::render('Transaction/SalesInvoiceForm', [
+        return Inertia::render('Transaction/SalesInvoice/SalesInvoiceForm', [
             'paymentMethods' => $this->paymentMethods(),
             'nextReceiptNo' => $this->getNextReceiptNo()
         ]);
@@ -123,7 +126,7 @@ class SalesInvoiceController extends Controller
 
                 // 1. Save Document (Business Details)
                 if ($request->action === 'credit_sale') {
-                    $receipt = \App\Models\CreditInvoice::create([
+                    $receipt = \App\Models\Accounting\CreditInvoice::create([
                         'invoice_no' => $request->receiptNo,
                         'customer_id' => $customerId,
                         'email' => $request->email,
@@ -135,7 +138,7 @@ class SalesInvoiceController extends Controller
                     ]);
 
                     foreach ($items as $itemData) {
-                        \App\Models\CreditInvoiceItem::create([
+                        \App\Models\Accounting\CreditInvoiceItem::create([
                             'credit_invoice_id' => $receipt->id,
                             'item_id' => $itemData['product'],
                             'description' => $itemData['description'] ?? '',
@@ -178,14 +181,14 @@ class SalesInvoiceController extends Controller
                     'date' => $request->receiptDate,
                     'reference' => $request->receiptNo,
                     'description' => $request->memo,
-                    'transaction_type' => $request->action === 'credit_sale' ? 'invoice' : 'sales_receipt',
+                    'transaction_type' => $request->action === 'credit_sale' ? 'invoice' : 'sales_invoice',
                     'payee_id' => $customerId,
                     'payee_type' => Customer::class,
                     'total_amount' => $totalAmount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
                     'transactionable_id' => $receipt->id,
-                    'transactionable_type' => $request->action === 'credit_sale' ? \App\Models\CreditInvoice::class : SalesInvoice::class,
+                    'transactionable_type' => $request->action === 'credit_sale' ? \App\Models\Accounting\CreditInvoice::class : SalesInvoice::class,
                 ]);
 
                 if ($request->action === 'credit_sale') {
@@ -263,22 +266,16 @@ class SalesInvoiceController extends Controller
 
                 return $journalEntry;
             });
+
+            return $this->handleActionRedirect($request, 'sales-invoice', $journalEntry->id, 'Cash sale saved successfully.');
         } catch (\Exception $e) {
             \Log::error('Sales invoice save error: ' . $e->getMessage(), [
                 'data' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
-            throw $e;
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
 
-        $action = $request->input('action', 'save');
-        if ($action === 'close') { return back()->with(['success' => 'Cash sale saved successfully.', 'close_window' => true]); }
-
-        if ($action === 'new') {
-            return redirect()->route('sales-invoice')->with('success', 'Cash sale saved successfully.');
-        }
-
-        return redirect()->route('sales-invoice.edit', $journalEntry->id)->with('success', 'Cash sale saved successfully.');
 
     }
 
@@ -326,14 +323,14 @@ class SalesInvoiceController extends Controller
                     'product' => $item->item_id,
                     'serviceDate' => $item->service_date,
                     'description' => $item->description,
-                    'qty' => $item->quantity,
+                    'qty' => (float)$item->quantity,
                     'rate' => number_format($item->rate, 2, '.', ''),
                     'amount' => number_format($item->amount, 2, '.', ''),
                 ];
             })->toArray(),
         ];
 
-        return Inertia::render('Transaction/SalesInvoiceForm', [
+        return Inertia::render('Transaction/SalesInvoice/SalesInvoiceForm', [
             'receipt' => $receiptData,
             'paymentMethods' => $this->paymentMethods(),
             'nextReceiptNo' => $this->getNextReceiptNo()
@@ -457,15 +454,7 @@ class SalesInvoiceController extends Controller
                     }
                 }
             });
-
-            $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Cash sale updated successfully.', 'close_window' => true]); }
-
-            if ($action === 'new') {
-                return redirect()->route('sales-invoice')->with('success', 'Cash sale updated successfully.');
-            }
-
-            return redirect()->route('sales-invoice.edit', $journalEntry->id)->with('success', 'Cash sale updated successfully.');
+            return $this->handleActionRedirect($request, 'sales-invoice', $journalEntry->id, 'Cash sale updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('customer_id');
             $table->string('email')->nullable();
-            $table->date('credit_note_date');
+            $table->date('date');
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->text('memo')->nullable();
             $table->text('statement_message')->nullable();

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('bill_returns', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('supplier_id');
-            $table->date('credit_date');
+            $table->date('date');
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->text('memo')->nullable();
             $table->string('status')->default('draft');

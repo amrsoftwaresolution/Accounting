@@ -146,21 +146,31 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'receive_payment') {
             return route('receive-payment.edit', tx.journal_entry_id);
         }
+
         if (type === 'sales_receipt') {
             return route('pos.edit', tx.journal_entry_id);
         }
+
+        if (type === 'sales_invoice') {
+            return route('sales-invoice.edit', tx.journal_entry_id);
+        }
+
         if (type === 'transfer') {
             return route('transfer.edit', tx.journal_entry_id);
         }
+
         if (type === 'bank_deposit') {
             return route('bank-deposit.edit', tx.journal_entry_id);
         }
-        if (type === 'credit_note') {
-            return route('credit-note.edit', tx.journal_entry_id);
+
+        if (type === 'invoice_return') {
+            return route('invoice-return.edit', tx.journal_entry_id);
         }
-        if (type === 'supplier_credit') {
-            return route('supplier-credit.edit', tx.journal_entry_id);
+
+        if (type === 'bill_return') {
+            return route('bill-return.edit', tx.journal_entry_id);
         }
+
         if (type === 'cheque') {
             return route('cheque.edit', tx.journal_entry_id);
         }
@@ -353,223 +363,223 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                             <th className="py-2.5 px-3 font-semibold text-gray-900 text-center w-[5%]"></th>
                         </tr>
                     </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {transactions.map((tx) => {
-                                    const isEditing = editingTxId === tx.id;
-                                    const isSplit = (tx.journal_entry?.lines || []).length > 2;
+                    <tbody className="divide-y divide-slate-100">
+                        {transactions.map((tx) => {
+                            const isEditing = editingTxId === tx.id;
+                            const isSplit = (tx.journal_entry?.lines || []).length > 2;
 
-                                    // Determine the split account label dynamically
-                                    const selectedOffsetAccount = accounts.find(a => a.id === editForm.offset_account_id);
-                                    const offsetAccountTypeLabel = selectedOffsetAccount
-                                        ? (selectedOffsetAccount.account_type.charAt(0).toUpperCase() + selectedOffsetAccount.account_type.slice(1))
-                                        : 'Account';
+                            // Determine the split account label dynamically
+                            const selectedOffsetAccount = accounts.find(a => a.id === editForm.offset_account_id);
+                            const offsetAccountTypeLabel = selectedOffsetAccount
+                                ? (selectedOffsetAccount.account_type.charAt(0).toUpperCase() + selectedOffsetAccount.account_type.slice(1))
+                                : 'Account';
 
-                                    if (isEditing) {
-                                        return (
-                                            <Fragment key={tx.id}>
-                                                {/* Editing Row */}
-                                                <tr className="bg-primary-50/20 hover:bg-primary-50/30 transition-colors">
-                                                    {/* Date */}
-                                                    <td className="px-2 py-4 align-top">
-                                                        <input
-                                                            type="date"
-                                                            value={editForm.date}
-                                                            onChange={e => setEditForm(prev => ({ ...prev, date: e.target.value }))}
-                                                            className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                                                        />
-                                                    </td>
-                                                    {/* Ref No */}
-                                                    <td className="px-2 py-4 align-top">
-                                                        <input
-                                                            type="text"
-                                                            value={editForm.reference}
-                                                            onChange={e => setEditForm(prev => ({ ...prev, reference: e.target.value }))}
-                                                            placeholder="Ref No."
-                                                            className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                                                        />
-                                                    </td>
-                                                    {/* Payee / Account */}
-                                                    <td className="px-2 py-4 align-top space-y-2">
-                                                        <div>
-                                                            <select
-                                                                value={editForm.payee_id}
-                                                                onChange={e => setEditForm(prev => ({ ...prev, payee_id: e.target.value }))}
-                                                                className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
-                                                            >
-                                                                <option value="">Payee</option>
-                                                                {payees.map(p => (
-                                                                    <option key={p.value} value={p.value}>{p.label}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] font-bold text-slate-400 w-16 uppercase shrink-0">{offsetAccountTypeLabel}</span>
-                                                            {isSplit ? (
-                                                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">-Split-</span>
-                                                            ) : (
-                                                                <select
-                                                                    value={editForm.offset_account_id}
-                                                                    onChange={e => setEditForm(prev => ({ ...prev, offset_account_id: e.target.value }))}
-                                                                    className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
-                                                                >
-                                                                    <option value="">Select Account</option>
-                                                                    {accounts.map(a => (
-                                                                        <option key={a.id} value={a.id}>{a.account_code} - {a.name}</option>
-                                                                    ))}
-                                                                </select>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    {/* Description */}
-                                                    <td className="px-2 py-4 align-top">
-                                                        <textarea
-                                                            value={editForm.memo}
-                                                            onChange={e => setEditForm(prev => ({ ...prev, memo: e.target.value }))}
-                                                            rows="2"
-                                                            className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white resize-none"
-                                                        />
-                                                    </td>
-                                                    {/* Amount 1 (Debit) */}
-                                                    <td className="px-2 py-4 align-top">
-                                                        {(parseFloat(tx.debit) > 0 || (parseFloat(tx.debit) === 0 && parseFloat(tx.credit) === 0 && isNormalDebit)) ? (
-                                                            <div className="space-y-1">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editForm.debit}
-                                                                    onChange={e => {
-                                                                        const val = e.target.value.replace(/[^\d.]/g, '');
-                                                                        setEditForm(prev => ({ ...prev, debit: val }));
-                                                                    }}
-                                                                    className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right font-mono"
-                                                                />
-                                                                <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Deposit' : 'Payment'}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-right text-slate-400 py-1">-</div>
-                                                        )}
-                                                    </td>
-                                                    {/* Amount 2 (Credit) */}
-                                                    <td className="px-2 py-4 align-top">
-                                                        {(parseFloat(tx.credit) > 0 || (parseFloat(tx.debit) === 0 && parseFloat(tx.credit) === 0 && !isNormalDebit)) ? (
-                                                            <div className="space-y-1">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editForm.credit}
-                                                                    onChange={e => {
-                                                                        const val = e.target.value.replace(/[^\d.]/g, '');
-                                                                        setEditForm(prev => ({ ...prev, credit: val }));
-                                                                    }}
-                                                                    className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right font-mono"
-                                                                />
-                                                                <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Payment' : 'Deposit'}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="text-right text-slate-400 py-1">-</div>
-                                                        )}
-                                                    </td>
-                                                    {/* Balance */}
-                                                    <td className="px-4 py-4 align-top text-right text-[11px] font-bold text-slate-500 font-mono">
-                                                        {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </td>
-                                                    {/* Empty Actions cell */}
-                                                    <td className="px-4 py-4 align-top"></td>
-                                                </tr>
-                                                {/* Bottom Actions Bar Row */}
-                                                <tr className="bg-primary-50/30">
-                                                    <td colSpan="8" className="px-4 py-2.5 text-right space-x-2 border-b border-slate-200">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteTx(tx.journal_entry_id)}
-                                                            className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                        <Link
-                                                            href={getEditRoute(tx)}
-                                                            className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm inline-block"
-                                                        >
-                                                            Edit
-                                                        </Link>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setEditingTxId(null)}
-                                                            className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleSaveEdit(tx.id, tx.journal_entry_id)}
-                                                            className="px-5 py-1.5 bg-green-700 hover:bg-green-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
-                                                        >
-                                                            Save
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </Fragment>
-                                        );
-                                    }
-
-                                    return (
-                                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                            if (isEditing) {
+                                return (
+                                    <Fragment key={tx.id}>
+                                        {/* Editing Row */}
+                                        <tr className="bg-primary-50/20 hover:bg-primary-50/30 transition-colors">
                                             {/* Date */}
-                                            <td className="px-4 py-3 text-[11px] text-slate-600 font-mono">
-                                                {tx.journal_entry?.date}
+                                            <td className="px-2 py-4 align-top">
+                                                <input
+                                                    type="date"
+                                                    value={editForm.date}
+                                                    onChange={e => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                                                    className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                                                />
                                             </td>
                                             {/* Ref No */}
-                                            <td className="px-4 py-3 text-[11px] font-bold text-slate-800 font-mono">
-                                                {tx.journal_entry?.reference || '-'}
+                                            <td className="px-2 py-4 align-top">
+                                                <input
+                                                    type="text"
+                                                    value={editForm.reference}
+                                                    onChange={e => setEditForm(prev => ({ ...prev, reference: e.target.value }))}
+                                                    placeholder="Ref No."
+                                                    className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                                                />
                                             </td>
                                             {/* Payee / Account */}
-                                            <td className="px-4 py-3 text-[11px] text-slate-600">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-800">{getPayeeLabel(tx.payee_id || tx.journal_entry?.payee_id)}</span>
-                                                    <span className={`text-[10px] font-semibold mt-0.5 ${isSplit ? 'text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-max' : 'text-slate-400'}`}>
-                                                        {getOffsetAccount(tx)}
-                                                    </span>
+                                            <td className="px-2 py-4 align-top space-y-2">
+                                                <div>
+                                                    <select
+                                                        value={editForm.payee_id}
+                                                        onChange={e => setEditForm(prev => ({ ...prev, payee_id: e.target.value }))}
+                                                        className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
+                                                    >
+                                                        <option value="">Payee</option>
+                                                        {payees.map(p => (
+                                                            <option key={p.value} value={p.value}>{p.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[9px] font-bold text-slate-400 w-16 uppercase shrink-0">{offsetAccountTypeLabel}</span>
+                                                    {isSplit ? (
+                                                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">-Split-</span>
+                                                    ) : (
+                                                        <select
+                                                            value={editForm.offset_account_id}
+                                                            onChange={e => setEditForm(prev => ({ ...prev, offset_account_id: e.target.value }))}
+                                                            className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white"
+                                                        >
+                                                            <option value="">Select Account</option>
+                                                            {accounts.map(a => (
+                                                                <option key={a.id} value={a.id}>{a.account_code} - {a.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
                                                 </div>
                                             </td>
-                                            {/* Memo / Description */}
-                                            <td className="px-4 py-3 text-[11px] text-slate-600">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-700">{tx.journal_entry?.description}</span>
-                                                    {tx.memo && <span className="text-[10px] text-slate-400 italic mt-0.5">{tx.memo}</span>}
-                                                </div>
+                                            {/* Description */}
+                                            <td className="px-2 py-4 align-top">
+                                                <textarea
+                                                    value={editForm.memo}
+                                                    onChange={e => setEditForm(prev => ({ ...prev, memo: e.target.value }))}
+                                                    rows="2"
+                                                    className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white resize-none"
+                                                />
                                             </td>
-                                            {/* Debit Amount */}
-                                            <td className="px-4 py-3 text-[11px] font-bold text-slate-900 text-right font-mono">
-                                                {parseFloat(tx.debit) > 0 ? parseFloat(tx.debit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
+                                            {/* Amount 1 (Debit) */}
+                                            <td className="px-2 py-4 align-top">
+                                                {(parseFloat(tx.debit) > 0 || (parseFloat(tx.debit) === 0 && parseFloat(tx.credit) === 0 && isNormalDebit)) ? (
+                                                    <div className="space-y-1">
+                                                        <input
+                                                            type="text"
+                                                            value={editForm.debit}
+                                                            onChange={e => {
+                                                                const val = e.target.value.replace(/[^\d.]/g, '');
+                                                                setEditForm(prev => ({ ...prev, debit: val }));
+                                                            }}
+                                                            className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right font-mono"
+                                                        />
+                                                        <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Deposit' : 'Payment'}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-right text-slate-400 py-1">-</div>
+                                                )}
                                             </td>
-                                            {/* Credit Amount */}
-                                            <td className="px-4 py-3 text-[11px] font-bold text-slate-900 text-right font-mono">
-                                                {parseFloat(tx.credit) > 0 ? parseFloat(tx.credit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
+                                            {/* Amount 2 (Credit) */}
+                                            <td className="px-2 py-4 align-top">
+                                                {(parseFloat(tx.credit) > 0 || (parseFloat(tx.debit) === 0 && parseFloat(tx.credit) === 0 && !isNormalDebit)) ? (
+                                                    <div className="space-y-1">
+                                                        <input
+                                                            type="text"
+                                                            value={editForm.credit}
+                                                            onChange={e => {
+                                                                const val = e.target.value.replace(/[^\d.]/g, '');
+                                                                setEditForm(prev => ({ ...prev, credit: val }));
+                                                            }}
+                                                            className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right font-mono"
+                                                        />
+                                                        <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Payment' : 'Deposit'}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-right text-slate-400 py-1">-</div>
+                                                )}
                                             </td>
                                             {/* Balance */}
-                                            <td className="px-4 py-3 text-[11px] font-bold text-primary-600 text-right font-mono">
-                                                {currencyPrefix} {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            <td className="px-4 py-4 align-top text-right text-[11px] font-bold text-slate-500 font-mono">
+                                                {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                             </td>
-                                            {/* Action */}
-                                            <td className="px-4 py-3 text-center">
-                                                <CommonButton
-                                                    variant="ghost"
-                                                    size="xs"
-                                                    href={getEditRoute(tx)}
+                                            {/* Empty Actions cell */}
+                                            <td className="px-4 py-4 align-top"></td>
+                                        </tr>
+                                        {/* Bottom Actions Bar Row */}
+                                        <tr className="bg-primary-50/30">
+                                            <td colSpan="8" className="px-4 py-2.5 text-right space-x-2 border-b border-slate-200">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteTx(tx.journal_entry_id)}
+                                                    className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm"
                                                 >
-                                                    View/Edit
-                                                </CommonButton>
+                                                    Delete
+                                                </button>
+                                                <Link
+                                                    href={getEditRoute(tx)}
+                                                    className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm inline-block"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingTxId(null)}
+                                                    className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all shadow-sm"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSaveEdit(tx.id, tx.journal_entry_id)}
+                                                    className="px-5 py-1.5 bg-green-700 hover:bg-green-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                                                >
+                                                    Save
+                                                </button>
                                             </td>
                                         </tr>
-                                    );
-                                })}
-                                {transactions.length === 0 && (
-                                    <tr>
-                                        <td colSpan={8} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
-                                            No transactions found for this account.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                    </Fragment>
+                                );
+                            }
+
+                            return (
+                                <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                                    {/* Date */}
+                                    <td className="px-4 py-3 text-[11px] text-slate-600 font-mono">
+                                        {tx.journal_entry?.date}
+                                    </td>
+                                    {/* Ref No */}
+                                    <td className="px-4 py-3 text-[11px] font-bold text-slate-800 font-mono">
+                                        {tx.journal_entry?.reference || '-'}
+                                    </td>
+                                    {/* Payee / Account */}
+                                    <td className="px-4 py-3 text-[11px] text-slate-600">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-slate-800">{getPayeeLabel(tx.payee_id || tx.journal_entry?.payee_id)}</span>
+                                            <span className={`text-[10px] font-semibold mt-0.5 ${isSplit ? 'text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-max' : 'text-slate-400'}`}>
+                                                {getOffsetAccount(tx)}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    {/* Memo / Description */}
+                                    <td className="px-4 py-3 text-[11px] text-slate-600">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-slate-700">{tx.journal_entry?.description}</span>
+                                            {tx.memo && <span className="text-[10px] text-slate-400 italic mt-0.5">{tx.memo}</span>}
+                                        </div>
+                                    </td>
+                                    {/* Debit Amount */}
+                                    <td className="px-4 py-3 text-[11px] font-bold text-slate-900 text-right font-mono">
+                                        {parseFloat(tx.debit) > 0 ? parseFloat(tx.debit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
+                                    </td>
+                                    {/* Credit Amount */}
+                                    <td className="px-4 py-3 text-[11px] font-bold text-slate-900 text-right font-mono">
+                                        {parseFloat(tx.credit) > 0 ? parseFloat(tx.credit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
+                                    </td>
+                                    {/* Balance */}
+                                    <td className="px-4 py-3 text-[11px] font-bold text-primary-600 text-right font-mono">
+                                        {currencyPrefix} {tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    </td>
+                                    {/* Action */}
+                                    <td className="px-4 py-3 text-center">
+                                        <CommonButton
+                                            variant="ghost"
+                                            size="xs"
+                                            href={getEditRoute(tx)}
+                                        >
+                                            View/Edit
+                                        </CommonButton>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {transactions.length === 0 && (
+                            <tr>
+                                <td colSpan={8} className="px-4 py-12 text-center text-[11px] text-slate-400 font-medium">
+                                    No transactions found for this account.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
         </ReportLayout>
     );

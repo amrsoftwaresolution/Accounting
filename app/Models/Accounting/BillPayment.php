@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Models\Accounting;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class BillPayment extends Model
+{
+    use HasUuids;
+
+    protected $fillable = [
+        'supplier_id', 'amount', 'payment_date',
+        'payment_method_id', 'payment_account_id', 'reference_no', 'memo'
+    ];
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(ChartOfAcc::class, 'payment_account_id');
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(BillPaymentAllocation::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+}

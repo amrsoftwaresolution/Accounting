@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
-use App\Models\ChartOfAcc;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\ChartOfAcc;
+use App\Models\Accounting\JournalEntryLine;
 use App\Models\Customer;
 use App\Models\Supplier;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
-use App\Models\SalesInvoice;
+use App\Models\Accounting\SalesInvoice;
 
 class ReportController extends Controller
 {
@@ -675,17 +675,6 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
 
-        // To get the inventory detail, we look for JournalEntryLines that touch the Inventory Asset account
-        // However, we didn't tag the specific item on JournalEntryLines currently in this system (we rely on Item models).
-        // Wait, looking at InventoryQuantityAdjustment, it saves the items. Bill and CreditInvoice save the items. 
-        // We can just query `journal_entry_lines` for `transactionable` ? No, journal lines are tied to JournalEntry.
-        // Actually, the simplest way to get inventory transactions is from Journal Entries of types:
-        // bill, invoice, supplier_credit, credit_note, inventory_adjustment where they contain the item.
-        // But since we just want a simple view, let's just show a placeholder or basic transaction list for now.
-        
-        // As a simple approximation, we can look for `JournalEntry` lines where the description contains the item name.
-        // But the best way is to look at the `items` relation if the transaction has one!
-        // For now, let's fetch transactions that are likely related.
         $query = DB::table('journal_entries')
             ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
@@ -826,7 +815,7 @@ class ReportController extends Controller
             ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
             ->join('journal_entries', function($join) {
                 $join->on('journal_entries.transactionable_id', '=', 'credit_invoices.id')
-                     ->where('journal_entries.transactionable_type', '=', \App\Models\CreditInvoice::class);
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Accounting\CreditInvoice::class);
             })
             ->join('items', 'credit_invoice_items.item_id', '=', 'items.id')
             ->join('customers', 'credit_invoices.customer_id', '=', 'customers.id')
@@ -938,7 +927,7 @@ class ReportController extends Controller
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
             ->join('journal_entries', function($join) {
                 $join->on('journal_entries.transactionable_id', '=', 'bills.id')
-                     ->where('journal_entries.transactionable_type', '=', \App\Models\Bill::class);
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Accounting\Bill::class);
             })
             ->join('items', 'bill_items.item_id', '=', 'items.id')
             ->join('suppliers', 'bills.supplier_id', '=', 'suppliers.id')
@@ -971,7 +960,7 @@ class ReportController extends Controller
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
             ->join('journal_entries', function($join) {
                 $join->on('journal_entries.transactionable_id', '=', 'payments.id')
-                     ->where('journal_entries.transactionable_type', '=', \App\Models\Payment::class);
+                     ->where('journal_entries.transactionable_type', '=', \App\Models\Accounting\Payment::class);
             })
             ->join('items', 'payment_items.item_id', '=', 'items.id')
             ->leftJoin('suppliers', 'payments.payee_id', '=', 'suppliers.id')

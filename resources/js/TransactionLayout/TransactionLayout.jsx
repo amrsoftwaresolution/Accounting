@@ -107,21 +107,21 @@ export default function TransactionLayout({
                 listRoute: 'dashboard'
             };
         }
-        if (currentPath.startsWith('/credit-note/')) {
+        if (currentPath.startsWith('/invoice-return/')) {
             return {
-                copyRoute: 'credit-note',
-                deleteRoute: 'credit-note.destroy',
-                printRoute: 'credit-note.print',
-                recordId: props.creditNote?.id,
+                copyRoute: 'invoice-return',
+                deleteRoute: 'invoice-return.destroy',
+                printRoute: 'invoice-return.print',
+                recordId: props.invoiceReturn?.id,
                 listRoute: 'dashboard'
             };
         }
-        if (currentPath.startsWith('/SupplierCredit/') || currentPath.startsWith('/supplier-return/')) {
+        if (currentPath.startsWith('/bill-return/')) {
             return {
-                copyRoute: 'supplier-credit',
-                deleteRoute: 'supplier-credit.destroy',
-                printRoute: 'supplier-credit.print',
-                recordId: props.credit?.id,
+                copyRoute: 'bill-return',
+                deleteRoute: 'bill-return.destroy',
+                printRoute: 'bill-return.print',
+                recordId: props.billReturn?.id,
                 listRoute: 'dashboard'
             };
         }
@@ -153,7 +153,7 @@ export default function TransactionLayout({
                 if (document.querySelector('[role="dialog"]') || document.querySelector('.fixed.inset-0')) {
                     return; // a modal is open, let it handle the escape
                 }
-                
+
                 // If it's focused in an input/textarea, blurring it or allowing form to cancel is better, 
                 // but closing the whole page is what they asked for, so we call handleClose()
                 const activeEl = document.activeElement;

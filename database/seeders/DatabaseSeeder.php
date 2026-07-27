@@ -3,14 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Package;
 use App\Models\Customer;
 use App\Models\Supplier;
 use App\Models\Item;
 use App\Models\ItemCategory;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;

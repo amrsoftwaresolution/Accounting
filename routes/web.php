@@ -49,33 +49,53 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    
     // Profile
-    Route::controller(ProfileController::class)->group(function () {
-        Route::get('/profile', 'edit')->name('profile.edit');
-        Route::patch('/profile', 'update')->name('profile.update');
-        Route::delete('/profile', 'destroy')->name('profile.destroy');
+    Route::controller(ProfileController::class)->prefix('profile')->as('profile.')->group(function () {
+        Route::get('/', 'edit')->name('edit');
+        Route::patch('/', 'update')->name('update');
+        Route::delete('/', 'destroy')->name('destroy');
     });
 
-    // Accounting - Expense
-    Route::controller(PaymentController::class)->prefix('receive_payment')->group(function () {
-        Route::get('/', 'create')->name('receive_payment');
-        Route::post('/', 'store')->name('payment.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('payment.edit');
-        Route::patch('/{journalEntry}', 'update')->name('payment.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('payment.destroy');
+     // Users
+    Route::resource('users', UserController::class);
+    Route::post('/users/{user}/resend-invite', [UserController::class, 'resendInvitation'])->name('users.resend-invite');
+
+    // Settings
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [CompanySettingsController::class, 'index'])->name('settings.index');
+        
+        Route::controller(CompanySettingsController::class)->group(function () {
+            Route::post('/company', 'update')->name('company.update');
+            Route::post('/legal', 'updateLegal')->name('legal.update');
+            Route::post('/accounting', 'updateAccounting')->name('accounting.update');
+            Route::post('/alerts', 'updateAlerts')->name('alerts.update');
+            Route::post('/time', 'updateTime')->name('time.settings.update');
+            Route::post('/logo', 'uploadLogo')->name('logo.upload');
+        });
     });
 
-    // Accounting - Pay Bill
-    Route::controller(PayBillController::class)->prefix('pay-bill')->group(function () {
-        Route::get('/', 'create')->name('pay-bill');
-        Route::post('/', 'store')->name('pay-bill.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('pay-bill.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('pay-bill.print');
-        Route::patch('/{journalEntry}', 'update')->name('pay-bill.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('pay-bill.destroy');
+    // Inventory
+    Route::get('items/{item}/print-barcode', [ItemController::class, 'printBarcode'])->name('items.print-barcode');
+    Route::resource('items', ItemController::class);
+    Route::resource('item-categories', ItemCategoryController::class);
+    Route::controller(InventoryQuantityAdjustmentController::class)
+        ->as('inventory-adjustment.')->prefix('inventory-adjustment')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
     });
+
+    // Contacts
+    Route::resource('customers', CustomerController::class);
+    Route::resource('suppliers', SupplierController::class);
+    Route::resource('employees', EmployeeController::class);
+    Route::resource('job-cards', JobCardController::class);
+    Route::resource('vehicles', VehicleController::class);
+
     
+    // Accounting - Chart of Accounts
+    Route::get('chart-of-account/{chart_of_account}/history', [ChartOfAccController::class, 'history'])->name('chart-of-account.history');
+    Route::resource('chart-of-account', ChartOfAccController::class);
+
     // Accounting - Journal Entries
     Route::controller(JournalEntryController::class)->group(function () {
         Route::get('/journal', 'create')->name('journal');
@@ -83,96 +103,128 @@ Route::middleware('auth')->group(function () {
     });
     Route::resource('journal-entries', JournalEntryController::class);
 
-    // Accounting - Transfer
-    Route::controller(TransferController::class)->prefix('transfer')->group(function () {
-        Route::get('/', 'create')->name('transfer');
-        Route::post('/', 'store')->name('transfer.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('transfer.edit');
-        Route::patch('/{journalEntry}', 'update')->name('transfer.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('transfer.destroy');
+    // POS
+    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+    Route::get('/pos/{journalEntry}/edit', [POSController::class, 'edit'])->name('pos.edit');
+    
+
+    // Accounting - Sales Invoice (formerly Sales invoice)
+    Route::controller(SalesInvoiceController::class)
+        ->as('sales-invoice.')->prefix('sales-invoice')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Credit CreditInvoice (formerly Invoice)
-    Route::controller(CreditInvoiceController::class)->prefix('credit-invoice')->group(function () {
-        Route::get('/', 'create')->name('credit-invoice');
-        Route::post('/', 'store')->name('credit-invoice.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('credit-invoice.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('credit-invoice.print');
-        Route::patch('/{journalEntry}', 'update')->name('credit-invoice.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('credit-invoice.destroy');
+    // Accounting - Credit Invoice
+    Route::controller(CreditInvoiceController::class)
+        ->as('credit-invoice.')->prefix('credit-invoice')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Bill
-    Route::controller(BillController::class)->prefix('bill')->group(function () {
-        Route::get('/', 'create')->name('bill');
-        Route::post('/', 'store')->name('bill.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('bill.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('bill.print');
-        Route::patch('/{journalEntry}', 'update')->name('bill.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('bill.destroy');
+    // Accounting - invoice-return
+    Route::controller(InvoiceReturnController::class)
+        ->as('invoice-return.')->prefix('invoice-return')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
     // Accounting - Receive Payment
-    Route::controller(ReceivePaymentController::class)->prefix('receive-payment')->group(function () {
-        Route::get('/', 'create')->name('receive-payment');
-        Route::post('/', 'store')->name('receive-payment.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('receive-payment.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('receive-payment.print');
-        Route::patch('/{journalEntry}', 'update')->name('receive-payment.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('receive-payment.destroy');
+    Route::controller(ReceivePaymentController::class)
+        ->as('receive-payment.')->prefix('receive-payment')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Sales Invoice (formerly Sales invoice)
-    Route::controller(SalesInvoiceController::class)->prefix('sales-invoice')->group(function () {
-        Route::get('/', 'create')->name('sales-invoice');
-        Route::post('/', 'store')->name('sales-invoice.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('sales-invoice.edit');
-        Route::patch('/{journalEntry}', 'update')->name('sales-invoice.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('sales-invoice.destroy');
+    // Accounting - Expense
+    Route::controller(PaymentController::class)
+        ->as('payment.')->prefix('payment')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Bank Deposit
-    Route::controller(BankDepositController::class)->prefix('bank-deposit')->group(function () {
-        Route::get('/', 'create')->name('bank-deposit');
-        Route::post('/', 'store')->name('bank-deposit.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('bank-deposit.edit');
-        Route::patch('/{journalEntry}', 'update')->name('bank-deposit.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('bank-deposit.destroy');
+    // Accounting - Bill
+    Route::controller(BillController::class)
+        ->as('bill.')->prefix('bill')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Credit Note (Sales Return)
-    Route::controller(InvoiceReturnController::class)->prefix('sales-return')->group(function () {
-        Route::get('/', 'create')->name('credit-note');
-        Route::post('/', 'store')->name('credit-note.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('credit-note.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('credit-note.print');
-        Route::patch('/{journalEntry}', 'update')->name('credit-note.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('credit-note.destroy');
+    // Accounting - Pay Bill
+    Route::controller(PayBillController::class)
+        ->as('pay-bill.')->prefix('pay-bill')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Supplier Credit (Supplier Return)
-    Route::controller(BillReturnController::class)->prefix('supplier-return')->group(function () {
-        Route::get('/', 'create')->name('supplier-credit');
-        Route::post('/', 'store')->name('supplier-credit.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('supplier-credit.edit');
-        Route::get('/{journalEntry}/print', 'print')->name('supplier-credit.print');
-        Route::patch('/{journalEntry}', 'update')->name('supplier-credit.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('supplier-credit.destroy');
+    // Accounting - Bill Return
+    Route::controller(BillReturnController::class)
+        ->as('bill-return.')->prefix('bill-return')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
     // Accounting - Cheque
-    Route::controller(ChequeController::class)->prefix('cheque')->group(function () {
-        Route::get('/list', 'index')->name('cheque.index');
-        Route::get('/', 'create')->name('cheque');
-        Route::post('/', 'store')->name('cheque.store');
-        Route::get('/{journalEntry}/edit', 'edit')->name('cheque.edit');
-        Route::patch('/{journalEntry}', 'update')->name('cheque.update');
-        Route::delete('/{journalEntry}', 'destroy')->name('cheque.destroy');
+    Route::controller(ChequeController::class)
+        ->as('cheque.')->prefix('cheque')->group(function () {
+        Route::get('/list', 'index')->name('index');
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
-    // Accounting - Chart of Accounts
-    Route::get('chart-of-account/{chart_of_account}/history', [ChartOfAccController::class, 'history'])->name('chart-of-account.history');
-    Route::resource('chart-of-account', ChartOfAccController::class);
+    
+    // Accounting - Transfer
+    Route::controller(TransferController::class)
+        ->as('transfer.')->prefix('transfer')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
+    });
+
+    // Accounting - Bank Deposit
+    Route::controller(BankDepositController::class)
+        ->as('bank-deposit.')->prefix('bank-deposit')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
+    });
 
     // Reports
     Route::controller(ReportController::class)->prefix('reports')->group(function () {
@@ -195,45 +247,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/purchase-by-supplier', 'purchaseBySupplier')->name('reports.purchase-by-supplier');
     });
 
-    // Inventory
-    Route::get('items/{item}/print-barcode', [ItemController::class, 'printBarcode'])->name('items.print-barcode');
-    Route::resource('items', ItemController::class);
-    Route::resource('item-categories', ItemCategoryController::class);
-    Route::controller(InventoryQuantityAdjustmentController::class)->prefix('inventory-adjustment')->group(function () {
-        Route::get('/', 'create')->name('inventory-adjustment');
-        Route::post('/', 'store')->name('inventory-adjustment.store');
-    });
-
-    // Contacts
-    Route::resource('customers', CustomerController::class);
-    Route::resource('suppliers', SupplierController::class);
-    Route::resource('employees', EmployeeController::class);
-    Route::resource('job-cards', JobCardController::class);
-    Route::resource('vehicles', VehicleController::class);
-
-    // Settings
-    Route::prefix('settings')->group(function () {
-        Route::get('/', [CompanySettingsController::class, 'index'])->name('settings.index');
-        
-        Route::controller(CompanySettingsController::class)->group(function () {
-            Route::post('/company', 'update')->name('company.update');
-            Route::post('/legal', 'updateLegal')->name('legal.update');
-            Route::post('/accounting', 'updateAccounting')->name('accounting.update');
-            Route::post('/alerts', 'updateAlerts')->name('alerts.update');
-            Route::post('/time', 'updateTime')->name('time.settings.update');
-            Route::post('/logo', 'uploadLogo')->name('logo.upload');
-        });
-    });
-
-
-    // Users
-    Route::resource('users', UserController::class);
-    Route::post('/users/{user}/resend-invite', [UserController::class, 'resendInvitation'])->name('users.resend-invite');
-
-    // POS
-    Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-    Route::get('/pos/{journalEntry}/edit', [POSController::class, 'edit'])->name('pos.edit');
-    
     // History
     Route::get('/history/{transactionType}', [TransactionHistoryController::class, 'page'])->name('history.index');
 });

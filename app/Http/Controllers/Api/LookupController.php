@@ -62,7 +62,7 @@ class LookupController extends Controller
         $search = $request->query('search');
         $type = $request->query('type'); // optional: filter by account_type
 
-        $accounts = \App\Models\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'currency')
+        $accounts = \App\Models\Accounting\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'currency')
             ->withSum('journalLines', 'debit')
             ->withSum('journalLines', 'credit')
             ->when($search, function($q) use ($search) {
@@ -98,7 +98,7 @@ class LookupController extends Controller
             return response()->json([ 'error' => 'Account ID is required.' ], 422);
         }
 
-        $account = \App\Models\ChartOfAcc::select('id', 'currency')->find($accountId);
+        $account = \App\Models\Accounting\ChartOfAcc::select('id', 'currency')->find($accountId);
         if (!$account) {
             return response()->json([ 'error' => 'Account not found.' ], 404);
         }
@@ -191,7 +191,7 @@ class LookupController extends Controller
         $defaultCode = $defaults[strtolower($type)] ?? 1000;
 
         // Fetch all account codes of this type for the active company
-        $codes = \App\Models\ChartOfAcc::where('account_type', $type)
+        $codes = \App\Models\Accounting\ChartOfAcc::where('account_type', $type)
             ->pluck('account_code');
 
         $numericCodes = $codes->filter(function($code) {
@@ -217,7 +217,7 @@ class LookupController extends Controller
             return response()->json(['next_ref' => '1']);
         }
 
-        $last = \App\Models\Payment::query()
+        $last = \App\Models\Accounting\Payment::query()
             ->where('payment_account_id', $accountId)
             ->whereNotNull('reference_no')
             ->whereRaw('reference_no REGEXP "^[0-9]+$"')
@@ -275,12 +275,12 @@ class LookupController extends Controller
     public function customerInvoices(Customer $customer, Request $request)
     {
         $paymentId = $request->query('receive_payment_id');
-        $credit_invoices = \App\Models\CreditInvoice::where('customer_id', $customer->id)
+        $credit_invoices = \App\Models\Accounting\CreditInvoice::where('customer_id', $customer->id)
             ->where('status', 'posted')
             ->with('journalEntry')
             ->get()
             ->map(function($creditInvoice) use ($paymentId) {
-                $query = \App\Models\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id);
+                $query = \App\Models\Accounting\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id);
                 if ($paymentId) {
                     $query->where('receive_payment_id', '!=', $paymentId);
                 }
@@ -289,7 +289,7 @@ class LookupController extends Controller
 
                 $applied = 0;
                 if ($paymentId) {
-                    $applied = \App\Models\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id)
+                    $applied = \App\Models\Accounting\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id)
                         ->where('receive_payment_id', $paymentId)
                         ->sum('amount');
                 }
@@ -338,12 +338,12 @@ class LookupController extends Controller
     public function supplierBills(Supplier $supplier, Request $request)
     {
         $paymentId = $request->query('receive_payment_id');
-        $bills = \App\Models\Bill::where('supplier_id', $supplier->id)
+        $bills = \App\Models\Accounting\Bill::where('supplier_id', $supplier->id)
             ->where('status', 'posted')
             ->with('journalEntry')
             ->get()
             ->map(function($bill) use ($paymentId) {
-                $query = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id);
+                $query = \App\Models\Accounting\BillPaymentAllocation::where('bill_id', $bill->id);
                 if ($paymentId) {
                     $query->where('bill_payment_id', '!=', $paymentId);
                 }
@@ -352,7 +352,7 @@ class LookupController extends Controller
 
                 $applied = 0;
                 if ($paymentId) {
-                    $applied = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id)
+                    $applied = \App\Models\Accounting\BillPaymentAllocation::where('bill_id', $bill->id)
                         ->where('bill_payment_id', $paymentId)
                         ->sum('amount_applied');
                 }
@@ -377,9 +377,9 @@ class LookupController extends Controller
     public function itemCreateOptions()
     {
         $categories = \App\Models\ItemCategory::orderBy('name')->get();
-        $incomeAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->orderBy('account_code')->get();
-        $expenseAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['payment', 'cost_of_goods_sold'])->orderBy('account_code')->get();
-        $inventoryAccounts = \App\Models\ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->orderBy('account_code')->get();
+        $incomeAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['income', 'other_income'])->orderBy('account_code')->get();
+        $expenseAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['payment', 'cost_of_goods_sold'])->orderBy('account_code')->get();
+        $inventoryAccounts = \App\Models\Accounting\ChartOfAcc::whereIn('account_type', ['asset', 'other_current_asset', 'fixed_asset', 'current_asset', 'inventory'])->orderBy('account_code')->get();
         $suppliers = \App\Models\Supplier::orderBy('display_name')->get()
             ->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name]);
         $allItems = \App\Models\Item::where('type', '!=', 'bundle')->orderBy('name')->get();
@@ -400,7 +400,7 @@ class LookupController extends Controller
     public function paymentMethods()
     {
         
-        $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
+        $paymentMethods = \App\Models\Accounting\PaymentMethod::withoutGlobalScopes()
             ->where('is_active', true)
             ->orderBy('name')
             ->get()

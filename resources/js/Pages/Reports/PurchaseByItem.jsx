@@ -3,7 +3,7 @@ import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import ReportDateFilter from '@/Components/ReportDateFilter';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
-
+import { getEditRoute } from '@/Utils/routeUtils';
 export default function PurchaseByItem({ reportData, filters, auth }) {
     const dateFormat = useDateFormat();
     const [collapsedGroups, setCollapsedGroups] = useState(new Set());
@@ -20,27 +20,13 @@ export default function PurchaseByItem({ reportData, filters, auth }) {
         });
     };
 
-    const getEditRoute = (type) => {
-        switch (type) {
-            case 'invoice': return 'invoice.edit';
-            case 'bill': return 'bill.edit';
-            case 'payment': return 'expense.edit';
-            case 'receive_payment': return 'payment.edit';
-            case 'bank_deposit': return 'deposit.edit';
-            case 'supplier_credit': return 'supplier-credit.edit';
-            case 'credit_note': return 'credit-note.edit';
-            case 'sales_receipt': return 'receipt.edit';
-            case 'transfer': return 'transfer.edit';
-            case 'cheque': return 'cheque.edit';
-            default: return 'journal-entries.edit';
-        }
-    };
+
 
     const handleFilterChange = (newFilters) => {
-        router.get(route('reports.purchase-by-item'), { 
-            start_date: newFilters.start_date, 
+        router.get(route('reports.purchase-by-item'), {
+            start_date: newFilters.start_date,
             end_date: newFilters.end_date,
-            type: newFilters.type 
+            type: newFilters.type
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -90,7 +76,7 @@ export default function PurchaseByItem({ reportData, filters, auth }) {
     };
 
     const filterElements = (
-        <ReportDateFilter 
+        <ReportDateFilter
             currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
             onFilterChange={handleFilterChange}
         />
@@ -139,14 +125,14 @@ export default function PurchaseByItem({ reportData, filters, auth }) {
                                 return (
                                     <React.Fragment key={group.item.id}>
                                         {/* Group Header Row */}
-                                        <tr 
+                                        <tr
                                             className="bg-slate-50/50 hover:bg-slate-100 cursor-pointer transition-colors"
                                             onClick={() => toggleGroup(group.item.id)}
                                         >
                                             <td colSpan="7" className="py-2 px-3 font-bold text-gray-800">
                                                 <div className="flex items-center gap-2 whitespace-nowrap">
-                                                    <svg 
-                                                        className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-90'}`} 
+                                                    <svg
+                                                        className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-90'}`}
                                                         fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     >
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -201,13 +187,13 @@ export default function PurchaseByItem({ reportData, filters, auth }) {
                                                 </td>
                                             </tr>
                                         )}
-                                        
+
                                         <tr className="h-4"></tr>
                                     </React.Fragment>
                                 );
                             })
                         )}
-                        
+
                         {/* Grand Total Footer Row */}
                         {items.length > 0 && (
                             <tr className="border-t-2 border-gray-300">

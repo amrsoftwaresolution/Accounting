@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Cheque;
-use App\Models\ChequeLine;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\Cheque;
+use App\Models\Accounting\ChequeLine;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Customer;
 use App\Models\Supplier;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
 use App\Http\Requests\Accounting\ChequeRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;

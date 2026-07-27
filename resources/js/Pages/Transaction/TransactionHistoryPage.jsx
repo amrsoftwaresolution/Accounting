@@ -1,5 +1,6 @@
 import { router, usePage, Head } from '@inertiajs/react';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import { getEditRoute } from '@/Utils/routeUtils';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 const typeLabel = (type = '') => {
@@ -8,20 +9,7 @@ const typeLabel = (type = '') => {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const getEditRoute = (type) => {
-    switch (type) {
-        case 'invoice':
-            return 'invoice.edit';
-        case 'bill':
-            return 'bill.edit';
-        case 'payment':
-            return 'expense.edit';
-        case 'sales_receipt':
-            return 'pos.edit';
-        default:
-            return 'journal-entries.edit';
-    }
-};
+
 
 export default function TransactionHistoryPage() {
     const { records = [], transactionType = 'invoice' } = usePage().props;

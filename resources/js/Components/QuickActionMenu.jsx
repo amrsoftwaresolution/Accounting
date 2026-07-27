@@ -24,16 +24,16 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
 
     if (!isOpen) return null;
 
-        const categories = [
+    const categories = [
         {
             title: "Customers",
             links: [
                 { name: "Add Customer", action: 'customer', isSolid: true },
                 { name: "POS Billing", href: route('pos.index') },
-                { name: "Sales Invoice", href: route('sales-invoice') },
-                { name: "Credit Invoice", href: route('credit-invoice') },
-                { name: "Receive Payment", href: route('receive-payment') },
-                { name: "Sales Return", href: route('credit-note') },
+                { name: "Sales Invoice", href: route('sales-invoice.create') },
+                { name: "Credit Invoice", href: route('credit-invoice.create') },
+                { name: "Receive Payment", href: route('receive-payment.create') },
+                { name: "Invoice Return", href: route('invoice-return.create') },
             ]
         },
         {
@@ -41,11 +41,11 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
             links: [
 
                 { name: "Add Supplier", action: 'supplier', isSolid: true },
-                { name: "Payment", href: route('receive_payment') },
-                { name: "Bill", href: "/bill" },
-                { name: "Pay Bill", href: route('pay-bill') },
-                { name: "Supplier Return", href: "/supplier-return" },
-                { name: "Cheque", href: "/cheque" },
+                { name: "Payment", href: route('payment.create') },
+                { name: "Bill", href: route('bill.create') },
+                { name: "Pay Bill", href: route('pay-bill.create') },
+                { name: "bill Return", href: route('bill-return.create') },
+                { name: "Cheque", href: route('cheque.create') },
 
             ]
         },
@@ -53,10 +53,10 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
             title: "Other",
             links: [
                 { name: "Add Account", action: 'account', isSolid: true },
-                { name: "Bank Deposit", href: route('bank-deposit') },
-                { name: "Transfer", href: "/transfer" },
-                { name: "Journal entry", href: "/journal" },
-                { name: "Inventory Qty Adj", href: "/inventory-adjustment" },
+                { name: "Bank Deposit", href: route('bank-deposit.create') },
+                { name: "Transfer", href: route('transfer.create') },
+                { name: "Journal entry", href: route('journal') },
+                { name: "Inventory Qty Adj", href: route('inventory-adjustment.create') },
             ]
         }
     ];

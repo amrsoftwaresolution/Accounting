@@ -4,22 +4,25 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
-use App\Models\ChartOfAcc;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\ChartOfAcc;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
 use App\Models\Supplier;
-use App\Models\BillPayment;
-use App\Models\BillPaymentAllocation;
+use App\Models\Accounting\BillPayment;
+use App\Models\Accounting\BillPaymentAllocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Traits\AccountingControllerTrait;
 
 class PayBillController extends Controller
 {
+    use AccountingControllerTrait;
+
     public function create(Request $request)
     {
-        return Inertia::render('Transaction/PayBill', [
+        return Inertia::render('Transaction/PayBill/PayBill', [
             'paymentMethods' => $this->paymentMethods()
         ]);
     }
@@ -65,7 +68,7 @@ class PayBillController extends Controller
                             ]);
                             $totalAllocated += $allocAmount;
 
-                            $bill = \App\Models\Bill::find($billData['id']);
+                            $bill = \App\Models\Accounting\Bill::find($billData['id']);
                             if ($bill) {
                                 $totalPaid = BillPaymentAllocation::where('bill_id', $bill->id)->sum('amount_applied');
                                 if ($totalPaid >= $bill->total_amount - 0.01) {
@@ -83,6 +86,8 @@ class PayBillController extends Controller
                     'reference' => $request->referenceNo,
                     'description' => $request->memo ?? 'Bill Payment',
                     'transaction_type' => 'pay_bill',
+                    'payee_id' => $request->supplier,
+                    'payee_type' => \App\Models\Supplier::class,
                     'transactionable_type' => BillPayment::class,
                     'transactionable_id' => $receivePayment->id,
                     'total_amount' => $amount,
@@ -102,7 +107,6 @@ class PayBillController extends Controller
                 // Debit Accounts Payable
                 $apAccount = ChartOfAcc::where('account_type', 'liability')
                     ->where('name', 'like', '%Accounts Payable%')
-                    
                     ->first();
 
                 if (!$apAccount) {
@@ -120,9 +124,154 @@ class PayBillController extends Controller
                 return $journalEntry;
             });
 
-            if ($request->action === 'close') { return back()->with(['success' => 'Bill payment recorded successfully.', 'close_window' => true]); }
+            return $this->handleActionRedirect($request, 'pay-bill', $journalEntry->id, 'Bill payment recorded successfully.');
 
-                return redirect()->route('pay-bill')->with('success', 'Bill payment recorded successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $receivePayment = BillPayment::with('allocations')->find($journalEntry->transactionable_id);
+
+        if (!$receivePayment) {
+            abort(404, 'Bill payment not found');
+        }
+
+        $paymentData = [
+            'id' => $journalEntry->id,
+            'supplier' => $receivePayment->supplier_id,
+            'amount' => number_format($receivePayment->amount, 2, '.', ''),
+            'paymentDate' => $receivePayment->payment_date,
+            'paymentMethod' => $receivePayment->payment_method_id,
+            'paymentAccount' => $receivePayment->payment_account_id,
+            'referenceNo' => $receivePayment->reference_no,
+            'memo' => $receivePayment->memo,
+            'allocations' => $receivePayment->allocations->map(function ($alloc) {
+                return [
+                    'bill_id' => $alloc->bill_id,
+                    'amount_applied' => $alloc->amount_applied,
+                ];
+            })->toArray()
+        ];
+
+        return Inertia::render('Transaction/PayBill/PayBill', [
+            'pay_bill' => $paymentData,
+            'paymentMethods' => $this->paymentMethods()
+        ]);
+    }
+
+    public function update(Request $request, JournalEntry $journalEntry)
+    {
+        $validated = $request->validate([
+            'supplier' => 'required|uuid',
+            'amount' => 'required|numeric|min:0.01',
+            'paymentDate' => 'required|date',
+            'paymentMethod' => 'nullable|uuid',
+            'paymentAccount' => 'required|uuid',
+            'referenceNo' => 'nullable|string|max:255',
+            'memo' => 'nullable|string',
+            'bills' => 'nullable|array',
+            'bills.*.id' => 'required|uuid',
+            'bills.*.amount' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            DB::transaction(function() use ($request, $validated, $journalEntry) {
+                $amount = (float) $validated['amount'];
+
+                $receivePayment = BillPayment::find($journalEntry->transactionable_id);
+                if (!$receivePayment) {
+                    throw new \Exception('Bill payment document not found');
+                }
+
+                // Delete old allocations
+                foreach ($receivePayment->allocations as $alloc) {
+                    $billId = $alloc->bill_id;
+                    $alloc->delete();
+                    $bill = \App\Models\Accounting\Bill::find($billId);
+                    if ($bill) {
+                        $totalPaid = BillPaymentAllocation::where('bill_id', $bill->id)->sum('amount_applied');
+                        if ($totalPaid >= $bill->total_amount - 0.01) {
+                            $bill->update(['status' => 'paid']);
+                        } else {
+                            $bill->update(['status' => 'posted']);
+                        }
+                    }
+                }
+
+                $receivePayment->update([
+                    'supplier_id' => $request->supplier,
+                    'amount' => $amount,
+                    'payment_date' => $request->paymentDate,
+                    'payment_method_id' => $request->paymentMethod,
+                    'payment_account_id' => $request->paymentAccount,
+                    'reference_no' => $request->referenceNo,
+                    'memo' => $request->memo,
+                ]);
+
+                // Create new allocations
+                if (!empty($request->bills)) {
+                    foreach ($request->bills as $billData) {
+                        $allocAmount = (float) $billData['amount'];
+                        if ($allocAmount > 0) {
+                            BillPaymentAllocation::create([
+                                'bill_payment_id' => $receivePayment->id,
+                                'bill_id' => $billData['id'],
+                                'amount_applied' => $allocAmount,
+                            ]);
+
+                            $bill = \App\Models\Accounting\Bill::find($billData['id']);
+                            if ($bill) {
+                                $totalPaid = BillPaymentAllocation::where('bill_id', $bill->id)->sum('amount_applied');
+                                if ($totalPaid >= $bill->total_amount - 0.01) {
+                                    $bill->update(['status' => 'paid']);
+                                } else {
+                                    $bill->update(['status' => 'posted']);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $journalEntry->update([
+                    'date' => $request->paymentDate,
+                    'reference' => $request->referenceNo,
+                    'description' => $request->memo ?? 'Bill Payment',
+                    'payee_id' => $request->supplier,
+                    'payee_type' => \App\Models\Supplier::class,
+                    'total_amount' => $amount,
+                ]);
+
+                $journalEntry->lines->each->delete();
+
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $request->paymentAccount,
+                    'description' => $request->memo ?? 'Bill Payment',
+                    'credit' => $amount,
+                    'debit' => 0,
+                ]);
+
+                $apAccount = ChartOfAcc::where('account_type', 'liability')
+                    ->where('name', 'like', '%Accounts Payable%')
+                    ->first();
+                if (!$apAccount) {
+                    $apAccount = ChartOfAcc::where('account_type', 'liability')->first();
+                }
+
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $apAccount->id ?? ChartOfAcc::first()->id,
+                    'description' => 'ReceivePayment for Bill(s)',
+                    'debit' => $amount,
+                    'credit' => 0,
+                ]);
+            });
+
+            return $this->handleActionRedirect($request, 'pay-bill', $journalEntry->id, 'Bill payment updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -146,7 +295,7 @@ class PayBillController extends Controller
                     $allocation->delete();
 
                     // Re-evaluate bill status
-                    $bill = \App\Models\Bill::find($billId);
+                    $bill = \App\Models\Accounting\Bill::find($billId);
                     if ($bill) {
                         $totalPaid = BillPaymentAllocation::where('bill_id', $bill->id)->sum('amount_applied');
                         if ($totalPaid >= $bill->total_amount - 0.01) {

@@ -5,17 +5,17 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Models\ItemCategory;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Supplier;
 use App\Models\BundleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
-use App\Models\BillItem;
-use App\Models\CreditInvoiceItem;
-use App\Models\PaymentItem;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\BillItem;
+use App\Models\Accounting\CreditInvoiceItem;
+use App\Models\Accounting\PaymentItem;
+use App\Models\Accounting\JournalEntryLine;
 
 class ItemController extends Controller
 {

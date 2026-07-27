@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Customer;
 use App\Http\Requests\Accounting\CreditInvoiceRequest;
 use Inertia\Inertia;
@@ -28,7 +28,7 @@ class CreditInvoiceController extends Controller
         if ($copyId = $request->query('copy')) {
             $journalEntry = JournalEntry::findOrFail($copyId);
             $journalEntry->load('lines');
-            $creditInvoice = \App\Models\CreditInvoice::find($journalEntry->transactionable_id);
+            $creditInvoice = \App\Models\Accounting\CreditInvoice::find($journalEntry->transactionable_id);
 
             $invoiceData = [
                 'id' => null,
@@ -53,13 +53,13 @@ class CreditInvoiceController extends Controller
                 })->toArray() ?? [],
             ];
 
-            return Inertia::render('Transaction/CreditInvoiceForm', [
+            return Inertia::render('Transaction/CreditInvoice/CreditInvoiceForm', [
                 'nextInvoiceNo' => $nextInvoiceNoLabel,
                 'invoice' => $invoiceData,
             ]);
         }
 
-        return Inertia::render('Transaction/CreditInvoiceForm', [
+        return Inertia::render('Transaction/CreditInvoice/CreditInvoiceForm', [
             'nextInvoiceNo' => $nextInvoiceNoLabel
         ]);
     }
@@ -74,7 +74,7 @@ class CreditInvoiceController extends Controller
             });
 
             // 1. Create Business Document (Invoice)
-            $creditInvoice = \App\Models\CreditInvoice::create([
+            $creditInvoice = \App\Models\Accounting\CreditInvoice::create([
                 'customer_id' => $request->customer,
                 'email' => $request->email,
                 'billing_address' => $request->billingAddress,
@@ -89,7 +89,7 @@ class CreditInvoiceController extends Controller
             ]);
 
             foreach ($request->items as $lineItem) {
-                \App\Models\CreditInvoiceItem::create([
+                \App\Models\Accounting\CreditInvoiceItem::create([
                     'credit_invoice_id' => $creditInvoice->id,
                     'item_id' => $lineItem['product'],
                     'description' => $lineItem['description'] ?? '',
@@ -113,7 +113,7 @@ class CreditInvoiceController extends Controller
                 'status' => 'posted',
                 'created_by' => Auth::id(),
                 'transactionable_id' => $creditInvoice->id,
-                'transactionable_type' => \App\Models\CreditInvoice::class,
+                'transactionable_type' => \App\Models\Accounting\CreditInvoice::class,
             ]);
 
             // Income Credits
@@ -176,7 +176,7 @@ class CreditInvoiceController extends Controller
         if ($action === 'close') { return back()->with(['success' => 'credit Sale saved successfully.', 'close_window' => true]); }
 
         if ($action === 'new') {
-            return redirect()->route('credit-invoice')->with('success', 'credit Sale saved successfully.');
+            return redirect()->route('credit-invoice.create')->with('success', 'credit Sale saved successfully.');
         }
 
        return redirect()->route('credit-invoice.edit', $journalEntry->id)->with('success', 'Credit Sale saved successfully.');
@@ -186,7 +186,7 @@ class CreditInvoiceController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $creditInvoice = \App\Models\CreditInvoice::find($journalEntry->transactionable_id);
+        $creditInvoice = \App\Models\Accounting\CreditInvoice::find($journalEntry->transactionable_id);
 
         $invoiceData = [
             'id' => $journalEntry->id,
@@ -211,7 +211,7 @@ class CreditInvoiceController extends Controller
             })->toArray() ?? [],
         ];
 
-        return Inertia::render('Transaction/CreditInvoiceForm', [
+        return Inertia::render('Transaction/CreditInvoice/CreditInvoiceForm', [
             'customers' => Customer::orderBy('display_name')->get(),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
             'items' => \App\Models\Item::orderBy('name')->get(),
@@ -222,7 +222,7 @@ class CreditInvoiceController extends Controller
     public function print(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $creditInvoice = \App\Models\CreditInvoice::with('items.item', 'customer', 'company')->findOrFail($journalEntry->transactionable_id);
+        $creditInvoice = \App\Models\Accounting\CreditInvoice::with('items.item', 'customer', 'company')->findOrFail($journalEntry->transactionable_id);
         $company = $creditInvoice->company;
 
         $tableItems = [];
@@ -278,7 +278,7 @@ class CreditInvoiceController extends Controller
             });
 
             // 1. Update Business Document
-            $creditInvoice = \App\Models\CreditInvoice::find($journalEntry->transactionable_id);
+            $creditInvoice = \App\Models\Accounting\CreditInvoice::find($journalEntry->transactionable_id);
             if ($creditInvoice) {
                 $creditInvoice->update([
                     'customer_id' => $request->customer,
@@ -301,7 +301,7 @@ class CreditInvoiceController extends Controller
                 }
                 $creditInvoice->items()->delete();
                 foreach ($request->items as $lineItem) {
-                    \App\Models\CreditInvoiceItem::create([
+                    \App\Models\Accounting\CreditInvoiceItem::create([
                         'credit_invoice_id' => $creditInvoice->id,
                         'item_id' => $lineItem['product'],
                         'description' => $lineItem['description'] ?? '',
@@ -379,7 +379,7 @@ class CreditInvoiceController extends Controller
         $action = $request->input('action', 'save');
         if ($action === 'close') { return back()->with(['success' => 'CreditInvoice updated successfully.', 'close_window' => true]); }
         if ($action === 'new') {
-            return redirect()->route('credit-invoice')->with('success', 'CreditInvoice updated successfully.');
+            return redirect()->route('credit-invoice.create')->with('success', 'CreditInvoice updated successfully.');
         }
         return redirect()->route('credit-invoice.edit', $journalEntry->id)->with('success', 'CreditInvoice updated successfully.');
     }
@@ -392,7 +392,7 @@ class CreditInvoiceController extends Controller
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {
-            $creditInvoice = \App\Models\CreditInvoice::find($journalEntry->transactionable_id);
+            $creditInvoice = \App\Models\Accounting\CreditInvoice::find($journalEntry->transactionable_id);
 
             if ($creditInvoice) {
                 foreach ($creditInvoice->items as $oldItem) {

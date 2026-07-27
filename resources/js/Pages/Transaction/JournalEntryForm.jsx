@@ -238,7 +238,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         const method = currentId ? 'patch' : 'post';
         const url = currentId ? `/journal-entries/${currentId}` : "/journal-entries";
 
-        router[method](url, payload, { replace: true,
+        router[method](url, payload, {
+            replace: true,
             preserveState: true,   // STAY ON SAME PAGE
             preserveScroll: true,
             onSuccess: (page) => {
@@ -269,7 +270,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
     };
     return (
         <TransactionLayout
-            historyType="journal entry"
+            historyType="journal_entry"
             title={`Journal Entry #${form.journalNo}`}
             amount={totals.debit.toFixed(2)}
             dirty={isDirty}

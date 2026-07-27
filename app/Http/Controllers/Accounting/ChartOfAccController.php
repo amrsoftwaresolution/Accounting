@@ -6,15 +6,13 @@ use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\Request;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\Accounting\ChartOfAccRequest;
 
-
 class ChartOfAccController extends Controller
 {
-
     public function index()
     {
         $accounts = ChartOfAcc::withSum('journalLines', 'debit')
@@ -105,7 +103,7 @@ class ChartOfAccController extends Controller
                 ]
             );
 
-            $journalEntry = \App\Models\JournalEntry::create([
+            $journalEntry = \App\Models\Accounting\JournalEntry::create([
                 'date' => $request->input('opening_balance_date', now()),
                 'reference' => 'OPENING_BAL',
                 'description' => 'Opening balance for ' . $account->name,
@@ -234,7 +232,7 @@ class ChartOfAccController extends Controller
 
     public function history(Request $request, ChartOfAcc $chartOfAccount)
     {
-        $query = \App\Models\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
+        $query = \App\Models\Accounting\JournalEntryLine::with(['journalEntry.creator', 'journalEntry.lines.account'])
              ->where('chart_of_acc_id', $chartOfAccount->id)
              ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id');
 

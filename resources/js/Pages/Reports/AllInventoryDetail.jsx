@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import { getEditRoute } from '@/Utils/routeUtils';
 import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function AllInventoryDetail({ reportData = [], filters = {} }) {
@@ -23,27 +24,13 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
         });
     };
 
-    const getEditRoute = (type) => {
-        switch (type) {
-            case 'invoice': return 'invoice.edit';
-            case 'bill': return 'bill.edit';
-            case 'payment': return 'expense.edit';
-            case 'receive_payment': return 'payment.edit';
-            case 'bank_deposit': return 'deposit.edit';
-            case 'supplier_credit': return 'supplier-credit.edit';
-            case 'credit_note': return 'credit-note.edit';
-            case 'sales_receipt': return 'receipt.edit';
-            case 'transfer': return 'transfer.edit';
-            case 'cheque': return 'cheque.edit';
-            default: return 'journal-entries.edit';
-        }
-    };
+
 
     const handleFilterChange = (newFilters) => {
-        router.get(route('reports.inventory-detail-all'), { 
-            start_date: newFilters.start_date, 
+        router.get(route('reports.inventory-detail-all'), {
+            start_date: newFilters.start_date,
             end_date: newFilters.end_date,
-            type: newFilters.type 
+            type: newFilters.type
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -51,7 +38,7 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
     };
 
     const filterElements = (
-        <ReportDateFilter 
+        <ReportDateFilter
             currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
             onFilterChange={handleFilterChange}
         />
@@ -62,12 +49,12 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
         return reportData.map(group => {
             let currentQty = 0;
             let currentValue = 0;
-            
+
             const linesWithBalance = group.lines.map(line => {
                 const amount = line.debit - line.credit;
                 currentQty += line.qty_change;
                 currentValue += amount;
-                
+
                 return {
                     ...line,
                     amount,
@@ -108,11 +95,6 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
             <Head title="Inventory Balance Detail" />
 
             <div className="text-center mb-8 font-serif relative">
-                <div className="absolute left-0 top-0">
-                    <Link href={route(`reports.inventory-summary`)} className="text-xs text-blue-600 hover:underline font-sans">
-                        &larr; Back to Inventory Summary
-                    </Link>
-                </div>
                 <h2 className="text-xl font-bold text-gray-900">{auth.company?.company_name || 'Company'}</h2>
                 <h3 className="text-lg text-gray-800 mt-1">Inventory Balance Detail</h3>
                 {filters.start_date && filters.end_date ? (
@@ -154,14 +136,14 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
                                 return (
                                     <React.Fragment key={group.item.id}>
                                         {/* Group Header Row */}
-                                        <tr 
+                                        <tr
                                             className="bg-slate-50/50 hover:bg-slate-100 cursor-pointer transition-colors"
                                             onClick={() => toggleGroup(group.item.id)}
                                         >
                                             <td colSpan="8" className="py-2 px-3 font-bold text-gray-800">
                                                 <div className="flex items-center gap-2 whitespace-nowrap">
-                                                    <svg 
-                                                        className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-90'}`} 
+                                                    <svg
+                                                        className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isCollapsed ? '' : 'rotate-90'}`}
                                                         fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                                     >
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -218,13 +200,13 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
                                                 </td>
                                             </tr>
                                         )}
-                                        
+
                                         <tr className="h-4"></tr>
                                     </React.Fragment>
                                 );
                             })
                         )}
-                        
+
                         {/* Grand Total Footer Row */}
                         {processedData.length > 0 && (
                             <tr className="border-t-2 border-gray-300">

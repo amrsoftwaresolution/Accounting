@@ -8,19 +8,19 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PaymentMethod;
-use App\Models\ChartOfAcc;
-use App\Models\BankDeposit;
-use App\Models\BankDepositItem;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\ChartOfAcc;
+use App\Models\Accounting\BankDeposit;
+use App\Models\Accounting\BankDepositItem;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
 use App\Http\Requests\Accounting\BankDepositRequest;
 
 class BankDepositController extends Controller
 {
     public function create()
     {
-        return Inertia::render('Transaction/BankDepositForm', [
-            'nextDepositNo' => $this->getNextDepositNo()
+        return Inertia::render('Transaction/BankDeposit/BankDepositForm', [
+            'nextRef' => $this->getNextDepositNo()
         ]);
     }
 
@@ -97,7 +97,7 @@ class BankDepositController extends Controller
         if ($action === 'close') { return back()->with(['success' => 'Bank deposit saved successfully.', 'close_window' => true]); }
 
         if ($action === 'new') {
-            return redirect()->route('bank-deposit')->with('success', 'Bank deposit saved successfully.');
+            return redirect()->route('bank-deposit.create')->with('success', 'Bank deposit saved successfully.');
         }
 
         return redirect()->back()->with('success', 'Bank deposit saved successfully.');
@@ -107,7 +107,7 @@ class BankDepositController extends Controller
     {
         $deposit = BankDeposit::with('items')->find($journalEntry->transactionable_id);
 
-        return Inertia::render('Transaction/BankDepositForm', [
+        return Inertia::render('Transaction/BankDeposit/BankDepositForm', [
             'deposit' => [
                 'id' => $journalEntry->id,
                 'depositTo' => $deposit->deposit_to_account_id,
@@ -203,7 +203,7 @@ class BankDepositController extends Controller
         if ($action === 'close') { return back()->with(['success' => 'Bank deposit updated successfully.', 'close_window' => true]); }
 
         if ($action === 'new') {
-            return redirect()->route('bank-deposit')->with('success', 'Bank deposit updated successfully.');
+            return redirect()->route('bank-deposit.create')->with('success', 'Bank deposit updated successfully.');
         }
 
         return redirect()->back()->with('success', 'Bank deposit updated successfully.');

@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
-use App\Models\SupplierInvoiceReturn;
-use App\Models\SupplierInvoiceReturnItem;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\BillReturn;
+use App\Models\Accounting\BillReturnItem;
 use App\Models\Supplier;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Item;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -18,36 +18,35 @@ use App\Http\Requests\Accounting\BillReturnRequest;
 
 class BillReturnController extends Controller
 {
-    public function index()
-    {
-        return Inertia::render('Transaction/SupplierCredit', [
-            'credits' => SupplierInvoiceReturn::with('supplier')
-                
-                ->latest()
-                ->get(),
-            // Added this so the dropdown isn't empty on the index/list page if needed
-            'suppliers' => Supplier::orderBy('display_name')->get(),
-            'accounts' => ChartOfAcc::orderBy('name')->get(),
-        ]);
-    }
+    // public function index()
+    // {
+    //     return Inertia::render('Transaction/SupplierCredit', [
+    //         'credits' => BillReturn::with('supplier')
+    //             ->latest()
+    //             ->get(),
+
+    //         'suppliers' => Supplier::orderBy('display_name')->get(),
+    //         'accounts' => ChartOfAcc::orderBy('name')->get(),
+    //     ]);
+    // }
 
     public function create(Request $request)
     {
         if ($copyId = $request->query('copy')) {
             $journalEntry = JournalEntry::findOrFail($copyId);
-            $invoiceReturn = SupplierInvoiceReturn::find($journalEntry->transactionable_id);
+            $invoiceReturn = BillReturn::find($journalEntry->transactionable_id);
 
             if (!$invoiceReturn) {
-                abort(404, 'Supplier Return not found');
+                abort(404, 'Bill Return not found');
             }
 
             $invoiceReturn->load('items');
 
-            $creditNoteData = [
+            $invoiceReturnData = [
                 'id' => null,
                 'supplier' => $invoiceReturn->supplier_id,
-                'creditDate' => $invoiceReturn->credit_date,
-                'creditNo' => (string)$this->getNextNo(),
+                'date' => $invoiceReturn->date,
+                'reference' => (string)$this->getNextNo(),
                 'memo' => $invoiceReturn->memo,
                 'items' => $invoiceReturn->items->whereNull('item_id')->map(function ($item) {
                     return [
@@ -67,14 +66,14 @@ class BillReturnController extends Controller
                 })->values()->toArray(),
             ];
 
-            return Inertia::render('Transaction/BillReturnForm', [
-                'credit' => $creditNoteData,
-                'nextCreditNo' => (string)$this->getNextNo(),
+            return Inertia::render('Transaction/BillReturn/BillReturnForm', [
+                'credit' => $invoiceReturnData,
+                'ref' => (string)$this->getNextNo(),
             ]);
         }
 
-        return Inertia::render('Transaction/BillReturnForm', [
-            'nextCreditNo' => (string)$this->getNextNo()
+        return Inertia::render('Transaction/BillReturn/BillReturnForm', [
+            'nextRef' => (string)$this->getNextNo()
         ]);
     }
 
@@ -104,9 +103,9 @@ class BillReturnController extends Controller
                 });
 
                 // 1. Create Credit Note
-                $invoiceReturn = SupplierInvoiceReturn::create([
+                $invoiceReturn = BillReturn::create([
                     'supplier_id' => $request->supplier,
-                    'credit_date' => $request->creditDate,
+                    'date' => $request->date,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'status' => 'posted',
@@ -114,7 +113,7 @@ class BillReturnController extends Controller
 
                 // Create Credit Note Items (Categories)
                 foreach ($categoryItems as $lineItem) {
-                    SupplierInvoiceReturnItem::create([
+                    BillReturnItem::create([
                         'bill_return_id' => $invoiceReturn->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'description' => $lineItem['description'] ?? '',
@@ -140,7 +139,7 @@ class BillReturnController extends Controller
                         $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
-                    SupplierInvoiceReturnItem::create([
+                    BillReturnItem::create([
                         'bill_return_id' => $invoiceReturn->id,
                         'item_id' => $productItem['product'],
                         'chart_of_acc_id' => $chartOfAccId,
@@ -153,17 +152,17 @@ class BillReturnController extends Controller
 
                 // 2. Financial Entry
                 $journalEntry = JournalEntry::create([
-                    'date' => $request->creditDate,
-                    'reference' => $request->creditNo,
+                    'date' => $request->date,
+                    'reference' => $request->reference,
                     'description' => $request->memo,
-                    'transaction_type' => 'supplier_credit',
+                    'transaction_type' => 'bill_return',
                     'payee_id' => $request->supplier,
                     'payee_type' => Supplier::class,
                     'total_amount' => $totalAmount,
                     'status' => 'posted',
                     'created_by' => Auth::id(),
                     'transactionable_id' => $invoiceReturn->id,
-                    'transactionable_type' => SupplierInvoiceReturn::class,
+                    'transactionable_type' => BillReturn::class,
                 ]);
 
                 // Debit Accounts Payable (Reducing what we owe)
@@ -213,13 +212,13 @@ class BillReturnController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Supplier Return saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { return back()->with(['success' => 'Bill Return saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
-                return redirect()->route('supplier-credit')->with('success', 'Supplier Return saved successfully.');
+                return redirect()->route('bill-return.create')->with('success', 'Bill Return saved successfully.');
             }
 
-            return redirect()->route('supplier-credit.edit', $journalEntry->id)->with('success', 'Supplier Return saved successfully.');
+            return redirect()->route('bill-return.edit', $journalEntry->id)->with('success', 'Bill Return saved successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -228,28 +227,28 @@ class BillReturnController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $invoiceReturn = SupplierInvoiceReturn::find($journalEntry->transactionable_id);
+        $billReturn = BillReturn::find($journalEntry->transactionable_id);
 
-        if (!$invoiceReturn) {
-            abort(404, 'Supplier Return not found');
+        if (!$billReturn) {
+            abort(404, 'Bill Return not found');
         }
 
-        $invoiceReturn->load('items');
+        $billReturn->load('items');
 
-        $creditNoteData = [
+        $billReturnData = [
             'id' => $journalEntry->id,
-            'supplier' => $invoiceReturn->supplier_id,
-            'creditDate' => $invoiceReturn->credit_date,
-            'creditNo' => $journalEntry->reference,
-            'memo' => $invoiceReturn->memo,
-            'items' => $invoiceReturn->items->whereNull('item_id')->map(function ($item) {
+            'supplier' => $billReturn->supplier_id,
+            'date' => $billReturn->date,
+            'reference' => $journalEntry->reference,
+            'memo' => $billReturn->memo,
+            'items' => $billReturn->items->whereNull('item_id')->map(function ($item) {
                 return [
                     'category' => $item->chart_of_acc_id,
                     'description' => $item->description,
                     'amount' => number_format($item->amount, 2, '.', ''),
                 ];
             })->values()->toArray(),
-            'itemDetails' => $invoiceReturn->items->whereNotNull('item_id')->map(function ($item) {
+            'itemDetails' => $billReturn->items->whereNotNull('item_id')->map(function ($item) {
                 return [
                     'product' => $item->item_id,
                     'description' => $item->description,
@@ -260,9 +259,9 @@ class BillReturnController extends Controller
             })->values()->toArray(),
         ];
 
-        return Inertia::render('Transaction/BillReturnForm', [
-            'credit' => $creditNoteData,
-            'nextCreditNo' => $this->getNextNo()
+        return Inertia::render('Transaction/BillReturn/BillReturnForm', [
+            'billReturn' => $billReturnData,
+            'nextRef' => $this->getNextNo()
         ]);
     }
 
@@ -292,27 +291,30 @@ class BillReturnController extends Controller
                 });
 
                 // 1. Update Credit Note
-                $invoiceReturn = SupplierInvoiceReturn::findOrFail($journalEntry->transactionable_id);
-                $invoiceReturn->update([
+                $billReturn = BillReturn::find($journalEntry->transactionable_id);
+                if (!$billReturn) {
+                    throw new \Exception("Bill Return not found");
+                }
+                $billReturn->update([
                     'supplier_id' => $request->supplier,
-                    'credit_date' => $request->creditDate,
+                    'date' => $request->date,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                 ]);
 
-                // Recreate Items
-                foreach ($invoiceReturn->items->whereNotNull('item_id') as $oldItem) {
+                // Re-create items
+                foreach ($billReturn->items->whereNotNull('item_id') as $oldItem) {
                     $itemModel = \App\Models\Item::find($oldItem->item_id);
                     if ($itemModel && $itemModel->type === 'inventory') {
                         $itemModel->increment('quantity_on_hand', $oldItem->quantity);
                     }
                 }
-                $invoiceReturn->items()->delete();
+                $billReturn->items()->delete();
 
                 // Create Credit Note Items (Categories)
                 foreach ($categoryItems as $lineItem) {
-                    SupplierInvoiceReturnItem::create([
-                        'bill_return_id' => $invoiceReturn->id,
+                    BillReturnItem::create([
+                        'bill_return_id' => $billReturn->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'description' => $lineItem['description'] ?? '',
                         'quantity' => 1,
@@ -337,8 +339,8 @@ class BillReturnController extends Controller
                         $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
-                    SupplierInvoiceReturnItem::create([
-                        'bill_return_id' => $invoiceReturn->id,
+                    BillReturnItem::create([
+                        'bill_return_id' => $billReturn->id,
                         'item_id' => $productItem['product'],
                         'chart_of_acc_id' => $chartOfAccId,
                         'description' => $productItem['description'] ?? '',
@@ -350,8 +352,8 @@ class BillReturnController extends Controller
 
                 // 2. Update Financial Entry
                 $journalEntry->update([
-                    'date' => $request->creditDate,
-                    'reference' => $request->creditNo,
+                    'date' => $request->date,
+                    'reference' => $request->reference,
                     'description' => $request->memo,
                     'payee_id' => $request->supplier,
                     'total_amount' => $totalAmount,
@@ -404,13 +406,13 @@ class BillReturnController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Supplier Return updated successfully.', 'close_window' => true]); }
+            if ($action === 'close') { return back()->with(['success' => 'Bill Return updated successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
-                return redirect()->route('supplier-credit')->with('success', 'Supplier Return updated successfully.');
+                return redirect()->route('bill-return.create')->with('success', 'Bill Return updated successfully.');
             }
 
-            return redirect()->route('supplier-credit.edit', $journalEntry->id)->with('success', 'Supplier Return updated successfully.');
+            return redirect()->route('bill-return.edit', $journalEntry->id)->with('success', 'Bill Return updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -423,17 +425,17 @@ class BillReturnController extends Controller
             ?? $journalEntry->lines->first()?->account_id;
 
         DB::transaction(function () use ($journalEntry) {
-            $invoiceReturn = SupplierInvoiceReturn::find($journalEntry->transactionable_id);
+            $billReturn = BillReturn::find($journalEntry->transactionable_id);
 
-            if ($invoiceReturn) {
-                foreach ($invoiceReturn->items->whereNotNull('item_id') as $oldItem) {
+            if ($billReturn) {
+                foreach ($billReturn->items->whereNotNull('item_id') as $oldItem) {
                     $itemModel = \App\Models\Item::find($oldItem->item_id);
                     if ($itemModel && $itemModel->type === 'inventory') {
                         $itemModel->increment('quantity_on_hand', $oldItem->quantity);
                     }
                 }
-                $invoiceReturn->items()->delete();
-                $invoiceReturn->delete();
+                $billReturn->items()->delete();
+                $billReturn->delete();
             }
 
             $journalEntry->lines->each->delete();
@@ -441,21 +443,21 @@ class BillReturnController extends Controller
         });
         if ($chartOfAccountId) {
             return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
-                ->with('success', 'Supplier Return deleted successfully.');
+                ->with('success', 'Bill Return deleted successfully.');
         }
 
         return redirect()->route('chart-of-account.index')
-            ->with('success', 'Supplier Return deleted successfully.');
+            ->with('success', 'Bill Return deleted successfully.');
     }
 
     public function print(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $invoiceReturn = SupplierInvoiceReturn::with('items.item', 'items.chartOfAccount', 'supplier', 'company')->findOrFail($journalEntry->transactionable_id);
-        $company = $invoiceReturn->company;
+        $billReturn = BillReturn::with('items.item', 'items.chartOfAccount', 'supplier', 'company')->findOrFail($journalEntry->transactionable_id);
+        $company = $billReturn->company;
 
         $tableItems = [];
-        foreach ($invoiceReturn->items as $item) {
+        foreach ($billReturn->items as $item) {
             $desc = "<div class='font-semibold text-gray-800'>" . ($item->item->name ?? $item->chartOfAccount->name ?? 'Item') . "</div>";
             if ($item->description) {
                 $desc .= "<div class='text-sm text-gray-500 mt-1'>" . $item->description . "</div>";
@@ -469,11 +471,11 @@ class BillReturnController extends Controller
         }
 
         $printSetting = \App\Models\PrintSetting::query()
-            ->where('document_type', 'supplier_credit')
+            ->where('document_type', 'bill_return')
             ->first();
 
         return view('print.document', [
-            'title' => $printSetting?->custom_title ?: 'Supplier Return Note',
+            'title' => $printSetting?->custom_title ?: 'Bill Return Note',
             'headerAlignment' => $printSetting?->header_alignment ?: 'left',
             'staticFooterContent' => $printSetting?->static_footer_content ?: null,
             'layoutConfig' => $printSetting?->layout_config,
@@ -481,17 +483,17 @@ class BillReturnController extends Controller
             'textColor' => $printSetting?->text_color,
             'pageSetup' => $printSetting?->page_setup,
             'blockStyles' => $printSetting?->block_styles,
-            'documentNo' => $invoiceReturn->credit_note_no,
-            'date' => $invoiceReturn->credit_date,
+            'documentNo' => 'BR-' . str_pad($billReturn->id, 4, '0', STR_PAD_LEFT),
+            'date' => $billReturn->date,
             'dueDate' => null,
-            'partyLabel' => 'Return To',
-            'partyName' => $invoiceReturn->supplier->display_name ?? $invoiceReturn->supplier->company_name,
+            'partyLabel' => 'Supplier',
+            'partyName' => $billReturn->supplier->display_name ?? $billReturn->supplier->company_name,
             'partyAddress' => '',
-            'partyEmail' => $invoiceReturn->supplier->email ?? '',
+            'partyEmail' => $billReturn->supplier->email ?? '',
             'tableHeaders' => ['Description', 'Qty', 'Rate', 'Amount'],
             'tableItems' => $tableItems,
-            'totalAmount' => $invoiceReturn->total_amount,
-            'memo' => $invoiceReturn->memo,
+            'totalAmount' => $billReturn->total_amount,
+            'memo' => $billReturn->memo,
             'statementMessage' => null,
             'company' => $company,
         ]);
@@ -499,7 +501,7 @@ class BillReturnController extends Controller
 
     private function getNextNo()
     {
-        $last = SupplierInvoiceReturn::query()->latest()->first();
+        $last = BillReturn::query()->latest()->first();
         return $last ? (int)filter_var($last->id, FILTER_SANITIZE_NUMBER_INT) + 1 : 1001;
     }
 }

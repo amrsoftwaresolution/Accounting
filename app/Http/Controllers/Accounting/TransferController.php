@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\ChartOfAcc;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
-use App\Models\Transfer; 
+use App\Models\Accounting\ChartOfAcc;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\Transfer; 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +17,7 @@ class TransferController extends Controller
 {
     public function create()
     {
-        return Inertia::render('Transaction/TransferForm');
+        return Inertia::render('Transaction/Transfer/TransferForm');
     }
 
     public function store(TransferRequest $request)
@@ -76,7 +76,7 @@ class TransferController extends Controller
             if ($action === 'close') { return back()->with(['success' => 'Transfer saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
-                return redirect()->route('transfer')->with('success', 'Transfer saved successfully.');
+                return redirect()->route('transfer.create')->with('success', 'Transfer saved successfully.');
             }
 
             return redirect()->route('transfer.edit', $journalEntry)->with('success', 'Transfer saved successfully.');
@@ -93,7 +93,7 @@ class TransferController extends Controller
 
         $transfer = $journalEntry->transactionable;
 
-        return Inertia::render('Transaction/TransferForm', [
+        return Inertia::render('Transaction/Transfer/TransferForm', [
             'transfer' => [
                 'id' => $journalEntry->id,
                 'transfer_from' => $transfer->from_account_id,
@@ -160,7 +160,7 @@ class TransferController extends Controller
             if ($action === 'close') { return back()->with(['success' => 'Transfer updated successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
-                return redirect()->route('transfer')->with('success', 'Transfer updated successfully.');
+                return redirect()->route('transfer.create')->with('success', 'Transfer updated successfully.');
             }
 
             return redirect()->route('transfer.edit', $journalEntry)->with('success', 'Transfer updated successfully.');

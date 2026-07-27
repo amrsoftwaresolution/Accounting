@@ -3,21 +3,19 @@ import { router } from '@inertiajs/react';
 import axios from 'axios';
 
 const TYPE_MAP = {
-    creditsale: 'invoice',
-    'credit sale': 'invoice',
-    recivepayment: 'receive_payment',
-    'received payment': 'receive_payment',
-    'cash sale': 'sales_receipt',
-    'sales return': 'credit_note',
-    payment: 'receive_payment',
-    bill: 'bill',
-    'supplier return': 'supplier_credit',
-    suppliercredit: 'supplier_credit',
+    "sales invoice": 'sales_invoice',
+    'credit invoice': 'credit_invoice',
+    'return invoice': 'return_invoice',
+    'receive payment': 'receive_payment',
+
+    'payment': 'payment',
+    'bill': 'bill',
+    'pay bill': 'pay_bill',
+    'bill return': 'bill_return',
+
     'bank deposit': 'bank_deposit',
-    deposit: 'bank_deposit',
-    transfer: 'transfer',
+    'transfer': 'transfer',
     'journal entry': 'journal_entry',
-    'journel entry': 'journal_entry',
     'inventory qty adj': 'inventory_adjustment',
     'inventory adjustment': 'inventory_adjustment',
 };
@@ -30,21 +28,25 @@ const normalizeType = (type = '') => {
 const getEditRoute = (type) => {
     switch (type) {
         case 'invoice':
-            return 'invoice.edit';
+            return 'credit-invoice.edit';
         case 'bill':
             return 'bill.edit';
         case 'payment':
-            return 'expense.edit';
-        case 'receive_payment':
             return 'payment.edit';
+        case 'receive_payment':
+            return 'receive-payment.edit';
+        case 'pay_bill':
+            return 'pay-bill.edit';
         case 'bank_deposit':
-            return 'deposit.edit';
-        case 'supplier_credit':
-            return 'supplier-credit.edit';
-        case 'credit_note':
-            return 'credit-note.edit';
-        case 'sales_receipt':
-            return 'pos.edit';
+            return 'bank-deposit.edit';
+        case 'bill_return':
+            return 'bill-return.edit';
+        case 'invoice_return':
+            return 'invoice-return.edit';
+        case 'sales_invoice':
+            return 'sales-invoice.edit';
+        case 'transfer':
+            return 'transfer.edit';
         default:
             return 'journal-entries.edit';
     }

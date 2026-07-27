@@ -7,7 +7,7 @@ use App\Models\ItemCategory;
 use App\Models\Item;
 use App\Models\BundleItem;
 use Illuminate\Support\Facades\DB;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 
 class InventorySeeder extends Seeder
 {

@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
-use App\Models\InvoiceReturn;
-use App\Models\InvoiceReturnItem;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
+use App\Models\Accounting\InvoiceReturn;
+use App\Models\Accounting\InvoiceReturnItem;
 use App\Models\Customer;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Item;
 use App\Http\Requests\Accounting\StoreInvoiceReturnRequest;
 use App\Http\Requests\Accounting\UpdateInvoiceReturnRequest;
@@ -26,17 +26,17 @@ class InvoiceReturnController extends Controller
             $invoiceReturn = InvoiceReturn::find($journalEntry->transactionable_id);
 
             if (!$invoiceReturn) {
-                abort(404, 'Sales Return not found');
+                abort(404, 'InvoiceReturn not found');
             }
 
             $invoiceReturn->load('items');
 
-            $creditNoteData = [
+            $invoiceReturnData = [
                 'id' => null,
                 'customer' => $invoiceReturn->customer_id,
                 'email' => $invoiceReturn->email,
-                'creditNoteDate' => $invoiceReturn->credit_note_date,
-                'creditNoteNo' => $this->getNextNo(),
+                'date' => $invoiceReturn->credit_note_date,
+                'ref' => $this->getNextNo(),
                 'memo' => $invoiceReturn->memo,
                 'statementMessage' => $invoiceReturn->statement_message,
                 'items' => $invoiceReturn->items->map(function ($item) {
@@ -50,14 +50,14 @@ class InvoiceReturnController extends Controller
                 })->toArray(),
             ];
 
-            return Inertia::render('Transaction/InvoiceReturnForm', [
-                'creditNote' => $creditNoteData,
-                'nextInvoiceReturnNo' => $this->getNextNo(),
+            return Inertia::render('Transaction/InvoiceReturn/InvoiceReturnForm', [
+                'invoiceReturn' => $invoiceReturnData,
+                'ref' => $this->getNextNo(),
             ]);
         }
 
-        return Inertia::render('Transaction/InvoiceReturnForm', [
-            'nextInvoiceReturnNo' => $this->getNextNo()
+        return Inertia::render('Transaction/InvoiceReturn/InvoiceReturnForm', [
+            'nextRef' => $this->getNextNo()
         ]);
     }
 
@@ -75,7 +75,7 @@ class InvoiceReturnController extends Controller
                 $invoiceReturn = InvoiceReturn::create([
                     'customer_id' => $request->customer,
                     'email' => $request->email,
-                    'credit_note_date' => $request->creditNoteDate,
+                    'date' => $request->date,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
@@ -101,10 +101,10 @@ class InvoiceReturnController extends Controller
 
                 // 2. Financial Truth (Journal Entry)
                 $journalEntry = JournalEntry::create([
-                    'date' => $request->creditNoteDate,
-                    'reference' => $request->creditNoteNo,
+                    'date' => $request->date,
+                    'reference' => $request->reference,
                     'description' => $request->memo,
-                    'transaction_type' => 'credit_note',
+                    'transaction_type' => 'invoice_return',
                     'payee_id' => $request->customer,
                     'payee_type' => Customer::class,
                     'total_amount' => $totalAmount,
@@ -142,13 +142,13 @@ class InvoiceReturnController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Sales Return saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { return back()->with(['success' => 'InvoiceReturn saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
-                return redirect()->route('credit-note')->with('success', 'Sales Return saved successfully.');
+                return redirect()->route('invoice-return.create')->with('success', 'InvoiceReturn saved successfully.');
             }
 
-            return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return saved successfully.');
+            return redirect()->route('invoice-return.edit', $journalEntry->id)->with('success', 'InvoiceReturn saved successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -161,17 +161,17 @@ class InvoiceReturnController extends Controller
         $invoiceReturn = InvoiceReturn::find($journalEntry->transactionable_id);
 
         if (!$invoiceReturn) {
-            abort(404, 'Sales Return not found');
+            abort(404, 'InvoiceReturn not found');
         }
 
         $invoiceReturn->load('items');
 
-        $creditNoteData = [
+        $invoiceReturnData = [
             'id' => $journalEntry->id,
             'customer' => $invoiceReturn->customer_id,
             'email' => $invoiceReturn->email,
-            'creditNoteDate' => $invoiceReturn->credit_note_date,
-            'creditNoteNo' => $journalEntry->reference,
+            'date' => $invoiceReturn->date,
+            'reference' => $journalEntry->reference,
             'memo' => $invoiceReturn->memo,
             'statementMessage' => $invoiceReturn->statement_message,
             'items' => $invoiceReturn->items->map(function ($item) {
@@ -186,8 +186,8 @@ class InvoiceReturnController extends Controller
         ];
 
         return Inertia::render('Transaction/InvoiceReturnForm', [
-            'creditNote' => $creditNoteData,
-            'nextInvoiceReturnNo' => $this->getNextNo()
+            'invoiceReturn' => $invoiceReturnData,
+            'nextRef' => $this->getNextNo()
         ]);
     }
 
@@ -206,7 +206,7 @@ class InvoiceReturnController extends Controller
                 $invoiceReturn->update([
                     'customer_id' => $request->customer,
                     'email' => $request->email,
-                    'credit_note_date' => $request->creditNoteDate,
+                    'date' => $request->date,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
@@ -239,8 +239,8 @@ class InvoiceReturnController extends Controller
 
                 // 2. Update Financial Truth (Journal Entry)
                 $journalEntry->update([
-                    'date' => $request->creditNoteDate,
-                    'reference' => $request->creditNoteNo,
+                    'date' => $request->date,
+                    'reference' => $request->reference,
                     'description' => $request->memo,
                     'payee_id' => $request->customer,
                     'total_amount' => $totalAmount,
@@ -275,11 +275,11 @@ class InvoiceReturnController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Sales Return updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
-                return redirect()->route('credit-note')->with('success', 'Sales Return updated successfully.');
+            if ($action === 'close') { return back()->with(['success' => 'InvoiceReturn updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
+                return redirect()->route('invoice-return')->with('success', 'InvoiceReturn updated successfully.');
             }
 
-            return redirect()->route('credit-note.edit', $journalEntry->id)->with('success', 'Sales Return updated successfully.');
+            return redirect()->route('invoice-return.edit', $journalEntry->id)->with('success', 'InvoiceReturn updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -311,11 +311,11 @@ class InvoiceReturnController extends Controller
         });
         if ($chartOfAccountId) {
             return redirect()->route('chart-of-account.history', ['chart_of_account' => $chartOfAccountId])
-                ->with('success', 'Sales Return deleted successfully.');
+                ->with('success', 'InvoiceReturn deleted successfully.');
         }
 
         return redirect()->route('chart-of-account.index')
-            ->with('success', 'Sales Return deleted successfully.');
+            ->with('success', 'InvoiceReturn deleted successfully.');
     }
 
     public function print(JournalEntry $journalEntry)
@@ -339,7 +339,7 @@ class InvoiceReturnController extends Controller
         }
 
         $printSetting = \App\Models\PrintSetting::query()
-            ->where('document_type', 'credit_note')
+            ->where('document_type', 'invoice_return')
             ->first();
 
         return view('print.document', [
@@ -352,7 +352,7 @@ class InvoiceReturnController extends Controller
             'pageSetup' => $printSetting?->page_setup,
             'blockStyles' => $printSetting?->block_styles,
             'documentNo' => $journalEntry->reference,
-            'date' => $invoiceReturn->credit_note_date,
+            'date' => $invoiceReturn->date,
             'dueDate' => null,
             'partyLabel' => 'Credit To',
             'partyName' => $invoiceReturn->customer->display_name ?? $invoiceReturn->customer->company_name,
@@ -370,6 +370,6 @@ class InvoiceReturnController extends Controller
     private function getNextNo()
     {
         $last = InvoiceReturn::query()->latest()->first();
-        return $last ? (int)$last->creditNoteNo + 1 : 1001;
+        return $last ? (int)$last->reference + 1 : 1001;
     }
 }

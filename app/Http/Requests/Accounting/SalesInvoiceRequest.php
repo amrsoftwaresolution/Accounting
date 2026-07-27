@@ -14,7 +14,7 @@ class SalesInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'vehicle_id' => 'required|exists:vehicles,id',
+            'vehicle_id' => 'nullable|exists:vehicles,id',
             'receiptDate' => 'required|date',
             'receiptNo' => 'required',
             'paymentMethod' => 'nullable',

@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Models\Accounting;
+
+use Illuminate\Database\Eloquent\Model;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class Bill extends Model
+{
+    use HasUuids;
+
+    protected $fillable = [
+        'supplier_id', 'email', 'bill_date',
+        'due_date', 'bill_no', 'total_amount', 'memo', 'status'
+    ];
+
+    public function items()
+    {
+        return $this->hasMany(BillItem::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+    public function journalEntry()
+    {
+        return $this->morphOne(JournalEntry::class, 'transactionable');
+    }
+}

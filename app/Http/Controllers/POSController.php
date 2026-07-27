@@ -7,9 +7,9 @@ use Inertia\Inertia;
 use App\Models\Item;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
-use App\Models\ChartOfAcc;
-use App\Models\JournalEntry;
-use App\Models\SalesInvoice;
+use App\Models\Accounting\ChartOfAcc;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\SalesInvoice;
 
 class POSController extends Controller
 {
@@ -89,7 +89,7 @@ class POSController extends Controller
 
     private function getNextReceiptNo()
     {
-        $lastReceipt = \App\Models\SalesInvoice::query()->latest()->first();
+        $lastReceipt = \App\Models\Accounting\SalesInvoice::query()->latest()->first();
         $number = 1;
         if ($lastReceipt && preg_match('/\d+/', $lastReceipt->receipt_no, $matches)) {
             $number = (int)$matches[0] + 1;

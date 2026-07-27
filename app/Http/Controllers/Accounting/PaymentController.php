@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PaymentMethod;
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 
 use App\Models\Supplier;
 use App\Models\Customer;
 use App\Models\Employee;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
 use App\Http\Requests\Accounting\PaymentRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +25,7 @@ class PaymentController extends Controller
         if ($copyId = $request->query('copy')) {
             $journalEntry = JournalEntry::findOrFail($copyId);
             $journalEntry->load('lines');
-            $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+            $payment = \App\Models\Accounting\Payment::find($journalEntry->transactionable_id);
 
             $expenseData = [
                 'id' => null,
@@ -54,13 +54,13 @@ class PaymentController extends Controller
                 })->values()->toArray() : [],
             ];
 
-            return Inertia::render('Transaction/PaymentForm', [
+            return Inertia::render('Transaction/Payment/PaymentForm', [
                 'payment' => $expenseData,
                 'paymentMethods' => $this->paymentMethods(),
             ]);
         }
 
-        return Inertia::render('Transaction/PaymentForm', [
+        return Inertia::render('Transaction/Payment/PaymentForm', [
             'nextExpenseNo' => $this->getNextExpenseNo()
         ]);
     }
@@ -111,7 +111,7 @@ class PaymentController extends Controller
 
                 // 1. Create Business Document (Expense)
 
-                $payment = \App\Models\Payment::create([
+                $payment = \App\Models\Accounting\Payment::create([
                     'payee_id' => $request->payee,
                     'payee_type' => $request->payeeType,
                     'payment_account_id' => $paymentAccount,
@@ -125,7 +125,7 @@ class PaymentController extends Controller
 
                 // Categories
                 foreach ($categoryItems as $lineItem) {
-                    \App\Models\PaymentItem::create([
+                    \App\Models\Accounting\PaymentItem::create([
                         'payment_id' => $payment->id,
                         'chart_of_acc_id' => $lineItem['category'],
                         'description' => $lineItem['description'] ?? '',
@@ -151,7 +151,7 @@ class PaymentController extends Controller
                         $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                     }
 
-                    \App\Models\PaymentItem::create([
+                    \App\Models\Accounting\PaymentItem::create([
                         'payment_id' => $payment->id,
                         'item_id' => $productItem['product'],
                         'chart_of_acc_id' => $chartOfAccId,
@@ -174,7 +174,7 @@ class PaymentController extends Controller
                     'status' => 'posted',
                     'created_by' => Auth::id(),
                     'transactionable_id' => $payment->id,
-                    'transactionable_type' => \App\Models\Payment::class,
+                    'transactionable_type' => \App\Models\Accounting\Payment::class,
                 ]);
 
                 // Debits (Expenses/Assets) - Categories
@@ -227,7 +227,7 @@ class PaymentController extends Controller
             if ($action === 'close') { return back()->with(['success' => 'ReceivePayment saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
-                return redirect()->route('receive_payment')->with('success', 'ReceivePayment saved successfully.');
+                return redirect()->route('payment.create')->with('success', 'ReceivePayment saved successfully.');
             }
 
             return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'ReceivePayment saved successfully.');
@@ -240,7 +240,7 @@ class PaymentController extends Controller
     public function edit(JournalEntry $journalEntry)
     {
         $journalEntry->load('lines');
-        $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+        $payment = \App\Models\Accounting\Payment::find($journalEntry->transactionable_id);
 
         $expenseData = [
             'id' => $journalEntry->id,
@@ -269,7 +269,7 @@ class PaymentController extends Controller
             })->values()->toArray() : [],
         ];
 
-        return Inertia::render('Transaction/PaymentForm', [
+        return Inertia::render('Transaction/Payment/PaymentForm', [
             'payees' => array_merge(
                 Customer::orderBy('display_name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->display_name, 'type' => 'customer'])->toArray(),
                 Supplier::orderBy('display_name')->get()->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name, 'type' => 'supplier'])->toArray()
@@ -311,7 +311,7 @@ class PaymentController extends Controller
                 });
 
                 // 1. Update Business Document
-                $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+                $payment = \App\Models\Accounting\Payment::find($journalEntry->transactionable_id);
                 if ($payment) {
 
                     $payment->update([
@@ -335,7 +335,7 @@ class PaymentController extends Controller
 
                     // Categories
                     foreach ($categoryItems as $lineItem) {
-                        \App\Models\PaymentItem::create([
+                        \App\Models\Accounting\PaymentItem::create([
                             'payment_id' => $payment->id,
                             'chart_of_acc_id' => $lineItem['category'],
                             'description' => $lineItem['description'] ?? '',
@@ -361,7 +361,7 @@ class PaymentController extends Controller
                             $chartOfAccId = ChartOfAcc::query()->where('account_type', 'payment')->first()?->id ?? ChartOfAcc::getOrCreateDefault('uncategorized-expense')->id;
                         }
 
-                        \App\Models\PaymentItem::create([
+                        \App\Models\Accounting\PaymentItem::create([
                             'payment_id' => $payment->id,
                             'item_id' => $productItem['product'],
                             'chart_of_acc_id' => $chartOfAccId,
@@ -428,7 +428,7 @@ class PaymentController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') { return back()->with(['success' => 'Payment updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
-                return redirect()->route('receive_payment')->with('success', 'Payment updated successfully.');
+                return redirect()->route('payment.create')->with('success', 'Payment updated successfully.');
             }
 
             return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment updated successfully.');
@@ -446,7 +446,7 @@ class PaymentController extends Controller
         ->value('chart_of_acc_id');
 
     DB::transaction(function () use ($journalEntry) {
-        $payment = \App\Models\Payment::find($journalEntry->transactionable_id);
+        $payment = \App\Models\Accounting\Payment::find($journalEntry->transactionable_id);
 
         if ($payment) {
             foreach ($payment->items->whereNotNull('item_id') as $oldItem) {

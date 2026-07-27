@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\ChartOfAcc;
-use App\Models\InventoryQuantityAdjustment;
+use App\Models\Accounting\ChartOfAcc;
+use App\Models\Accounting\InventoryQuantityAdjustment;
 use App\Models\Item;
-use App\Models\JournalEntry;
-use App\Models\JournalEntryLine;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Accounting\JournalEntryLine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;

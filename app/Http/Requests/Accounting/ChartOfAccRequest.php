@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Accounting;
 
-use App\Models\ChartOfAcc;
+use App\Models\Accounting\ChartOfAcc;
 use App\Models\Company;
 
 use Illuminate\Foundation\Http\FormRequest;

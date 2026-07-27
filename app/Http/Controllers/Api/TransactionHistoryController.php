@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\JournalEntry;
+use App\Models\Accounting\JournalEntry;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -73,8 +73,8 @@ class TransactionHistoryController extends Controller
                     'ref_no' => $refNo,
                     'payee_account' => $payeeName,
                     'memo' => $memo,
-                    'debit' => in_array($normalizedType, ['invoice', 'receive_payment', 'bank_deposit', 'payment', 'supplier_credit', 'journal_entry', 'inventory_adjustment']) ? $amount : 0,
-                    'credit' => in_array($normalizedType, ['bill', 'credit_note', 'sales_receipt']) ? $amount : 0,
+                    'debit' => in_array($normalizedType, ['invoice', 'receive_payment', 'bank_deposit', 'payment', 'pay_bill', 'bill_return', 'journal_entry', 'inventory_adjustment']) ? $amount : 0,
+                    'credit' => in_array($normalizedType, ['bill', 'invoice_return', 'sales_invoice']) ? $amount : 0,
                     'amount' => $amount,
                 ];
             })
@@ -85,24 +85,24 @@ class TransactionHistoryController extends Controller
     private function normalizeType(string $type): string
     {
         $map = [
-            'creditsale' => 'invoice',
-            'credit sale' => 'invoice',
-            'recivepayment' => 'receive_payment',
-            'received payment' => 'receive_payment',
-            'cash sale' => 'sales_receipt',
-            'sales return' => 'credit_note',
-            'receive_payment' => 'receive_payment',
-            'bill' => 'bill',
-            'supplier return' => 'supplier_credit',
-            'suppliercredit' => 'supplier_credit',
-            'bank deposit' => 'bank_deposit',
-            'deposit' => 'bank_deposit',
-            'transfer' => 'transfer',
-            'journal entry' => 'journal_entry',
-            'journel entry' => 'journal_entry',
+            'pos'     => 'pos',
+
+            'sales invoice'     => 'sales_invoice',
+            'credit invoice'    => 'credit_invoice',
+            'return invoice'    => 'return_invoice',
+            'receive payment'   => 'receive_payment',
+
+            'payment'           => 'payment',
+            'bill'              => 'bill',
+            'pay bill'          => 'pay_bill',
+            'bill_return'       => 'bill_return',
+
+            'bank deposit'      => 'bank_deposit',
+            'transfer'          => 'transfer',
+            'journal entry'     => 'journal_entry',
             'inventory qty adj' => 'inventory_adjustment',
             'inventory adjustment' => 'inventory_adjustment',
-        ];
+_        ];
 
         $normalized = strtolower(trim(str_replace(['_', ' ', '-'], ' ', $type)));
 

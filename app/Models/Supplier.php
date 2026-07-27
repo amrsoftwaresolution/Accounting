@@ -26,15 +26,15 @@ class Supplier extends Model
     public function getBalanceAttribute()
     {
         // Calculate AP Balance for Supplier
-        $apAccountIds = \App\Models\ChartOfAcc::where('sub_type', 'accounts-payable')
+        $apAccountIds = \App\Models\Accounting\ChartOfAcc::where('sub_type', 'accounts-payable')
             
             ->pluck('id');
             
-        $debits = \App\Models\JournalEntryLine::where('payee_id', $this->id)
+        $debits = \App\Models\Accounting\JournalEntryLine::where('payee_id', $this->id)
             ->whereIn('chart_of_acc_id', $apAccountIds)
             ->sum('debit');
             
-        $credits = \App\Models\JournalEntryLine::where('payee_id', $this->id)
+        $credits = \App\Models\Accounting\JournalEntryLine::where('payee_id', $this->id)
             ->whereIn('chart_of_acc_id', $apAccountIds)
             ->sum('credit');
 

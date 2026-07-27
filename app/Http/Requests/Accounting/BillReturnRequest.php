@@ -15,8 +15,8 @@ class BillReturnRequest extends FormRequest
     {
         return [
             'supplier' => 'required',
-            'creditDate' => 'required|date',
-            'creditNo' => 'required',
+            'date' => 'required|date',
+            'reference' => 'required',
             'items' => 'nullable|array',
             'itemDetails' => 'nullable|array',
         ];

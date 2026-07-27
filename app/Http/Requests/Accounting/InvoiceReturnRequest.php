@@ -4,7 +4,7 @@ namespace App\Http\Requests\Accounting;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreInvoiceReturnRequest extends FormRequest
+class InvoiceReturnRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,8 +15,8 @@ class StoreInvoiceReturnRequest extends FormRequest
     {
         return [
             'customer' => 'required',
-            'creditNoteDate' => 'required|date',
-            'creditNoteNo' => 'required',
+            'date' => 'required|date',
+            'ref' => 'required',
             'items' => 'required|array|min:1',
         ];
     }

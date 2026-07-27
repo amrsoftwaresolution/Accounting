@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
+import { getEditRoute } from '@/Utils/routeUtils';
 import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function AllContactBalanceDetail({ reportData = [], contactType, filters = {} }) {
@@ -25,21 +26,7 @@ export default function AllContactBalanceDetail({ reportData = [], contactType, 
         });
     };
 
-    const getEditRoute = (type) => {
-        switch (type) {
-            case 'invoice': return 'invoice.edit';
-            case 'bill': return 'bill.edit';
-            case 'payment': return 'expense.edit';
-            case 'receive_payment': return 'payment.edit';
-            case 'bank_deposit': return 'deposit.edit';
-            case 'supplier_credit': return 'supplier-credit.edit';
-            case 'credit_note': return 'credit-note.edit';
-            case 'sales_receipt': return 'pos.edit';
-            case 'transfer': return 'transfer.edit';
-            case 'cheque': return 'cheque.edit';
-            default: return 'journal-entries.edit';
-        }
-    };
+
 
     const handleFilterChange = (newFilters) => {
         const routeName = contactType === 'Customer' ? 'reports.customer-balance-detail' : 'reports.supplier-balance-detail';
