@@ -12,4 +12,9 @@ class SalesReceiptItem extends Model
     protected $fillable = [
         'sales_receipt_id', 'item_id', 'description', 'quantity', 'rate', 'amount', 'service_date'
     ];
+
+    public function item()
+    {
+        return $this->belongsTo(Item::class);
+    }
 }

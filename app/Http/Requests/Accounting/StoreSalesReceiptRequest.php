@@ -14,7 +14,7 @@ class StoreSalesReceiptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer' => 'nullable',
+            'vehicle_id' => 'required|exists:vehicles,id',
             'receiptDate' => 'required|date',
             'receiptNo' => 'required',
             'paymentMethod' => 'nullable',

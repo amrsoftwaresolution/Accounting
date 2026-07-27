@@ -179,10 +179,10 @@ class InvoiceController extends Controller
         }
 
         if ($action === 'new') {
-            return redirect()->route('invoice')->with('success', 'credit Sale saved successfully.');
+            return redirect()->route('credit-invoice')->with('success', 'credit Sale saved successfully.');
         }
 
-       return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'Credit Sale saved successfully.');
+       return redirect()->route('credit-invoice.edit', $journalEntry->id)->with('success', 'Credit Sale saved successfully.');
 
     }
 
@@ -384,9 +384,9 @@ class InvoiceController extends Controller
             return redirect()->route('dashboard')->with('success', 'Invoice updated successfully.');
         }
         if ($action === 'new') {
-            return redirect()->route('invoice')->with('success', 'Invoice updated successfully.');
+            return redirect()->route('credit-invoice')->with('success', 'Invoice updated successfully.');
         }
-        return redirect()->route('invoice.edit', $journalEntry->id)->with('success', 'Invoice updated successfully.');
+        return redirect()->route('credit-invoice.edit', $journalEntry->id)->with('success', 'Invoice updated successfully.');
     }
 
 

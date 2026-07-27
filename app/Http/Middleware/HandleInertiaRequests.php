@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'company' => \App\Models\Company::first(),
             ],
             'appName' => config('app.name'),
             'flash' => [

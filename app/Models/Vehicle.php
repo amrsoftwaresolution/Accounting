@@ -6,11 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vehicle extends Model
 {
-    
-protected $fillable = [
-    'vehicle_type',
-    'brand',
-    'model',
-    'fuel_type',
-];
+    protected $fillable = [
+        'vehicle_type',
+        'brand',
+        'model',
+        'fuel_type',
+        'customer_id',
+        'vehicle_no',
+    ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 }

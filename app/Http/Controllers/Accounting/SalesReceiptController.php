@@ -105,8 +105,15 @@ class SalesReceiptController extends Controller
                     return (float) str_replace(',', '', $item['amount']);
                 }) + $repairingCost;
 
-                // Handle Walk-in Customer
-                $customerId = $request->customer;
+                $customerId = null;
+                if ($request->vehicle_id) {
+                    $vehicle = \App\Models\Vehicle::find($request->vehicle_id);
+                    if ($vehicle) {
+                        $customerId = $vehicle->customer_id;
+                    }
+                }
+
+                // Handle Walk-in Customer fallback
                 if (!$customerId) {
                     $walkInCustomer = \App\Models\Customer::firstOrCreate(
                         ['display_name' => 'Walk-in Customer'],
@@ -143,6 +150,7 @@ class SalesReceiptController extends Controller
                     $receipt = SalesReceipt::create([
                         'receipt_no' => $request->receiptNo,
                         'customer_id' => $customerId,
+                        'vehicle_id' => $request->vehicle_id,
                         'email' => $request->email,
                         'receipt_date' => $request->receiptDate,
                         'payment_method_id' => $request->paymentMethod,
@@ -270,10 +278,10 @@ class SalesReceiptController extends Controller
         }
 
         if ($action === 'new') {
-            return redirect()->route('receipt')->with('success', 'Cash sale saved successfully.');
+            return redirect()->route('sales-invoice')->with('success', 'Cash sale saved successfully.');
         }
 
-        return redirect()->route('receipt.edit', $journalEntry->id)->with('success', 'Cash sale saved successfully.');
+        return redirect()->route('sales-invoice.edit', $journalEntry->id)->with('success', 'Cash sale saved successfully.');
 
     }
 
@@ -459,10 +467,10 @@ class SalesReceiptController extends Controller
             }
 
             if ($action === 'new') {
-                return redirect()->route('receipt')->with('success', 'Cash sale updated successfully.');
+                return redirect()->route('sales-invoice')->with('success', 'Cash sale updated successfully.');
             }
 
-            return redirect()->route('receipt.edit', $journalEntry->id)->with('success', 'Cash sale updated successfully.');
+            return redirect()->route('sales-invoice.edit', $journalEntry->id)->with('success', 'Cash sale updated successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);

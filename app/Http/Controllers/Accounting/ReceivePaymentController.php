@@ -136,10 +136,10 @@ class ReceivePaymentController extends Controller
             }
 
             if ($action === 'new') {
-                return redirect()->route('payment')->with('success', 'Payment received successfully.');
+                return redirect()->route('receive-payment')->with('success', 'Payment received successfully.');
             }
 
-            return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment received successfully.');
+            return redirect()->route('receive-payment.edit', $journalEntry->id)->with('success', 'Payment received successfully.');
 
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -251,11 +251,11 @@ class ReceivePaymentController extends Controller
             }
 
             if ($action === 'new') {
-                return redirect()->route('payment')->with('success', 'Payment updated successfully.');
+                return redirect()->route('receive-payment')->with('success', 'Payment updated successfully.');
             }
 
 
-            return redirect()->route('payment.edit', $journalEntry->id)->with('success', 'Payment updated successfully.');
+            return redirect()->route('receive-payment.edit', $journalEntry->id)->with('success', 'Payment updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }

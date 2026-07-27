@@ -347,6 +347,15 @@ class ItemController extends Controller
         return redirect()->route('items.index')->with('success', 'Item updated successfully');
     }
 
+    public function printBarcode(Request $request, Item $item)
+    {
+        $count = $request->query('count', 10);
+        return Inertia::render('Inventory/PrintBarcodes', [
+            'item' => $item,
+            'count' => (int) $count,
+        ]);
+    }
+
     public function destroy(Item $item)
     {
         $item->delete();

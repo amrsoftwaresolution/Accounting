@@ -411,4 +411,35 @@ class LookupController extends Controller
 
         return response()->json($paymentMethods);
     }
+
+    /**
+     * Endpoint to fetch vehicles
+     */
+    public function vehicles(Request $request)
+    {
+        $search = $request->query('search');
+        
+        $vehicles = \App\Models\Vehicle::with('customer')
+            ->when($search, function($query, $search) {
+                $query->where('vehicle_no', 'like', "%{$search}%")
+                      ->orWhere('brand', 'like', "%{$search}%")
+                      ->orWhere('model', 'like', "%{$search}%")
+                      ->orWhereHas('customer', function($q) use ($search) {
+                          $q->where('display_name', 'like', "%{$search}%");
+                      });
+            })
+            ->orderBy('vehicle_no')
+            ->limit(50)
+            ->get()
+            ->map(function($v) {
+                $custName = $v->customer ? $v->customer->display_name : 'No Customer';
+                return [
+                    'value' => $v->id,
+                    'label' => "{$v->vehicle_no} - {$v->brand} {$v->model} ({$custName})",
+                    'customer_id' => $v->customer_id,
+                ];
+            });
+
+        return response()->json($vehicles);
+    }
 }

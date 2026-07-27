@@ -12,12 +12,23 @@ class SalesReceipt extends Model
 
     protected $fillable = [
         'receipt_no', 'customer_id', 'email', 'receipt_date', 'payment_method_id',
-        'deposit_to_account_id', 'total_amount', 'memo', 'statement_message', 'status'
+        'deposit_to_account_id', 'total_amount', 'memo', 'statement_message', 'status',
+        'vehicle_id',
     ];
 
     public function items()
     {
         return $this->hasMany(SalesReceiptItem::class);
+    }
+
+    public function depositToAccount()
+    {
+        return $this->belongsTo(ChartOfAcc::class, 'deposit_to_account_id');
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
 
     public function customer()

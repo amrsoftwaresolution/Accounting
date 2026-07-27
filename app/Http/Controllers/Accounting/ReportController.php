@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\Supplier;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Models\SalesReceipt;
 
 class ReportController extends Controller
 {
@@ -1151,6 +1152,33 @@ class ReportController extends Controller
                 'end_date' => $endDate,
                 'type' => $request->query('type') ?? 'custom'
             ]
+        ]);
+    }
+
+    public function vehicleHistory(Request $request)
+    {
+        $vehicleId = $request->input('vehicle_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $query = SalesReceipt::with(['items.item', 'vehicle', 'customer'])
+            ->whereNotNull('vehicle_id');
+
+        if ($vehicleId) {
+            $query->where('vehicle_id', $vehicleId);
+        }
+        if ($startDate) {
+            $query->where('receipt_date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('receipt_date', '<=', $endDate);
+        }
+
+        $receipts = $query->orderBy('receipt_date', 'desc')->get();
+
+        return Inertia::render('Reports/VehicleHistory', [
+            'receipts' => $receipts,
+            'filters' => $request->all()
         ]);
     }
 }

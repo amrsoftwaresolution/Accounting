@@ -57,20 +57,22 @@ class CompanySettingsController extends Controller
     /**
      * Update General Company Info
      */
-public function update(Request $request)
-{
-    $validated = $request->validate([
-        'company_name' => 'required|string|max:255',
-        'company_email' => 'nullable|email',
-        'phone' => 'nullable|string',
-        'address' => 'nullable|string',
-        'website' => 'nullable|string',
-        'industry' => 'nullable|string',
-    ]);
+    public function update(Request $request)
+    {
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'company_email' => 'nullable|email',
+            'phone' => 'nullable|string',
+            'address' => 'nullable|string',
+            'website' => 'nullable|string',
+            'industry' => 'nullable|string',
+            'home_currency_prefix' => 'nullable|string|max:10',
+        ]);
 
-    $this->getActiveCompany()->update($validated);
-    return back()->with('message', 'Company information updated successfully.');
-}
+        $this->getActiveCompany()->update($validated);
+        return back()->with('message', 'Company information updated successfully.');
+    }
+
     /**
      * Update Legal & Tax Info
      */

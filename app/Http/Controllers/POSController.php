@@ -8,45 +8,82 @@ use App\Models\Item;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\ChartOfAcc;
+use App\Models\JournalEntry;
+use App\Models\SalesReceipt;
 
 class POSController extends Controller
 {
     public function index()
     {
-        
         // Fetch Items (Inventory and Service)
         $items = Item::query()
             ->whereIn('type', ['inventory', 'service'])
             ->orderBy('name')
             ->get();
 
-        // Fetch Customers
-        $customers = Customer::query()
-            ->orderBy('display_name')
-            ->get();
-
-        $paymentMethods = PaymentMethod::withoutGlobalScopes()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
-
-        // Fetch Deposit Accounts (Bank / Cash)
-        $depositAccounts = ChartOfAcc::query()
-            ->whereIn('account_type', ['bank', 'asset'])
-            ->orderBy('name')
-            ->get();
-
-        // Default Cash account
-        $defaultDepositAccount = $depositAccounts->firstWhere('name', 'Cash on Hand') 
-            ?? $depositAccounts->first();
+        $paymentMethods = $this->paymentMethods();
 
         return Inertia::render('POS/Index', [
             'items' => $items,
-            'customers' => $customers,
             'paymentMethods' => $paymentMethods,
-            'depositAccounts' => $depositAccounts,
-            'defaultDepositAccount' => $defaultDepositAccount,
             'nextReceiptNo' => $this->getNextReceiptNo(),
+            'existingReceipt' => null,
+        ]);
+    }
+
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $receipt = SalesReceipt::find($journalEntry->transactionable_id);
+
+        if (!$receipt) {
+            abort(404, 'Sales receipt not found');
+        }
+
+        // Fetch Items (Inventory and Service)
+        $items = Item::query()
+            ->whereIn('type', ['inventory', 'service'])
+            ->orderBy('name')
+            ->get();
+
+        $paymentMethods = $this->paymentMethods();
+
+        // Calculate repairing cost if any (from lines)
+        $serviceIncomeAcc = ChartOfAcc::getOrCreateDefault('service-income')->id;
+        $repairingCostLine = $journalEntry->lines->where('chart_of_acc_id', $serviceIncomeAcc)->first();
+        $repairingCost = $repairingCostLine ? $repairingCostLine->credit : 0;
+
+        $receiptData = [
+            'id' => $journalEntry->id,
+            'receipt_id' => $receipt->id,
+            'customer' => $receipt->customer_id,
+            'vehicle_id' => $receipt->vehicle_id,
+            'email' => $receipt->email,
+            'receiptDate' => $receipt->receipt_date,
+            'receiptNo' => $receipt->receipt_no,
+            'paymentMethod' => $receipt->payment_method_id,
+            'depositTo' => $receipt->deposit_to_account_id,
+            'memo' => $receipt->memo,
+            'statementMessage' => $receipt->statement_message,
+            'repairingCost' => $repairingCost,
+            'items' => $receipt->items->map(function ($item) {
+                return [
+                    'product' => $item->item_id,
+                    'name' => $item->item->name ?? '',
+                    'description' => $item->description,
+                    'qty' => $item->quantity,
+                    'rate' => number_format($item->rate, 2, '.', ''),
+                    'amount' => number_format($item->amount, 2, '.', ''),
+                    'discount' => 0,
+                ];
+            })->toArray(),
+        ];
+
+        return Inertia::render('POS/Index', [
+            'items' => $items,
+            'paymentMethods' => $paymentMethods,
+            'nextReceiptNo' => $receipt->receipt_no,
+            'existingReceipt' => $receiptData,
         ]);
     }
 

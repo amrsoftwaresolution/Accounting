@@ -23,6 +23,7 @@ class Company extends Model
         'business_type',
         'legal_address',
         'is_onboarded',
+        'home_currency_prefix',
     ];
     
 
@@ -38,9 +39,9 @@ class Company extends Model
         return Str::slug($this->company_name);
     }
 
-    public function getHomeCurrencyPrefixAttribute()
+    public function getHomeCurrencyPrefixAttribute($value)
     {
-        return 'LKR ';
+        return $value ?? 'LKR ';
     }
 
     public function users()
