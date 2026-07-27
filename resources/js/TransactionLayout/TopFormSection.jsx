@@ -19,7 +19,7 @@ export default function TopFormSection({ form, setForm }) {
 
             <div>
                 <SearchableSelect
-                    label="ReceivePayment account"
+                    label="Payment account"
                     value={form.account}
                     onChange={(val) => setForm({ ...form, account: val })}
                     options={[

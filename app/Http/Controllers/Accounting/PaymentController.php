@@ -61,7 +61,8 @@ class PaymentController extends Controller
         }
 
         return Inertia::render('Transaction/Payment/PaymentForm', [
-            'nextExpenseNo' => $this->getNextExpenseNo()
+            'nextExpenseNo' => $this->getNextExpenseNo(),
+            'paymentMethods' => $this->paymentMethods()
         ]);
     }
 
@@ -208,7 +209,7 @@ class PaymentController extends Controller
                     ]);
                 }
 
-                // ReceivePayment Account Credit
+                // Payment Account Credit
                 JournalEntryLine::create([
                     'journal_entry_id' => $journalEntry->id,
                     'chart_of_acc_id' => $paymentAccount,

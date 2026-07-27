@@ -400,7 +400,7 @@ class LookupController extends Controller
     public function paymentMethods()
     {
         
-        $paymentMethods = \App\Models\Accounting\PaymentMethod::withoutGlobalScopes()
+        $paymentMethods = \App\Models\PaymentMethod::withoutGlobalScopes()
             ->where('is_active', true)
             ->orderBy('name')
             ->get()

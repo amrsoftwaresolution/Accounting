@@ -378,7 +378,7 @@ export default function PaymentForm({
                         <div className="w-[380px]">
                             <div className="mb-6">
                                 <SearchableSelect
-                                    label="ReceivePayment account"
+                                    label="Payment account"
                                     placeholder="Select account"
                                     value={data.account}
                                     onChange={handleAccountChange}
@@ -422,7 +422,7 @@ export default function PaymentForm({
                     </div>
                     <div className="w-[220px]">
                         <SearchableSelect
-                            label="ReceivePayment Method"
+                            label="Payment Method"
                             placeholder="Select method"
                             value={data.method}
                             onChange={(val) => { setData("method", val); setIsDirty(true); }}

@@ -387,7 +387,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                     </div>
                     <div className="w-[220px]">
                         <SearchableSelect
-                            label="ReceivePayment Method"
+                            label="Payment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
                             onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}

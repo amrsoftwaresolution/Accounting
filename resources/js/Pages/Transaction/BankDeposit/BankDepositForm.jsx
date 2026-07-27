@@ -59,7 +59,7 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
         { key: "receivedFrom", label: "Received From", placeholder: "Select payee", options: payeeOptions, type: 'select', onAddNew: () => setIsPayeeModalOpen(true) },
         { key: "account", label: "Account", placeholder: "Select account", options: accountOptions, type: 'select', onAddNew: (index) => openAccountModal('item', index) },
         { key: "description", label: "Description", placeholder: "Enter description" },
-        { key: "paymentMethod", label: "ReceivePayment Method", placeholder: "Select method", options: paymentMethodOptions, type: 'select' },
+        { key: "paymentMethod", label: "Payment Method", placeholder: "Select method", options: paymentMethodOptions, type: 'select' },
         { key: "refNo", label: "Ref no.", placeholder: "Reference" },
         { key: "amount", label: "Amount", type: "currency", className: "text-right", inputClass: "text-right" },
     ];

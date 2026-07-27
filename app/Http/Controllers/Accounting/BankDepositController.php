@@ -20,7 +20,8 @@ class BankDepositController extends Controller
     public function create()
     {
         return Inertia::render('Transaction/BankDeposit/BankDepositForm', [
-            'nextRef' => $this->getNextDepositNo()
+            'nextRef' => $this->getNextDepositNo(),
+            'paymentMethods' => $this->paymentMethods()
         ]);
     }
 
@@ -128,7 +129,8 @@ class BankDepositController extends Controller
                         'amount' => $i->amount,
                     ];
                 })
-            ]
+            ],
+            'paymentMethods' => $this->paymentMethods()
         ]);
     }
 

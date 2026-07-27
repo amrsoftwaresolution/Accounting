@@ -17,7 +17,7 @@ class ChartOfAccController extends Controller
     {
         $accounts = ChartOfAcc::withSum('journalLines', 'debit')
             ->withSum('journalLines', 'credit')
-            ->orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "payment")')
+            ->orderByRaw('FIELD(LOWER(account_type), "asset", "liability", "equity", "income", "expense")')
             ->orderBy('sub_type')
             ->orderBy('name')
             ->get();
@@ -36,7 +36,6 @@ class ChartOfAccController extends Controller
 
         $chartOfAccounts = $chartOfAccounts->map(function ($account) {
             $account->currency_code = $account->currency ? $account->currency : null;
-
             return $account;
         });
 
@@ -49,28 +48,13 @@ class ChartOfAccController extends Controller
 
     public function store(ChartOfAccRequest $request)
     {
-        // Strip commas from opening_balance if present
-        if ($request->has('opening_balance')) {
-            $request->merge([
-                'opening_balance' => str_replace(',', '', $request->input('opening_balance'))
-            ]);
-        }
 
-        
-        if ($company->multicurrency && blank($request->input('currency'))) {
-            return redirect()->back()
-                ->withErrors(['currency' => 'Currency is required when multi-currency is enabled.'])
-                ->withInput();
-        }
 
         $request->validated();
 
         if ($request->filled('opening_balance_date')) {
             session(['last_opening_balance_date' => $request->input('opening_balance_date')]);
         }
-
-                $selectedCurrency = $request->input('currency');
-        $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $account = ChartOfAcc::create([
             'account_code' => $request->input('account_code'),
@@ -80,7 +64,7 @@ class ChartOfAccController extends Controller
             'balance' => 0,
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
-            'currency' => $currencyToSave,
+            'currency' => 'LKR',
             'parent_id' => $request->input('is_subaccount') ? $request->input('parent_id') : null,
             'is_locked' => $request->boolean('is_locked', false),
         ]);
@@ -204,17 +188,7 @@ class ChartOfAccController extends Controller
             return redirect()->route('chart-of-account.index')->with('success', "Account {$statusText} successfully.");
         }
 
-        
-        if ($company->multicurrency && blank($request->input('currency'))) {
-            return redirect()->back()
-                ->withErrors(['currency' => 'Currency is required when multi-currency is enabled.'])
-                ->withInput();
-        }
-
         $request->validated();
-
-                $selectedCurrency = $request->input('currency');
-        $currencyToSave = ($selectedCurrency === $company->home_currency) ? null : $selectedCurrency;
 
         $chartOfAccount->update([
             'account_code' => $request->input('account_code'),
@@ -222,7 +196,7 @@ class ChartOfAccController extends Controller
             'account_type' => $request->input('account_type'),
             'sub_type' => $request->input('sub_type'),
             'description' => $request->input('description'),
-            'currency' => $currencyToSave,
+            'currency' => 'LKR',
             'parent_id' => $request->input('is_subaccount') ? $request->input('parent_id') : null,
             'is_locked' => $request->boolean('is_locked', false),
         ]);

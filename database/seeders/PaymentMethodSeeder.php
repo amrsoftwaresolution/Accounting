@@ -20,7 +20,7 @@ class PaymentMethodSeeder extends Seeder
         ];
 
         foreach ($methods as $method) {
-            \App\Models\Accounting\PaymentMethod::updateOrCreate(
+            \App\Models\PaymentMethod::updateOrCreate(
                 ['slug' => $method['slug']], 
                 ['name' => $method['name']]
             );

@@ -44,7 +44,7 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
                 { name: "Payment", href: route('payment.create') },
                 { name: "Bill", href: route('bill.create') },
                 { name: "Pay Bill", href: route('pay-bill.create') },
-                { name: "bill Return", href: route('bill-return.create') },
+                { name: "Bill Return", href: route('bill-return.create') },
                 { name: "Cheque", href: route('cheque.create') },
 
             ]

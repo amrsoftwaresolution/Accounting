@@ -16,6 +16,15 @@ class ChartOfAccRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('opening_balance')) {
+            $this->merge([
+                'opening_balance' => str_replace(',', '', $this->input('opening_balance'))
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         $chartOfAccount = $this->route('chart_of_account');

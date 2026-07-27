@@ -332,11 +332,6 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
             <Head title={`History - ${account.name}`} />
 
             <div className="text-center mb-8 font-serif relative">
-                <div className="absolute left-0 top-0">
-                    <button onClick={() => window.history.back()} className="text-xs text-blue-600 hover:underline font-sans bg-transparent border-none cursor-pointer">
-                        &larr; Back
-                    </button>
-                </div>
                 <h2 className="text-xl font-bold text-gray-900">Account History: {account.name}</h2>
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <p className="text-[13px] text-gray-500 mt-1">

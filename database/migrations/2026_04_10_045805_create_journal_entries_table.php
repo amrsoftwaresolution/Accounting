@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('reference')->nullable();
             $table->text('description')->nullable();
             
-            // Payee & ReceivePayment Method
+            // Payee & Payment Method
             $table->uuid('payee_id')->nullable();
             $table->string('payee_type')->nullable();
             $table->uuid('payment_method_id')->nullable();
