@@ -6,7 +6,7 @@ export default function POSCartItem({ item, onRemove, onUpdateQty, onUpdateDisco
             <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
                     <h4 className="font-bold text-xs text-slate-800 leading-tight">{item.name}</h4>
-                    <p className="text-[10px] text-slate-500">{currency} {Number(item.rate).toFixed(2)}</p>
+                    <p className="text-[10px] text-slate-500">{currency} {Number(item.rate).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 </div>
                 <button onClick={() => onRemove(item.product)} className="text-slate-300 hover:text-red-500 leading-none px-1">
                     &times;
@@ -15,7 +15,7 @@ export default function POSCartItem({ item, onRemove, onUpdateQty, onUpdateDisco
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 bg-slate-100 rounded p-0.5">
                     <button onClick={() => onUpdateQty(item.product, -1)} className="w-5 h-5 flex items-center justify-center bg-white rounded text-slate-600 text-xs shadow-sm">-</button>
-                    <span className="text-xs font-bold w-5 text-center">{item.qty}</span>
+                    <span className="text-xs font-bold w-5 text-center">{Number(item.qty).toString()}</span>
                     <button onClick={() => onUpdateQty(item.product, 1)} className="w-5 h-5 flex items-center justify-center bg-white rounded text-slate-600 text-xs shadow-sm">+</button>
                 </div>
 
@@ -30,7 +30,7 @@ export default function POSCartItem({ item, onRemove, onUpdateQty, onUpdateDisco
                     />
                 </div>
                 <div className="font-bold text-xs text-primary-600">
-                    {currency} {Number(item.amount).toFixed(2)}
+                    {currency} {Number(item.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </div>
             </div>
         </div>

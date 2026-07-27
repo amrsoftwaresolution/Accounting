@@ -79,7 +79,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 email: "",
                 billingAddress: "",
                 receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-                receiptNo: nextReceiptNo ? String(parseInt(nextReceiptNo)).padStart(4, '0') : "1001",
+                receiptNo: nextReceiptNo ? nextReceiptNo : "RCPT-0001",
                 paymentMethod: "",
                 depositTo: "",
                 memo: "",
@@ -119,7 +119,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         email: receipt?.email || "",
         billingAddress: receipt?.billingAddress || "",
         receiptDate: receipt?.receiptDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-        receiptNo: receipt?.receiptNo || (nextReceiptNo ? String(parseInt(nextReceiptNo)).padStart(4, '0') : "1001"),
+        receiptNo: receipt?.receiptNo || (nextReceiptNo ? nextReceiptNo : "RCPT-0001"),
         paymentMethod: receipt?.paymentMethod || "",
         depositTo: receipt?.depositTo || "",
         memo: receipt?.memo || "",
@@ -209,16 +209,14 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                     setSavedEntryId(newId);
                 }
 
+                const serverNextNo = page.props.nextReceiptNo || "";
                 if (actionType === 'new') {
                     setSavedOnce(false);
                     setSavedEntryId(null);
-                    const currentNo = data.receiptNo || nextReceiptNo || '1001';
-                    const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
-                    const nextNo = String(num + 1).padStart(4, '0');
                     setData({
                         customer: "", email: "", billingAddress: "",
                         receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-                        receiptNo: nextNo, paymentMethod: "", depositTo: "", memo: "", statementMessage: "",
+                        receiptNo: serverNextNo, paymentMethod: "", depositTo: "", memo: "", statementMessage: "",
                         items: [
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },

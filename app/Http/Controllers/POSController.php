@@ -209,7 +209,14 @@ class POSController extends Controller
                 return $journalEntry;
             });
 
-            return redirect()->back()->with('success', 'Sale saved successfully.');
+            $printUrl = null;
+            if ($request->action === 'credit_sale') {
+                $printUrl = route('credit-invoice.print', $je->id);
+            } else {
+                $printUrl = route('sales-invoice.print', $je->id);
+            }
+
+            return redirect()->back()->with('success', 'Sale saved successfully.')->with('print_url', $printUrl);
         } catch (\Exception $e) {
             \Log::error('POS save error: ' . $e->getMessage(), [
                 'data' => $request->all(),

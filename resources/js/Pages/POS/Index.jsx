@@ -169,6 +169,10 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
             alert("Cart is empty!");
             return;
         }
+        if (!data.vehicle_id) {
+            alert("Please select a vehicle before completing the sale.");
+            return;
+        }
         setData('action', action);
         setIsCheckoutModalOpen(true);
     };
@@ -198,8 +202,13 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
             });
         } else {
             post(route('pos.store'), {
-                onSuccess: () => {
-                    alert('Sale completed successfully! You can now print the bill.');
+                onSuccess: (page) => {
+                    const printUrl = page.props.flash?.print_url;
+                    if (printUrl) {
+                        window.open(printUrl, '_blank');
+                    } else {
+                        alert('Sale completed successfully!');
+                    }
                     setCart([]);
                     reset('vehicle_id', 'email', 'billingAddress', 'repairingCost', 'action');
                     setIsCheckoutModalOpen(false);
@@ -403,31 +412,38 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                     </div>
 
                     <div className="p-3 bg-white border-t border-slate-200 shrink-0">
-                        <div className="flex justify-between items-center mb-3">
-                            <div className="flex flex-col">
-                                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</span>
-                                <button onClick={() => setIsRepairCostExpanded(!isRepairCostExpanded)} className="text-[9px] text-primary-500 hover:underline flex items-center gap-0.5 mt-0.5 text-left font-bold transition-all">
-                                    {isRepairCostExpanded ? '- Hide Repair Cost' : '+ Add Repair Cost'}
-                                </button>
-                            </div>
-                            <span className="text-xl font-black text-primary-600">{currency} {Number(totalAmount).toFixed(2)}</span>
+                        <div className="flex justify-between items-center text-sm font-semibold text-slate-600">
+                            <span>Subtotal</span>
+                            <span>{currency} {Number(cartSubtotal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                         </div>
 
-                        {isRepairCostExpanded && (
-                            <div className="flex items-center justify-between mb-3 border-t border-slate-100 pt-3 bg-white">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase">Additional Repair Cost</label>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-xs font-bold text-slate-400">{currency}</span>
-                                    <input
-                                        type="number"
-                                        className="w-20 text-xs py-1 px-2 border-slate-300 rounded text-right font-bold bg-slate-50 focus:bg-white transition-colors shadow-sm"
-                                        value={data.repairingCost}
-                                        onChange={e => setData('repairingCost', e.target.value)}
-                                        min="0"
-                                    />
+                        {/* Repairing Cost Toggle */}
+                        <div className="flex flex-col gap-1 border-b border-slate-100 pb-2">
+                            <button onClick={() => setIsRepairCostExpanded(!isRepairCostExpanded)} className="text-[9px] text-primary-500 hover:underline flex items-center gap-0.5 mt-0.5 text-left font-bold transition-all">
+                                {isRepairCostExpanded ? '- Hide Repair Cost' : '+ Add Repair Cost'}
+                            </button>
+
+                            {isRepairCostExpanded && (
+                                <div className="flex flex-col gap-1 pb-2 bg-white">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase">Additional Repair Cost</label>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-xs font-bold text-slate-400">{currency}</span>
+                                        <input
+                                            type="number"
+                                            className="w-20 text-xs py-1 px-2 border-slate-300 rounded text-right font-bold bg-slate-50 focus:bg-white transition-colors shadow-sm"
+                                            value={data.repairingCost}
+                                            onChange={e => setData('repairingCost', e.target.value)}
+                                            min="0"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
+
+                        <div className="flex justify-between items-end pt-1">
+                            <span className="text-sm font-bold text-slate-700">Total</span>
+                            <span className="text-xl font-black text-primary-600">{currency} {Number(totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
 
                         <div className="flex gap-2">
                             <CommonButton
@@ -472,7 +488,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                                                         <div className="font-bold text-sm text-slate-800">{vehicleStr}</div>
                                                         <div className="text-[10px] text-slate-500">{draft.date}</div>
                                                     </div>
-                                                    <div className="font-black text-primary-600 text-sm">{currency} {Number(draft.total).toFixed(2)}</div>
+                                                    <div className="font-black text-primary-600 text-sm">{currency} {Number(draft.total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                                                 </div>
                                                 <div className="text-xs text-slate-600 mb-3">
                                                     {draft.cart.length} items {Number(draft.repairingCost) > 0 && `+ Repair Cost ({currency} ${draft.repairingCost})`}
@@ -505,6 +521,14 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                 paymentMethods={paymentMethods}
                 processing={processing}
                 isEditMode={isEditMode}
+                onPrint={() => {
+                    if (existingReceipt) {
+                        const printUrl = data.action === 'credit_sale' 
+                            ? route('credit-invoice.print', existingReceipt.journal_entry_id)
+                            : route('sales-invoice.print', existingReceipt.journal_entry_id);
+                        window.open(printUrl, '_blank');
+                    }
+                }}
             />
 
         </AuthenticatedLayout>

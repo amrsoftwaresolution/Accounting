@@ -119,6 +119,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::get('/{journalEntry}/print', 'print')->name('print');
         Route::patch('/{journalEntry}', 'update')->name('update');
         Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });

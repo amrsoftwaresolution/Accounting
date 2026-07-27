@@ -406,9 +406,63 @@ class SalesInvoiceController extends Controller
             ->with('success', 'Sales invoice deleted successfully.');
     }
 
-   private function getNextReceiptNo()
-   {
-       $last = SalesInvoice::query()->latest()->first();
-       return $last ? (int)$last->receipt_no + 1 : 1001;
-   }
+    private function getNextReceiptNo()
+    {
+        $lastInvoice = SalesInvoice::orderBy('id', 'desc')->first();
+        if (!$lastInvoice) {
+            return 'RCPT-0001';
+        }
+
+        $lastNumber = intval(str_replace('RCPT-', '', $lastInvoice->receipt_no));
+        return 'RCPT-' . str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function print(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $salesInvoice = \App\Models\Accounting\SalesInvoice::with('items.item', 'customer', 'company', 'vehicle')->findOrFail($journalEntry->transactionable_id);
+        $company = $salesInvoice->company;
+
+        $tableItems = [];
+        foreach ($salesInvoice->items as $item) {
+            $desc = "<div class='font-semibold text-gray-800'>" . ($item->item->name ?? 'Item') . "</div>";
+            if ($item->description) {
+                $desc .= "<div class='text-sm text-gray-500 mt-1'>" . $item->description . "</div>";
+            }
+            $tableItems[] = [
+                $desc,
+                $item->quantity,
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
+            ];
+        }
+
+        $printSetting = \App\Models\PrintSetting::query()
+            ->where('document_type', 'invoice')
+            ->first();
+
+        return view('print.document', [
+            'title' => $printSetting?->custom_title ?: 'Receipt / Sales Invoice',
+            'headerAlignment' => $printSetting?->header_alignment ?: 'left',
+            'staticFooterContent' => $printSetting?->static_footer_content ?: null,
+            'layoutConfig' => $printSetting?->layout_config,
+            
+            'company' => $company,
+            'documentNo' => $salesInvoice->receipt_no,
+            'date' => \Carbon\Carbon::parse($salesInvoice->receipt_date)->format('M d, Y'),
+            
+            'billedTo' => $salesInvoice->customer,
+            
+            'tableHeaders' => ['PRODUCT/SERVICE', 'QTY', 'RATE', 'AMOUNT'],
+            'tableItems' => $tableItems,
+            
+            'summaryInfo' => [
+                'Total Amount' => ($company->home_currency_prefix ?? 'LKR ') . number_format($salesInvoice->total_amount, 2)
+            ],
+            
+            'amountInWords' => true,
+            'totalAmount' => $salesInvoice->total_amount,
+            'memo' => $salesInvoice->memo,
+        ]);
+    }
 }

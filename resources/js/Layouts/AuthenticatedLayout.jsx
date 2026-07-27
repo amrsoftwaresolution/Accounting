@@ -102,6 +102,10 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                                 </svg>
                             </button>
                         )}
+                        
+                        {hideSidebar && (
+                            <ApplicationLogo className="h-7 w-auto" />
+                        )}
 
                         <div className="h-5 w-px bg-slate-200 hidden sm:block mx-1" />
 
