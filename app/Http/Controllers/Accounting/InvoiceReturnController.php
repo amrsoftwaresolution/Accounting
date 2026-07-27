@@ -142,9 +142,7 @@ class InvoiceReturnController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Sales Return saved successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'Sales Return saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('credit-note')->with('success', 'Sales Return saved successfully.');
@@ -277,9 +275,7 @@ class InvoiceReturnController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Sales Return updated successfully.');
-            } elseif ($action === 'new') {
+            if ($action === 'close') { return back()->with(['success' => 'Sales Return updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
                 return redirect()->route('credit-note')->with('success', 'Sales Return updated successfully.');
             }
 

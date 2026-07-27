@@ -604,16 +604,15 @@ class ReportController extends Controller
             ->selectRaw('item_id, SUM(quantity) as qty')
             ->get()->keyBy('item_id');
 
-        $creditData = DB::table('supplier_credit_items')
-            ->join('supplier_credits', 'supplier_credit_items.supplier_credit_id', '=', 'supplier_credits.id')
-            ->where('supplier_credits.status', 'posted')
+        $creditData = DB::table('bill_return_items')
+            ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
+            ->where('bill_returns.status', 'posted')
             ->groupBy('item_id')
             ->selectRaw('item_id, SUM(quantity) as qty')
             ->get()->keyBy('item_id');
 
         $adjData = DB::table('inventory_quantity_adjustment_items')
             ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
-            ->where('inventory_quantity_adjustments.status', 'posted')
             ->groupBy('item_id')
             ->selectRaw('item_id, SUM(change_in_qty) as qty')
             ->get()->keyBy('item_id');

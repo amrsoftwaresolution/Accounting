@@ -15,8 +15,7 @@ use App\Models\Item;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\Accounting\StoreSalesInvoiceRequest;
-use App\Http\Requests\Accounting\UpdateSalesInvoiceRequest;
+use App\Http\Requests\Accounting\SalesInvoiceRequest;
 
 class SalesInvoiceController extends Controller
 {
@@ -85,7 +84,7 @@ class SalesInvoiceController extends Controller
         ]);
     }
 
-    public function store(StoreSalesInvoiceRequest $request)
+    public function store(SalesInvoiceRequest $request)
     {
         $validated = $request->validated();
         try {
@@ -273,9 +272,7 @@ class SalesInvoiceController extends Controller
         }
 
         $action = $request->input('action', 'save');
-        if ($action === 'close') {
-            return redirect()->route('dashboard')->with('success', 'Cash sale saved successfully.');
-        }
+        if ($action === 'close') { return back()->with(['success' => 'Cash sale saved successfully.', 'close_window' => true]); }
 
         if ($action === 'new') {
             return redirect()->route('sales-invoice')->with('success', 'Cash sale saved successfully.');
@@ -343,7 +340,7 @@ class SalesInvoiceController extends Controller
         ]);
     }
 
-    public function update(UpdateSalesInvoiceRequest $request, JournalEntry $journalEntry)
+    public function update(SalesInvoiceRequest $request, JournalEntry $journalEntry)
     {
         $validated = $request->validated();
 
@@ -462,9 +459,7 @@ class SalesInvoiceController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Cash sale updated successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'Cash sale updated successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('sales-invoice')->with('success', 'Cash sale updated successfully.');

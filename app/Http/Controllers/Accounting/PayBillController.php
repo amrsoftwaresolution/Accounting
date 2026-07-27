@@ -120,9 +120,7 @@ class PayBillController extends Controller
                 return $journalEntry;
             });
 
-            if ($request->action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Bill payment recorded successfully.');
-            }
+            if ($request->action === 'close') { return back()->with(['success' => 'Bill payment recorded successfully.', 'close_window' => true]); }
 
                 return redirect()->route('pay-bill')->with('success', 'Bill payment recorded successfully.');
 

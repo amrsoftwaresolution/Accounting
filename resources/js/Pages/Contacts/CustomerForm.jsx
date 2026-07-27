@@ -17,7 +17,6 @@ export default function CustomerForm({ auth, customer, nextCustomerNumber }) {
         nic: customer?.nic || '',
         passport: customer?.passport || '',
         address: customer?.address || '',
-        vehicle_id: customer?.vehicle_id || '',
     });
 
     const submit = (e) => {
@@ -112,18 +111,12 @@ export default function CustomerForm({ auth, customer, nextCustomerNumber }) {
                                         error={errors.phone_number}
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="mt-4">
                                     <CommonInput
                                         label="Address"
                                         value={data.address}
                                         onChange={e => setData('address', e.target.value)}
                                         error={errors.address}
-                                    />
-                                    <CommonInput
-                                        label="Vehicle ID"
-                                        value={data.vehicle_id}
-                                        onChange={e => setData('vehicle_id', e.target.value)}
-                                        error={errors.vehicle_id}
                                     />
                                 </div>
                             </section>

@@ -4,7 +4,7 @@ namespace App\Http\Requests\Accounting;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreSalesInvoiceRequest extends FormRequest
+class SalesInvoiceRequest extends FormRequest
 {
     public function authorize(): bool
     {

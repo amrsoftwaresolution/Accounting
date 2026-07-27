@@ -173,9 +173,7 @@ class CreditInvoiceController extends Controller
 
         $action = $request->input('action', 'save');
 
-        if ($action === 'close') {
-            return redirect()->route('dashboard')->with('success', 'credit Sale saved successfully.');
-        }
+        if ($action === 'close') { return back()->with(['success' => 'credit Sale saved successfully.', 'close_window' => true]); }
 
         if ($action === 'new') {
             return redirect()->route('credit-invoice')->with('success', 'credit Sale saved successfully.');
@@ -379,9 +377,7 @@ class CreditInvoiceController extends Controller
         });
 
         $action = $request->input('action', 'save');
-        if ($action === 'close') {
-            return redirect()->route('dashboard')->with('success', 'CreditInvoice updated successfully.');
-        }
+        if ($action === 'close') { return back()->with(['success' => 'CreditInvoice updated successfully.', 'close_window' => true]); }
         if ($action === 'new') {
             return redirect()->route('credit-invoice')->with('success', 'CreditInvoice updated successfully.');
         }

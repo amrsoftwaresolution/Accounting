@@ -130,9 +130,7 @@ class ReceivePaymentController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'ReceivePayment received successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'ReceivePayment received successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('receive-payment')->with('success', 'ReceivePayment received successfully.');
@@ -245,9 +243,7 @@ class ReceivePaymentController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'ReceivePayment updated successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'ReceivePayment updated successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('receive-payment')->with('success', 'ReceivePayment updated successfully.');

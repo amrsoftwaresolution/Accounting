@@ -8,6 +8,7 @@ export default function SupplierForm() {
         company_name: "",
         email: "",
         phone_number: "",
+        address: "",
     });
 
     const submit = (e) => {
@@ -23,7 +24,7 @@ export default function SupplierForm() {
                         <h2 className="text-xl font-bold text-slate-800">Supplier Details</h2>
                         <p className="text-sm text-slate-500 mt-1">Add a new supplier to your contact list.</p>
                     </div>
-                    
+
                     <form onSubmit={submit} className="p-8 space-y-6">
                         <div className="grid grid-cols-2 gap-6">
                             <div className="col-span-2">
@@ -65,6 +66,16 @@ export default function SupplierForm() {
                                     value={data.phone_number}
                                     onChange={(e) => setData("phone_number", e.target.value)}
                                 />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Address</label>
+                                <textarea
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all font-sans text-sm"
+                                    rows="3"
+                                    value={data.address}
+                                    onChange={(e) => setData("address", e.target.value)}
+                                ></textarea>
                             </div>
                         </div>
 

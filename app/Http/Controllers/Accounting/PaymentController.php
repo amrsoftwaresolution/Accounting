@@ -224,9 +224,7 @@ class PaymentController extends Controller
 
             // No session saving needed
 
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'ReceivePayment saved successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'ReceivePayment saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('receive_payment')->with('success', 'ReceivePayment saved successfully.');
@@ -429,9 +427,7 @@ class PaymentController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Payment updated successfully.');
-            } elseif ($action === 'new') {
+            if ($action === 'close') { return back()->with(['success' => 'Payment updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
                 return redirect()->route('receive_payment')->with('success', 'Payment updated successfully.');
             }
 

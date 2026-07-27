@@ -277,7 +277,7 @@ class LookupController extends Controller
         $paymentId = $request->query('receive_payment_id');
         $credit_invoices = \App\Models\CreditInvoice::where('customer_id', $customer->id)
             ->where('status', 'posted')
-            
+            ->with('journalEntry')
             ->get()
             ->map(function($creditInvoice) use ($paymentId) {
                 $query = \App\Models\ReceivePaymentAllocation::where('credit_invoice_id', $creditInvoice->id);
@@ -296,6 +296,7 @@ class LookupController extends Controller
 
                 return [
                     'id' => $creditInvoice->id,
+                    'journal_entry_id' => $creditInvoice->journalEntry?->id,
                     'invoice_no' => $creditInvoice->invoice_no,
                     'invoice_date' => $creditInvoice->invoice_date,
                     'due_date' => $creditInvoice->due_date,
@@ -339,7 +340,7 @@ class LookupController extends Controller
         $paymentId = $request->query('receive_payment_id');
         $bills = \App\Models\Bill::where('supplier_id', $supplier->id)
             ->where('status', 'posted')
-            
+            ->with('journalEntry')
             ->get()
             ->map(function($bill) use ($paymentId) {
                 $query = \App\Models\BillPaymentAllocation::where('bill_id', $bill->id);
@@ -358,6 +359,7 @@ class LookupController extends Controller
 
                 return [
                     'id' => $bill->id,
+                    'journal_entry_id' => $bill->journalEntry?->id,
                     'bill_no' => $bill->bill_no,
                     'bill_date' => $bill->bill_date,
                     'due_date' => $bill->due_date,

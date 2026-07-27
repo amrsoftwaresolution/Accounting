@@ -238,7 +238,7 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
         const method = currentId ? 'patch' : 'post';
         const url = currentId ? `/journal-entries/${currentId}` : "/journal-entries";
 
-        router[method](url, payload, {
+        router[method](url, payload, { replace: true,
             preserveState: true,   // STAY ON SAME PAGE
             preserveScroll: true,
             onSuccess: (page) => {

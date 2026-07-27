@@ -6,14 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\Supplier;
-use App\Models\Address;
 use Inertia\Inertia;
 
 class SupplierController extends Controller
 {
     public function index()
     {
-        $suppliers = Supplier::with('addresses')->orderBy('display_name')->get();
+        $suppliers = Supplier::orderBy('display_name')->get();
         return Inertia::render('Contacts/SupplierIndex', [
             'suppliers' => $suppliers
         ]);
@@ -33,16 +32,10 @@ class SupplierController extends Controller
             'company_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
-            'billing_address' => 'nullable|array',
+            'address' => 'nullable|string',
         ]);
 
         $supplier = Supplier::create($validatedData);
-
-        if ($request->filled('billing_address.address_line_1')) {
-            $supplier->addresses()->create(array_merge($request->billing_address, ['type' => 'billing']));
-        }
-
-
 
         return redirect()->back()->with([
             'success' => 'Supplier created successfully.',
@@ -63,26 +56,16 @@ class SupplierController extends Controller
             'company_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
-            'billing_address' => 'nullable|array',
+            'address' => 'nullable|string',
         ]);
 
         $supplier->update($validatedData);
-
-        if ($request->filled('billing_address.address_line_1')) {
-            $supplier->addresses()->updateOrCreate(
-                ['type' => 'billing'],
-                $request->billing_address
-            );
-        }
-
-
 
         return redirect()->back()->with('success', 'Supplier updated successfully.');
     }
 
     public function destroy(Supplier $supplier)
     {
-        $supplier->addresses()->delete();
         $supplier->delete();
         return redirect()->back()->with('success', 'Supplier deleted successfully.');
     }

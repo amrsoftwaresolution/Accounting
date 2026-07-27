@@ -11,9 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('vehicles', function (Blueprint $table) {
-            $table->uuid('customer_id')->nullable()->after('id');
-            $table->string('vehicle_no')->nullable()->after('customer_id');
+        Schema::create('vehicles', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('vehicle_type');
+            $table->string('brand');
+            $table->string('model');
+            $table->string('fuel_type');
+            $table->uuid('customer_id')->nullable();
+            $table->string('vehicle_no')->nullable();
+            $table->timestamps();
 
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
         });
@@ -24,9 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('vehicles', function (Blueprint $table) {
-            $table->dropForeign(['customer_id']);
-            $table->dropColumn(['customer_id', 'vehicle_no']);
-        });
+        Schema::dropIfExists('vehicles');
     }
 };

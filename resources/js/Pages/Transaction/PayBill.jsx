@@ -35,7 +35,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         referenceNo: payment?.referenceNo || "0001",
         paymentAccount: payment?.paymentAccount || "",
         amount: payment?.amount || "0.00",
-                        memo: payment?.memo || "",
+        memo: payment?.memo || "",
         action: 'save',
     });
 
@@ -83,10 +83,8 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 bill.applied = 0;
             }
 
-            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            if (amountVal === 0 || totalApplied > amountVal) {
-                setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            }
+            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(String(item.applied).replace(/,/g, '')) || 0), 0);
+            setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
             return updated;
         });
@@ -94,19 +92,17 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
     };
 
     const handleBillPaymentChange = (originalIdx, value) => {
-        const cleanVal = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
-
         setBills(prev => {
             const updated = [...prev];
             const bill = updated[originalIdx];
-            bill.applied = Math.min(bill.open_balance, cleanVal);
-            bill.checked = bill.applied > 0;
+            
+            const rawVal = value.replace(/[^0-9.,]/g, '');
+            bill.applied = rawVal;
+            const parsed = parseFloat(rawVal.replace(/,/g, '')) || 0;
+            bill.checked = parsed > 0;
 
-            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
-            if (amountVal === 0 || totalApplied > amountVal) {
-                setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            }
+            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(String(item.applied).replace(/,/g, '')) || 0), 0);
+            setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
             return updated;
         });
@@ -152,10 +148,8 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 }
             });
 
-            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            if (amountVal === 0 || totalApplied > amountVal) {
-                setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            }
+            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(String(item.applied).replace(/,/g, '')) || 0), 0);
+            setData("amount", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
             return updated;
         });
@@ -170,7 +164,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         setData("amount", "0.00");
     };
 
-    const amountToApply = bills.reduce((sum, bill) => sum + (parseFloat(bill.applied) || 0), 0);
+    const amountToApply = bills.reduce((sum, bill) => sum + (parseFloat(String(bill.applied).replace(/,/g, '')) || 0), 0);
     const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
     const amountToCredit = Math.max(0, amountVal - amountToApply);
 
@@ -192,7 +186,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         fetchAccounts();
     }, []);
 
-    
+
     useEffect(() => {
         if (payment) {
             setData({
@@ -202,7 +196,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 referenceNo: payment.referenceNo || "",
                 paymentAccount: payment.paymentAccount || "",
                 amount: payment.amount || "0.00",
-                                                memo: payment.memo || "",
+                memo: payment.memo || "",
                 action: 'save'
             });
             if (payment.supplier) {
@@ -224,7 +218,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                 referenceNo: "0001",
                 paymentAccount: "",
                 amount: "0.00",
-                                                memo: "",
+                memo: "",
                 action: 'save'
             });
             setBills([]);
@@ -235,54 +229,54 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
     const methodOptions = paymentMethods.map(m => ({ value: m.id, label: m.name }));
 
     useEffect(() => {
-    transform((data) => ({
-        ...data,
-        amount: String(data.amount).replace(/,/g, ''),
-        action: actionRef.current,
-        bills: bills
-            .filter(bill => bill.applied > 0)
-            .map(bill => ({
-                id: bill.id,
-                amount: String(bill.applied)
-            }))
-    }));
-}, [transform, data.amount, bills]);
+        transform((data) => ({
+            ...data,
+            amount: String(data.amount).replace(/,/g, ''),
+            action: actionRef.current,
+            bills: bills
+                .filter(bill => bill.applied > 0)
+                .map(bill => ({
+                    id: bill.id,
+                    amount: String(bill.applied)
+                }))
+        }));
+    }, [transform, data.amount, bills]);
 
-const submit = (action = 'save') => {
-    actionRef.current = action;
-    const currentRefNo = data.referenceNo; // capture BEFORE submit
+    const submit = (action = 'save') => {
+        actionRef.current = action;
+        const currentRefNo = data.referenceNo; // capture BEFORE submit
 
-    const url = payment?.id ? route('pay-bill.update', payment.id) : route('pay-bill.store');
-    const submitMethod = payment?.id ? patch : post;
+        const url = payment?.id ? route('pay-bill.update', payment.id) : route('pay-bill.store');
+        const submitMethod = payment?.id ? patch : post;
 
-    submitMethod(url, {
-        preserveScroll: true,
-        preserveState: action === 'save',
-        onSuccess: () => {
-            showToast('success', 'Record saved successfully.');
-            setIsDirty(false);
-            if (action === 'new') {
-                const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
-                const nextNo = String(num + 1).padStart(4, '0');
-                reset();
-                clearErrors();
-                setBills([]);
-                const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
-                setData({
-                    supplier: "", paymentDate: cachedDate, paymentMethod: "",
-                    referenceNo: nextNo, paymentAccount: "", amount: "0.00",
-                    memo: "", action: 'save'
-                });
+        submitMethod(url, {
+            preserveScroll: true,
+            preserveState: action === 'save',
+            onSuccess: () => {
+                showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
+                if (action === 'new') {
+                    const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
+                    const nextNo = String(num + 1).padStart(4, '0');
+                    reset();
+                    clearErrors();
+                    setBills([]);
+                    const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
+                    setData({
+                        supplier: "", paymentDate: cachedDate, paymentMethod: "",
+                        referenceNo: nextNo, paymentAccount: "", amount: "0.00",
+                        memo: "", action: 'save'
+                    });
+                    setIsDirty(false);
+                }
             }
-        }
-    });
-};
+        });
+    };
 
     return (
         <TransactionLayout
             historyType="pay_bill"
-            title={payment?.id ? `Edit Bill ReceivePayment no.${data.referenceNo}` : "Pay Bill"}
+            title={`Pay Bill #${data.referenceNo}`}
             amount={parseFloat(String(data.amount || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => submit('save')}
             onSaveAndClose={() => submit('close')}
@@ -389,31 +383,6 @@ const submit = (action = 'save') => {
                             size="sm"
                             error={errors.paymentAccount}
                         />
-                                            </div>
-                    <div className="w-[180px]">
-                        <CommonInput
-                            type="text"
-                            label="Amount Paid"
-                            placeholder="0.00"
-                            value={data.amount}
-                            onChange={(e) => {
-                                const val = e.target.value.replace(/[^0-9.]/g, '');
-                                setData("amount", val);
-                                setIsDirty(true);
-                            }}
-                            onBlur={(e) => {
-                                const val = parseFloat(e.target.value || 0);
-                                setData("amount", val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                            }}
-                            onFocus={(e) => {
-                                const val = e.target.value.replace(/,/g, '');
-                                setData("amount", val);
-                                setTimeout(() => e.target.select(), 0);
-                            }}
-                            size="sm"
-                            inputClass="text-right font-semibold"
-                            error={errors.amount}
-                        />
                     </div>
                 </div>
 
@@ -490,8 +459,10 @@ const submit = (action = 'save') => {
                                                         className="rounded-sm border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-xs text-blue-600 font-bold hover:underline cursor-pointer">
-                                                    Bill # {bill.bill_no} ({formatDate(bill.bill_date, dateFormat)})
+                                                <td className="px-4 py-3 text-xs font-bold">
+                                                    <a href={route('bill.edit', bill.journal_entry_id)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline cursor-pointer">
+                                                        Bill # {bill.bill_no} ({formatDate(bill.bill_date, dateFormat)})
+                                                    </a>
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-medium">
                                                     {formatDate(bill.due_date, dateFormat)}
@@ -508,6 +479,19 @@ const submit = (action = 'save') => {
                                                         placeholder="0.00"
                                                         value={bill.applied || ""}
                                                         onChange={(e) => handleBillPaymentChange(originalIdx, e.target.value)}
+                                                        onBlur={(e) => {
+                                                            const val = parseFloat(e.target.value.replace(/,/g, '')) || 0;
+                                                            if (val > 0) {
+                                                                handleBillPaymentChange(originalIdx, Math.min(bill.open_balance, val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                                            } else {
+                                                                handleBillPaymentChange(originalIdx, "");
+                                                            }
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            const val = e.target.value.replace(/,/g, '');
+                                                            handleBillPaymentChange(originalIdx, val);
+                                                            setTimeout(() => e.target.select(), 0);
+                                                        }}
                                                         className="w-full px-2.5 h-[30px] border border-slate-300 rounded-sm text-xs font-mono text-slate-800 text-right focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-white"
                                                     />
                                                 </td>

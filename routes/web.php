@@ -122,7 +122,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{journalEntry}', 'destroy')->name('receive-payment.destroy');
     });
 
-    // Accounting - Sales CreditInvoice (formerly Sales invoice)
+    // Accounting - Sales Invoice (formerly Sales invoice)
     Route::controller(SalesInvoiceController::class)->prefix('sales-invoice')->group(function () {
         Route::get('/', 'create')->name('sales-invoice');
         Route::post('/', 'store')->name('sales-invoice.store');

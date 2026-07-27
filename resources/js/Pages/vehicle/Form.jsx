@@ -2,6 +2,7 @@ import { useForm, Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function Form({ auth, vehicle, customers }) {
     const isEdit = !!vehicle;
@@ -33,11 +34,10 @@ export default function Form({ auth, vehicle, customers }) {
                     <form onSubmit={submit} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-4">
-                                <CommonInput
-                                    type="select"
+                                <SearchableSelect
                                     label="Customer (Owner)"
                                     value={data.customer_id}
-                                    onChange={e => setData('customer_id', e.target.value)}
+                                    onChange={val => setData('customer_id', val)}
                                     required
                                     error={errors.customer_id}
                                     options={[
@@ -63,6 +63,7 @@ export default function Form({ auth, vehicle, customers }) {
                                     required
                                     error={errors.vehicle_type}
                                     options={[
+                                        { value: '', label: 'Select Type' },
                                         { value: 'Car', label: 'Car' },
                                         { value: 'Bike', label: 'Bike' },
                                         { value: 'Van', label: 'Van' },
@@ -77,6 +78,7 @@ export default function Form({ auth, vehicle, customers }) {
                                     required
                                     error={errors.fuel_type}
                                     options={[
+                                        { value: '', label: 'Select Fuel' },
                                         { value: 'Petrol', label: 'Petrol' },
                                         { value: 'Diesel', label: 'Diesel' },
                                         { value: 'Electric', label: 'Electric' },

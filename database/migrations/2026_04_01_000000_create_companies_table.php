@@ -27,6 +27,7 @@ return new class extends Migration
             $table->text('legal_address')->nullable();
 
             $table->boolean('is_onboarded')->default(false);
+            $table->string('home_currency_prefix')->nullable()->default('LKR ');
             
             $table->timestamps();
         });

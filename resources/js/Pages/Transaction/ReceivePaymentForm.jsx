@@ -92,10 +92,8 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 inv.applied = 0;
             }
 
-            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            if (amountReceivedVal === 0 || totalApplied > amountReceivedVal) {
-                setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            }
+            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(String(item.applied).replace(/,/g, '')) || 0), 0);
+            setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
             return updated;
         });
@@ -118,19 +116,17 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     });
     };
     const handleInvoicePaymentChange = (originalIdx, value) => {
-        const cleanVal = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
-
         setInvoices(prev => {
             const updated = [...prev];
             const inv = updated[originalIdx];
-            inv.applied = Math.min(inv.open_balance, cleanVal);
-            inv.checked = inv.applied > 0;
+            
+            const rawVal = value.replace(/[^0-9.,]/g, '');
+            inv.applied = rawVal;
+            const parsed = parseFloat(rawVal.replace(/,/g, '')) || 0;
+            inv.checked = parsed > 0;
 
-            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
-            if (amountReceivedVal === 0 || totalApplied > amountReceivedVal) {
-                setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            }
+            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(String(item.applied).replace(/,/g, '')) || 0), 0);
+            setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
             return updated;
         });
@@ -176,10 +172,8 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 }
             });
 
-            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(item.applied) || 0), 0);
-            if (amountReceivedVal === 0 || totalApplied > amountReceivedVal) {
-                setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            }
+            const totalApplied = updated.reduce((sum, item) => sum + (parseFloat(String(item.applied).replace(/,/g, '')) || 0), 0);
+            setData("amountReceived", totalApplied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
             return updated;
         });
@@ -194,7 +188,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         setData("amountReceived", "0.00");
     };
 
-    const amountToApply = credit_invoices.reduce((sum, inv) => sum + (parseFloat(inv.applied) || 0), 0);
+    const amountToApply = credit_invoices.reduce((sum, inv) => sum + (parseFloat(String(inv.applied).replace(/,/g, '')) || 0), 0);
     const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
     const amountToCredit = Math.max(0, amountReceivedVal - amountToApply);
 
@@ -437,38 +431,6 @@ const submit = (action = 'save') => {
                             error={errors.depositTo}
                         />
                                             </div>
-                    <div className="w-[180px]">
-                        <CommonInput
-                            type="text"
-                            label="Amount Received"
-                            placeholder="0.00"
-                            value={data.amountReceived}
-                            onChange={(e) => {
-                        const val = e.target.value.replace(/[^0-9.+\-*/]/g, '');
-                            setData("amountReceived", val);
-                            setIsDirty(true);
-                        }}
-                            onBlur={(e) => {
-                                let num = 0;
-                                try {
-                                    const cleanExpr = e.target.value.replace(/,/g, '').replace(/[^0-9+\-*/.]/g, '');
-                                    num = cleanExpr ? (new Function(`return ${cleanExpr}`)() || 0) : 0;
-                                } catch {
-                                    num = parseFloat(e.target.value.replace(/,/g, '')) || 0;
-                                }
-                                setData("amountReceived", num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                                autoApplyAmount(num); // ADD THIS - auto-distribute across credit_invoices
-                            }}
-                            onFocus={(e) => {
-                                const val = e.target.value.replace(/,/g, '');
-                                setData("amountReceived", val);
-                                setTimeout(() => e.target.select(), 0);
-                            }}
-                            size="sm"
-                            inputClass="text-right font-semibold"
-                            error={errors.amountReceived}
-                        />
-                    </div>
                 </div>
 
                 {/* ROW 3: Memo */}
@@ -557,8 +519,10 @@ const submit = (action = 'save') => {
                                                         className="rounded-sm border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-xs text-blue-600 font-bold hover:underline cursor-pointer">
-                                                    Credit Sale # {inv.invoice_no} ({formatDate(inv.invoice_date, dateFormat)})
+                                                <td className="px-4 py-3 text-xs font-bold">
+                                                    <a href={route('credit-invoice.edit', inv.journal_entry_id)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline cursor-pointer">
+                                                        Credit Sale # {inv.invoice_no} ({formatDate(inv.invoice_date, dateFormat)})
+                                                    </a>
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-slate-650 font-medium">
                                                     {formatDate(inv.due_date, dateFormat)}
@@ -575,6 +539,19 @@ const submit = (action = 'save') => {
                                                         placeholder="0.00"
                                                         value={inv.applied || ""}
                                                         onChange={(e) => handleInvoicePaymentChange(originalIdx, e.target.value)}
+                                                        onBlur={(e) => {
+                                                            const val = parseFloat(e.target.value.replace(/,/g, '')) || 0;
+                                                            if (val > 0) {
+                                                                handleInvoicePaymentChange(originalIdx, Math.min(inv.open_balance, val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                                                            } else {
+                                                                handleInvoicePaymentChange(originalIdx, "");
+                                                            }
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            const val = e.target.value.replace(/,/g, '');
+                                                            handleInvoicePaymentChange(originalIdx, val);
+                                                            setTimeout(() => e.target.select(), 0);
+                                                        }}
                                                         className="w-full px-2.5 h-[30px] border border-slate-300 rounded-sm text-xs font-mono text-slate-800 text-right focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-white"
                                                     />
                                                 </td>

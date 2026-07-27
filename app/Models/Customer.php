@@ -30,14 +30,6 @@ class Customer extends Model
     protected $appends = ['balance'];
 
     /**
-     * Get all of the customer's addresses.
-     */
-    public function addresses()
-    {
-        return $this->morphMany(Address::class, 'addressable');
-    }
-
-    /**
      * Get all of the customer's devices.
      */
     public function devices()

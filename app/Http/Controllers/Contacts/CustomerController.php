@@ -52,7 +52,6 @@ class CustomerController extends Controller
             'nic' => 'required|string|max:50',
             'passport' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
-            'vehicle_id' => 'nullable|string|max:100',
         ]);
 
         // Assigned here, not trusted from the frontend, to avoid race conditions
@@ -76,7 +75,6 @@ class CustomerController extends Controller
             'nic' => 'required|string|max:50',
             'passport' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
-            'vehicle_id' => 'nullable|string|max:100',
         ]);
         // customer_number is intentionally excluded — it's assigned once at creation and never changes.
 
@@ -87,7 +85,6 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer)
     {
-        $customer->addresses()->delete();
         $customer->delete();
         return redirect()->back()->with('success', 'Customer deleted successfully.');
     }

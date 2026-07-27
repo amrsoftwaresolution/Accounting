@@ -17,18 +17,11 @@ class Supplier extends Model
         'email',
         'phone_number',
         'tax_id',
+        'address',
         'opening_balance',
     ];
 
     protected $appends = ['balance'];
-
-    /**
-     * Get all of the supplier's addresses.
-     */
-    public function addresses()
-    {
-        return $this->morphMany(Address::class, 'addressable');
-    }
 
     public function getBalanceAttribute()
     {

@@ -214,9 +214,7 @@ class BillController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Bill saved successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'Bill saved successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('bill')->with('success', 'Bill saved successfully.');
@@ -416,9 +414,7 @@ class BillController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Bill updated successfully.');
-            }
+            if ($action === 'close') { return back()->with(['success' => 'Bill updated successfully.', 'close_window' => true]); }
 
             if ($action === 'new') {
                 return redirect()->route('bill')->with('success', 'Bill updated successfully.');

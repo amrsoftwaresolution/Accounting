@@ -142,6 +142,12 @@ export default function TransactionLayout({
     }, [dirty]);
 
     useEffect(() => {
+        if (props.flash?.close_window) {
+            handleClose();
+        }
+    }, [props.flash?.close_window]);
+
+    useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 if (document.querySelector('[role="dialog"]') || document.querySelector('.fixed.inset-0')) {
