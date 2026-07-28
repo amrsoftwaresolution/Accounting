@@ -33,14 +33,35 @@ class Warranty extends Model
         static::creating(function ($warranty) {
             $policy = WarrantyPolicy::find($warranty->warranty_policy_id);
             if ($policy) {
-                if ($policy->duration_days && !$warranty->end_date) {
-                    $warranty->end_date = Carbon::parse($warranty->start_date)->addDays($policy->duration_days)->toDateString();
+                $computed = static::calculateExpiryDates($policy, $warranty->start_date, $warranty->start_odometer);
+
+                if ($computed['end_date'] && !$warranty->end_date) {
+                    $warranty->end_date = $computed['end_date'];
                 }
-                if ($policy->duration_km && $warranty->start_odometer && !$warranty->end_odometer) {
-                    $warranty->end_odometer = $warranty->start_odometer + $policy->duration_km;
+                if ($computed['end_odometer'] !== null && !$warranty->end_odometer) {
+                    $warranty->end_odometer = $computed['end_odometer'];
                 }
             }
         });
+    }
+
+    public static function calculateExpiryDates(WarrantyPolicy $policy, ?string $startDate = null, ?int $startOdometer = null): array
+    {
+        $endDate = null;
+        $endOdometer = null;
+
+        if ($policy->duration_days && !in_array($policy->expiry_rule, ['km_only'], true)) {
+            $endDate = Carbon::parse($startDate ?? now()->toDateString())->addDays($policy->duration_days)->toDateString();
+        }
+
+        if ($policy->duration_km && $startOdometer !== null && in_array($policy->expiry_rule, ['km_only', 'whichever_first'], true)) {
+            $endOdometer = $startOdometer + $policy->duration_km;
+        }
+
+        return [
+            'end_date' => $endDate,
+            'end_odometer' => $endOdometer,
+        ];
     }
 
     public function warrantyPolicy()

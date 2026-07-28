@@ -9,10 +9,10 @@ import SearchableSelect from '@/Components/SearchableSelect';
 import Modal from '@/Components/Modal';
 import { showToast } from '@/Components/ToastNotification';
 
-export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, existingReceipt }) {
+export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies = [], nextReceiptNo, existingReceipt }) {
     const isEditMode = !!existingReceipt;
     const currency = auth.company?.home_currency_prefix || '{currency}';
-    const [cart, setCart] = useState(isEditMode ? existingReceipt.items : []);
+    const [cart, setCart] = useState(isEditMode ? existingReceipt.items.map(item => ({ ...item, warranty: item.warranty ?? null })) : []);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' or 'service'
 
@@ -84,7 +84,9 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                 qty: 1,
                 rate: Number(item.sale_price),
                 discount: 0, // percentage
-                amount: Number(item.sale_price)
+                amount: Number(item.sale_price),
+                itemType: item.type,
+                warranty: null
             }];
         });
     }, []);
@@ -163,6 +165,15 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
         setCart(prev => prev.filter(i => i.product !== productId));
     };
 
+    const updateCartWarranty = (productId, warranty) => {
+        setCart(prev => prev.map(item => {
+            if (item.product === productId) {
+                return { ...item, warranty };
+            }
+            return item;
+        }));
+    };
+
     const cartSubtotal = cart.reduce((sum, item) => sum + Number(item.amount), 0);
     const repairingCostNum = Number(data.repairingCost) || 0;
     const totalAmount = cartSubtotal + repairingCostNum;
@@ -191,6 +202,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
             rate: c.rate,
             discount: c.discount,
             amount: c.amount,
+            warranty: c.warranty ?? null,
         }));
 
         // data.action is managed by the modal or handleCheckoutClick
@@ -407,9 +419,11 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                                     <POSCartItem currency={currency}
                                         key={item.product}
                                         item={item}
+                                        warrantyPolicies={warrantyPolicies}
                                         onRemove={removeFromCart}
                                         onUpdateQty={updateCartQty}
                                         onUpdateDiscount={updateCartDiscount}
+                                        onUpdateWarranty={updateCartWarranty}
                                     />
                                 ))}
                             </div>

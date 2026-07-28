@@ -7,6 +7,8 @@ use Inertia\Inertia;
 use App\Models\Item;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
+use App\Models\Warranty;
+use App\Models\WarrantyPolicy;
 use App\Models\Accounting\ChartOfAcc;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Accounting\JournalEntryLine;
@@ -29,10 +31,15 @@ class POSController extends Controller
             ->get();
 
         $paymentMethods = $this->paymentMethods();
+        $warrantyPolicies = WarrantyPolicy::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'applies_to', 'duration_days', 'duration_km', 'expiry_rule']);
 
         return Inertia::render('POS/Index', [
             'items' => $items,
             'paymentMethods' => $paymentMethods,
+            'warrantyPolicies' => $warrantyPolicies,
             'nextReceiptNo' => $this->getNextReceiptNo(),
             'existingReceipt' => null,
         ]);
@@ -106,7 +113,7 @@ class POSController extends Controller
                     ]);
 
                     foreach ($items as $itemData) {
-                        SalesInvoiceItem::create([
+                        $invoiceItem = SalesInvoiceItem::create([
                             'sales_invoice_id' => $receipt->id,
                             'item_id' => $itemData['product'],
                             'description' => $itemData['description'] ?? '',
@@ -115,6 +122,8 @@ class POSController extends Controller
                             'amount' => (float) str_replace(',', '', $itemData['amount']),
                             'service_date' => $itemData['serviceDate'] ?? null,
                         ]);
+
+                        $this->createWarrantyForInvoiceItem($itemData, $invoiceItem, $receipt);
                     }
                 }
 
@@ -211,9 +220,9 @@ class POSController extends Controller
 
             $printUrl = null;
             if ($request->action === 'credit_sale') {
-                $printUrl = route('credit-invoice.print', $je->id);
+                $printUrl = route('credit-invoice.print', $journalEntry->id);
             } else {
-                $printUrl = route('sales-invoice.print', $je->id);
+                $printUrl = route('sales-invoice.print', $journalEntry->id);
             }
 
             return redirect()->back()->with('success', 'Sale saved successfully.')->with('print_url', $printUrl);
@@ -248,6 +257,10 @@ class POSController extends Controller
             ->get();
 
         $paymentMethods = $this->paymentMethods();
+        $warrantyPolicies = WarrantyPolicy::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'applies_to', 'duration_days', 'duration_km', 'expiry_rule']);
 
         // Calculate repairing cost if any (from lines)
         $serviceIncomeAcc = ChartOfAcc::getOrCreateDefault('service-income')->id;
@@ -283,8 +296,37 @@ class POSController extends Controller
         return Inertia::render('POS/Index', [
             'items' => $items,
             'paymentMethods' => $paymentMethods,
+            'warrantyPolicies' => $warrantyPolicies,
             'nextReceiptNo' => $isCreditSale ? $receipt->invoice_no : $receipt->receipt_no,
             'existingReceipt' => $receiptData,
+        ]);
+    }
+
+    private function createWarrantyForInvoiceItem(array $itemData, SalesInvoiceItem $invoiceItem, SalesInvoice $receipt): void
+    {
+        if (empty($itemData['warranty']) || !is_array($itemData['warranty'])) {
+            return;
+        }
+
+        $warrantyData = $itemData['warranty'];
+        $policy = WarrantyPolicy::find($warrantyData['policy_id'] ?? null);
+        if (!$policy) {
+            throw new \Exception('Selected warranty policy not found.');
+        }
+
+        $startDate = $warrantyData['start_date'] ?? now()->toDateString();
+        $expiryDates = Warranty::calculateExpiryDates($policy, $startDate, null);
+
+        Warranty::create([
+            'warranty_policy_id' => $policy->id,
+            'invoice_item_id' => $invoiceItem->id,
+            'vehicle_id' => $receipt->vehicle_id,
+            'customer_id' => $receipt->customer_id,
+            'start_date' => $startDate,
+            'start_odometer' => null,
+            'end_date' => $expiryDates['end_date'],
+            'end_odometer' => $expiryDates['end_odometer'],
+            'status' => 'active',
         ]);
     }
 
@@ -371,7 +413,7 @@ class POSController extends Controller
                             'service_date' => $itemData['serviceDate'] ?? null,
                         ]);
                     } else {
-                        SalesInvoiceItem::create([
+                        $invoiceItem = SalesInvoiceItem::create([
                             'sales_invoice_id' => $receipt->id,
                             'item_id' => $itemData['product'],
                             'description' => $itemData['description'] ?? '',
@@ -380,6 +422,8 @@ class POSController extends Controller
                             'amount' => (float) str_replace(',', '', $itemData['amount']),
                             'service_date' => $itemData['serviceDate'] ?? null,
                         ]);
+
+                        $this->createWarrantyForInvoiceItem($itemData, $invoiceItem, $receipt);
                     }
                 }
 
