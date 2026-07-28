@@ -114,7 +114,8 @@ Route::middleware('auth')->group(function () {
     Route::controller(WarrantyClaimController::class)
         ->as('warranty-claims.')->prefix('warranty-claims')->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::post('/', 'store')->name('store');
+            Route::post('/{warranty}', 'store')->name('store');
+            Route::patch('/{warrantyClaim}', 'update')->name('update');
         });
 
     // Accounting - Chart of Accounts

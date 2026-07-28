@@ -28,4 +28,12 @@ class WarrantyClaimController extends Controller
 
         return redirect()->route('warranties.show', $warranty->id)->with('success', 'Warranty claim logged successfully.');
     }
+
+    public function update(WarrantyClaimRequest $request, WarrantyClaim $warrantyClaim)
+    {
+        $validated = $request->validated();
+        $warrantyClaim->update($validated);
+
+        return redirect()->route('warranties.show', $warrantyClaim->warranty_id)->with('success', 'Warranty claim updated successfully.');
+    }
 }

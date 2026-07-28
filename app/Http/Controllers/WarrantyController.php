@@ -20,12 +20,14 @@ class WarrantyController extends Controller
                 return $query->where('status', $status);
             })
             ->when($search, function ($query, $search) {
-                return $query->whereHas('customer', function ($q) use ($search) {
-                    $q->where('display_name', 'like', "%{$search}%");
-                })->orWhereHas('vehicle', function ($q) use ($search) {
-                    $q->where('vehicle_no', 'like', "%{$search}%");
-                })->orWhereHas('invoiceItem.invoice', function ($q) use ($search) {
-                    $q->where('receipt_no', 'like', "%{$search}%");
+                $searchTerm = "%{$search}%";
+
+                return $query->whereHas('customer', function ($q) use ($searchTerm) {
+                    $q->where('display_name', 'like', $searchTerm);
+                })->orWhereHas('vehicle', function ($q) use ($searchTerm) {
+                    $q->where('vehicle_no', 'like', $searchTerm);
+                })->orWhereHas('invoiceItem.invoice', function ($q) use ($searchTerm) {
+                    $q->where('receipt_no', 'like', $searchTerm);
                 });
             })
             ->orderBy('created_at', 'desc')
@@ -44,6 +46,13 @@ class WarrantyController extends Controller
     public function show(Warranty $warranty)
     {
         $warranty->load(['warrantyPolicy', 'vehicle.customer', 'customer', 'invoiceItem.invoice', 'claims.resolvedInvoice']);
+
+        $warranty->start_date = $warranty->start_date ? \Carbon\Carbon::parse($warranty->start_date)->format('M j, Y') : null;
+        $warranty->end_date = $warranty->end_date ? \Carbon\Carbon::parse($warranty->end_date)->format('M j, Y') : null;
+
+        foreach ($warranty->claims as $claim) {
+            $claim->claim_date = $claim->claim_date ? \Carbon\Carbon::parse($claim->claim_date)->format('M j, Y') : null;
+        }
 
         $resolvedInvoices = SalesInvoice::orderBy('receipt_no')->limit(50)->get();
 

@@ -1,9 +1,16 @@
+import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import CommonButton from '@/Components/CommonButton';
 
 export default function Index({ auth, warranties, filters }) {
     const { props } = usePage();
+    const [search, setSearch] = useState(filters?.search || '');
+
+    const submitSearch = (e) => {
+        e.preventDefault();
+        router.get(route('warranties.index'), { search, status: filters?.status || '' }, { preserveState: true, preserveScroll: true });
+    };
 
     return (
         <AuthenticatedLayout user={auth.user} header="Warranties">
@@ -20,6 +27,22 @@ export default function Index({ auth, warranties, filters }) {
                             <CommonButton variant="primary">Refresh</CommonButton>
                         </Link>
                     </div>
+
+                    <form onSubmit={submitSearch} className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search by receipt, customer, or vehicle"
+                            className="w-full sm:max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none"
+                        />
+                        <CommonButton type="submit" variant="primary">Search</CommonButton>
+                        {filters?.search && (
+                            <Link href={route('warranties.index')} preserveState preserveScroll>
+                                <CommonButton variant="secondary">Clear</CommonButton>
+                            </Link>
+                        )}
+                    </form>
 
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="overflow-x-auto">
