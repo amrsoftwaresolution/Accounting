@@ -6,6 +6,8 @@ import POSProductCard from './Partials/POSProductCard';
 import POSCartItem from './Partials/POSCartItem';
 import CheckoutModal from './Partials/CheckoutModal';
 import SearchableSelect from '@/Components/SearchableSelect';
+import Modal from '@/Components/Modal';
+import { showToast } from '@/Components/ToastNotification';
 
 export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, existingReceipt }) {
     const isEditMode = !!existingReceipt;
@@ -20,6 +22,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
 
     // Checkout & UI States
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+    const [isExitModalOpen, setIsExitModalOpen] = useState(false);
     const [isRepairCostExpanded, setIsRepairCostExpanded] = useState(false);
     const [selectedVehicleLabel, setSelectedVehicleLabel] = useState(isEditMode ? existingReceipt.vehicle?.vehicle_no : '');
 
@@ -166,11 +169,11 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
 
     const handleCheckoutClick = (action = 'cash_sale') => {
         if (cart.length === 0 && repairingCostNum === 0) {
-            alert("Cart is empty!");
+            showToast('error', 'Cart is empty! Add items before checkout.');
             return;
         }
         if (!data.vehicle_id) {
-            alert("Please select a vehicle before completing the sale.");
+            showToast('error', 'Please select a vehicle before completing the sale.');
             return;
         }
         setData('action', action);
@@ -195,7 +198,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
         if (isEditMode) {
             patch(route('pos.update', existingReceipt.id), {
                 onSuccess: () => {
-                    alert('Sale updated successfully!');
+                    showToast('success', 'Sale updated successfully!');
                     setIsCheckoutModalOpen(false);
                 },
                 preserveScroll: true
@@ -207,7 +210,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                     if (printUrl) {
                         window.open(printUrl, '_blank');
                     } else {
-                        alert('Sale completed successfully!');
+                        showToast('success', 'Sale completed successfully!');
                     }
                     setCart([]);
                     reset('vehicle_id', 'email', 'billingAddress', 'repairingCost', 'action');
@@ -220,11 +223,11 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
 
     const saveDraft = () => {
         if (cart.length === 0 && repairingCostNum === 0) {
-            alert("Nothing to hold.");
+            showToast('error', 'Nothing to hold. Add items or repair cost before holding.');
             return false;
         }
         if (!data.vehicle_id) {
-            alert("Please select a vehicle before holding the sale.");
+            showToast('error', 'Please select a vehicle before holding the sale.');
             return false;
         }
         const draft = {
@@ -241,23 +244,14 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
         setDrafts(updatedDrafts);
         setCart([]);
         reset('vehicle_id', 'repairingCost');
-        alert("Sale saved to Hold/Drafts.");
+        showToast('success', 'Sale saved to Hold/Drafts.');
         return true;
     };
 
     const handleClosePOS = (e) => {
         e.preventDefault();
         if (cart.length > 0 || repairingCostNum > 0) {
-            const wantsToHold = window.confirm("You have an active order. Would you like to put it on HOLD before leaving?\n\nClick OK to Hold, or Cancel to leave without saving.");
-            if (wantsToHold) {
-                if (saveDraft()) {
-                    router.get(route('dashboard'));
-                }
-            } else {
-                if (window.confirm("Are you sure you want to discard this order and leave?")) {
-                    router.get(route('dashboard'));
-                }
-            }
+            setIsExitModalOpen(true);
         } else {
             router.get(route('dashboard'));
         }
@@ -276,6 +270,17 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
             setDrafts(updatedDrafts);
             setIsDraftsModalOpen(false);
         }
+    };
+
+    const handleExitChoice = (choice) => {
+        if (choice === 'hold') {
+            if (saveDraft()) {
+                router.get(route('dashboard'));
+            }
+        } else if (choice === 'discard') {
+            router.get(route('dashboard'));
+        }
+        setIsExitModalOpen(false);
     };
 
     const deleteDraft = (draftId) => {
@@ -491,7 +496,7 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                                                     <div className="font-black text-primary-600 text-sm">{currency} {Number(draft.total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                                                 </div>
                                                 <div className="text-xs text-slate-600 mb-3">
-                                                    {draft.cart.length} items {Number(draft.repairingCost) > 0 && `+ Repair Cost ({currency} ${draft.repairingCost})`}
+                                                    {draft.cart.length} items {Number(draft.repairingCost) > 0 && `+ Repair Cost (${currency} ${draft.repairingCost})`}
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => restoreDraft(draft.id)} className="flex-1 bg-primary-50 text-primary-700 text-xs font-bold py-1.5 rounded hover:bg-primary-100">
@@ -510,6 +515,33 @@ export default function POSIndex({ auth, items, paymentMethods, nextReceiptNo, e
                     </div>
                 </div>
             )}
+
+            <Modal show={isExitModalOpen} onClose={() => setIsExitModalOpen(false)} maxWidth="md">
+                <div className="p-4 sm:p-5">
+                    <h2 className="text-base font-bold text-slate-900">Active order detected</h2>
+                    <p className="mt-2 text-sm text-slate-600">You have an active order in POS. Save it to Hold before leaving, or discard it?</p>
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                        <button
+                            onClick={() => handleExitChoice('discard')}
+                            className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-sm"
+                        >
+                            Discard & Leave
+                        </button>
+                        <button
+                            onClick={() => handleExitChoice('hold')}
+                            className="w-full sm:w-auto px-3 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 text-sm"
+                        >
+                            Save to Hold & Leave
+                        </button>
+                        <button
+                            onClick={() => setIsExitModalOpen(false)}
+                            className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-sm"
+                        >
+                            Continue POS
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             <CheckoutModal currency={currency}
                 isOpen={isCheckoutModalOpen}

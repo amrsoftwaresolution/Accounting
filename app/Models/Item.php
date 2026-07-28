@@ -61,4 +61,11 @@ class Item extends Model
     {
         return $this->hasMany(BundleItem::class, 'bundle_id');
     }
+
+    public function warrantyPolicies()
+    {
+        return $this->belongsToMany(WarrantyPolicy::class, 'warranty_policy_items', 'item_id', 'warranty_policy_id')
+            ->withPivot('item_type')
+            ->withTimestamps();
+    }
 }

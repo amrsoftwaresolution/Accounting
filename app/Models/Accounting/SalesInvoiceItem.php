@@ -17,4 +17,9 @@ class SalesInvoiceItem extends Model
     {
         return $this->belongsTo(\App\Models\Item::class);
     }
+
+    public function warranty()
+    {
+        return $this->hasOne(\App\Models\Warranty::class, 'invoice_item_id');
+    }
 }

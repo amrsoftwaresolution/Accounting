@@ -37,6 +37,9 @@ use App\Http\Controllers\Contacts\EmployeeController;
 use App\Http\Controllers\Settings\CompanySettingsController;
 use App\Http\Controllers\Settings\PrintSettingController;
 use App\Http\Controllers\Garage\VehicleController;
+use App\Http\Controllers\WarrantyController;
+use App\Http\Controllers\WarrantyPolicyController;
+use App\Http\Controllers\WarrantyClaimController;
 // ...
 use Illuminate\Support\Facades\Route;
 
@@ -91,7 +94,29 @@ Route::middleware('auth')->group(function () {
     Route::resource('job-cards', JobCardController::class);
     Route::resource('vehicles', VehicleController::class);
 
-    
+    // Warranty
+    Route::controller(WarrantyPolicyController::class)
+        ->as('warranty-policies.')->prefix('warranty-policies')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{warrantyPolicy}/edit', 'edit')->name('edit');
+            Route::patch('/{warrantyPolicy}', 'update')->name('update');
+            Route::delete('/{warrantyPolicy}', 'destroy')->name('destroy');
+        });
+
+    Route::controller(WarrantyController::class)
+        ->as('warranties.')->prefix('warranties')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{warranty}', 'show')->name('show');
+        });
+
+    Route::controller(WarrantyClaimController::class)
+        ->as('warranty-claims.')->prefix('warranty-claims')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+        });
+
     // Accounting - Chart of Accounts
     Route::get('chart-of-account/{chart_of_account}/history', [ChartOfAccController::class, 'history'])->name('chart-of-account.history');
     Route::resource('chart-of-account', ChartOfAccController::class);

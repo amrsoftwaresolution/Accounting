@@ -40,9 +40,13 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
 
     const navigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
+        { name: 'POS Billing', href: route('pos.index'), icon: 'pos' },
         { name: 'Customer Registrations', href: route('customers.index'), icon: 'users' },
         { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle' },
         { name: 'Job Registrations', href: route('job-cards.index'), icon: 'document' },
+        { name: 'Warranty Policies', href: route('warranty-policies.index'), icon: 'warranty' },
+        { name: 'Warranties', href: route('warranties.index'), icon: 'warranty' },
+        {name: 'Warranty Claims', href: route('warranty-claims.index'), icon: 'warranty' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
         { name: 'Chart of Accounts', href: route('chart-of-account.index'), icon: 'accounting' },
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },

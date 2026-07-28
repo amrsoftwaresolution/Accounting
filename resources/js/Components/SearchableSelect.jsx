@@ -20,6 +20,7 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     tabIndex = 0,
     onKeyDown: externalOnKeyDown,
     fetchUrl = null,
+    multiple = false,
 }, ref) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -38,6 +39,10 @@ const SearchableSelect = forwardRef(function SearchableSelect({
 
     const [isAsyncMode, setIsAsyncMode] = useState(false);
 
+    const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
+    const isMulti = multiple || Array.isArray(value);
+    const selectedOptions = options.filter(opt => selectedValues.some(val => String(val) === String(opt.value)));
+
     const filteredOptions = isAsyncMode
     ? searchResults.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()))
     : options.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()));
@@ -47,13 +52,17 @@ const SearchableSelect = forwardRef(function SearchableSelect({
         : filteredOptions;
 
     useEffect(() => {
-        const selected = options.find(opt => String(opt.value) === String(value));
-        if (selected) {
-            setSelectedLabel(selected.label);
-        } else if (!value) {
-            setSelectedLabel("");
+        if (Array.isArray(value)) {
+            setSelectedLabel(selectedOptions.map(opt => opt.label).join(', '));
+        } else {
+            const selected = options.find(opt => String(opt.value) === String(value));
+            if (selected) {
+                setSelectedLabel(selected.label);
+            } else if (!value) {
+                setSelectedLabel("");
+            }
         }
-    }, [options, value]);
+    }, [options, value, selectedOptions]);
 
     useEffect(() => {
         if (isOpen) {
@@ -155,10 +164,27 @@ useEffect(() => {
             e.preventDefault();
             e.stopPropagation();
             setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
-        } else if (e.key === 'Enter' && activeIndex >= 0) {
+            } else if (e.key === 'Enter' && activeIndex >= 0) {
             e.preventDefault();
             e.stopPropagation();
             const selected = displayOptions[activeIndex];
+            if (isMulti) {
+                const updatedValues = new Set(selectedValues.map(String));
+                const selectedString = String(selected.value);
+                if (updatedValues.has(selectedString)) {
+                    updatedValues.delete(selectedString);
+                } else {
+                    updatedValues.add(selectedString);
+                }
+                const updatedArray = Array.from(updatedValues);
+                onChange(updatedArray, selected);
+                setSelectedLabel(updatedArray.map(val => {
+                    const found = options.find(opt => String(opt.value) === String(val));
+                    return found ? found.label : val;
+                }).join(', '));
+                setSearch("");
+                return;
+            }
             setSelectedLabel(selected.label);
             onChange(selected.value, selected);
             setIsOpen(false);
@@ -166,8 +192,14 @@ useEffect(() => {
         }
     };
 
-    const selectedOption = options.find(opt => String(opt.value) === String(value));
-    const displayLabel = selectedOption ? selectedOption.label : (selectedLabel || placeholder);
+    const selectedOption = !isMulti
+        ? options.find(opt => String(opt.value) === String(value))
+        : null;
+    const displayLabel = isMulti
+        ? selectedLabel || placeholder
+        : selectedOption
+            ? selectedOption.label
+            : (selectedLabel || placeholder);
 
     const sizeClasses = {
         sm: "h-[30px] text-xs rounded-sm",
@@ -273,6 +305,23 @@ useEffect(() => {
                                     key={opt.value}
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
+                                        if (isMulti) {
+                                            const updatedValues = new Set(selectedValues.map(String));
+                                            const selectedString = String(opt.value);
+                                            if (updatedValues.has(selectedString)) {
+                                                updatedValues.delete(selectedString);
+                                            } else {
+                                                updatedValues.add(selectedString);
+                                            }
+                                            const updatedArray = Array.from(updatedValues);
+                                            onChange(updatedArray, opt);
+                                            setSelectedLabel(updatedArray.map(val => {
+                                                const found = options.find(o => String(o.value) === String(val));
+                                                return found ? found.label : val;
+                                            }).join(', '));
+                                            setSearch("");
+                                            return;
+                                        }
                                         setSelectedLabel(opt.label);
                                         onChange(opt.value, opt);
                                         setIsOpen(false);
@@ -280,10 +329,15 @@ useEffect(() => {
                                         restoreFocus();
                                     }}
                                     className={`px-3 py-1.5 text-xs cursor-pointer  flex justify-between items-center ${idx === activeIndex ? 'bg-slate-100' : ''
-                                        } ${String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                                        }`}
+                                        } ${isMulti ? selectedValues.some(val => String(val) === String(opt.value)) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50' : String(opt.value) === String(value) ? 'bg-green-50 text-green-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}
+                                        `}
                                 >
-                                    <span>{opt.label}</span>
+                                    <div className="flex items-center gap-2">
+                                        {isMulti && (
+                                            <span className={`inline-flex h-3.5 w-3.5 rounded-sm border ${selectedValues.some(val => String(val) === String(opt.value)) ? 'bg-primary-600 border-primary-600' : 'border-slate-300'}`} />
+                                        )}
+                                        <span>{opt.label}</span>
+                                    </div>
                                     {opt.type && (
                                         <span className="text-2xs text-slate-400 italic font-medium ml-4">
                                             {opt.type}

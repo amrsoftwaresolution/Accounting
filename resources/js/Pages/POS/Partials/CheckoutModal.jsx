@@ -1,94 +1,94 @@
-import React from 'react';
-import CommonButton from '@/Components/CommonButton';
-import SearchableSelect from '@/Components/SearchableSelect';
+    import React from 'react';
+    import CommonButton from '@/Components/CommonButton';
+    import SearchableSelect from '@/Components/SearchableSelect';
 
-export default function CheckoutModal({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    totalAmount, 
-    data, 
-    setData, 
-    paymentMethods, 
-    processing,
-    isEditMode,
-    currency = '{currency}',
-    onPrint
-}) {
-    if (!isOpen) return null;
+    export default function CheckoutModal({ 
+        isOpen, 
+        onClose, 
+        onConfirm, 
+        totalAmount, 
+        data, 
+        setData, 
+        paymentMethods, 
+        processing,
+        isEditMode,
+        currency = '{currency}',
+        onPrint
+    }) {
+        if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col">
-                <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                    <h3 className="font-bold text-slate-800">
-                        {isEditMode ? 'Update Sale' : 'Complete Sale'}
-                    </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-                </div>
-                <form onSubmit={onConfirm} className="p-4 space-y-4">
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Total Amount</label>
-                        <div className="text-2xl font-black text-primary-600">{currency} {Number(totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+        return (
+            <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col">
+                    <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                        <h3 className="font-bold text-slate-800">
+                            {isEditMode ? 'Update Sale' : 'Complete Sale'}
+                        </h3>
+                        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
                     </div>
+                    <form onSubmit={onConfirm} className="p-4 space-y-4">
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Total Amount</label>
+                            <div className="text-2xl font-black text-primary-600">{currency} {Number(totalAmount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Sale Type</label>
-                        <select
-                            className="w-full h-[30px] text-xs border-slate-300 rounded-sm shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 py-0 outline-none"
-                            value={data.action}
-                            onChange={e => setData('action', e.target.value)}
-                            required
-                        >
-                            <option value="cash_sale">Cash Sale (Paid)</option>
-                            <option value="credit_sale">Credit Sale (Unpaid)</option>
-                        </select>
-                    </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Sale Type</label>
+                            <select
+                                className="w-full h-[30px] text-xs border-slate-300 rounded-sm shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 py-0 outline-none"
+                                value={data.action}
+                                onChange={e => setData('action', e.target.value)}
+                                required
+                            >
+                                <option value="cash_sale">Cash Sale (Paid)</option>
+                                <option value="credit_sale">Credit Sale (Unpaid)</option>
+                            </select>
+                        </div>
 
-                    {data.action !== 'credit_sale' && (
-                        <>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Pay Method</label>
-                                <select
-                                    className="w-full h-[30px] text-xs border-slate-300 rounded-sm shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 py-0 outline-none"
-                                    value={data.paymentMethod}
-                                    onChange={e => setData('paymentMethod', e.target.value)}
-                                    required={data.action !== 'credit_sale'}
-                                >
-                                    <option value="">Select Method</option>
-                                    {paymentMethods.map(pm => <option key={pm.id} value={pm.id}>{pm.name}</option>)}
-                                </select>
-                            </div>
-
-                            <div className="mb-4">
-                                <SearchableSelect
-                                    label="Deposit To"
-                                    placeholder="Select Account"
-                                    value={data.depositTo}
-                                    onChange={val => setData('depositTo', val)}
-                                    fetchUrl={route('api.accounts', { account_type: 'bank,asset' })}
-                                    required={data.action !== 'credit_sale'}
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    <div className="pt-2 flex gap-2">
-                        {isEditMode ? (
+                        {data.action !== 'credit_sale' && (
                             <>
-                                <CommonButton variant="ghost" type="button" onClick={onClose} className="flex-1 justify-center">Cancel</CommonButton>
-                                <CommonButton variant="secondary" type="button" onClick={onPrint} className="flex-1 justify-center">Print</CommonButton>
-                                <CommonButton variant="primary" type="submit" className="flex-1 justify-center" processing={processing}>Update</CommonButton>
-                            </>
-                        ) : (
-                            <>
-                                <CommonButton variant="ghost" type="button" onClick={onClose} className="w-1/3 justify-center">Cancel</CommonButton>
-                                <CommonButton variant="primary" type="submit" className="w-2/3 justify-center" processing={processing}>Confirm & Print</CommonButton>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Pay Method</label>
+                                    <select
+                                        className="w-full h-[30px] text-xs border-slate-300 rounded-sm shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-500/20 py-0 outline-none"
+                                        value={data.paymentMethod}
+                                        onChange={e => setData('paymentMethod', e.target.value)}
+                                        required={data.action !== 'credit_sale'}
+                                    >
+                                        <option value="">Select Method</option>
+                                        {paymentMethods.map(pm => <option key={pm.id} value={pm.id}>{pm.name}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <SearchableSelect
+                                        label="Deposit To"
+                                        placeholder="Select Account"
+                                        value={data.depositTo}
+                                        onChange={val => setData('depositTo', val)}
+                                        fetchUrl={route('api.accounts', { account_type: 'bank,asset' })}
+                                        required={data.action !== 'credit_sale'}
+                                    />
+                                </div>
                             </>
                         )}
-                    </div>
-                </form>
+
+                        <div className="pt-2 flex gap-2">
+                            {isEditMode ? (
+                                <>
+                                    <CommonButton variant="ghost" type="button" onClick={onClose} className="flex-1 justify-center">Cancel</CommonButton>
+                                    <CommonButton variant="secondary" type="button" onClick={onPrint} className="flex-1 justify-center">Print</CommonButton>
+                                    <CommonButton variant="primary" type="submit" className="flex-1 justify-center" processing={processing}>Update</CommonButton>
+                                </>
+                            ) : (
+                                <>
+                                    <CommonButton variant="ghost" type="button" onClick={onClose} className="w-1/3 justify-center">Cancel</CommonButton>
+                                    <CommonButton variant="primary" type="submit" className="w-2/3 justify-center" processing={processing}>Confirm & Print</CommonButton>
+                                </>
+                            )}
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+    }

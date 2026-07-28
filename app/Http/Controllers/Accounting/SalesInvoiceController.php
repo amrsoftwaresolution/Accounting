@@ -12,6 +12,8 @@ use App\Models\Customer;
 use App\Models\Accounting\ChartOfAcc;
 use App\Models\PaymentMethod;
 use App\Models\Item;
+use App\Models\Warranty;
+use App\Models\Vehicle;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -115,7 +117,7 @@ class SalesInvoiceController extends Controller
                 ]);
 
                 foreach ($items as $itemData) {
-                    SalesInvoiceItem::create([
+                    $invoiceItem = SalesInvoiceItem::create([
                         'sales_invoice_id' => $receipt->id,
                         'item_id' => $itemData['product'],
                         'description' => $itemData['description'] ?? '',
@@ -124,6 +126,14 @@ class SalesInvoiceController extends Controller
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                         'service_date' => $itemData['serviceDate'] ?? null,
                     ]);
+
+                    $this->createWarrantyForInvoiceItem(
+                        $invoiceItem,
+                        $request->vehicle_id,
+                        $customerId,
+                        $request->receiptDate,
+                        $itemData['warranty'] ?? false
+                    );
                 }
 
                 // 2. Save Financial Truth (Journal Entry)
@@ -270,6 +280,14 @@ class SalesInvoiceController extends Controller
                     return (float) str_replace(',', '', $item['amount']);
                 });
 
+                $customerId = $request->customer;
+                if ($request->vehicle_id) {
+                    $vehicle = Vehicle::find($request->vehicle_id);
+                    if ($vehicle) {
+                        $customerId = $vehicle->customer_id;
+                    }
+                }
+
                 // 1. Update Business Document
                 $receipt = SalesInvoice::find($journalEntry->transactionable_id);
                 if (!$receipt) {
@@ -295,7 +313,7 @@ class SalesInvoiceController extends Controller
                 }
                 $receipt->items()->delete();
                 foreach ($items as $itemData) {
-                    SalesInvoiceItem::create([
+                    $invoiceItem = SalesInvoiceItem::create([
                         'sales_invoice_id' => $receipt->id,
                         'item_id' => $itemData['product'],
                         'description' => $itemData['description'] ?? '',
@@ -304,6 +322,14 @@ class SalesInvoiceController extends Controller
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                         'service_date' => $itemData['serviceDate'] ?? null,
                     ]);
+
+                    $this->createWarrantyForInvoiceItem(
+                        $invoiceItem,
+                        $request->vehicle_id,
+                        $customerId,
+                        $request->receiptDate,
+                        $itemData['warranty'] ?? false
+                    );
                 }
 
                 // 2. Update Financial Truth (Journal Entry)

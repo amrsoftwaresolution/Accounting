@@ -169,9 +169,17 @@ export default function ChartOfAccIndex({ auth, chartOfAccounts = [] }) {
                                                     <CommonButton
                                                         variant="ghost"
                                                         size="xs"
-                                                        onClick={() => handleOpenEdit(account)}
+                                                        href={route('chart-of-account.history', account.id)}
                                                     >
-                                                        Edit
+                                                        View
+                                                    </CommonButton>
+                                                ) : ['income', 'expense'].includes(account.account_type) ? (
+                                                    <CommonButton
+                                                        variant="ghost"
+                                                        size="xs"
+                                                        href={route('chart-of-account.history', account.id)}
+                                                    >
+                                                        Run Report
                                                     </CommonButton>
                                                 ) : (
                                                     <CommonButton

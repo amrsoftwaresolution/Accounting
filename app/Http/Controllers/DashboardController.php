@@ -60,6 +60,32 @@ class DashboardController extends Controller
 
         $monthlyProfit = $monthlyRevenue - $monthlyExpenses;
 
+        $trendData = collect(range(0, 6))->map(function ($dayIndex) use ($today) {
+            $date = $today->copy()->subDays(6 - $dayIndex);
+
+            $revenue = JournalEntryLine::whereHas('account', function ($q) {
+                    $q->whereIn('account_type', ['income', 'other_income']);
+                })
+                ->whereHas('journalEntry', function ($q) use ($date) {
+                    $q->whereDate('date', $date);
+                })
+                ->sum(DB::raw('credit - debit'));
+
+            $expense = JournalEntryLine::whereHas('account', function ($q) {
+                    $q->whereIn('account_type', ['expense', 'cost_of_goods_sold']);
+                })
+                ->whereHas('journalEntry', function ($q) use ($date) {
+                    $q->whereDate('date', $date);
+                })
+                ->sum(DB::raw('debit - credit'));
+
+            return [
+                'date' => $date->format('M d'),
+                'revenue' => (float) $revenue,
+                'expense' => (float) $expense,
+            ];
+        })->toArray();
+
         // Inventory Alerts (Items where qty < some threshold, say 5)
         $lowStockItems = \App\Models\Item::query()
             ->where('type', 'inventory')
@@ -82,6 +108,7 @@ class DashboardController extends Controller
                 'monthly_expenses' => $monthlyExpenses,
                 'monthly_profit' => $monthlyProfit,
             ],
+            'trendData' => $trendData,
             'lowStockItems' => $lowStockItems,
             'recentJobs' => $recentJobs
         ]);

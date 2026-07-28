@@ -3,6 +3,8 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState, useEffect, Fragment } from 'react';
 import CommonButton from '@/Components/CommonButton';
 import CommonInput from '@/Components/CommonInput';
+
+import ReportDateFilter from '@/Components/ReportDateFilter';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 import axios from 'axios';
 
@@ -13,7 +15,6 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
-    const [datePreset, setDatePreset] = useState('custom');
 
     const handleRunReport = (overrideStart, overrideEnd) => {
         const s = typeof overrideStart === 'string' ? overrideStart : startDate;
@@ -22,32 +23,6 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
             preserveState: true,
             preserveScroll: true,
         });
-    };
-
-    const handlePresetChange = (e) => {
-        const val = e.target.value;
-        setDatePreset(val);
-
-        let newStart = startDate;
-        let newEnd = endDate;
-        const currentYear = new Date().getFullYear();
-
-        if (val === 'all') {
-            newStart = '';
-            newEnd = '';
-        } else if (val === 'this_year') {
-            newStart = `${currentYear}-01-01`;
-            newEnd = `${currentYear}-12-31`;
-        } else if (val === 'last_year') {
-            newStart = `${currentYear - 1}-01-01`;
-            newEnd = `${currentYear - 1}-12-31`;
-        }
-
-        if (val !== 'custom') {
-            setStartDate(newStart);
-            setEndDate(newEnd);
-            handleRunReport(newStart, newEnd);
-        }
     };
     // Calculate running balance
     const transactions = useMemo(() => {
@@ -277,50 +252,14 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
     };
 
     const filterElements = (
-        <div className="flex items-end gap-4">
-            <div className="w-[160px] pb-[1px]">
-                <CommonInput
-                    type="select"
-                    label="Date Period"
-                    value={datePreset}
-                    onChange={handlePresetChange}
-                    size="sm"
-                >
-                    <option value="all">All Dates</option>
-                    <option value="this_year">Current Year</option>
-                    <option value="last_year">Last Year</option>
-                    <option value="custom">Customize</option>
-                </CommonInput>
-            </div>
-            {datePreset === 'custom' && (
-                <>
-                    <div className="w-[140px]">
-                        <CommonInput
-                            type="date"
-                            label="From"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <div className="w-[140px]">
-                        <CommonInput
-                            type="date"
-                            label="To"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            size="sm"
-                        />
-                    </div>
-                    <button
-                        onClick={() => handleRunReport()}
-                        className="px-4 bg-slate-900 text-white rounded-sm hover:bg-slate-800 transition-colors font-bold text-[11px] uppercase tracking-wider h-[30px]"
-                    >
-                        Run Report
-                    </button>
-                </>
-            )}
-        </div>
+        <ReportDateFilter
+            currentFilter={{ start_date: filters.start_date || '', end_date: filters.end_date || '', type: filters.type || 'custom' }}
+            onFilterChange={({ start_date: newStart, end_date: newEnd }) => {
+                setStartDate(newStart);
+                setEndDate(newEnd);
+                handleRunReport(newStart, newEnd);
+            }}
+        />
     );
 
     return (
@@ -344,18 +283,18 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                 )}
             </div>
 
-            <div className="w-full overflow-x-auto pb-10">
-                <table className="w-full text-[13px] text-left border-collapse table-fixed">
+            <div className="w-full overflow-x-auto pb-10" style={{ minWidth: 0 }}>
+                <table className="w-full max-w-full text-[13px] text-left border-collapse table-fixed" style={{ minWidth: 0, tableLayout: 'fixed' }}>
                     <thead>
                         <tr className="border-y-2 border-gray-300">
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Date</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[12%]">Ref No.</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[18%]">Payee / Account</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 w-[20%]">Memo</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Debit</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Credit</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right w-[11%]">Balance</th>
-                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-center w-[5%]"></th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 break-words">Date</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 break-words">Ref No.</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 break-words">Payee / Account</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 break-words">Memo</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right break-words">Debit</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right break-words">Credit</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right break-words">Balance</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-center break-words"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -559,6 +498,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                                             variant="ghost"
                                             size="xs"
                                             href={getEditRoute(tx)}
+                                            className="whitespace-nowrap"
                                         >
                                             View/Edit
                                         </CommonButton>

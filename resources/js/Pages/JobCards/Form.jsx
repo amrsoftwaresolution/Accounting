@@ -104,17 +104,18 @@ export default function Form({ auth, jobCard, customers }) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Complaint / Issue</label>
-                                <textarea
-                                    className="w-full text-sm border-slate-300 rounded-md shadow-sm min-h-[100px]"
+                                <CommonInput
+                                    label="Complaint / Issue"
+                                    type="textarea"
                                     value={data.complaint}
                                     onChange={e => setData('complaint', e.target.value)}
                                     placeholder="Describe the issue..."
+                                    error={errors.complaint}
+                                    className="min-h-[120px]"
                                 />
-                                {errors.complaint && <div className="text-red-500 text-xs mt-1">{errors.complaint}</div>}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <CommonInput
                                     label="Technician Assigned"
                                     value={data.technician_assigned}

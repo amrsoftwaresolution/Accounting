@@ -99,10 +99,10 @@ export default function Sidebar({ navigation, user, onQuickMenuOpen }) {
                                         : 'text-slate-400 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
-                                    <span className={`transition-colors ${route().current() === item.href ? 'text-white' : 'group-hover:text-white'}`}>
+                                    <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md transition-colors ${route().current() === item.href ? 'text-white' : 'group-hover:text-white'}`}>
                                         <SidebarIcon name={item.icon} />
                                     </span>
-                                    <span className="text-xs font-bold">{item.name}</span>
+                                    <span className="text-xs font-bold leading-none whitespace-nowrap">{item.name}</span>
                                 </Link>
                             )
                         ))}

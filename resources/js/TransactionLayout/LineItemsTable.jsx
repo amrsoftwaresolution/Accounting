@@ -195,6 +195,16 @@ export default function LineItemsTable({
                                                     tabIndex={col.tabIndex ?? 0}
                                                     onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
                                                 />
+                                            ) : col.type === 'checkbox' ? (
+                                                <div className="flex items-center justify-center h-full">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!item[col.key]}
+                                                        onChange={(e) => handleItemChange(index, col.key, e.target.checked)}
+                                                        className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                                                        tabIndex={col.tabIndex ?? 0}
+                                                    />
+                                                </div>
                                             ) : (
                                                 <CommonInput
                                                     ref={(node) => {

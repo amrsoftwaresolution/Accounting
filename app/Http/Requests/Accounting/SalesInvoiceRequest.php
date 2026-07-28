@@ -24,6 +24,7 @@ class SalesInvoiceRequest extends FormRequest
             'items' => 'required|array|min:1',
             'items.*.product' => 'required',
             'items.*.amount' => 'required',
+            'items.*.warranty' => 'nullable|boolean',
             'action' => 'nullable|string',
             'repairingCost' => 'nullable|numeric',
         ];
