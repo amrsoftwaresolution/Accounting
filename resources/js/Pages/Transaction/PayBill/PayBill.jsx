@@ -28,6 +28,11 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
     const actionRef = useRef('save');
     const [isDirty, setIsDirty] = useState(false);
 
+    const getDefaultCashPaymentMethod = () => {
+        const cashMethod = paymentMethods.find((pm) => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
+        return cashMethod?.id || '';
+    };
+
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         supplier: payment?.supplier || "",
         paymentDate: payment?.paymentDate || localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
@@ -38,6 +43,12 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         memo: payment?.memo || "",
         action: 'save',
     });
+
+    useEffect(() => {
+        if (!payment?.id && !data.paymentMethod && paymentMethods.length > 0) {
+            setData('paymentMethod', getDefaultCashPaymentMethod());
+        }
+    }, [paymentMethods, payment?.id, data.paymentMethod]);
 
     const handleSupplierChange = (val) => {
         setData(prev => ({ ...prev, supplier: val }));
@@ -211,10 +222,11 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                     .catch(err => console.error("Failed to fetch supplier bills:", err));
             }
         } else {
+            const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
             setData({
                 supplier: "",
-                paymentDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-                paymentMethod: "",
+                paymentDate: cachedDate,
+                paymentMethod: getDefaultCashPaymentMethod() || "",
                 referenceNo: "0001",
                 paymentAccount: "",
                 amount: "0.00",
@@ -263,7 +275,7 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                     setBills([]);
                     const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                     setData({
-                        supplier: "", paymentDate: cachedDate, paymentMethod: "",
+                        supplier: "", paymentDate: cachedDate, paymentMethod: getDefaultCashPaymentMethod() || "",
                         referenceNo: nextNo, paymentAccount: "", amount: "0.00",
                         memo: "", action: 'save'
                     });

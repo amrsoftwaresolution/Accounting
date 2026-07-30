@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import useModalSession from '@/Utils/useModalSession';
 import { useForm, Head } from "@inertiajs/react";
 import axios from "axios";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
@@ -9,7 +10,7 @@ import QuickAddPayee from "@/Components/QuickAddPayee";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import { showToast } from "@/Components/ToastNotification";
 
-export default function BankDepositForm({ auth, nextRef = "", deposit = null }) {
+export default function BankDepositForm({ auth, nextRef = "", deposit = null, onModeChange = null, onClose = null }) {
     const company = auth.company;
     const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
 
@@ -17,6 +18,11 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
     const [accountOptions, setAccountOptions] = useState([]);
     const [depositAccountOptions, setDepositAccountOptions] = useState([]);
     const [paymentMethodOptions, setPaymentMethodOptions] = useState([]);
+
+    const getDefaultCashPaymentMethod = () => {
+        const cashMethod = paymentMethodOptions.find(pm => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
+        return cashMethod?.id || '';
+    };
 
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -55,6 +61,14 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
         fetchPaymentMethods();
     }, []);
 
+    // Modal session tracking (proof-of-fix)
+    const modalSession = useModalSession('bank_deposit');
+
+    useEffect(() => {
+        // mark this modal open in session so last-url is tracked
+        modalSession.open();
+    }, []);
+
     const COLUMNS = [
         { key: "receivedFrom", label: "Received From", placeholder: "Select payee", options: payeeOptions, type: 'select', onAddNew: () => setIsPayeeModalOpen(true) },
         { key: "account", label: "Account", placeholder: "Select account", options: accountOptions, type: 'select', onAddNew: (index) => openAccountModal('item', index) },
@@ -72,7 +86,7 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
             ...i,
             amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         })) : [
-            { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }
+            { receivedFrom: "", account: "", description: "", paymentMethod: getDefaultCashPaymentMethod() || "", refNo: "", amount: "0.00" }
         ],
         cashBackAccount: deposit?.cashBackAccount || "",
         cashBackMemo: deposit?.cashBackMemo || "",
@@ -80,6 +94,17 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
         memo: deposit?.memo || "",
         action: 'save'
     });
+
+    useEffect(() => {
+        if (!deposit && paymentMethodOptions.length > 0) {
+            const defaultId = getDefaultCashPaymentMethod();
+            if (!defaultId) return;
+            if (data?.items && data.items.some(it => !it.paymentMethod)) {
+                const updated = data.items.map(it => ({ ...it, paymentMethod: it.paymentMethod || defaultId }));
+                setData('items', updated);
+            }
+        }
+    }, [paymentMethodOptions, deposit, data]);
 
     useEffect(() => {
         if (deposit) {
@@ -91,7 +116,7 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
                     ...i,
                     amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 })) : [
-                    { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }
+                    { receivedFrom: "", account: "", description: "", paymentMethod: getDefaultCashPaymentMethod() || "", refNo: "", amount: "0.00" }
                 ],
                 cashBackAccount: deposit.cashBackAccount || "",
                 cashBackMemo: deposit.cashBackMemo || "",
@@ -121,7 +146,7 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
         const method = deposit?.id ? patch : post;
 
         method(url, {
-            onSuccess: (page) => {
+            onSuccess: async (page) => {
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
 
@@ -130,6 +155,27 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
                     || page.props?.record?.id;
                 if (newId && !savedEntryId) {
                     setSavedEntryId(newId);
+                }
+
+                // Update session last-url to current path (edit URL after redirect)
+                try {
+                    await axios.post(route('api.session.modal_last_url'), {
+                        modalName: 'bank_deposit',
+                        url: window.location.pathname + window.location.search
+                    });
+                } catch (e) {
+                    // ignore
+                }
+
+                // Inform parent that mode changed to edit
+                if (typeof onModeChange === 'function' && newId) {
+                    try { onModeChange('edit', newId); } catch {}
+                }
+
+                // If caller requested close action, reload underlying list and call onClose if provided
+                if (action === 'close') {
+                    if (typeof onClose === 'function') onClose();
+                    router.reload({ preserveScroll: true });
                 }
 
                 if (action === 'new') {
@@ -163,8 +209,8 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
                     router.delete(route('bank-deposit.destroy', deposit.id));
                 }
             } : undefined}
-            onAddLine={() => { setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
-            onClearRows={() => { setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
+            onAddLine={() => { const def = getDefaultCashPaymentMethod(); setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: def || "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
+            onClearRows={() => { const def = getDefaultCashPaymentMethod(); setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: def || "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
         >
             <Head title="Bank Deposit" />
 
@@ -235,9 +281,9 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null }) 
                     columns={COLUMNS}
                     items={data.items}
                     handleItemChange={handleItemChange}
-                    addRow={() => { setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
+                    addRow={() => { const def = getDefaultCashPaymentMethod(); setData('items', [...data.items, { receivedFrom: "", account: "", description: "", paymentMethod: def || "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
                     removeRow={(index) => { setData('items', data.items.filter((_, i) => i !== index)); setIsDirty(true); }}
-                    clearRows={() => { setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
+                    clearRows={() => { const def = getDefaultCashPaymentMethod(); setData('items', [{ receivedFrom: "", account: "", description: "", paymentMethod: def || "", refNo: "", amount: "0.00" }]); setIsDirty(true); }}
                     totals={{ "Total": totalAmount }}
                     currencyPrefix={currencyPrefix}
                 />

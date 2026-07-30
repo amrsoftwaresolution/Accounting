@@ -26,6 +26,11 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
     const [isRepairCostExpanded, setIsRepairCostExpanded] = useState(false);
     const [selectedVehicleLabel, setSelectedVehicleLabel] = useState(isEditMode ? existingReceipt.vehicle?.vehicle_no : '');
 
+    const getDefaultCashPaymentMethod = () => {
+        const cashMethod = paymentMethods.find(pm => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
+        return cashMethod?.id || paymentMethods[0]?.id || '';
+    };
+
     useEffect(() => {
         const savedDrafts = JSON.parse(localStorage.getItem('pos_drafts') || '[]');
         setDrafts(savedDrafts);
@@ -43,7 +48,7 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
         billingAddress: isEditMode ? existingReceipt.billingAddress : '',
         receiptDate: isEditMode ? existingReceipt.receiptDate : new Date().toISOString().split('T')[0],
         receiptNo: isEditMode ? existingReceipt.receiptNo : nextReceiptNo,
-        paymentMethod: isEditMode ? existingReceipt.paymentMethod : (paymentMethods.length > 0 ? paymentMethods[0].id : ''),
+        paymentMethod: isEditMode ? existingReceipt.paymentMethod : getDefaultCashPaymentMethod(),
         depositTo: isEditMode ? existingReceipt.depositTo : '',
         memo: isEditMode ? existingReceipt.memo : 'POS Sale',
         statementMessage: isEditMode ? existingReceipt.statementMessage : '',
@@ -51,6 +56,12 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
         source: 'pos',
         items: []
     });
+
+    useEffect(() => {
+        if (!isEditMode && !data.paymentMethod && paymentMethods.length > 0) {
+            setData('paymentMethod', getDefaultCashPaymentMethod());
+        }
+    }, [isEditMode, data.paymentMethod, paymentMethods]);
 
     const filteredItems = useMemo(() => {
         return items.filter(item => {
@@ -91,6 +102,10 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
         });
     }, []);
 
+    const cartSubtotal = cart.reduce((sum, item) => sum + Number(item.amount), 0);
+    const repairingCostNum = Number(data.repairingCost) || 0;
+    const totalAmount = cartSubtotal + repairingCostNum;
+
     // Barcode Scanner Listener
     useEffect(() => {
         let buffer = '';
@@ -109,7 +124,27 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
             }
 
             if (e.key === 'Escape') {
-                if (!document.querySelector('[role="dialog"]') && !document.querySelector('.fixed.inset-0')) {
+                if (isCheckoutModalOpen) {
+                    setIsCheckoutModalOpen(false);
+                    return;
+                }
+                if (isExitModalOpen) {
+                    setIsExitModalOpen(false);
+                    return;
+                }
+                if (isDraftsModalOpen) {
+                    setIsDraftsModalOpen(false);
+                    return;
+                }
+
+                if (isInput) {
+                    document.activeElement?.blur();
+                    return;
+                }
+
+                if (cart.length > 0 || repairingCostNum > 0) {
+                    setIsExitModalOpen(true);
+                } else {
                     window.location.href = route('dashboard');
                 }
                 return;
@@ -134,7 +169,7 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [items, addToCart]);
+    }, [items, addToCart, cart, repairingCostNum, isCheckoutModalOpen, isExitModalOpen, isDraftsModalOpen]);
 
 
     const updateCartQty = (productId, delta) => {
@@ -174,10 +209,6 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
         }));
     };
 
-    const cartSubtotal = cart.reduce((sum, item) => sum + Number(item.amount), 0);
-    const repairingCostNum = Number(data.repairingCost) || 0;
-    const totalAmount = cartSubtotal + repairingCostNum;
-
     const handleCheckoutClick = (action = 'cash_sale') => {
         if (cart.length === 0 && repairingCostNum === 0) {
             showToast('error', 'Cart is empty! Add items before checkout.');
@@ -187,6 +218,11 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
             showToast('error', 'Please select a vehicle before completing the sale.');
             return;
         }
+
+        if (action === 'cash_sale' && !data.paymentMethod) {
+            setData('paymentMethod', getDefaultCashPaymentMethod());
+        }
+
         setData('action', action);
         setIsCheckoutModalOpen(true);
     };

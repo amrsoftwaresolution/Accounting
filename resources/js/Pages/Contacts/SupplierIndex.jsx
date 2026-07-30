@@ -19,7 +19,8 @@ export default function SupplierIndex({ suppliers = [] }) {
         company_name: '',
         email: '',
         phone_number: '',
-        address: ''
+        address: '',
+        opening_balance: ''
     });
 
     const handleOpenCreate = () => {
@@ -33,8 +34,7 @@ export default function SupplierIndex({ suppliers = [] }) {
     const handleEdit = (supplier) => {
         setIsEdit(true);
         setSelectedId(supplier.id);
-
-
+        clearErrors();
 
         setData({
             display_name: supplier.display_name || '',
@@ -43,7 +43,8 @@ export default function SupplierIndex({ suppliers = [] }) {
             company_name: supplier.company_name || '',
             email: supplier.email || '',
             phone_number: supplier.phone_number || '',
-            address: supplier.address || ''
+            address: supplier.address || '',
+            opening_balance: ''
         });
         setIsCreateOpen(true);
     };
@@ -204,6 +205,20 @@ export default function SupplierIndex({ suppliers = [] }) {
                                 />
                             </div>
                         </section>
+
+                        {!isEdit && (
+                            <section>
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Opening Balance</h3>
+                                <CommonInput
+                                    label="Opening Balance"
+                                    type="number"
+                                    step="0.01"
+                                    value={data.opening_balance}
+                                    onChange={e => setData('opening_balance', e.target.value)}
+                                    error={errors.opening_balance}
+                                />
+                            </section>
+                        )}
 
                         <section>
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-50 pb-2">Business Details</h3>

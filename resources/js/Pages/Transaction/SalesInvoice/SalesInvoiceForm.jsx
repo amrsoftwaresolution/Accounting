@@ -21,6 +21,11 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
     const [accountOptions, setAccountOptions] = useState([]);
     const paymentMethodOptions = paymentMethods.map(pm => ({ value: pm.id, label: pm.name }));
 
+    const getDefaultCashPaymentMethod = () => {
+        const cashMethod = paymentMethods.find((pm) => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
+        return cashMethod?.id || '';
+    };
+
     // Modal States
     const [isPayeeModalOpen, setIsPayeeModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -80,7 +85,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 billingAddress: "",
                 receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                 receiptNo: nextReceiptNo ? nextReceiptNo : "RCPT-0001",
-                paymentMethod: "",
+                paymentMethod: getDefaultCashPaymentMethod() || "",
                 depositTo: "",
                 memo: "",
                 statementMessage: "",
@@ -132,8 +137,16 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         action: 'save'
     });
 
+    useEffect(() => {
+        if (!receipt?.id && !data.paymentMethod && paymentMethods.length > 0) {
+            setData('paymentMethod', getDefaultCashPaymentMethod());
+        }
+    }, [paymentMethods, receipt?.id, data.paymentMethod]);
+
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    const totalAmount = data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0).toFixed(2);
 
     const handleItemChange = (index, field, value) => {
         const updated = [...data.items];
@@ -211,7 +224,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                     setData({
                         customer: "", email: "", billingAddress: "",
                         receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-                        receiptNo: serverNextNo, paymentMethod: "", depositTo: "", memo: "", statementMessage: "",
+                        receiptNo: serverNextNo, paymentMethod: getDefaultCashPaymentMethod() || "", depositTo: "", memo: "", statementMessage: "",
                         items: [
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PaymentMethodController extends Controller
 {
@@ -15,8 +16,17 @@ class PaymentMethodController extends Controller
             'is_active' => 'boolean'
         ]);
 
+        $name = $validated['name'];
+        $baseSlug = Str::slug($name);
+        $slug = $baseSlug;
+        $i = 1;
+        while (PaymentMethod::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $i++;
+        }
+
         $paymentMethod = PaymentMethod::create([
-            'name' => $validated['name'],
+            'name' => $name,
+            'slug' => $slug,
             'is_active' => $validated['is_active'] ?? true,
         ]);
 

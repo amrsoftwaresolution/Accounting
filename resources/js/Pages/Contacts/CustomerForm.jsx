@@ -7,7 +7,7 @@ export default function CustomerForm({ auth, customer, nextCustomerNumber }) {
     const isEdit = !!customer;
     const displayNumber = isEdit ? customer.customer_number : nextCustomerNumber;
 
-    const { data, setData, post, put, processing, errors } = useForm({
+    const initialFormData = {
         display_name: customer?.display_name || '',
         first_name: customer?.first_name || '',
         last_name: customer?.last_name || '',
@@ -17,7 +17,13 @@ export default function CustomerForm({ auth, customer, nextCustomerNumber }) {
         nic: customer?.nic || '',
         passport: customer?.passport || '',
         address: customer?.address || '',
-    });
+    };
+
+    if (!isEdit) {
+        initialFormData.opening_balance = customer?.opening_balance ?? '';
+    }
+
+    const { data, setData, post, put, processing, errors } = useForm(initialFormData);
 
     const submit = (e) => {
         e.preventDefault();
@@ -67,6 +73,18 @@ export default function CustomerForm({ auth, customer, nextCustomerNumber }) {
                                         error={errors.display_name}
                                     />
                                 </div>
+                                {!isEdit && (
+                                    <div className="mt-4">
+                                        <CommonInput
+                                            label="Opening Balance"
+                                            type="number"
+                                            step="0.01"
+                                            value={data.opening_balance}
+                                            onChange={e => setData('opening_balance', e.target.value)}
+                                            error={errors.opening_balance}
+                                        />
+                                    </div>
+                                )}
                             </section>
 
                             <section>

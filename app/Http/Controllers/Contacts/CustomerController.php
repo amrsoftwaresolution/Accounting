@@ -52,7 +52,10 @@ class CustomerController extends Controller
             'nic' => 'required|string|max:50',
             'passport' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
+            'opening_balance' => 'nullable|numeric',
         ]);
+
+        $validatedData['opening_balance'] = $validatedData['opening_balance'] ?? 0;
 
         // Assigned here, not trusted from the frontend, to avoid race conditions
         // between two people creating a customer at the same time.

@@ -80,6 +80,8 @@ class ReceivePaymentController extends Controller
                     'deposit_to_account_id' => $request->depositTo,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                 ]);
 
                 // Allocations (Business Details)
@@ -159,8 +161,9 @@ class ReceivePaymentController extends Controller
             'depositTo' => $receivePayment->deposit_to_account_id,
             'referenceNo' => $receivePayment->reference_no,
             'memo' => $receivePayment->memo,
+            'checkDate' => $receivePayment->check_date,
+            'checkNumber' => $receivePayment->check_number,
         ];
-
 
         return Inertia::render('Transaction/ReceivePayment/ReceivePaymentForm', [
             'payment' => $paymentData,
@@ -190,6 +193,8 @@ class ReceivePaymentController extends Controller
                     'deposit_to_account_id' => $request->depositTo,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                 ]);
 
                 // 2. Re-create Allocations

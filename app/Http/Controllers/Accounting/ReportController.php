@@ -96,6 +96,112 @@ class ReportController extends Controller
         return collect($tree)->groupBy('account_type');
     }
 
+    private function buildBalanceSheetTree($types, $lines, $displayBy, $months)
+    {
+        $allAccounts = ChartOfAcc::query()
+            ->whereIn('account_type', $types)
+            ->orderByRaw('FIELD(account_type, "Asset", "Liability", "Equity", "Income", "Expense")')
+            ->orderBy('sub_type')
+            ->orderBy('name')
+            ->get();
+
+        $accountBalances = [];
+        foreach ($allAccounts as $account) {
+            $accountLines = $lines->where('chart_of_acc_id', $account->id);
+            $type = strtolower($account->account_type);
+
+            $monthly_balances = [];
+            $total_balance = 0;
+
+            if ($displayBy === 'month') {
+                $runningBalance = 0;
+                foreach ($months as $month) {
+                    $monthLine = $accountLines->firstWhere('month', $month);
+                    $debit = $monthLine ? $monthLine->total_debit : 0;
+                    $credit = $monthLine ? $monthLine->total_credit : 0;
+
+                    if ($type === 'income' || $type === 'liability' || $type === 'equity') {
+                        $runningBalance += ($credit - $debit);
+                    } else {
+                        $runningBalance += ($debit - $credit);
+                    }
+
+                    $monthly_balances[$month] = (float) $runningBalance;
+                }
+                $total_balance = $runningBalance;
+            } else {
+                $line = $accountLines->first();
+                $debit = $line ? $line->total_debit : 0;
+                $credit = $line ? $line->total_credit : 0;
+                if ($type === 'income' || $type === 'liability' || $type === 'equity') {
+                    $total_balance = $credit - $debit;
+                } else {
+                    $total_balance = $debit - $credit;
+                }
+            }
+
+            $accountBalances[$account->id] = [
+                'id' => $account->id,
+                'name' => $account->name,
+                'account_type' => $type,
+                'sub_type' => $account->sub_type,
+                'parent_id' => $account->parent_id,
+                'balance' => (float) $total_balance,
+                'total_balance' => (float) $total_balance,
+                'monthly_balances' => $monthly_balances,
+                'total_monthly_balances' => $monthly_balances,
+                'children' => []
+            ];
+        }
+
+        $tree = [];
+        foreach ($accountBalances as $id => &$node) {
+            if ($node['parent_id'] && isset($accountBalances[$node['parent_id']])) {
+                $accountBalances[$node['parent_id']]['children'][] = &$node;
+            } else {
+                $tree[] = &$node;
+            }
+        }
+
+        $rollup = function(&$node) use (&$rollup, $displayBy, $months) {
+            $total = $node['balance'];
+            $monthly = $node['monthly_balances'];
+
+            foreach ($node['children'] as &$child) {
+                $total += $rollup($child);
+                if ($displayBy === 'month') {
+                    foreach ($months as $m) {
+                        $monthly[$m] = ($monthly[$m] ?? 0) + ($child['total_monthly_balances'][$m] ?? 0);
+                    }
+                }
+            }
+
+            $node['total_balance'] = $total;
+            if ($displayBy === 'month') {
+                $node['total_monthly_balances'] = $monthly;
+            }
+            return $total;
+        };
+
+        foreach ($tree as &$node) {
+            $rollup($node);
+        }
+
+        $filterZero = function($nodes) use (&$filterZero) {
+            $result = [];
+            foreach ($nodes as $node) {
+                $node['children'] = $filterZero($node['children']);
+                if ($node['total_balance'] != 0 || count($node['children']) > 0) {
+                    $result[] = $node;
+                }
+            }
+            return $result;
+        };
+
+        $tree = $filterZero($tree);
+        return collect($tree)->groupBy('account_type');
+    }
+
     private function buildPnLTree($types, $lines, $displayBy, $months)
     {
         $allAccounts = ChartOfAcc::query()
@@ -269,23 +375,55 @@ class ReportController extends Controller
 
     public function balanceSheet(Request $request)
     {
+        $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $displayBy = $request->query('display_by', 'total');
+
+        if (!$request->has('start_date') && !$request->has('end_date')) {
+            $startDate = now()->startOfMonth()->toDateString();
+            $endDate = now()->endOfMonth()->toDateString();
+        }
+
         $endDate = $endDate !== null && $endDate !== '' ? $endDate : now()->toDateString();
 
-        $lines = JournalEntryLine::query()
+        $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
-            
-            ->where('journal_entries.date', '<=', $endDate)
             ->select(
                 'journal_entry_lines.chart_of_acc_id',
                 DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
                 DB::raw('SUM(journal_entry_lines.credit) as total_credit')
-            )
-            ->groupBy('journal_entry_lines.chart_of_acc_id')
-            ->get()
-            ->keyBy('chart_of_acc_id');
+            );
 
-        $reportData = $this->buildAccountTree(['asset', 'liability', 'equity'], $lines, true);
+        if ($startDate) {
+            $query->where('journal_entries.date', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        if ($displayBy === 'month') {
+            $query->addSelect(DB::raw('DATE_FORMAT(journal_entries.date, "%Y-%m") as month'))
+                  ->groupBy('journal_entry_lines.chart_of_acc_id', 'month');
+        } else {
+            $query->groupBy('journal_entry_lines.chart_of_acc_id');
+        }
+
+        $lines = $query->get();
+
+        $months = [];
+        if ($displayBy === 'month') {
+            $actualStart = $startDate ? \Carbon\Carbon::parse($startDate) : ($lines->min('month') ? \Carbon\Carbon::createFromFormat('Y-m', $lines->min('month')) : now());
+            $actualEnd = $endDate ? \Carbon\Carbon::parse($endDate) : ($lines->max('month') ? \Carbon\Carbon::createFromFormat('Y-m', $lines->max('month')) : now());
+
+            $start = $actualStart->copy()->startOfMonth();
+            $end = $actualEnd->copy()->startOfMonth();
+            while ($start->lte($end)) {
+                $months[] = $start->format('Y-m');
+                $start->addMonth();
+            }
+        }
+
+        $reportData = $this->buildBalanceSheetTree(['asset', 'liability', 'equity'], $lines, $displayBy, $months);
 
         $fiscalYearStart = \Carbon\Carbon::parse($endDate)->startOfYear()->toDateString();
 
@@ -360,7 +498,10 @@ class ReportController extends Controller
         return Inertia::render('Reports/BalanceSheet', [
             'reportData' => $reportData,
             'filters' => [
-                'end_date' => $endDate
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'display_by' => $displayBy,
+                'months' => $months
             ]
         ]);
     }

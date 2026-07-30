@@ -50,7 +50,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
 
     const income = reportData.income || [];
     const cogs = reportData.cogs || [];
-    const expense = reportData.payment || reportData.expense || [];
+    const expense = reportData.expense || [];
 
     const totalIncome = income.reduce((sum, item) => sum + item.total_balance, 0);
     const totalCogs = cogs.reduce((sum, item) => sum + item.total_balance, 0);
@@ -407,7 +407,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
                             <td className="py-2.5 px-3 text-right tabular-nums text-gray-900"><Currency value={grossProfit} /></td>
                         </tr>
 
-                        {/* Payment Section */}
+                        {/* Expense Section */}
                         <tr 
                             className="bg-gray-50 border-y border-gray-300 cursor-pointer hover:bg-gray-100"
                             onClick={() => toggleGroup('Expense')}

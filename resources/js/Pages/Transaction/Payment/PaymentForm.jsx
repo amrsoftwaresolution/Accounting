@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import useModalSession from '@/Utils/useModalSession';
+import axios from 'axios';
 import { useForm, usePage, Head } from "@inertiajs/react";
 import TransactionLayout from "@/TransactionLayout/TransactionLayout";
 import LineItemsTable from "@/TransactionLayout/LineItemsTable";
@@ -10,7 +12,6 @@ import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 import { showToast } from "@/Components/ToastNotification";
 import { useDateFormat, formatDate } from "@/Utils/dateFormat";
-import axios from "axios";
 
 export default function PaymentForm({
     auth,
@@ -31,6 +32,11 @@ export default function PaymentForm({
     const [accountOptions, setAccountOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);
     const [paymentMethodOptions, setPaymentMethodOptions] = useState([]);
+
+    const getDefaultCashPaymentMethod = () => {
+        const cashMethod = paymentMethodOptions.find(pm => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
+        return cashMethod?.id || '';
+    };
 
     // Modal States
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -77,6 +83,18 @@ export default function PaymentForm({
         fetchItems();
         fetchPaymentMethods();
     }, []);
+
+    const modalSession = useModalSession('payment');
+
+    useEffect(() => {
+        modalSession.open();
+    }, []);
+
+    useEffect(() => {
+        if (!expense?.id && !data.method && paymentMethodOptions.length > 0) {
+            setData('method', getDefaultCashPaymentMethod());
+        }
+    }, [paymentMethodOptions, expense?.id, data.method]);
 
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
@@ -156,7 +174,7 @@ export default function PaymentForm({
                 payee: "",
                 account: "",
                 date: cachedDate,
-                method: "",
+                method: getDefaultCashPaymentMethod() || "",
                 ref: nextExpenseNo || "",
                 memo: "",
                 items: [
@@ -264,7 +282,7 @@ export default function PaymentForm({
         method(url, {
             preserveScroll: true,
             preserveState: action === 'save',
-            onSuccess: (page) => {
+            onSuccess: async (page) => {
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
 
@@ -273,6 +291,18 @@ export default function PaymentForm({
                     || page.props?.record?.id;
                 if (newId && !savedEntryId) {
                     setSavedEntryId(newId);
+                }
+
+                // update session modal last url
+                try {
+                    await axios.post(route('api.session.modal_last_url'), {
+                        modalName: 'payment',
+                        url: window.location.pathname + window.location.search
+                    });
+                } catch (e) {}
+
+                if (action === 'close') {
+                    router.reload({ preserveScroll: true });
                 }
 
                 if (action === 'new') {
@@ -286,7 +316,7 @@ export default function PaymentForm({
                     fetchAccounts();
                     const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                     setData({
-                        payee: "", account: "", date: cachedDate, method: "", ref: nextRef, memo: "",
+                        payee: "", account: "", date: cachedDate, method: getDefaultCashPaymentMethod() || "", ref: nextRef, memo: "",
                         items: [{ category: "", description: "", amount: "0.00" }],
                         itemDetails: [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
                         action: 'save'

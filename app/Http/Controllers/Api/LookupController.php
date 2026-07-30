@@ -387,6 +387,22 @@ class LookupController extends Controller
     }
 
     /**
+     * Store last modal URL in session under a namespaced key
+     */
+    public function storeModalLastUrl(Request $request)
+    {
+        $request->validate([
+            'modalName' => 'required|string',
+            'url' => 'required|string'
+        ]);
+
+        $key = 'last_modal_url:' . $request->input('modalName');
+        session([$key => $request->input('url')]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Endpoint to fetch vehicles
      */
     public function vehicles(Request $request)

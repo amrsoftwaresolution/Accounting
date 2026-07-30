@@ -29,6 +29,11 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     const [savedEntryId, setSavedEntryId] = useState(payment?.id || null);
     const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
 
+    const getDefaultCashPaymentMethod = () => {
+        const cashMethod = paymentMethods.find((pm) => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
+        return cashMethod?.id || '';
+    };
+
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         customer: payment?.customer || "",
         email: payment?.email || "",
@@ -38,8 +43,16 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
         depositTo: payment?.depositTo || "",
         amountReceived: payment?.amountReceived ? parseFloat(payment.amountReceived).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00",
         memo: payment?.memo || "",
+        checkDate: payment?.checkDate || "",
+        checkNumber: payment?.checkNumber || "",
         action: 'save',
     });
+
+    useEffect(() => {
+        if (!payment?.id && !data.paymentMethod && paymentMethods.length > 0) {
+            setData('paymentMethod', getDefaultCashPaymentMethod());
+        }
+    }, [paymentMethods, payment?.id, data.paymentMethod]);
 
 
     const handleCustomerChange = (val) => {
@@ -138,6 +151,22 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
     });
 
 
+    const handlePaymentMethodChange = (val) => {
+        const selectedMethod = paymentMethods.find((method) => method.id === val);
+        const isCheque = selectedMethod?.name?.toLowerCase() === 'cheque';
+
+        setData(prev => ({
+            ...prev,
+            paymentMethod: val,
+            checkDate: isCheque ? prev.checkDate : "",
+            checkNumber: isCheque ? prev.checkNumber : ""
+        }));
+        setIsDirty(true);
+    };
+
+    const selectedPaymentMethod = paymentMethods.find((method) => method.id === data.paymentMethod);
+    const isChequePayment = selectedPaymentMethod?.name?.toLowerCase() === 'cheque';
+
     const handleSelectAllToggle = (isChecked) => {
         setInvoices(prev => {
             const amountReceivedVal = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
@@ -220,6 +249,8 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                 depositTo: payment.depositTo || "",
                 amountReceived: payment.amountReceived || "0.00",
                 memo: payment.memo || "",
+                checkDate: payment.checkDate || "",
+                checkNumber: payment.checkNumber || "",
                 action: 'save'
             });
             if (payment.customer) {
@@ -234,15 +265,18 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                     .catch(err => console.error("Failed to fetch customer credit_invoices:", err));
             }
         } else {
+            const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
             setData({
                 customer: "",
                 email: "",
-                paymentDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
-                paymentMethod: "",
+                paymentDate: cachedDate,
+                paymentMethod: getDefaultCashPaymentMethod() || "",
                 referenceNo: nextPaymentNo || "",
                 depositTo: "",
                 amountReceived: "0.00",
                 memo: "",
+                checkDate: "",
+                checkNumber: "",
                 action: 'save'
             });
             setInvoices([]);
@@ -309,7 +343,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                     const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
                     setData({
                         customer: "", email: "", paymentDate: cachedDate,
-                        paymentMethod: "", referenceNo: nextRef,
+                        paymentMethod: getDefaultCashPaymentMethod() || "", referenceNo: nextRef,
                         depositTo: "", amountReceived: "0.00", memo: "", action: 'save'
                     });
                     setIsDirty(false);
@@ -390,13 +424,36 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.paymentMethod}
-                            onChange={(val) => { setData("paymentMethod", val); setIsDirty(true); }}
+                            onChange={handlePaymentMethodChange}
                             options={methodOptions}
                             onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
                             error={errors.paymentMethod}
                         />
                     </div>
+                    {isChequePayment && (
+                        <div className="w-[180px]">
+                            <CommonInput
+                                type="date"
+                                label="Check Date"
+                                value={data.checkDate}
+                                onChange={(e) => { setData('checkDate', e.target.value); setIsDirty(true); }}
+                                size="sm"
+                                error={errors.checkDate}
+                            />
+                        </div>
+                    )}
+                    {isChequePayment && (
+                        <div className="w-[180px]">
+                            <CommonInput
+                                label="Check Number"
+                                value={data.checkNumber}
+                                onChange={(e) => { setData('checkNumber', e.target.value); setIsDirty(true); }}
+                                size="sm"
+                                error={errors.checkNumber}
+                            />
+                        </div>
+                    )}
                     <div className="w-[180px]">
                         <CommonInput
                             label="Reference no."

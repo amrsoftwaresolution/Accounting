@@ -161,11 +161,7 @@ class InventoryQuantityAdjustmentController extends Controller
                 return redirect()->route('dashboard')->with('success', 'Inventory quantity adjustment saved successfully.');
             }
 
-            if (isset($journalEntry)) {
-                return redirect()->route('journal-entries.edit', $journalEntry->id)->with('success', 'Inventory quantity adjustment saved successfully.');
-            }
-
-            return redirect()->back()->with('success', 'Inventory quantity adjustment saved successfully.');
+            return redirect()->route('items.index')->with('success', 'Inventory quantity adjustment saved successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }

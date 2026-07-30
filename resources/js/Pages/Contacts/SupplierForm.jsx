@@ -9,6 +9,7 @@ export default function SupplierForm() {
         email: "",
         phone_number: "",
         address: "",
+        opening_balance: "",
     });
 
     const submit = (e) => {
@@ -76,6 +77,18 @@ export default function SupplierForm() {
                                     value={data.address}
                                     onChange={(e) => setData("address", e.target.value)}
                                 ></textarea>
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Opening Balance</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#00713D] focus:border-[#00713D] outline-none transition-all"
+                                    value={data.opening_balance}
+                                    onChange={(e) => setData("opening_balance", e.target.value)}
+                                />
+                                {errors.opening_balance && <p className="text-red-500 text-xs mt-1 font-bold">{errors.opening_balance}</p>}
                             </div>
                         </div>
 

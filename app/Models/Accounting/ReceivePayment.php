@@ -13,7 +13,8 @@ class ReceivePayment extends Model
 
     protected $fillable = [
         'customer_id', 'amount', 'payment_date',
-        'payment_method_id', 'deposit_to_account_id', 'reference_no', 'memo'
+        'payment_method_id', 'deposit_to_account_id', 'reference_no', 'memo',
+        'check_date', 'check_number'
     ];
 
     public function allocations()

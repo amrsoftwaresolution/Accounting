@@ -75,6 +75,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/time', 'updateTime')->name('time.settings.update');
             Route::post('/logo', 'uploadLogo')->name('logo.upload');
         });
+        // Quick routes for settings-managed resources
+        Route::post('/payment-methods', [\App\Http\Controllers\Settings\PaymentMethodController::class, 'store'])->name('payment-methods.store');
     });
 
     // Inventory
@@ -259,24 +261,33 @@ Route::middleware('auth')->group(function () {
     });
 
     // Reports
-    Route::controller(ReportController::class)->prefix('reports')->group(function () {
-        Route::get('/', 'index')->name('reports.index');
-        Route::get('/vehicle-history', 'vehicleHistory')->name('reports.vehicle-history');
-        Route::get('/profit-loss', 'profitAndLoss')->name('reports.profit-loss');
-        Route::get('/balance-sheet', 'balanceSheet')->name('reports.balance-sheet');
-        Route::get('/customer-balance', 'customerBalance')->name('reports.customer-balance');
-        Route::get('/customer-balance-detail', 'customerBalanceDetailAll')->name('reports.customer-balance-detail');
-        Route::get('/customer-balance/{customer}', 'customerDetail')->name('reports.customer-detail');
-        Route::get('/supplier-balance', 'supplierBalance')->name('reports.supplier-balance');
-        Route::get('/supplier-balance-detail', 'supplierBalanceDetailAll')->name('reports.supplier-balance-detail');
-        Route::get('/supplier-balance/{supplier}', 'supplierDetail')->name('reports.supplier-detail');
-        Route::get('/inventory-summary', 'inventorySummary')->name('reports.inventory-summary');
-        Route::get('/inventory-detail-all', 'inventoryDetailAll')->name('reports.inventory-detail-all');
-        Route::get('/inventory-detail/{item}', 'inventoryDetail')->name('reports.inventory-detail');
-        Route::get('/sales-by-item', 'salesByItem')->name('reports.sales-by-item');
-        Route::get('/sales-by-customer', 'salesByCustomer')->name('reports.sales-by-customer');
-        Route::get('/purchase-by-item', 'purchaseByItem')->name('reports.purchase-by-item');
-        Route::get('/purchase-by-supplier', 'purchaseBySupplier')->name('reports.purchase-by-supplier');
+    Route::prefix('reports')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Accounting\ReportController::class, 'index'])->name('reports.index');
+        Route::get('/vehicle-history', [\App\Http\Controllers\Accounting\ReportController::class, 'vehicleHistory'])->name('reports.vehicle-history');
+
+        Route::get('/profit-loss', [\App\Http\Controllers\Accounting\Reports\ProfitAndLossController::class, 'profitAndLoss'])->name('reports.profit-loss');
+        Route::get('/balance-sheet', [\App\Http\Controllers\Accounting\Reports\BalanceSheetController::class, 'balanceSheet'])->name('reports.balance-sheet');
+
+        // Contact balances
+        Route::get('/customer-balance', [\App\Http\Controllers\Accounting\Reports\ContactBalanceController::class, 'customerBalance'])->name('reports.customer-balance');
+        Route::get('/customer-balance-detail', [\App\Http\Controllers\Accounting\Reports\ContactBalanceController::class, 'customerBalanceDetailAll'])->name('reports.customer-balance-detail');
+        Route::get('/customer-balance/{customer}', [\App\Http\Controllers\Accounting\Reports\ContactBalanceController::class, 'customerDetail'])->name('reports.customer-detail');
+        Route::get('/supplier-balance', [\App\Http\Controllers\Accounting\Reports\ContactBalanceController::class, 'supplierBalance'])->name('reports.supplier-balance');
+        Route::get('/supplier-balance-detail', [\App\Http\Controllers\Accounting\Reports\ContactBalanceController::class, 'supplierBalanceDetailAll'])->name('reports.supplier-balance-detail');
+        Route::get('/supplier-balance/{supplier}', [\App\Http\Controllers\Accounting\Reports\ContactBalanceController::class, 'supplierDetail'])->name('reports.supplier-detail');
+
+        // Inventory
+        Route::get('/inventory-summary', [\App\Http\Controllers\Accounting\Reports\InventoryReportController::class, 'inventorySummary'])->name('reports.inventory-summary');
+        Route::get('/inventory-detail-all', [\App\Http\Controllers\Accounting\Reports\InventoryReportController::class, 'inventoryDetailAll'])->name('reports.inventory-detail-all');
+        Route::get('/inventory-detail/{item}', [\App\Http\Controllers\Accounting\Reports\InventoryReportController::class, 'inventoryDetail'])->name('reports.inventory-detail');
+
+        // Sales
+        Route::get('/sales-by-item', [\App\Http\Controllers\Accounting\Reports\SalesReportController::class, 'salesByItem'])->name('reports.sales-by-item');
+        Route::get('/sales-by-customer', [\App\Http\Controllers\Accounting\Reports\SalesReportController::class, 'salesByCustomer'])->name('reports.sales-by-customer');
+
+        // Purchases
+        Route::get('/purchase-by-item', [\App\Http\Controllers\Accounting\Reports\PurchaseReportController::class, 'purchaseByItem'])->name('reports.purchase-by-item');
+        Route::get('/purchase-by-supplier', [\App\Http\Controllers\Accounting\Reports\PurchaseReportController::class, 'purchaseBySupplier'])->name('reports.purchase-by-supplier');
     });
 
     // History

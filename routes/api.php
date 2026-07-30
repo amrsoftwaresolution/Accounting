@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\LookupController;
+use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\TransactionHistoryController;
 
 Route::get('/user', function (Request $request) {
@@ -25,5 +26,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories', [LookupController::class, 'categories'])->name('api.categories');
     Route::get('/payment-methods', [LookupController::class, 'paymentMethods'])->name('api.payment-methods');
     Route::get('/vehicles', [LookupController::class, 'vehicles'])->name('api.vehicles');
+    // Store modal last URL in session (namespaced by modal name)
+    Route::post('/session/modal-last-url', [LookupController::class, 'storeModalLastUrl'])->name('api.session.modal_last_url');
     Route::get('/history/{transactionType}', [TransactionHistoryController::class, 'index'])->name('api.history');
+
+    Route::prefix('reports')->group(function () {
+        Route::get('/profit-and-loss', [ReportsController::class, 'profitAndLoss'])->name('api.reports.profit-loss');
+        Route::get('/balance-sheet', [ReportsController::class, 'balanceSheet'])->name('api.reports.balance-sheet');
+        Route::get('/customer-balance', [ReportsController::class, 'customerBalance'])->name('api.reports.customer-balance');
+        Route::get('/supplier-balance', [ReportsController::class, 'supplierBalance'])->name('api.reports.supplier-balance');
+        Route::get('/inventory-summary', [ReportsController::class, 'inventorySummary'])->name('api.reports.inventory-summary');
+        Route::get('/sales-by-item', [ReportsController::class, 'salesByItem'])->name('api.reports.sales-by-item');
+        Route::get('/sales-by-customer', [ReportsController::class, 'salesByCustomer'])->name('api.reports.sales-by-customer');
+        Route::get('/purchase-by-item', [ReportsController::class, 'purchaseByItem'])->name('api.reports.purchase-by-item');
+        Route::get('/purchase-by-supplier', [ReportsController::class, 'purchaseBySupplier'])->name('api.reports.purchase-by-supplier');
+    });
 });

@@ -51,12 +51,12 @@ class ChequeController extends Controller
                 })->values()->toArray() : [],
             ];
 
-            return Inertia::render('Transaction/ChequeForm', [
+            return Inertia::render('Transaction/Cheque/ChequeForm', [
                 'cheque' => $chequeData,
             ]);
         }
 
-        return Inertia::render('Transaction/ChequeForm', [
+        return Inertia::render('Transaction/Cheque/ChequeForm', [
             'nextChequeNo' => $this->getNextChequeNo()
         ]);
     }
@@ -201,7 +201,7 @@ class ChequeController extends Controller
             })->values()->toArray() : [],
         ];
 
-        return Inertia::render('Transaction/ChequeForm', [
+        return Inertia::render('Transaction/Cheque/ChequeForm', [
             'cheque' => $chequeData,
         ]);
     }

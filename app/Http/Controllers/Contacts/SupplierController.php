@@ -33,7 +33,10 @@ class SupplierController extends Controller
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
             'address' => 'nullable|string',
+            'opening_balance' => 'nullable|numeric',
         ]);
+
+        $validatedData['opening_balance'] = $validatedData['opening_balance'] ?? 0;
 
         $supplier = Supplier::create($validatedData);
 
