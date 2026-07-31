@@ -125,14 +125,36 @@ export default function ReportLayout({ children, title, filters, onFilterChange,
 
                 <style dangerouslySetInnerHTML={{
                     __html: `
-                    @media print {
-                        body { background: white !important; }
-                        .no-print { display: none !important; }
-                        header { display: none !important; }
-                        .fixed { position: static !important; }
-                        main { padding: 0 !important; }
-                    }
-                `}} />
+                        #report-content table {
+                            page-break-inside: auto;
+                            break-inside: auto;
+                            border-collapse: collapse;
+                        }
+
+                        #report-content thead {
+                            display: table-header-group;
+                        }
+
+                        #report-content tfoot {
+                            display: table-footer-group;
+                        }
+
+                        #report-content tr,
+                        #report-content td,
+                        #report-content th {
+                            page-break-inside: avoid;
+                            break-inside: avoid;
+                        }
+
+                        @media print {
+                            body { background: white !important; }
+                            .no-print { display: none !important; }
+                            header { display: none !important; }
+                            .fixed { position: static !important; }
+                            main { padding: 0 !important; }
+                        }
+                    `
+                }} />
             </div>
         </AuthenticatedLayout>
     );

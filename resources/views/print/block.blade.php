@@ -20,7 +20,7 @@
     $titleFontSize = isset($styles['titleFontSize']) && $styles['titleFontSize'] ? "font-size: {$styles['titleFontSize']}px !important;" : "";
     $nameFontSize = isset($styles['nameFontSize']) && $styles['nameFontSize'] ? "font-size: {$styles['nameFontSize']}px !important;" : "";
 
-    $currency = $company->currency_prefix ?? 'LKR';
+    $currency = $company->home_currency_prefix ?? '';
 @endphp
 
 @switch($blockId)

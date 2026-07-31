@@ -100,6 +100,7 @@ class DatabaseSeeder extends Seeder
             PaymentMethodSeeder::class,
             InventorySeeder::class,
             CustomerSeeder::class,
+            AccountingReportSeeder::class,
             VehicleSeeder::class,
             JobCardSeeder::class,
             WarrantyPolicySeeder::class,

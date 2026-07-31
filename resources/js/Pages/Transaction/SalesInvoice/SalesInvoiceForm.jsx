@@ -13,8 +13,8 @@ import { showToast } from "@/Components/ToastNotification";
 
 export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceiptNo = "", receipt = null }) {
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
-    const defaultCurrencyCode = company?.home_currency || 'LKR';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '';
+    const defaultCurrencyCode = company?.home_currency || company?.home_currency_prefix || '';
 
     const [customerOptions, setCustomerOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);

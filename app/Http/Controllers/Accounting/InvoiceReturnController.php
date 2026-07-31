@@ -332,8 +332,8 @@ class InvoiceReturnController extends Controller
             $tableItems[] = [
                 $desc,
                 $item->quantity,
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
+                ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($item->amount, 2),
             ];
         }
 

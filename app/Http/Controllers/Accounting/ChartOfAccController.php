@@ -64,7 +64,7 @@ class ChartOfAccController extends Controller
             'balance' => 0,
             'description' => $request->input('description'),
             'is_active' => $request->boolean('is_active', true),
-            'currency' => 'LKR',
+            'currency' => $request->input('currency') ?: auth()->user()?->currentCompany()?->home_currency_prefix ?: null,
             'parent_id' => $request->input('is_subaccount') ? $request->input('parent_id') : null,
             'is_locked' => $request->boolean('is_locked', false),
         ]);
@@ -196,7 +196,7 @@ class ChartOfAccController extends Controller
             'account_type' => $request->input('account_type'),
             'sub_type' => $request->input('sub_type'),
             'description' => $request->input('description'),
-            'currency' => 'LKR',
+            'currency' => $request->input('currency') ?: auth()->user()?->currentCompany()?->home_currency_prefix ?: null,
             'parent_id' => $request->input('is_subaccount') ? $request->input('parent_id') : null,
             'is_locked' => $request->boolean('is_locked', false),
         ]);

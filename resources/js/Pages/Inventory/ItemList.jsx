@@ -8,7 +8,7 @@ import PrintBarcodeModal from './Partials/PrintBarcodeModal';
 
 export default function ItemList({ items, filters, counts }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
+    const currencyPrefix = auth.company?.home_currency_prefix || '';
     const { delete: destroy } = useForm();
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
@@ -227,7 +227,7 @@ export default function ItemList({ items, filters, counts }) {
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums">
-                                                        {currencyPrefix}{parseFloat(item.sale_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        {currencyPrefix ? `${currencyPrefix} ` : ''}{parseFloat(item.sale_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </td>
                                                     <td className="px-4 py-2 text-right">
                                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

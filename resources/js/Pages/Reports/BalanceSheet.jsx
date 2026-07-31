@@ -61,7 +61,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
     const totalEquity = equity.reduce((sum, item) => sum + item.total_balance, 0);
     const totalLiabilityEquity = totalLiability + totalEquity;
 
-    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR';
+    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
 
     const Currency = ({ value }) => (
         <span className={value < 0 ? 'text-red-600' : 'text-slate-900'}>
@@ -83,7 +83,7 @@ export default function BalanceSheet({ reportData, filters, auth }) {
     };
 
     const handleExportExcel = () => {
-        const companyName = auth.company?.company_name || 'GrowDigitec';
+        const companyName = auth.company?.company_name || 'Company';
         const endDate = filters.end_date;
 
         let csvContent = "";

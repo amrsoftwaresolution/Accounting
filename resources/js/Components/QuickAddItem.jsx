@@ -8,7 +8,7 @@ import axios from "axios";
 
 export default function QuickAddItem({ isOpen, onClose, onSuccess }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
+    const currencyPrefix = auth.company?.home_currency_prefix || '';
 
     const [categories, setCategories] = useState([]);
     const [incomeAccounts, setIncomeAccounts] = useState([]);

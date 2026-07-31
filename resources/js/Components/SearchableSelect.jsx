@@ -345,7 +345,7 @@ useEffect(() => {
                                     )}
                                     {opt.balance !== undefined && (
                                         <span className="text-2xs text-slate-400 font-mono">
-                                            LKR {parseFloat(opt.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {opt.currency || ''} {parseFloat(opt.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
                                     )}
                                 </div>

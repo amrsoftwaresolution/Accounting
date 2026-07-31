@@ -142,6 +142,8 @@ export default forwardRef(function CommonInput(
         }
     };
 
+    const normalizedValue = props.value ?? '';
+
     return (
         <div
             className={`flex flex-col gap-0.5 ${containerClass} ${variant === 'table' ? 'h-full' : ''}`}
@@ -156,12 +158,14 @@ export default forwardRef(function CommonInput(
                 {type === 'textarea' ? (
                     <textarea
                         {...props}
+                        value={normalizedValue}
                         ref={inputRef}
                         className={`${baseInputClasses} ${errorClasses} py-1.5 resize-y ${className} ${inputClass}`}
                     />
                 ) : type === 'select' ? (
                     <select
                         {...props}
+                        value={normalizedValue}
                         ref={inputRef}
                         className={`${baseInputClasses} ${errorClasses} py-0 pl-2 pr-8 ${className} ${inputClass}`}
                     >
@@ -172,6 +176,7 @@ export default forwardRef(function CommonInput(
                 ) : (
                     <input
                         {...props}
+                        value={normalizedValue}
                         type={type === 'password' ? (showPassword ? 'text' : 'password') : type}
                         ref={inputRef}
                         onPaste={props.onPaste || handlePaste}

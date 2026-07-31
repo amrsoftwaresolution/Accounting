@@ -872,7 +872,7 @@ class ReportController extends Controller
 
     public function inventoryDetailAll(Request $request)
     {
-                $startDate = $request->query('start_date');
+        $startDate = $request->query('start_date');
         $endDate = $request->query('end_date') ?: date('Y-m-d');
 
         $items = \App\Models\Item::query()
@@ -883,7 +883,6 @@ class ReportController extends Controller
         $query = DB::table('journal_entries')
             ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
-            
             ->where('chart_of_accs.sub_type', 'inventory');
 
         if ($startDate) {
@@ -898,7 +897,6 @@ class ReportController extends Controller
             ->get();
 
         $reportData = $items->map(function ($item) use ($allLines) {
-            // Find lines that belong to this item (using memo hack as per existing system)
             $itemLines = $allLines->filter(function ($line) use ($item) {
                 return stripos($line->memo, $item->name) !== false;
             })->values()->map(function ($line) use ($item) {
@@ -942,7 +940,8 @@ class ReportController extends Controller
             'reportData' => $reportData,
             'filters' => [
                 'start_date' => $startDate ?? '',
-                'end_date' => $endDate
+                'end_date' => $endDate,
+                'type' => $request->query('type') ?? 'custom'
             ]
         ]);
     }

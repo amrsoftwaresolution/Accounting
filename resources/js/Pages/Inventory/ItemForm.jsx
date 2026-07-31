@@ -53,7 +53,7 @@ export default function ItemForm({
     nextSku = ''
 }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
+    const currencyPrefix = auth.company?.home_currency_prefix || '';
     const [localCategories, setLocalCategories] = useState(initialCategories);
     const [localInventoryAccounts, setLocalInventoryAccounts] = useState(initialInventoryAccounts);
     const [localIncomeAccounts, setLocalIncomeAccounts] = useState(initialIncomeAccounts);
@@ -500,7 +500,7 @@ export default function ItemForm({
                     <FormSection title="Sales Information" show={showSalesSection}>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Sales Price / Rate (LKR)</label>
+                                <label className="block text-[11px] font-bold text-slate-600 ml-0.5 text-xs mb-1">Sales Price / Rate ({currencyPrefix || 'Currency'})</label>
                                 <div className="relative">
                                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">{currencyPrefix}</span>
                                     <input

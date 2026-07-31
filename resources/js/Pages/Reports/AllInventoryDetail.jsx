@@ -7,7 +7,7 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function AllInventoryDetail({ reportData = [], filters = {} }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR ';
+    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
     const dateFormat = useDateFormat();
 
     const [collapsedGroups, setCollapsedGroups] = useState(new Set());
@@ -78,9 +78,10 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
     }, [processedData]);
 
     const formatCurrency = (val) => {
-        if (val < 0) return <span className="text-red-600">-{currencyPrefix}{Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
-        return <span>{currencyPrefix}{Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
-    };
+        const prefix = currencyPrefix ? `${currencyPrefix} ` : '';
+        if (val < 0) return <span className="text-red-600">{currencyPrefix ? `${currencyPrefix} -` : '-'}{Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+        return <span>{prefix}{Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+    }; 
 
     const formatQty = (val) => {
         if (val < 0) return <span className="text-red-600">-{Math.abs(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>;

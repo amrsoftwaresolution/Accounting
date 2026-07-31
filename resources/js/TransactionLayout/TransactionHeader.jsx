@@ -6,7 +6,7 @@ import RecentTransactionHistory from '@/Components/RecentTransactionHistory';
 export default function TransactionHeader({ title, amount, historyType = null, dirty = false, onClose, moreOptions = null }) {
     const { auth } = usePage().props;
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '';
 
     return (
         <div className="flex items-center justify-between border-b px-6 py-1.5 bg-white">

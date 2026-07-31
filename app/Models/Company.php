@@ -41,7 +41,7 @@ class Company extends Model
 
     public function getHomeCurrencyPrefixAttribute($value)
     {
-        return $value ?? 'LKR ';
+        return $value;
     }
 
     public function users()

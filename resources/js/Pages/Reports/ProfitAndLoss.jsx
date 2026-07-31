@@ -58,7 +58,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     const totalExpense = expense.reduce((sum, item) => sum + item.total_balance, 0);
     const netIncome = grossProfit - totalExpense;
 
-    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR';
+    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
 
     const Currency = ({ value }) => (
         <span className={value < 0 ? 'text-red-600' : 'text-slate-900'}>
@@ -112,7 +112,7 @@ export default function ProfitAndLoss({ reportData, filters, auth }) {
     };
 
     const handleExportExcel = () => {
-        const companyName = auth.company?.company_name || 'GrowDigitec';
+        const companyName = auth.company?.company_name || 'Company';
         const startDate = filters.start_date;
         const endDate = filters.end_date;
 

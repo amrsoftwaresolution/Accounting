@@ -148,7 +148,7 @@ export default function EmployeeIndex({ employees = [] }) {
                                             </span>
                                         </td>
                                         <td className="px-4 py-2 text-right font-bold text-slate-900 tabular-nums">
-                                            {employee.salary ? `LKR ${parseFloat(employee.salary).toLocaleString()}` : '-'}
+                                            {employee.salary ? `${employee.currency_prefix || ''} ${parseFloat(employee.salary).toLocaleString()}` : '-'}
                                         </td>
                                         <td className="px-4 py-2 text-right font-medium text-slate-500 text-[11px] uppercase">
                                             {employee.join_date || '-'}

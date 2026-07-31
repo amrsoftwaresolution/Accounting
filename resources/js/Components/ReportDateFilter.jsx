@@ -20,6 +20,16 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
         return [year, month, day].join('-');
     };
 
+    const getCurrentMonthRange = () => {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        return {
+            start: formatDate(start),
+            end: formatDate(end),
+        };
+    };
+
     const handleApply = (type, customStart, customEnd) => {
         let start = '';
         let end = '';
@@ -110,8 +120,13 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
             if (currentFilter.type) {
                 setFilterType(currentFilter.type);
             }
-            if (currentFilter.start_date !== undefined) setStartDate(currentFilter.start_date);
-            if (currentFilter.end_date !== undefined) setEndDate(currentFilter.end_date);
+
+            const defaultRange = getCurrentMonthRange();
+            const incomingStart = currentFilter.start_date ?? defaultRange.start;
+            const incomingEnd = currentFilter.end_date ?? defaultRange.end;
+
+            setStartDate(incomingStart);
+            setEndDate(incomingEnd);
         }
     }, [currentFilter]);
 

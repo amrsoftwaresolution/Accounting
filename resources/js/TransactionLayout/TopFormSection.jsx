@@ -31,7 +31,7 @@ export default function TopFormSection({ form, setForm }) {
             </div>
 
             <div className="flex items-end text-sm text-gray-500 pb-1">
-                Balance LKR 666,500.00
+                Balance 666,500.00
             </div>
 
             <div>

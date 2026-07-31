@@ -146,7 +146,7 @@ export default function Show({ auth, jobCard }) {
                             </div>
                             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                                 <span className="block text-xs text-slate-500 uppercase">Est. Cost</span>
-                                <span className="font-semibold text-slate-800">{jobCard.estimated_cost ? `LKR ${jobCard.estimated_cost}` : 'TBD'}</span>
+                                <span className="font-semibold text-slate-800">{jobCard.estimated_cost ? `${jobCard.currency_prefix || ''} ${jobCard.estimated_cost}` : 'TBD'}</span>
                             </div>
                         </div>
 

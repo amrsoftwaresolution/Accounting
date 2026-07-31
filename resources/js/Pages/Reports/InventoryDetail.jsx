@@ -20,7 +20,7 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
     };
 
     const handleExportExcel = () => {
-        const companyName = auth.company?.company_name || 'GrowDigitec';
+        const companyName = auth.company?.company_name || 'Company';
         
         let csvContent = "";
         csvContent += `"${companyName}"\n`;

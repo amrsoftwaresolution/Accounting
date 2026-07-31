@@ -12,7 +12,7 @@ import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 
 export default function ReceivePaymentForm({ paymentMethods = [], payment = null, nextPaymentNo = "" }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || 'LKR';
+    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || '';
     const dateFormat = useDateFormat();
 
     const [customerOptions, setCustomerOptions] = useState([]);
@@ -27,7 +27,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
 
     const [isDirty, setIsDirty] = useState(false);
     const [savedEntryId, setSavedEntryId] = useState(payment?.id || null);
-    const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
+    const defaultCurrencyCode = auth?.company?.home_currency || auth?.company?.home_currency_prefix || '';
 
     const getDefaultCashPaymentMethod = () => {
         const cashMethod = paymentMethods.find((pm) => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');

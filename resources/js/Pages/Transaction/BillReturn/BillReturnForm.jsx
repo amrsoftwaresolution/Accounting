@@ -11,7 +11,7 @@ import QuickAddAccount from "@/Components/QuickAddAccount";
 import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 
 export default function BillReturnForm({ auth, nextRef = "", billReturn = null }) {
-    const currencyPrefix = auth.company?.home_currency_prefix || 'LKR ';
+    const currencyPrefix = auth.company?.home_currency_prefix || '';
 
     const [supplierOptions, setSupplierOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);

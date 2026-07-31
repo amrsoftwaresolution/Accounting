@@ -12,7 +12,7 @@ import { showToast } from "@/Components/ToastNotification";
 
 export default function BankDepositForm({ auth, nextRef = "", deposit = null, onModeChange = null, onClose = null }) {
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '';
 
     const [payeeOptions, setPayeeOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);
@@ -30,7 +30,7 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null, on
     const [accountModalRowIndex, setAccountModalRowIndex] = useState(null);
     const [isDirty, setIsDirty] = useState(false);
     const [savedEntryId, setSavedEntryId] = useState(deposit?.id || null);
-    const defaultCurrencyCode = company?.home_currency || 'LKR';
+    const defaultCurrencyCode = company?.home_currency || company?.home_currency_prefix || '';
 
     const fetchPayees = (search = "") => {
         axios.get(route('api.payees', { search })).then(res => setPayeeOptions(res.data));

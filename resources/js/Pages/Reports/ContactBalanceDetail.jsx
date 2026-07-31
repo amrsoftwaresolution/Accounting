@@ -7,7 +7,7 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function ContactBalanceDetail({ contact, contactType, lines = [], filters = {} }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR ';
+    const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
 
     const handleFilterChange = (newFilters) => {
         const routeName = contactType === 'Customer' ? 'reports.customer-detail' : 'reports.supplier-detail';
@@ -110,16 +110,16 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
                                 </td>
                                 <td className="py-2 px-3 text-right tabular-nums text-gray-900">
                                     {tx.amount < 0 ? (
-                                        <span className="text-red-600">-{currencyPrefix}{Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span className="text-red-600">{currencyPrefix ? `${currencyPrefix} -` : '-'}{Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     ) : (
-                                        <span>{currencyPrefix}{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>{currencyPrefix ? `${currencyPrefix} ` : ''}{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     )}
                                 </td>
                                 <td className="py-2 px-3 text-right tabular-nums font-medium text-gray-900">
                                     {tx.running_balance < 0 ? (
-                                        <span className="text-red-600">-{currencyPrefix}{Math.abs(tx.running_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span className="text-red-600">{currencyPrefix ? `${currencyPrefix} -` : '-'}{Math.abs(tx.running_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     ) : (
-                                        <span>{currencyPrefix}{tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>{currencyPrefix ? `${currencyPrefix} ` : ''}{tx.running_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     )}
                                 </td>
                             </tr>
@@ -142,9 +142,9 @@ export default function ContactBalanceDetail({ contact, contactType, lines = [],
                                 </td>
                                 <td className="py-3 px-3 text-right font-bold text-gray-900 tabular-nums">
                                     {transactions[0].running_balance < 0 ? (
-                                        <span className="text-red-600">-{currencyPrefix}{Math.abs(transactions[0].running_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span className="text-red-600">{currencyPrefix ? `${currencyPrefix} -` : '-'}{Math.abs(transactions[0].running_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     ) : (
-                                        <span>{currencyPrefix}{transactions[0].running_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span>{currencyPrefix ? `${currencyPrefix} ` : ''}{transactions[0].running_balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     )}
                                 </td>
                             </tr>

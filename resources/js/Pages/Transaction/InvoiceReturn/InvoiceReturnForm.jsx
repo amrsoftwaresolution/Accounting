@@ -11,7 +11,7 @@ import InventoryItemSidePanel from "@/Components/InventoryItemSidePanel";
 
 export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = null }) {
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '';
 
     const [customerOptions, setCustomerOptions] = useState([]);
     const [productOptions, setProductOptions] = useState([]);

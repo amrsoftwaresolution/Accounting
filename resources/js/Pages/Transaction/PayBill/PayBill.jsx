@@ -12,9 +12,9 @@ import { useDateFormat, formatDate } from "@/Utils/dateFormat";
 
 export default function PayBill({ paymentMethods = [], payment = null }) {
     const { auth } = usePage().props;
-    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || 'LKR ';
+    const currencyPrefix = auth?.company?.home_currency_prefix || auth?.company?.home_currency || '';
     const dateFormat = useDateFormat();
-    const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
+    const defaultCurrencyCode = auth?.company?.home_currency || auth?.company?.home_currency_prefix || '';
 
     const [supplierOptions, setSupplierOptions] = useState([]);
     const [accountOptions, setAccountOptions] = useState([]);

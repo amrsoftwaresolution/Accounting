@@ -1,4 +1,4 @@
-export function formatCurrency(value, currency = 'LKR') {
+export function formatCurrency(value, currency = '') {
     const amount = Number(value ?? 0);
     if (Number.isNaN(amount)) {
         return `${currency} 0`;

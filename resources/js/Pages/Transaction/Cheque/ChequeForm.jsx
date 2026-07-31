@@ -15,8 +15,8 @@ export default function ChequeForm({
     nextChequeNo = ""
 }) {
     const company = auth.company;
-    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || 'LKR ';
-    const defaultCurrencyCode = company?.home_currency || 'LKR';
+    const currencyPrefix = company?.home_currency_prefix || company?.home_currency || '';
+    const defaultCurrencyCode = company?.home_currency || company?.home_currency_prefix || '';
 
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
 

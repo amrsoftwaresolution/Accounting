@@ -332,13 +332,13 @@ class PayBillController extends Controller
             foreach ($receivePayment->allocations as $alloc) {
                 $tableItems[] = [
                     "ReceivePayment applied to Bill #" . ($alloc->bill->bill_no ?? 'Unknown'),
-                    ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount_applied, 2),
+                    ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($alloc->amount_applied, 2),
                 ];
             }
         } else {
             $tableItems[] = [
                 "ReceivePayment to Supplier",
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($receivePayment->amount, 2),
+                ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($receivePayment->amount, 2),
             ];
         }
 

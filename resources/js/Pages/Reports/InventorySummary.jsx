@@ -44,7 +44,7 @@ export default function InventorySummary({ reportData, filters = {}, auth }) {
         />
     );
 
-    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || 'LKR';
+    const homeCurrency = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
 
     const Currency = ({ value }) => (
         <span className={value < 0 ? 'text-red-600' : 'text-slate-900'}>
@@ -54,7 +54,7 @@ export default function InventorySummary({ reportData, filters = {}, auth }) {
     );
 
     const handleExportExcel = () => {
-        const companyName = auth.company?.company_name || 'GrowDigitec';
+        const companyName = auth.company?.company_name || 'Company';
         
         let csvContent = "";
         // Add Title Header

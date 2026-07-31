@@ -36,11 +36,11 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
     const { auth, currencies = [] } = usePage().props;
     const company = auth?.company;
     const multicurrencyEnabled = !!company?.multicurrency;
-    const defaultCurrency = company?.home_currency || 'LKR';
+    const defaultCurrency = company?.home_currency || company?.home_currency_prefix || '';
     const currencyOptions = currencies.length
         ? currencies
         : [
-            { id: 'LKR', code: 'LKR', name: 'Sri Lankan Rupee' },
+            { id: defaultCurrency || 'USD', code: defaultCurrency || 'USD', name: 'Company Currency' },
             { id: 'USD', code: 'USD', name: 'US Dollar' },
             { id: 'EUR', code: 'EUR', name: 'Euro' },
             { id: 'GBP', code: 'GBP', name: 'British Pound' },
@@ -397,7 +397,7 @@ export default function QuickAddAccount({ isOpen, onClose, onSuccess, defaultTyp
                             onFocus={e => e.target.select()}
                             onBlur={handleBalanceBlur}
                             error={errors.opening_balance}
-                            icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || 'LKR'}</span>}
+                            icon={<span className="text-[10px] font-bold text-slate-400">{data.currency || company?.home_currency || company?.home_currency_prefix || ''}</span>}
                             disabled={data.is_locked}
                         />
                         <CommonInput

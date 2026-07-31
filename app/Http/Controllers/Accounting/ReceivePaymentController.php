@@ -287,13 +287,13 @@ class ReceivePaymentController extends Controller
             foreach ($receivePayment->allocations as $alloc) {
                 $tableItems[] = [
                     "Receive Payment applied to Credit Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
-                    ($company->home_currency_prefix ?? 'LKR ') . number_format($alloc->amount, 2),
+                    ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($alloc->amount, 2),
                 ];
             }
         } else {
             $tableItems[] = [
                 "Receive Payment Received",
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($receivePayment->amount, 2),
+                ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($receivePayment->amount, 2),
             ];
         }
 

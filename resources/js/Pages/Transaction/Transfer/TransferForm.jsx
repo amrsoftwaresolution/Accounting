@@ -9,7 +9,7 @@ import axios from "axios";
 
 export default function TransferForm({ transfer = null }) {
     const { auth } = usePage().props;
-    const defaultCurrencyCode = auth?.company?.home_currency || 'LKR';
+    const defaultCurrencyCode = auth?.company?.home_currency || auth?.company?.home_currency_prefix || '';
 
     const [accountOptions, setAccountOptions] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -135,7 +135,7 @@ export default function TransferForm({ transfer = null }) {
                             {selectedFrom && (
                                 <div className="mt-1 flex items-baseline gap-2">
                                     <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Balance</span>
-                                    <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[10px] font-bold text-slate-700">{defaultCurrencyCode} {parseFloat(selectedFrom.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
                         </div>
@@ -159,7 +159,7 @@ export default function TransferForm({ transfer = null }) {
                             {selectedTo && (
                                 <div className="mt-1 flex items-baseline gap-2">
                                     <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Balance</span>
-                                    <span className="text-[10px] font-bold text-slate-700">LKR {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                    <span className="text-[10px] font-bold text-slate-700">{defaultCurrencyCode} {parseFloat(selectedTo.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
                         </div>
@@ -168,7 +168,7 @@ export default function TransferForm({ transfer = null }) {
                     <div className="text-right flex flex-col items-end">
                         <p className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-1">Transfer Amount</p>
                         <p className="text-4xl font-black tracking-tighter text-slate-900 leading-none">
-                            <span className="text-slate-400 text-[10px] font-medium mr-1">LKR</span>
+                            <span className="text-slate-400 text-[10px] font-medium mr-1">{defaultCurrencyCode}</span>
                             {parseFloat(String(data.amount || 0).replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                     </div>

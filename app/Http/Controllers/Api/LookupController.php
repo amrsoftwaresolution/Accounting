@@ -73,9 +73,9 @@ class LookupController extends Controller
             ->orderBy('account_code')
             ->get()
             ->map(function($acc) {
-                $currencyCode = $acc->currency ?: 'LKR';
+                $currencyCode = $acc->currency ?: auth()->user()?->currentCompany()?->home_currency_prefix ?: null;
                 $currencySymbol = $this->getCurrencySymbol($currencyCode);
-                $isMultiCurrency = $currencyCode !== 'LKR';
+                $isMultiCurrency = !empty($currencyCode) && $currencyCode !== (auth()->user()?->currentCompany()?->home_currency_prefix ?: null);
 
                 return [
                     'value' => $acc->id,
@@ -103,7 +103,7 @@ class LookupController extends Controller
             return response()->json([ 'error' => 'Account not found.' ], 404);
         }
 
-        $currencyCode = $account->currency ?: 'LKR';
+        $currencyCode = $account->currency ?: auth()->user()?->currentCompany()?->home_currency_prefix ?: null;
         $currencySymbol = 'Rs.';
 
         return response()->json([
@@ -129,7 +129,6 @@ class LookupController extends Controller
             'AUD' => '🇦🇺',
             'AED' => '🇦🇪',
             'QAR' => '🇶🇦',
-            'LKR' => '🇱🇰',
             default => '',
         };
     }

@@ -36,14 +36,22 @@ class CompanySettingsController extends Controller
         $settings = $this->getSettings();
 
         // Merge company info and specific settings
+        $salesSettings = class_exists(\App\Models\SalesSetting::class)
+            ? (\App\Models\SalesSetting::query()->first()?->toArray() ?? [])
+            : [];
+
+        $advancedSettings = class_exists(\App\Models\AdvancedSettings::class)
+            ? (\App\Models\AdvancedSettings::query()->first()?->toArray() ?? [])
+            : [];
+
         $mergedData = array_merge($company->toArray(), $settings->toArray(), [
             'settings_metadata' => [
                 'payments' => [
                     'show_tags' => $settings->show_tags,
                     'bill_payment_terms' => $settings->bill_payment_terms,
                 ],
-                'sales' => \App\Models\SalesSetting::firstOrCreate([])->toArray(),
-                'advanced' => \App\Models\AdvancedSettings::first() ? \App\Models\AdvancedSettings::first()->toArray() : [],
+                'sales' => $salesSettings,
+                'advanced' => $advancedSettings,
                 'print_settings' => \App\Models\PrintSetting::query()->get(),
             ],
         ]);

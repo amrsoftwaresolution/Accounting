@@ -11,7 +11,7 @@ export default function CompanySettings({ settings, currencies = [] }) {
         industry: settings?.industry || '',
         address: settings?.address || '',
         website: settings?.website || '',
-        home_currency_prefix: settings?.home_currency_prefix || 'LKR ',
+        home_currency_prefix: settings?.home_currency_prefix || '',
     });
 
     const handleInfoSubmit = (e) => {
@@ -203,7 +203,7 @@ const handleAccountingSubmit = (e) => {
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currency Prefix</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.home_currency_prefix} onChange={e => infoForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. LKR " />
+                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.home_currency_prefix} onChange={e => infoForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. $" />
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">

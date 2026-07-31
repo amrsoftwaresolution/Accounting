@@ -458,8 +458,8 @@ class SalesInvoiceController extends Controller
             $tableItems[] = [
                 $desc,
                 $item->quantity,
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->rate, 2),
-                ($company->home_currency_prefix ?? 'LKR ') . number_format($item->amount, 2),
+                ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($item->rate, 2),
+                ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($item->amount, 2),
             ];
         }
 
@@ -483,7 +483,7 @@ class SalesInvoiceController extends Controller
             'tableItems' => $tableItems,
             
             'summaryInfo' => [
-                'Total Amount' => ($company->home_currency_prefix ?? 'LKR ') . number_format($salesInvoice->total_amount, 2)
+                'Total Amount' => ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($salesInvoice->total_amount, 2)
             ],
             
             'amountInWords' => true,
