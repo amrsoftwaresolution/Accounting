@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/company', 'update')->name('company.update');
             Route::post('/legal', 'updateLegal')->name('legal.update');
             Route::post('/accounting', 'updateAccounting')->name('accounting.update');
+            Route::post('/layout', 'updateLayout')->name('layout.update');
             Route::post('/alerts', 'updateAlerts')->name('alerts.update');
             Route::post('/time', 'updateTime')->name('time.settings.update');
             Route::post('/logo', 'uploadLogo')->name('logo.upload');

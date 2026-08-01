@@ -22,6 +22,16 @@ use App\Http\Requests\Accounting\SalesInvoiceRequest;
 
 class POSController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $settings = \App\Models\CompanySetting::first();
+            if (!$settings || !$settings->pos_layout_enabled) {
+                abort(403, 'POS feature is disabled. Enable it from Layout Settings.');
+            }
+            return $next($request);
+        });
+    }
     public function index()
     {
         // Fetch Items (Inventory, Service, Bundle, Non-Inventory)

@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
                 'company' => $request->user()?->currentCompany(),
+                'pos_layout_enabled' => class_exists(\App\Models\CompanySetting::class) ? (bool) \App\Models\CompanySetting::first()?->pos_layout_enabled : false,
             ],
             'appName' => config('app.name'),
             'flash' => [

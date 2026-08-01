@@ -129,6 +129,19 @@ public function updateAccounting(Request $request)
 }
 
     /**
+     * Update Layout Settings
+     */
+    public function updateLayout(Request $request)
+    {
+        $validated = $request->validate([
+            'pos_layout_enabled' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+        return back()->with('message', 'Layout settings updated successfully.');
+    }
+
+    /**
      * Handle Logo Upload
      */
     public function uploadLogo(Request $request)
@@ -147,7 +160,7 @@ public function updateAccounting(Request $request)
                 Storage::disk('public')->delete($company->logo_path);
             }
 
-            $path = $request->file('logo')->store($company->slug, 'public');
+            $path = $request->file('logo')->store($company->id . '/logo', 'public');
             
             $company->update(['logo_path' => $path]);
         }

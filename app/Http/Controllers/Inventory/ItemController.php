@@ -157,7 +157,8 @@ class ItemController extends Controller
                         $validated['track_inventory'] = ($request->input('type') === 'inventory');
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('items', 'public');
+            $companyId = request()->user()->currentCompany()->id;
+            $path = $request->file('image')->store($companyId . '/products', 'public');
             $validated['image'] = Storage::url($path);
         } else {
             $validated['image'] = $request->input('image');
@@ -236,15 +237,16 @@ class ItemController extends Controller
         $validated['track_inventory'] = ($request->input('type') === 'inventory');
 
         if ($request->hasFile('image')) {
-            if ($item->image && str_starts_with($item->image, '/storage/items/')) {
+            if ($item->image && str_starts_with($item->image, '/storage/')) {
                 $oldPath = str_replace('/storage/', '', $item->image);
                 Storage::disk('public')->delete($oldPath);
             }
-            $path = $request->file('image')->store('items', 'public');
+            $companyId = request()->user()->currentCompany()->id;
+            $path = $request->file('image')->store($companyId . '/products', 'public');
             $validated['image'] = Storage::url($path);
         } else {
             if ($request->input('image') === null || $request->input('image') === '') {
-                if ($item->image && str_starts_with($item->image, '/storage/items/')) {
+                if ($item->image && str_starts_with($item->image, '/storage/')) {
                     $oldPath = str_replace('/storage/', '', $item->image);
                     Storage::disk('public')->delete($oldPath);
                 }

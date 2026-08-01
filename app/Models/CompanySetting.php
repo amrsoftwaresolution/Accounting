@@ -19,8 +19,10 @@ class CompanySetting extends Model
         'warn_dup_bill',
         'warn_dup_journal',
         'sign_out_inactive',
+        'pos_layout_enabled',
     ];
 
     protected $casts = [
+        'pos_layout_enabled' => 'boolean',
     ];
 }

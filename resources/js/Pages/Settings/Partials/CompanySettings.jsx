@@ -110,14 +110,14 @@ const handleAccountingSubmit = (e) => {
                                 alt="Company Logo"
                             />
                         ) : (
-                            <span className="material-icons text-gray-400 text-3xl">store</span>
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                         )}
 
                         <div className={`absolute inset-0 bg-black flex items-center justify-center transition-all ${isUploading ? 'bg-opacity-40' : 'bg-opacity-0 group-hover:bg-opacity-10'}`}>
                             {isUploading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
-                                <span className="material-icons text-white opacity-0 group-hover:opacity-100 text-lg">add_a_photo</span>
+                                <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             )}
                         </div>
                     </div>
@@ -126,9 +126,9 @@ const handleAccountingSubmit = (e) => {
                             e.stopPropagation();
                             selectFile();
                         }}
-                        className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md border border-gray-200"
+                        className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-md border border-gray-200"
                     >
-                        <span className="material-icons text-xs text-gray-600">edit</span>
+                        <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </div>
                 </div>
             </div>
@@ -404,6 +404,39 @@ const handleAccountingSubmit = (e) => {
                         </div>
                     </form>
                 )}
+            </div>
+
+            {/* Layout Settings Card */}
+            <div className="bg-white rounded shadow-sm border border-gray-200">
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-3">
+                        <div>
+                            <h2 className="text-sm font-bold text-gray-800">Layout settings</h2>
+                            <p className="text-gray-400 text-[10px]">Customize the layout of your application.</p>
+                        </div>
+                    </div>
+                    <div className="space-y-3 pt-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-800">POS Layout</h3>
+                                <p className="text-gray-400 text-[10px]">If enabled, only POS Billing will be shown in the sidebar and navbar.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={settings?.pos_layout_enabled || false}
+                                    onChange={(e) => {
+                                        router.post(route('layout.update'), {
+                                            pos_layout_enabled: e.target.checked
+                                        }, { preserveScroll: true });
+                                    }}
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

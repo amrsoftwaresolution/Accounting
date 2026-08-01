@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CommonInput from './CommonInput';
+import { Link } from '@inertiajs/react';
 
 export default function ReportDateFilter({ currentFilter, onFilterChange }) {
     const [filterType, setFilterType] = useState('custom');
@@ -13,10 +14,10 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
         let month = '' + (d.getMonth() + 1);
         let day = '' + d.getDate();
         const year = d.getFullYear();
-        
+
         if (month.length < 2) month = '0' + month;
         if (day.length < 2) day = '0' + day;
-        
+
         return [year, month, day].join('-');
     };
 
@@ -132,6 +133,13 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
 
     return (
         <div className="flex flex-col sm:flex-row items-end gap-3">
+            <Link
+                href={route('reports.index')}
+                className="flex items-center justify-center w-[30px] h-[30px] border border-slate-300 rounded-sm text-slate-500 hover:text-gray-900 bg-white shadow-sm hover:bg-slate-50 transition-colors shrink-0 mb-[1px]"
+                title="Back to Reports"
+            >
+                <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </Link>
             <div className="w-full sm:w-48">
                 <label className="font-bold text-slate-600 ml-0.5 text-xs mb-1 block">Date Range</label>
                 <select

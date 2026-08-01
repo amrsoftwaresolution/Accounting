@@ -38,21 +38,21 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
     const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
     const [quickAddType, setQuickAddType] = useState(null);
 
-    const navigation = [
+    const allNavigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
-        { name: 'POS Billing', href: route('pos.index'), icon: 'pos' },
+        ...(page.props.auth.pos_layout_enabled ? [{ name: 'POS Billing', href: route('pos.index'), icon: 'pos' }] : []),
         { name: 'Customer Registrations', href: route('customers.index'), icon: 'users' },
         { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle' },
         { name: 'Job Registrations', href: route('job-cards.index'), icon: 'document' },
-        { name: 'Warranty Policies', href: route('warranty-policies.index'), icon: 'warranty' },
         { name: 'Warranties', href: route('warranties.index'), icon: 'warranty' },
-        {name: 'Warranty Claims', href: route('warranty-claims.index'), icon: 'warranty' },
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
         { name: 'Chart of Accounts', href: route('chart-of-account.index'), icon: 'accounting' },
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
         { name: 'Reports', href: route('reports.index'), adminOnly: true, icon: 'finance' },
         { name: 'User Management', href: route('users.index'), adminOnly: true, icon: 'users' },
     ];
+
+    const navigation = allNavigation;
 
     return (
         <div className={`bg-[#f8fafc] ${hideSidebar ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'}`}>
@@ -130,9 +130,11 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
 
 
                         {/* POS Billing Shortcut */}
-                        <Link href={route('pos.index')} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative" title="POS Billing">
-                            <span className="material-symbols-outlined text-[20px] leading-none block">point_of_sale</span>
-                        </Link>
+                        {page.props.auth.pos_layout_enabled && (
+                            <Link href={route('pos.index')} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative" title="POS Billing">
+                                <span className="material-symbols-outlined text-[20px] leading-none block">point_of_sale</span>
+                            </Link>
+                        )}
 
                         {/* Notifications (Mock) */}
                         <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">

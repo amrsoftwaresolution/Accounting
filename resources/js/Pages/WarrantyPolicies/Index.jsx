@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import CommonButton from '@/Components/CommonButton';
+import WarrantyTabs from '@/Components/WarrantyTabs';
 
 export default function Index({ auth, policies }) {
     const handleDelete = (policyId) => {
@@ -16,6 +17,8 @@ export default function Index({ auth, policies }) {
 
             <div className="py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <WarrantyTabs />
+                    
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900">Warranty Policies</h1>

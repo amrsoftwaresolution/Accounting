@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('warranty_policy_items');
         Schema::create('warranty_policy_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('warranty_policy_id')->constrained('warranty_policies')->onDelete('cascade');
+            $table->foreignId('warranty_policy_id')->constrained('warranty_policies')->onDelete('cascade');
             $table->string('item_type');
             $table->foreignUuid('item_id')->constrained('items')->onDelete('cascade');
             $table->timestamps();
