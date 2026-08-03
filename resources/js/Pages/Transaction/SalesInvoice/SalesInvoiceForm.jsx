@@ -73,6 +73,8 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 depositTo: receipt.depositTo || "",
                 memo: receipt.memo || "",
                 statementMessage: receipt.statementMessage || "",
+                checkDate: receipt.checkDate || "",
+                checkNumber: receipt.checkNumber || "",
                 items: receipt.items && receipt.items.length > 0 ? receipt.items.map(i => ({ ...i, warranty: i.warranty || false })) : [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }
                 ],
@@ -89,6 +91,8 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 depositTo: "",
                 memo: "",
                 statementMessage: "",
+                checkDate: "",
+                checkNumber: "",
                 items: [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
@@ -130,12 +134,30 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         depositTo: receipt?.depositTo || "",
         memo: receipt?.memo || "",
         statementMessage: receipt?.statementMessage || "",
+        checkDate: receipt?.checkDate || "",
+        checkNumber: receipt?.checkNumber || "",
         items: receipt?.items ? receipt.items.map(i => ({ ...i, warranty: i.warranty || false })) : [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
         ],
         action: 'save'
     });
+
+    const handlePaymentMethodChange = (val) => {
+        const selectedMethod = paymentMethods.find((method) => String(method.id) === String(val));
+        const isCheque = selectedMethod?.name?.toLowerCase() === 'cheque';
+
+        setData(prev => ({
+            ...prev,
+            paymentMethod: val,
+            checkDate: isCheque ? prev.checkDate : "",
+            checkNumber: isCheque ? prev.checkNumber : "",
+        }));
+        setIsDirty(true);
+    };
+
+    const selectedPaymentMethod = paymentMethods.find((method) => String(method.id) === String(data.paymentMethod));
+    const isChequePayment = selectedPaymentMethod?.name?.toLowerCase() === 'cheque';
 
     useEffect(() => {
         if (!receipt?.id && !data.paymentMethod && paymentMethods.length > 0) {
@@ -343,13 +365,36 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                         <SearchableSelect
                             label="Payment method"
                             value={data.paymentMethod}
-                            onChange={(val) => { setData('paymentMethod', val); setIsDirty(true); }}
+                            onChange={handlePaymentMethodChange}
                             options={paymentMethodOptions}
                             onAddNew={() => setIsMethodModalOpen(true)}
                             size="sm"
                             error={errors.paymentMethod}
                         />
                     </div>
+                    {isChequePayment && (
+                        <div className="w-[180px]">
+                            <CommonInput
+                                type="date"
+                                label="Cheque Date"
+                                value={data.checkDate}
+                                onChange={(e) => { setData('checkDate', e.target.value); setIsDirty(true); }}
+                                size="sm"
+                                error={errors.checkDate}
+                            />
+                        </div>
+                    )}
+                    {isChequePayment && (
+                        <div className="w-[180px]">
+                            <CommonInput
+                                label="Cheque Number"
+                                value={data.checkNumber}
+                                onChange={(e) => { setData('checkNumber', e.target.value); setIsDirty(true); }}
+                                size="sm"
+                                error={errors.checkNumber}
+                            />
+                        </div>
+                    )}
                     <div className="w-[240px]">
                         <SearchableSelect
                             label="Deposit to"

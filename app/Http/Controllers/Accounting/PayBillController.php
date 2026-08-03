@@ -54,6 +54,8 @@ class PayBillController extends Controller
                     'payment_account_id' => $request->paymentAccount,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                 ]);
 
                 $totalAllocated = 0;
@@ -149,6 +151,8 @@ class PayBillController extends Controller
             'paymentAccount' => $receivePayment->payment_account_id,
             'referenceNo' => $receivePayment->reference_no,
             'memo' => $receivePayment->memo,
+            'checkDate' => $receivePayment->check_date,
+            'checkNumber' => $receivePayment->check_number,
             'allocations' => $receivePayment->allocations->map(function ($alloc) {
                 return [
                     'bill_id' => $alloc->bill_id,
@@ -210,6 +214,8 @@ class PayBillController extends Controller
                     'payment_account_id' => $request->paymentAccount,
                     'reference_no' => $request->referenceNo,
                     'memo' => $request->memo,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                 ]);
 
                 // Create new allocations

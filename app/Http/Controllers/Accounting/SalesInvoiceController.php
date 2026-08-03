@@ -113,6 +113,8 @@ class SalesInvoiceController extends Controller
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                     'status' => 'posted',
                 ]);
 
@@ -242,6 +244,8 @@ class SalesInvoiceController extends Controller
             'depositTo' => $receipt->deposit_to_account_id,
             'memo' => $receipt->memo,
             'statementMessage' => $receipt->statement_message,
+            'checkDate' => $receipt->check_date,
+            'checkNumber' => $receipt->check_number,
             'items' => $receipt->items->map(function ($item) {
                 return [
                     'product' => $item->item_id,
@@ -303,6 +307,8 @@ class SalesInvoiceController extends Controller
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                 ]);
 
                 foreach ($receipt->items as $oldItem) {

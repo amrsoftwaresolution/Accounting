@@ -36,6 +36,8 @@ class PaymentController extends Controller
                 'paymentMethod' => $payment?->payment_method_id ?? '',
                 'referenceNo' => '',
                 'memo' => $journalEntry->description,
+                'checkDate' => $payment?->check_date,
+                'checkNumber' => $payment?->check_number,
                 'items' => $payment ? $payment->items->whereNull('item_id')->map(function ($item) {
                     return [
                         'category' => $item->chart_of_acc_id,
@@ -121,6 +123,8 @@ class PaymentController extends Controller
                     'reference_no' => $referenceNo,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
+                    'check_date' => $request->checkDate,
+                    'check_number' => $request->checkNumber,
                     'status' => 'posted',
                 ]);
 
@@ -251,6 +255,8 @@ class PaymentController extends Controller
             'paymentMethod' => $payment?->payment_method_id ?? '',
             'referenceNo' => $journalEntry->reference,
             'memo' => $journalEntry->description,
+            'checkDate' => $payment?->check_date,
+            'checkNumber' => $payment?->check_number,
             'items' => $payment ? $payment->items->whereNull('item_id')->map(function ($item) {
                 return [
                     'category' => $item->chart_of_acc_id,
@@ -323,6 +329,8 @@ class PaymentController extends Controller
                         'reference_no' => $referenceNo,
                         'total_amount' => $totalAmount,
                         'memo' => $request->memo,
+                        'check_date' => $request->checkDate,
+                        'check_number' => $request->checkNumber,
                     ]);
 
                     foreach ($payment->items->whereNotNull('item_id') as $oldItem) {

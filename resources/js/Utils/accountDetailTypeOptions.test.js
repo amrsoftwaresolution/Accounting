@@ -15,7 +15,10 @@ describe('getDetailTypeOptions', () => {
     });
 
     it('returns the correct detail types for other account types', () => {
-        expect(getDetailTypeOptions('asset').map(option => option.value)).toContain('cash-and-cash-equivalents');
+        const assetOptions = getDetailTypeOptions('asset').map(option => option.value);
+
+        expect(assetOptions).toContain('cash-and-cash-equivalents');
+        expect(assetOptions).toContain('bank');
         expect(getDetailTypeOptions('liability').map(option => option.value)).toContain('accounts-payable');
         expect(getDetailTypeOptions('income').map(option => option.value)).toContain('income');
     });

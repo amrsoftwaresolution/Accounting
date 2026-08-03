@@ -37,4 +37,14 @@ class ReceivePaymentRequest extends FormRequest
             ],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'checkDate.required' => 'Cheque Date is required when Cheque is selected as the payment method.',
+            'checkDate.date' => 'Cheque Date must be a valid date.',
+            'checkNumber.required' => 'Cheque Number is required when Cheque is selected as the payment method.',
+            'checkNumber.string' => 'Cheque Number must be a valid text value.',
+        ];
+    }
 }

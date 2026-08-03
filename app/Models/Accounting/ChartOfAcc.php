@@ -62,14 +62,42 @@ class ChartOfAcc extends Model
         }
     }
 
+    public static function isCashLikeSubType(?string $subType): bool
+    {
+        return in_array(strtolower((string) $subType), ['cash-and-cash-equivalents', 'bank'], true);
+    }
+
+    public function isCashLike(): bool
+    {
+        return self::isCashLikeSubType($this->sub_type);
+    }
+
     public static function getOrCreateDefault($subType, $companyId = null)
     {
-        $account = self::where('sub_type', $subType)->first();
+        $normalizedSubType = strtolower((string) $subType);
+        $matchingSubTypes = [$subType];
+
+        if (self::isCashLikeSubType($normalizedSubType)) {
+            $matchingSubTypes[] = 'cash-and-cash-equivalents';
+            $matchingSubTypes[] = 'bank';
+        }
+
+        $account = self::whereIn('sub_type', array_unique($matchingSubTypes))->first();
         if ($account) {
             return $account;
         }
 
         $defaults = [
+            'cash-and-cash-equivalents' => [
+                'name' => 'Cash and Cash Equivalents',
+                'account_type' => 'asset',
+                'account_code' => '1000',
+            ],
+            'bank' => [
+                'name' => 'Bank',
+                'account_type' => 'asset',
+                'account_code' => '1010',
+            ],
             'accounts-receivable' => [
                 'name' => 'Accounts Receivable (A/R)',
                 'account_type' => 'asset',
@@ -112,7 +140,7 @@ class ChartOfAcc extends Model
             ],
         ];
 
-        $def = $defaults[$subType] ?? [
+        $def = $defaults[$normalizedSubType] ?? (self::isCashLikeSubType($normalizedSubType) ? $defaults['cash-and-cash-equivalents'] : null) ?? [
             'name' => 'Default ' . ucfirst(str_replace('-', ' ', $subType)),
             'account_type' => 'expense',
             'account_code' => '9999',

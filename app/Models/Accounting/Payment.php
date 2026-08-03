@@ -13,7 +13,7 @@ class Payment extends Model
     protected $fillable = [
         'payee_id', 'payee_type', 'payment_account_id',
         'payment_date', 'payment_method_id', 'reference_no',
-        'total_amount', 'memo', 'status'
+        'total_amount', 'memo', 'status', 'check_date', 'check_number'
     ];
 
     public function items()

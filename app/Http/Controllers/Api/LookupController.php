@@ -61,8 +61,10 @@ class LookupController extends Controller
     {
         $search = $request->query('search');
         $type = $request->query('type'); // optional: filter by account_type
+        $subType = $request->query('sub_type'); // optional: filter by detail type
+        $includeSelectedId = $request->query('include_selected_id');
 
-        $accounts = \App\Models\Accounting\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'currency')
+        $accounts = \App\Models\Accounting\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'sub_type', 'currency')
             ->withSum('journalLines', 'debit')
             ->withSum('journalLines', 'credit')
             ->when($search, function($q) use ($search) {
@@ -70,6 +72,10 @@ class LookupController extends Controller
                   ->orWhere('account_code', 'like', "%{$search}%");
             })
             ->when($type, fn($q) => $q->where('account_type', $type))
+            ->when($subType, fn($q) => $q->where('sub_type', $subType))
+            ->when($includeSelectedId, function($q) use ($includeSelectedId) {
+                $q->orWhere('id', $includeSelectedId);
+            })
             ->orderBy('account_code')
             ->get()
             ->map(function($acc) {

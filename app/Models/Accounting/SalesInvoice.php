@@ -15,7 +15,7 @@ class SalesInvoice extends Model
     protected $fillable = [
         'receipt_no', 'customer_id', 'email', 'receipt_date', 'payment_method_id',
         'deposit_to_account_id', 'total_amount', 'memo', 'statement_message', 'status',
-        'vehicle_id',
+        'vehicle_id', 'check_date', 'check_number',
     ];
 
     public function items()

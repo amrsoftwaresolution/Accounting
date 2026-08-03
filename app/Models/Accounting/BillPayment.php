@@ -12,7 +12,7 @@ class BillPayment extends Model
 
     protected $fillable = [
         'supplier_id', 'amount', 'payment_date',
-        'payment_method_id', 'payment_account_id', 'reference_no', 'memo'
+        'payment_method_id', 'payment_account_id', 'reference_no', 'memo', 'check_date', 'check_number'
     ];
 
     public function supplier()

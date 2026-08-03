@@ -41,7 +41,14 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null, on
     };
 
     const fetchDepositAccounts = (search = "") => {
-        axios.get(route('api.accounts', { search, type: 'asset' })).then(res => setDepositAccountOptions(res.data));
+        const selectedAccountId = data.depositTo || deposit?.depositTo || '';
+        const params = { search, type: 'asset', sub_type: 'bank' };
+
+        if (selectedAccountId) {
+            params.include_selected_id = selectedAccountId;
+        }
+
+        axios.get(route('api.accounts', params)).then(res => setDepositAccountOptions(res.data));
     };
 
     const fetchPaymentMethods = () => {

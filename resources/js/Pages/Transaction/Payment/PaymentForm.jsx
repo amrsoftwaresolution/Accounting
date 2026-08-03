@@ -90,15 +90,6 @@ export default function PaymentForm({
         modalSession.open();
     }, []);
 
-    useEffect(() => {
-        if (!expense?.id && !data.method && paymentMethodOptions.length > 0) {
-            setData('method', getDefaultCashPaymentMethod());
-        }
-    }, [paymentMethodOptions, expense?.id, data.method]);
-
-    const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
-    const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
-
     const getInitialPaymentDate = () => {
         if (expense?.paymentDate) return expense.paymentDate;
         const cached = localStorage.getItem('last_transaction_date');
@@ -108,7 +99,6 @@ export default function PaymentForm({
 
     const initialPaymentDate = getInitialPaymentDate();
 
-    // useForm
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
         payee: expense?.payee || expense?.payee_id || "",
         account: expense?.paymentAccount || expense?.account || expense?.payment_account_id || "",
@@ -116,6 +106,8 @@ export default function PaymentForm({
         method: expense?.paymentMethod || expense?.method || expense?.payment_method_id || "",
         ref: expense?.referenceNo || expense?.ref || expense?.reference_no || nextExpenseNo || "",
         memo: expense?.memo || "",
+        checkDate: expense?.checkDate || "",
+        checkNumber: expense?.checkNumber || "",
         items: expense?.items && expense.items.length > 0 ? expense.items.map(i => ({ ...i, amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })) : [
             { category: "", description: "", amount: "0.00" },
         ],
@@ -131,6 +123,31 @@ export default function PaymentForm({
     });
 
     const actionRef = useRef('save');
+
+    const handlePaymentMethodChange = (val) => {
+        const selectedMethod = paymentMethodOptions.find((method) => String(method.id) === String(val));
+        const isCheque = selectedMethod?.name?.toLowerCase() === 'cheque';
+
+        setData(prev => ({
+            ...prev,
+            method: val,
+            checkDate: isCheque ? prev.checkDate : "",
+            checkNumber: isCheque ? prev.checkNumber : "",
+        }));
+        setIsDirty(true);
+    };
+
+    const selectedPaymentMethod = paymentMethodOptions.find((method) => String(method.id) === String(data.method));
+    const isChequePayment = selectedPaymentMethod?.name?.toLowerCase() === 'cheque';
+
+    useEffect(() => {
+        if (!expense?.id && !data.method && paymentMethodOptions.length > 0) {
+            setData('method', getDefaultCashPaymentMethod());
+        }
+    }, [paymentMethodOptions, expense?.id, data.method]);
+
+    const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
+    const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
 
 
@@ -155,6 +172,8 @@ export default function PaymentForm({
                 method: expense.paymentMethod || expense.method || "",
                 ref: expense.referenceNo || expense.ref || "",
                 memo: expense.memo || "",
+                checkDate: expense.checkDate || "",
+                checkNumber: expense.checkNumber || "",
                 items: expense.items && expense.items.length > 0 ? expense.items.map(i => ({ ...i, amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })) : [
                     { category: "", description: "", amount: "0.00" }
                 ],
@@ -177,6 +196,8 @@ export default function PaymentForm({
                 method: getDefaultCashPaymentMethod() || "",
                 ref: nextExpenseNo || "",
                 memo: "",
+                checkDate: "",
+                checkNumber: "",
                 items: [
                     { category: "", description: "", amount: "0.00" },
                 ],
@@ -455,13 +476,36 @@ export default function PaymentForm({
                             label="Payment Method"
                             placeholder="Select method"
                             value={data.method}
-                            onChange={(val) => { setData("method", val); setIsDirty(true); }}
+                            onChange={handlePaymentMethodChange}
                             options={paymentMethodOptions}
                             onAddNew={() => setIsPaymentMethodModalOpen(true)}
                             size="sm"
                             error={errors.method}
                         />
                     </div>
+                    {isChequePayment && (
+                        <div className="w-[180px]">
+                            <CommonInput
+                                type="date"
+                                label="Cheque Date"
+                                value={data.checkDate}
+                                onChange={(e) => { setData('checkDate', e.target.value); setIsDirty(true); }}
+                                size="sm"
+                                error={errors.checkDate}
+                            />
+                        </div>
+                    )}
+                    {isChequePayment && (
+                        <div className="w-[180px]">
+                            <CommonInput
+                                label="Cheque Number"
+                                value={data.checkNumber}
+                                onChange={(e) => { setData('checkNumber', e.target.value); setIsDirty(true); }}
+                                size="sm"
+                                error={errors.checkNumber}
+                            />
+                        </div>
+                    )}
                     <div className="w-[180px]">
                         <CommonInput
                             label="Ref no."

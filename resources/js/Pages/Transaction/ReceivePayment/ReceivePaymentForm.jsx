@@ -435,7 +435,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                         <div className="w-[180px]">
                             <CommonInput
                                 type="date"
-                                label="Check Date"
+                                label="Cheque Date"
                                 value={data.checkDate}
                                 onChange={(e) => { setData('checkDate', e.target.value); setIsDirty(true); }}
                                 size="sm"
@@ -446,7 +446,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                     {isChequePayment && (
                         <div className="w-[180px]">
                             <CommonInput
-                                label="Check Number"
+                                label="Cheque Number"
                                 value={data.checkNumber}
                                 onChange={(e) => { setData('checkNumber', e.target.value); setIsDirty(true); }}
                                 size="sm"
