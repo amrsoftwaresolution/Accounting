@@ -42,7 +42,7 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null, on
 
     const fetchDepositAccounts = (search = "") => {
         const selectedAccountId = data.depositTo || deposit?.depositTo || '';
-        const params = { search, type: 'asset', sub_type: 'bank' };
+        const params = { search, bank_only: true };
 
         if (selectedAccountId) {
             params.include_selected_id = selectedAccountId;

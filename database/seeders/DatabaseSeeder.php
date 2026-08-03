@@ -69,6 +69,7 @@ class DatabaseSeeder extends Seeder
         // 4. Create Chart of Accounts for the single company
         $accounts = [
             ['code' => '1000', 'name' => 'Cash on Hand', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
+            ['code' => '1005', 'name' => 'Cheque in Hand', 'type' => 'asset', 'sub' => 'cash-and-cash-equivalents'],
             ['code' => '1010', 'name' => 'Main Bank Account', 'type' => 'asset', 'sub' => 'bank'],
             ['code' => '1100', 'name' => 'Accounts Receivable', 'type' => 'asset', 'sub' => 'accounts-receivable'],
             ['code' => '1200', 'name' => 'Inventory Asset', 'type' => 'asset', 'sub' => 'current-assets'],

@@ -33,6 +33,7 @@ class AccountingReportSeeder extends Seeder
         );
 
         $cashOnHand = ChartOfAcc::where('name', 'Cash on Hand')->first();
+        $chequeInHand = ChartOfAcc::where('name', 'Cheque in Hand')->first();
         $mainBank = ChartOfAcc::where('name', 'Main Bank Account')->first();
         $accountsReceivable = ChartOfAcc::where('name', 'Accounts Receivable')->first();
         $inventoryAsset = ChartOfAcc::where('name', 'Inventory Asset')->first();
@@ -49,6 +50,7 @@ class AccountingReportSeeder extends Seeder
 
         $requiredAccounts = [
             'cashOnHand' => $cashOnHand,
+            'chequeInHand' => $chequeInHand,
             'accountsReceivable' => $accountsReceivable,
             'inventoryAsset' => $inventoryAsset,
             'accountsPayable' => $accountsPayable,
@@ -73,6 +75,7 @@ class AccountingReportSeeder extends Seeder
             $customer,
             $supplier,
             $cashOnHand,
+            $chequeInHand,
             $accountsReceivable,
             $inventoryAsset,
             $accountsPayable,

@@ -60,8 +60,9 @@ class LookupController extends Controller
     public function accounts(Request $request)
     {
         $search = $request->query('search');
-        $type = $request->query('type'); // optional: filter by account_type
+        $type = $request->query('type'); // optional: filter by account_type or special bank-only keyword
         $subType = $request->query('sub_type'); // optional: filter by detail type
+        $bankOnly = $request->boolean('bank_only') || strtolower((string) $type) === 'bank_only';
         $includeSelectedId = $request->query('include_selected_id');
 
         $accounts = \App\Models\Accounting\ChartOfAcc::select('id', 'name', 'account_code', 'balance', 'account_type', 'sub_type', 'currency')
@@ -71,8 +72,12 @@ class LookupController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('account_code', 'like', "%{$search}%");
             })
-            ->when($type, fn($q) => $q->where('account_type', $type))
-            ->when($subType, fn($q) => $q->where('sub_type', $subType))
+            ->when($bankOnly, function($q) {
+                $q->where('account_type', 'asset')
+                  ->where('sub_type', 'bank');
+            })
+            ->when(!$bankOnly && $type && strtolower($type) !== 'bank_only', fn($q) => $q->where('account_type', $type))
+            ->when(!$bankOnly, fn($q) => $q->when($subType, fn($q2) => $q2->where('sub_type', $subType)))
             ->when($includeSelectedId, function($q) use ($includeSelectedId) {
                 $q->orWhere('id', $includeSelectedId);
             })
@@ -120,12 +125,12 @@ class LookupController extends Controller
         ]);
     }
 
-    private function getCurrencySymbol(string $currencyCode): string
+    private function getCurrencySymbol(?string $currencyCode): string
     {
         return 'Rs.';
     }
 
-    private function currencyFlagEmoji(string $code): string
+    private function currencyFlagEmoji(?string $code): string
     {
         return match ($code) {
             'USD' => '🇺🇸',
