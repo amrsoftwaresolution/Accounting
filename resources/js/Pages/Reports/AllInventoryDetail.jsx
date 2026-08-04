@@ -5,7 +5,7 @@ import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 import { getEditRoute } from '@/Utils/routeUtils';
 import ReportDateFilter from '@/Components/ReportDateFilter';
 
-export default function AllInventoryDetail({ reportData = [], filters = {} }) {
+export default function AllInventoryDetail({ reportData = [], filters = {}, allInventoryItems = [] }) {
     const { auth } = usePage().props;
     const currencyPrefix = auth.company?.home_currency_prefix || auth.company?.home_currency || '';
     const dateFormat = useDateFormat();
@@ -30,7 +30,19 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
         router.get(route('reports.inventory-detail-all'), {
             start_date: newFilters.start_date,
             end_date: newFilters.end_date,
-            type: newFilters.type
+            type: newFilters.type,
+            item_ids: filters.item_ids || [],
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handleItemsChange = (e) => {
+        const selectedOptions = Array.from(e.target.selectedOptions).map(opt => opt.value);
+        router.get(route('reports.inventory-detail-all'), {
+            ...filters,
+            item_ids: selectedOptions,
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -38,10 +50,26 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
     };
 
     const filterElements = (
-        <ReportDateFilter
-            currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
-            onFilterChange={handleFilterChange}
-        />
+        <div className="flex flex-row flex-wrap items-end gap-3">
+            <ReportDateFilter
+                currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
+                onFilterChange={handleFilterChange}
+            />
+            <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Items</label>
+                <select
+                    multiple
+                    value={filters.item_ids || []}
+                    onChange={handleItemsChange}
+                    className="h-[30px] text-xs border-slate-300 rounded-sm focus:ring-green-500 focus:border-green-500 py-0 px-2 bg-white"
+                >
+                    <option value="" disabled>Select Items</option>
+                    {allInventoryItems && allInventoryItems.map(item => (
+                        <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
     );
 
     // Process data to calculate running balances per item
@@ -201,8 +229,6 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
                                                 </td>
                                             </tr>
                                         )}
-
-                                        <tr className="h-4"></tr>
                                     </React.Fragment>
                                 );
                             })

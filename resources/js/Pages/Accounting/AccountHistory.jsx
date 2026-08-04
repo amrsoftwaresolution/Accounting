@@ -149,6 +149,11 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'cheque') {
             return route('cheque.edit', tx.journal_entry_id);
         }
+
+        if (type === 'inventory_quantity_adjustment' || type === 'inventory_adjustment') {
+            return route('inventory-adjustment.edit', tx.journal_entry_id);
+        }
+        
         return route('journal-entries.edit', tx.journal_entry_id);
     };
 

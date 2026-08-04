@@ -132,16 +132,15 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
     }, [currentFilter]);
 
     return (
-        <div className="flex flex-col sm:flex-row items-end gap-3">
+        <div className="flex flex-row items-center gap-2 flex-wrap">
             <Link
                 href={route('reports.index')}
-                className="flex items-center justify-center w-[30px] h-[30px] border border-slate-300 rounded-sm text-slate-500 hover:text-gray-900 bg-white shadow-sm hover:bg-slate-50 transition-colors shrink-0 mb-[1px]"
+                className="flex items-center justify-center w-[30px] h-[30px] border border-slate-300 rounded-sm text-slate-500 hover:text-gray-900 bg-white shadow-sm hover:bg-slate-50 transition-colors shrink-0"
                 title="Back to Reports"
             >
                 <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </Link>
-            <div className="w-full sm:w-48">
-                <label className="font-bold text-slate-600 ml-0.5 text-xs mb-1 block">Date Range</label>
+            <div className="w-36">
                 <select
                     value={filterType}
                     onChange={(e) => {
@@ -150,6 +149,7 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             handleApply(e.target.value);
                         }
                     }}
+                    title="Date Range"
                     className="w-full h-[30px] py-0 border border-slate-300 rounded-sm text-xs focus:ring-green-500/20 focus:border-green-500 transition-colors bg-white cursor-pointer shadow-sm text-slate-900"
                 >
                     <option value="all_dates">All Dates</option>
@@ -170,9 +170,8 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
 
             {filterType === 'custom' && (
                 <>
-                    <div className="w-full sm:w-36">
+                    <div className="w-28">
                         <CommonInput
-                            label="Start Date"
                             type="date"
                             value={startDate}
                             onChange={(e) => {
@@ -181,9 +180,8 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             onBlur={() => handleApply('custom', startDate, endDate)}
                         />
                     </div>
-                    <div className="w-full sm:w-36">
+                    <div className="w-28">
                         <CommonInput
-                            label="End Date"
                             type="date"
                             value={endDate}
                             onChange={(e) => {
@@ -192,19 +190,16 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             onBlur={() => handleApply('custom', startDate, endDate)}
                         />
                     </div>
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => handleApply('custom', startDate, endDate)}
+                            className="h-[30px] px-3 bg-primary text-white text-xs font-semibold rounded-sm hover:bg-primary-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors shadow-sm"
+                        >
+                            Apply
+                        </button>
+                    </div>
                 </>
-            )}
-
-            {filterType === 'custom' && (
-                <div className="w-full sm:w-auto">
-                    <button
-                        type="button"
-                        onClick={() => handleApply('custom', startDate, endDate)}
-                        className="w-full sm:w-auto h-[30px] px-4 bg-primary text-white text-xs font-semibold rounded-sm hover:bg-primary-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
-                    >
-                        Apply
-                    </button>
-                </div>
             )}
         </div>
     );
