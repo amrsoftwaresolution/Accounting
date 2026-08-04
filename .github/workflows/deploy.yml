@@ -1,82 +1,112 @@
-name: Deploy JBooks App Server
+name: Deploy Laravel App
 
 on:
   push:
     branches:
       - develop
+      - jobalign
+      - hallam-city-campus
+      - steel-audit
+  workflow_dispatch:
 
 jobs:
-  FTP-Deploy-Action:
-    name: Deploy to Production Server
+  deploy:
+    name: Deploy ${{ github.ref_name }}
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2.1.0
-      with:
-        fetch-depth: 2 
-    - name: Build assets
-      run: npm install && npm run build
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-    - name: Install PHP and Composer
-      uses: shivammathur/setup-php@v2
-      with:
+      - name: Resolve deployment target
+        id: deploy-target
+        shell: bash
+        run: |
+          branch="${GITHUB_REF_NAME:-develop}"
+          case "$branch" in
+            jobalign)
+              echo "env_file=.env.prod.jobalign" >> "$GITHUB_OUTPUT"
+              echo "ftp_server=${{ secrets.FTP_SERVER_JOBALIGN }}" >> "$GITHUB_ENV"
+              echo "ftp_username=${{ secrets.FTP_USERNAME_JOBALIGN }}" >> "$GITHUB_ENV"
+              echo "ftp_password=${{ secrets.FTP_PASSWORD_JOBALIGN }}" >> "$GITHUB_ENV"
+              dir="${{ secrets.FTP_SERVER_DIR_JOBALIGN }}"
+              ;;
+            hallam-city-campus)
+              echo "env_file=.env.prod.hallam-city-campus" >> "$GITHUB_OUTPUT"
+              echo "ftp_server=${{ secrets.FTP_SERVER_HALLAM }}" >> "$GITHUB_ENV"
+              echo "ftp_username=${{ secrets.FTP_USERNAME_HALLAM }}" >> "$GITHUB_ENV"
+              echo "ftp_password=${{ secrets.FTP_PASSWORD_HALLAM }}" >> "$GITHUB_ENV"
+              dir="${{ secrets.FTP_SERVER_DIR_HALLAM }}"
+              ;;
+            steel-audit)
+              echo "env_file=.env.prod.steel-audit" >> "$GITHUB_OUTPUT"
+              echo "ftp_server=${{ secrets.FTP_SERVER_STEEL }}" >> "$GITHUB_ENV"
+              echo "ftp_username=${{ secrets.FTP_USERNAME_STEEL }}" >> "$GITHUB_ENV"
+              echo "ftp_password=${{ secrets.FTP_PASSWORD_STEEL }}" >> "$GITHUB_ENV"
+              dir="${{ secrets.FTP_SERVER_DIR_STEEL }}"
+              ;;
+            *)
+              echo "env_file=.env.prod" >> "$GITHUB_OUTPUT"
+              echo "ftp_server=${{ secrets.FTP_SERVER }}" >> "$GITHUB_ENV"
+              echo "ftp_username=${{ secrets.FTP_USERNAME }}" >> "$GITHUB_ENV"
+              echo "ftp_password=${{ secrets.FTP_PASSWORD }}" >> "$GITHUB_ENV"
+              dir="${{ secrets.FTP_SERVER_DIR }}"
+              ;;
+          esac
+
+          if [ -z "$dir" ]; then
+            dir="/"
+          fi
+
+          echo "ftp_server_dir=$dir" >> "$GITHUB_ENV"
+
+      - name: Build assets
+        run: npm install && npm run build
+
+      - name: Install PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
           php-version: '8.2'
           tools: 'composer'
 
-    - name: Copy .env file
-      run: php -r "file_exists('.env') || copy('.env.prod', '.env');"
+      - name: Prepare environment file
+        shell: bash
+        run: |
+          if [ -f "${{ steps.deploy-target.outputs.env_file }}" ]; then
+            cp "${{ steps.deploy-target.outputs.env_file }}" .env
+          else
+            cp .env.prod .env
+          fi
 
-    # - name: Install Dependencies
-    #   run: composer install --prefer-dist --optimize-autoloader
+      - name: Ensure storage directories exist
+        run: |
+          mkdir -p storage/framework/cache
+          mkdir -p storage/framework/sessions
+          mkdir -p storage/framework/views
+          mkdir -p storage/logs
 
-    # - name: Generate Application Key
-    #   run: php artisan key:generate
+      - name: Fix storage permissions
+        run: |
+          sudo chmod -R 777 storage bootstrap/cache || true
+          sudo chown -R $(whoami):$(whoami) storage bootstrap/cache || true
 
-    - name: Ensure Storage Directories Exist
-      run: |
-        mkdir -p storage/framework/cache
-        mkdir -p storage/framework/sessions
-        mkdir -p storage/framework/views
-        mkdir -p storage/logs
+      - name: Set permissions
+        run: chmod -R 777 storage bootstrap/cache
 
-    - name: Fix Storage Permissions
-      run: |
-        sudo chmod -R 777 storage bootstrap/cache || true
-        sudo chown -R $(whoami):$(whoami) storage bootstrap/cache || true
+      - name: Create storage symlink
+        run: |
+          ln -s storage/app/public public/storage || true
 
-    - name: Set Permissions
-      run: chmod -R 777 storage bootstrap/cache
-
-    - name: Create Storage Symlink
-      run: |
-        # rm -f public/storage
-        ln -s storage/app/public public/storage
-
-      # - name: Truncate all tables
-      #   run: php artisan migrate:fresh
-
-      # - name: Migrate Database
-      #   run: php artisan migrate
-
-      # - name: Seed Database
-      #   run: php artisan db:seed --class=DatabaseSeeder
-
-      # - name: Clear and Cache Configurations
-      #   run: |
-      #     php artisan optimize:clear
-      #     php artisan cache:clear
-      #     php artisan config:clear
-      #     php artisan route:clear
-      #     php artisan view:clear
-
-    - name: FTP-Deploy-Action
-      uses: SamKirkland/FTP-Deploy-Action@4.3.3
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /
-        exclude: |
-          **/resources/js/**
-          **/node_modules/**
-          **/.git/**
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.3
+        with:
+          server: ${{ env.ftp_server }}
+          username: ${{ env.ftp_username }}
+          password: ${{ env.ftp_password }}
+          server-dir: ${{ env.ftp_server_dir }}
+          exclude: |
+            **/resources/js/**
+            **/node_modules/**
+            **/.git/**
