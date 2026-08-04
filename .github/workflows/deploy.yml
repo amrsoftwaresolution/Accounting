@@ -23,35 +23,56 @@ jobs:
       - name: Resolve deployment target
         id: deploy-target
         shell: bash
+        env:
+          FTP_SERVER_JOBALIGN: ${{ secrets.FTP_SERVER_JOBALIGN }}
+          FTP_USERNAME_JOBALIGN: ${{ secrets.FTP_USERNAME_JOBALIGN }}
+          FTP_PASSWORD_JOBALIGN: ${{ secrets.FTP_PASSWORD_JOBALIGN }}
+          FTP_SERVER_HALLAM: ${{ secrets.FTP_SERVER_HALLAM }}
+          FTP_USERNAME_HALLAM: ${{ secrets.FTP_USERNAME_HALLAM }}
+          FTP_PASSWORD_HALLAM: ${{ secrets.FTP_PASSWORD_HALLAM }}
+          FTP_SERVER_STEEL: ${{ secrets.FTP_SERVER_STEEL }}
+          FTP_USERNAME_STEEL: ${{ secrets.FTP_USERNAME_STEEL }}
+          FTP_PASSWORD_STEEL: ${{ secrets.FTP_PASSWORD_STEEL }}
+          FTP_SERVER_AAASS: ${{ secrets.FTP_SERVER_AAASS }}
+          FTP_USERNAME_AAASS: ${{ secrets.FTP_USERNAME_AAASS }}
+          FTP_PASSWORD_AAASS: ${{ secrets.FTP_PASSWORD_AAASS }}
         run: |
+          # Helper function to write to GITHUB_ENV safely, stripping newlines
+          set_env() {
+            local key=$1
+            local val
+            val=$(echo "$2" | tr -d '\n\r')
+            echo "$key=$val" >> "$GITHUB_ENV"
+          }
+
           branch="${GITHUB_REF_NAME:-develop}"
           case "$branch" in
             jobalign)
               echo "env_file=env/.env.prod.jobalign" >> "$GITHUB_OUTPUT"
-              echo "ftp_server=${{ secrets.FTP_SERVER_JOBALIGN }}" >> "$GITHUB_ENV"
-              echo "ftp_username=${{ secrets.FTP_USERNAME_JOBALIGN }}" >> "$GITHUB_ENV"
-              echo "ftp_password=${{ secrets.FTP_PASSWORD_JOBALIGN }}" >> "$GITHUB_ENV"
+              set_env "ftp_server" "$FTP_SERVER_JOBALIGN"
+              set_env "ftp_username" "$FTP_USERNAME_JOBALIGN"
+              set_env "ftp_password" "$FTP_PASSWORD_JOBALIGN"
               dir="/public_html/"
               ;;
             hallam-city-campus)
               echo "env_file=env/.env.prod.hallam-city-campus" >> "$GITHUB_OUTPUT"
-              echo "ftp_server=${{ secrets.FTP_SERVER_HALLAM }}" >> "$GITHUB_ENV"
-              echo "ftp_username=${{ secrets.FTP_USERNAME_HALLAM }}" >> "$GITHUB_ENV"
-              echo "ftp_password=${{ secrets.FTP_PASSWORD_HALLAM }}" >> "$GITHUB_ENV"
+              set_env "ftp_server" "$FTP_SERVER_HALLAM"
+              set_env "ftp_username" "$FTP_USERNAME_HALLAM"
+              set_env "ftp_password" "$FTP_PASSWORD_HALLAM"
               dir="/public_html/"
               ;;
             steel-audit)
               echo "env_file=env/.env.prod.steel-audit" >> "$GITHUB_OUTPUT"
-              echo "ftp_server=${{ secrets.FTP_SERVER_STEEL }}" >> "$GITHUB_ENV"
-              echo "ftp_username=${{ secrets.FTP_USERNAME_STEEL }}" >> "$GITHUB_ENV"
-              echo "ftp_password=${{ secrets.FTP_PASSWORD_STEEL }}" >> "$GITHUB_ENV"
+              set_env "ftp_server" "$FTP_SERVER_STEEL"
+              set_env "ftp_username" "$FTP_USERNAME_STEEL"
+              set_env "ftp_password" "$FTP_PASSWORD_STEEL"
               dir="/"
               ;;
             *)
               echo "env_file=env/.env.prod.aaass" >> "$GITHUB_OUTPUT"
-              echo "ftp_server=${{ secrets.FTP_SERVER_AAASS }}" >> "$GITHUB_ENV"
-              echo "ftp_username=${{ secrets.FTP_USERNAME_AAASS }}" >> "$GITHUB_ENV"
-              echo "ftp_password=${{ secrets.FTP_PASSWORD_AAASS }}" >> "$GITHUB_ENV"
+              set_env "ftp_server" "$FTP_SERVER_AAASS"
+              set_env "ftp_username" "$FTP_USERNAME_AAASS"
+              set_env "ftp_password" "$FTP_PASSWORD_AAASS"
               dir="/"
               ;;
           esac
