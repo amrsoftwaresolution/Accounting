@@ -3,7 +3,7 @@ name: Deploy Laravel App
 on:
   push:
     branches:
-      - develop
+      - aaass
       - jobalign
       - hallam-city-campus
       - steel-audit
@@ -45,14 +45,14 @@ jobs:
               echo "ftp_server=${{ secrets.FTP_SERVER_STEEL }}" >> "$GITHUB_ENV"
               echo "ftp_username=${{ secrets.FTP_USERNAME_STEEL }}" >> "$GITHUB_ENV"
               echo "ftp_password=${{ secrets.FTP_PASSWORD_STEEL }}" >> "$GITHUB_ENV"
-              dir="/public_html/"
+              dir="/"
               ;;
             *)
               echo "env_file=env/.env.prod" >> "$GITHUB_OUTPUT"
-              echo "ftp_server=${{ secrets.FTP_SERVER }}" >> "$GITHUB_ENV"
-              echo "ftp_username=${{ secrets.FTP_USERNAME }}" >> "$GITHUB_ENV"
-              echo "ftp_password=${{ secrets.FTP_PASSWORD }}" >> "$GITHUB_ENV"
-              dir="/public_html/"
+              echo "ftp_server=${{ secrets.FTP_SERVER_AAASS }}" >> "$GITHUB_ENV"
+              echo "ftp_username=${{ secrets.FTP_USERNAME_AAASS }}" >> "$GITHUB_ENV"
+              echo "ftp_password=${{ secrets.FTP_PASSWORD_AAASS }}" >> "$GITHUB_ENV"
+              dir="/"
               ;;
           esac
 

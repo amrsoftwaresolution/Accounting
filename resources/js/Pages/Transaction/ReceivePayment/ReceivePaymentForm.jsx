@@ -362,7 +362,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
 
     return (
         <TransactionLayout
-            historyType="recive_payment"
+            historyType="receive_payment"
             title={payment?.id ? `Edit ReceivePayment no.${data.referenceNo}` : "Receive Payment"}
             amount={parseFloat(String(data.amountReceived || 0).replace(/,/g, '')).toFixed(2)}
             onSave={() => submit('save')}

@@ -133,6 +133,47 @@ export default function TransactionLayout({
                 listRoute: 'dashboard'
             };
         }
+        if (currentPath.startsWith('/bank-deposit/')) {
+            return {
+                copyRoute: 'bank-deposit',
+                deleteRoute: 'bank-deposit.destroy',
+                recordId: props.deposit?.id,
+                listRoute: 'dashboard'
+            };
+        }
+        if (currentPath.startsWith('/cheque-deposit/')) {
+            return {
+                copyRoute: 'cheque-deposit',
+                deleteRoute: 'cheque-deposit.destroy',
+                recordId: props.deposit?.id,
+                listRoute: 'dashboard'
+            };
+        }
+        if (currentPath.startsWith('/transfer/')) {
+            return {
+                copyRoute: 'transfer',
+                deleteRoute: 'transfer.destroy',
+                recordId: props.transfer?.id || props.journalEntry?.id,
+                listRoute: 'dashboard'
+            };
+        }
+        if (currentPath.startsWith('/receive-payment/')) {
+            return {
+                copyRoute: null,
+                deleteRoute: 'receive-payment.destroy',
+                printRoute: 'receive-payment.print',
+                recordId: props.payment?.id,
+                listRoute: 'dashboard'
+            };
+        }
+        if (currentPath.startsWith('/inventory-adjustment/')) {
+            return {
+                copyRoute: null,
+                deleteRoute: 'inventory-adjustment.destroy',
+                recordId: props.adjustment?.id,
+                listRoute: 'dashboard'
+            };
+        }
 
         return null;
     })();
