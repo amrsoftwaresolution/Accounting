@@ -109,47 +109,41 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
     const getEditRoute = (tx) => {
         const type = tx.journal_entry?.transaction_type;
-        if (type === 'payment') {
-            return route('payment.edit', tx.journal_entry_id);
-        }
-        if (type === 'credit_invoice') {
-            return route('credit-invoice.edit', tx.journal_entry_id);
-        }
-        if (type === 'bill') {
-            return route('bill.edit', tx.journal_entry_id);
-        }
-        if (type === 'receive_payment') {
-            return route('receive-payment.edit', tx.journal_entry_id);
-        }
+        const id = tx.journal_entry_id;
 
-        if (type === 'sales_receipt' || type === 'pos') {
-            return route('pos.edit', tx.journal_entry_id);
+        switch (type) {
+            case 'pos':
+            case 'sales_receipt':
+                return route('pos.edit', id);
+            case 'credit_invoice':
+                return route('credit-invoice.edit', id);
+            case 'bill':
+                return route('bill.edit', id);
+            case 'payment':
+                return route('payment.edit', id);
+            case 'receive_payment':
+                return route('receive-payment.edit', id);
+            case 'pay_bill':
+                return route('pay-bill.edit', id);
+            case 'bank_deposit':
+                return route('bank-deposit.edit', id);
+            case 'bill_return':
+                return route('bill-return.edit', id);
+            case 'invoice_return':
+                return route('invoice-return.edit', id);
+            case 'sales_invoice':
+                return route('sales-invoice.edit', id);
+            case 'transfer':
+                return route('transfer.edit', id);
+            case 'cheque_deposit':
+                return route('cheque-deposit.edit', id);
+            case 'cheque':
+                return route('cheque.edit', id);
+            case 'inventory_adjustment':
+                return route('inventory-adjustment.edit', id);
+            default:
+                return route('journal-entries.edit', id);
         }
-
-        if (type === 'sales_invoice') {
-            return route('sales-invoice.edit', tx.journal_entry_id);
-        }
-
-        if (type === 'transfer') {
-            return route('transfer.edit', tx.journal_entry_id);
-        }
-
-        if (type === 'bank_deposit') {
-            return route('bank-deposit.edit', tx.journal_entry_id);
-        }
-
-        if (type === 'invoice_return') {
-            return route('invoice-return.edit', tx.journal_entry_id);
-        }
-
-        if (type === 'bill_return') {
-            return route('bill-return.edit', tx.journal_entry_id);
-        }
-
-        if (type === 'cheque') {
-            return route('cheque.edit', tx.journal_entry_id);
-        }
-        return route('journal-entries.edit', tx.journal_entry_id);
     };
 
     const handleStartEdit = (tx) => {

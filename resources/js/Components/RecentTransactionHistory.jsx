@@ -51,6 +51,10 @@ const getEditRoute = (type) => {
             return 'transfer.edit';
         case 'cheque_deposit':
             return 'cheque-deposit.edit';
+        case 'cheque':
+            return 'cheque.edit';
+        case 'inventory_adjustment':
+            return 'inventory-adjustment.edit';
         default:
             return 'journal-entries.edit';
     }
