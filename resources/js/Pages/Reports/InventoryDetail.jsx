@@ -9,10 +9,10 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
     const dateFormat = useDateFormat();
 
     const handleFilterChange = (newFilters) => {
-        router.get(route('reports.inventory-detail', item.id), { 
-            start_date: newFilters.start_date, 
+        router.get(route('reports.inventory-detail', item.id), {
+            start_date: newFilters.start_date,
             end_date: newFilters.end_date,
-            type: newFilters.type 
+            type: newFilters.type
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -21,7 +21,7 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
 
     const handleExportExcel = () => {
         const companyName = auth.company?.company_name || 'Company';
-        
+
         let csvContent = "";
         csvContent += `"${companyName}"\n`;
         csvContent += `"Inventory Detail: ${item.name}"\n`;
@@ -47,20 +47,10 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
 
     const filterElements = (
         <div className="flex items-end gap-4 flex-wrap">
-            <ReportDateFilter 
+            <ReportDateFilter
                 currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
                 onFilterChange={handleFilterChange}
             />
-            
-            <div className="ml-auto">
-                <Link 
-                    href={route('reports.inventory-summary')}
-                    className="flex items-center text-[12px] font-medium text-slate-500 hover:text-slate-800 pb-[1px]"
-                >
-                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                    Back to Summary
-                </Link>
-            </div>
         </div>
     );
 
@@ -77,8 +67,8 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                 <h3 className="text-sm text-gray-700 mt-1">{auth.company?.company_name}</h3>
                 <h4 className="text-md font-semibold text-primary mt-2">{item.name} {item.sku ? `(SKU: ${item.sku})` : ''}</h4>
                 <p className="text-[13px] text-gray-500 mt-1">
-                    {filters.start_date ? formatDate(filters.start_date, dateFormat) : 'All Time'} 
-                    {' '}to{' '} 
+                    {filters.start_date ? formatDate(filters.start_date, dateFormat) : 'All Time'}
+                    {' '}to{' '}
                     {filters.end_date ? formatDate(filters.end_date, dateFormat) : 'Present'}
                 </p>
             </div>

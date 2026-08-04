@@ -20,18 +20,12 @@ class CompanySettingsController extends Controller
 
     private function getSettings()
     {
-        $company = $this->getActiveCompany();
-        if (!$company) {
-            // Fallback or handle error
-            return null;
-        }
         return CompanySetting::firstOrCreate([]);
     }
 
     public function index()
     {
         $company = $this->getActiveCompany();
-        if (!$company) return redirect()->route('dashboard');
 
         $settings = $this->getSettings();
 
@@ -44,11 +38,11 @@ class CompanySettingsController extends Controller
             ? (\App\Models\AdvancedSettings::query()->first()?->toArray() ?? [])
             : [];
 
-        $mergedData = array_merge($company->toArray(), $settings->toArray(), [
+        $mergedData = array_merge($company ? $company->toArray() : [], $settings ? $settings->toArray() : [], [
             'settings_metadata' => [
                 'payments' => [
-                    'show_tags' => $settings->show_tags,
-                    'bill_payment_terms' => $settings->bill_payment_terms,
+                    'show_tags' => $settings->show_tags ?? false,
+                    'bill_payment_terms' => $settings->bill_payment_terms ?? null,
                 ],
                 'sales' => $salesSettings,
                 'advanced' => $advancedSettings,
@@ -77,7 +71,13 @@ class CompanySettingsController extends Controller
             'home_currency_prefix' => 'nullable|string|max:10',
         ]);
 
-        $this->getActiveCompany()->update($validated);
+        $company = $this->getActiveCompany();
+        if ($company) {
+            $company->update($validated);
+        } else {
+            \App\Models\Company::create($validated);
+        }
+        
         return back()->with('message', 'Company information updated successfully.');
     }
 
@@ -93,7 +93,13 @@ public function updateLegal(Request $request)
         'legal_address' => 'nullable|string',
     ]);
 
-    $this->getActiveCompany()->update($validated);
+    $company = $this->getActiveCompany();
+    if ($company) {
+        $company->update($validated);
+    } else {
+        \App\Models\Company::create($validated);
+    }
+
     return back()->with('message', 'Legal information updated successfully.');
 }
     /**
@@ -152,7 +158,7 @@ public function updateAccounting(Request $request)
 
         $company = $this->getActiveCompany();
         if (!$company) {
-            return back()->withErrors(['logo' => 'No active company session found.']);
+            return back()->withErrors(['logo' => 'Please save your company information first before uploading a logo.']);
         }
 
         if ($request->hasFile('logo')) {

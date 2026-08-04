@@ -53,6 +53,7 @@ const getEditRoute = (type) => {
             return 'cheque-deposit.edit';
         case 'cheque':
             return 'cheque.edit';
+        case 'inventory_quantity_adjustment':
         case 'inventory_adjustment':
             return 'inventory-adjustment.edit';
         default:
