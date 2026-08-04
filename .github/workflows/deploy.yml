@@ -101,6 +101,8 @@ jobs:
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
+        env:
+          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
         with:
           server: ${{ env.ftp_server }}
           username: ${{ env.ftp_username }}
