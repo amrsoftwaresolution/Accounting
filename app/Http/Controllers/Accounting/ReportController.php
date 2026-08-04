@@ -717,44 +717,62 @@ class ReportController extends Controller
             $items = $itemsQuery;
         }
 
-        $billData = DB::table('bill_items')
+        $billQuery = DB::table('bill_items')
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
-            ->where('bills.status', 'posted')
-            ->groupBy('item_id')
+            ->where('bills.status', 'posted');
+        if ($endDate) {
+            $billQuery->where('bills.bill_date', '<=', $endDate);
+        }
+        $billData = $billQuery->groupBy('item_id')
             ->selectRaw('item_id, SUM(quantity) as qty, SUM(quantity * rate) as val')
             ->get()->keyBy('item_id');
 
-        $expenseData = DB::table('payment_items')
+        $expenseQuery = DB::table('payment_items')
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
-            ->where('payments.status', 'posted')
-            ->groupBy('item_id')
+            ->where('payments.status', 'posted');
+        if ($endDate) {
+            $expenseQuery->where('payments.payment_date', '<=', $endDate);
+        }
+        $expenseData = $expenseQuery->groupBy('item_id')
             ->selectRaw('item_id, SUM(quantity) as qty, SUM(quantity * rate) as val')
             ->get()->keyBy('item_id');
 
-        $invoiceData = DB::table('credit_invoice_items')
+        $invoiceQuery = DB::table('credit_invoice_items')
             ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
-            ->where('credit_invoices.status', 'posted')
-            ->groupBy('item_id')
+            ->where('credit_invoices.status', 'posted');
+        if ($endDate) {
+            $invoiceQuery->where('credit_invoices.invoice_date', '<=', $endDate);
+        }
+        $invoiceData = $invoiceQuery->groupBy('item_id')
             ->selectRaw('item_id, SUM(quantity) as qty')
             ->get()->keyBy('item_id');
 
-        $receiptData = DB::table('sales_invoice_items')
+        $receiptQuery = DB::table('sales_invoice_items')
             ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
-            ->where('sales_invoices.status', 'posted')
-            ->groupBy('item_id')
+            ->where('sales_invoices.status', 'posted');
+        if ($endDate) {
+            $receiptQuery->where('sales_invoices.invoice_date', '<=', $endDate);
+        }
+        $receiptData = $receiptQuery->groupBy('item_id')
             ->selectRaw('item_id, SUM(quantity) as qty')
             ->get()->keyBy('item_id');
 
-        $creditData = DB::table('bill_return_items')
+        $creditQuery = DB::table('bill_return_items')
             ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
-            ->where('bill_returns.status', 'posted')
-            ->groupBy('item_id')
+            ->where('bill_returns.status', 'posted');
+        if ($endDate) {
+            $creditQuery->where('bill_returns.return_date', '<=', $endDate);
+        }
+        $creditData = $creditQuery->groupBy('item_id')
             ->selectRaw('item_id, SUM(quantity) as qty')
             ->get()->keyBy('item_id');
 
-        $adjData = DB::table('inventory_quantity_adjustment_items')
-            ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
-            ->groupBy('item_id')
+        $adjQuery = DB::table('inventory_quantity_adjustment_items')
+            ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id');
+        if ($endDate) {
+            $adjQuery->where('inventory_quantity_adjustments.date', '<=', $endDate);
+        }
+        $adjData = $adjQuery->groupBy('item_id')
             ->selectRaw('item_id, SUM(change_in_qty) as qty')
             ->get()->keyBy('item_id');
 
@@ -896,7 +914,34 @@ class ReportController extends Controller
             ->orderBy('journal_entries.id', 'asc')
             ->get();
 
-        $reportData = $items->map(function ($item) use ($allLines) {
+        $openingLines = collect();
+        if ($startDate) {
+            $openingLines = DB::table('journal_entries')
+                ->join('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+                ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
+                ->where('chart_of_accs.sub_type', 'inventory')
+                ->where('journal_entries.date', '<', $startDate)
+                ->select('journal_entry_lines.memo', 'journal_entry_lines.debit', 'journal_entry_lines.credit')
+                ->get();
+        }
+
+        $reportData = $items->map(function ($item) use ($allLines, $openingLines, $startDate) {
+            $openingQty = 0;
+            if ($startDate) {
+                $itemOpeningLines = $openingLines->filter(function ($line) use ($item) {
+                    return stripos($line->memo, $item->name) !== false;
+                });
+                if ($item->purchase_price > 0) {
+                    foreach ($itemOpeningLines as $line) {
+                        if ($line->debit > 0) {
+                            $openingQty += $line->debit / $item->purchase_price;
+                        } else if ($line->credit > 0) {
+                            $openingQty -= $line->credit / $item->purchase_price;
+                        }
+                    }
+                }
+            }
+
             $itemLines = $allLines->filter(function ($line) use ($item) {
                 return stripos($line->memo, $item->name) !== false;
             })->values()->map(function ($line) use ($item) {
@@ -927,13 +972,15 @@ class ReportController extends Controller
                     'name' => $item->name,
                     'sku' => $item->sku,
                     'purchase_price' => (float)$item->purchase_price,
+                    'opening_qty' => round($openingQty, 2),
+                    'opening_value' => round($openingQty * $item->purchase_price, 2),
                     'qty_on_hand' => (float)$item->quantity_on_hand,
                     'asset_value' => (float)($item->quantity_on_hand * $item->purchase_price),
                 ],
                 'lines' => $itemLines
             ];
         })->filter(function ($group) {
-            return $group['lines']->isNotEmpty() || $group['item']['qty_on_hand'] > 0;
+            return $group['lines']->isNotEmpty() || $group['item']['qty_on_hand'] > 0 || $group['item']['opening_qty'] != 0;
         })->values();
 
         return Inertia::render('Reports/AllInventoryDetail', [

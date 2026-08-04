@@ -47,8 +47,8 @@ export default function AllInventoryDetail({ reportData = [], filters = {} }) {
     // Process data to calculate running balances per item
     const processedData = useMemo(() => {
         return reportData.map(group => {
-            let currentQty = 0;
-            let currentValue = 0;
+            let currentQty = group.item.opening_qty || 0;
+            let currentValue = group.item.opening_value || 0;
 
             const linesWithBalance = group.lines.map(line => {
                 const amount = line.debit - line.credit;
