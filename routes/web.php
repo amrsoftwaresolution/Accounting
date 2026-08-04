@@ -88,6 +88,9 @@ Route::middleware('auth')->group(function () {
         ->as('inventory-adjustment.')->prefix('inventory-adjustment')->group(function () {
         Route::get('/', 'create')->name('create');
         Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
     // Contacts

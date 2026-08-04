@@ -162,8 +162,193 @@ class InventoryQuantityAdjustmentController extends Controller
             }
 
             return redirect()->route('items.index')->with('success', 'Inventory quantity adjustment saved successfully.');
+        }
+    }
+    
+    public function edit(JournalEntry $journalEntry)
+    {
+        $journalEntry->load('lines');
+        $adjustment = InventoryQuantityAdjustment::with('items.item')->findOrFail($journalEntry->transactionable_id);
+
+        $items = Item::query()
+            ->where('track_inventory', true)
+            ->get(['id', 'name', 'sku', 'description', 'quantity_on_hand']);
+            
+        $accounts = ChartOfAcc::query()->get(['id', 'name', 'account_code']);
+
+        $adjustmentData = [
+            'id' => $journalEntry->id,
+            'adjustment_date' => $adjustment->adjustment_date,
+            'reference_number' => $adjustment->reference_number,
+            'adjustment_reason' => $adjustment->adjustment_reason,
+            'inventory_adjustment_account_id' => $adjustment->inventory_adjustment_account_id,
+            'memo' => $adjustment->memo,
+            'items' => $adjustment->items->map(function ($adjItem) {
+                return [
+                    'id' => $adjItem->id,
+                    'item_id' => $adjItem->item_id,
+                    'sku' => $adjItem->item->sku ?? '',
+                    'description' => $adjItem->description ?? '',
+                    'qty_on_hand' => (float) $adjItem->qty_on_hand,
+                    'new_qty' => (float) $adjItem->new_qty,
+                    'change_in_qty' => (float) $adjItem->change_in_qty,
+                ];
+            })->toArray()
+        ];
+
+        return Inertia::render('Inventory/QuantityAdjustment/Edit', [
+            'items' => $items,
+            'accounts' => $accounts,
+            'adjustment' => $adjustmentData,
+        ]);
+    }
+
+    public function update(Request $request, JournalEntry $journalEntry)
+    {
+        $validated = $request->validate([
+            'adjustment_date' => 'required|date',
+            'reference_number' => 'nullable|string|max:255',
+            'adjustment_reason' => 'required|string|max:255',
+            'inventory_adjustment_account_id' => 'required|exists:chart_of_accs,id',
+            'memo' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|exists:items,id',
+            'items.*.description' => 'nullable|string|max:255',
+            'items.*.qty_on_hand' => 'required|numeric',
+            'items.*.new_qty' => 'required|numeric',
+            'items.*.change_in_qty' => 'required|numeric',
+        ]);
+
+        try {
+            DB::transaction(function () use ($validated, $journalEntry) {
+                $adjustment = InventoryQuantityAdjustment::findOrFail($journalEntry->transactionable_id);
+
+                // Revert previous items
+                foreach ($adjustment->items as $oldItem) {
+                    $item = Item::find($oldItem->item_id);
+                    if ($item) {
+                        $item->decrement('quantity_on_hand', $oldItem->change_in_qty);
+                    }
+                }
+                
+                $adjustment->items()->delete();
+
+                // Update business document
+                $adjustment->update([
+                    'adjustment_date' => $validated['adjustment_date'],
+                    'reference_number' => $validated['reference_number'] ?? null,
+                    'adjustment_reason' => $validated['adjustment_reason'],
+                    'inventory_adjustment_account_id' => $validated['inventory_adjustment_account_id'],
+                    'memo' => $validated['memo'] ?? null,
+                ]);
+
+                $journalLines = [];
+                $totalAmount = 0.0;
+
+                foreach ($validated['items'] as $itemData) {
+                    $adjustment->items()->create([
+                        'item_id' => $itemData['item_id'],
+                        'description' => $itemData['description'] ?? null,
+                        'qty_on_hand' => $itemData['qty_on_hand'],
+                        'new_qty' => $itemData['new_qty'],
+                        'change_in_qty' => $itemData['change_in_qty'],
+                    ]);
+
+                    $item = Item::findOrFail($itemData['item_id']);
+                    // Apply new qty change
+                    $item->increment('quantity_on_hand', $itemData['change_in_qty']);
+
+                    $changeInQty = (float) $itemData['change_in_qty'];
+                    if ($changeInQty != 0) {
+                        $cost = (float) $item->purchase_price;
+                        $lineVal = abs($changeInQty) * $cost;
+                        $totalAmount += $lineVal;
+
+                        $inventoryAccountId = $item->inventory_account_id ?? 
+                            (ChartOfAcc::query()->where('sub_type', 'inventory')->first()?->id ?? 
+                             ChartOfAcc::getOrCreateDefault('inventory')->id);
+
+                        $lineMemo = "Inventory Qty Adj: " . $item->name . ($itemData['description'] ? ' (' . $itemData['description'] . ')' : '');
+
+                        if ($changeInQty > 0) {
+                            $journalLines[] = [
+                                'chart_of_acc_id' => $inventoryAccountId,
+                                'debit' => $lineVal,
+                                'credit' => 0,
+                                'memo' => $lineMemo,
+                            ];
+                            $journalLines[] = [
+                                'chart_of_acc_id' => $validated['inventory_adjustment_account_id'],
+                                'debit' => 0,
+                                'credit' => $lineVal,
+                                'memo' => $lineMemo,
+                            ];
+                        } else {
+                            $journalLines[] = [
+                                'chart_of_acc_id' => $validated['inventory_adjustment_account_id'],
+                                'debit' => $lineVal,
+                                'credit' => 0,
+                                'memo' => $lineMemo,
+                            ];
+                            $journalLines[] = [
+                                'chart_of_acc_id' => $inventoryAccountId,
+                                'debit' => 0,
+                                'credit' => $lineVal,
+                                'memo' => $lineMemo,
+                            ];
+                        }
+                    }
+                }
+
+                $journalEntry->update([
+                    'date' => $validated['adjustment_date'],
+                    'reference' => $validated['reference_number'] ?? 'ADJ-' . time(),
+                    'description' => $validated['memo'] ?? ('Inventory quantity adjustment - ' . $validated['adjustment_reason']),
+                    'total_amount' => $totalAmount,
+                ]);
+
+                $journalEntry->lines->each->delete();
+
+                foreach ($journalLines as $line) {
+                    $journalEntry->lines()->create($line);
+                }
+            });
+
+            $action = $request->input('action', 'save');
+            if ($action === 'close') {
+                return redirect()->back()->with(['success' => 'Inventory quantity adjustment updated successfully.', 'close_window' => true]);
+            }
+            if ($action === 'new') {
+                return redirect()->route('inventory-adjustment.create')->with('success', 'Inventory quantity adjustment updated successfully.');
+            }
+            return redirect()->route('inventory-adjustment.edit', $journalEntry->id)->with('success', 'Inventory quantity adjustment updated successfully.');
+
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function destroy(JournalEntry $journalEntry)
+    {
+        DB::transaction(function () use ($journalEntry) {
+            $adjustment = InventoryQuantityAdjustment::find($journalEntry->transactionable_id);
+
+            if ($adjustment) {
+                // Revert previous items
+                foreach ($adjustment->items as $oldItem) {
+                    $item = Item::find($oldItem->item_id);
+                    if ($item) {
+                        $item->decrement('quantity_on_hand', $oldItem->change_in_qty);
+                    }
+                }
+                $adjustment->items()->delete();
+                $adjustment->delete();
+            }
+
+            $journalEntry->lines->each->delete();
+            $journalEntry->delete();
+        });
+
+        return redirect()->route('items.index')->with('success', 'Inventory quantity adjustment deleted successfully.');
     }
 }

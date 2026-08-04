@@ -29,9 +29,7 @@ const getEditRoute = (type) => {
     switch (type) {
         case 'pos':
             return 'pos.edit';
-        case 'sales_receipt':
-            return 'pos.edit';
-        case 'invoice':
+        case 'credit_invoice':
             return 'credit-invoice.edit';
         case 'bill':
             return 'bill.edit';
@@ -51,6 +49,8 @@ const getEditRoute = (type) => {
             return 'sales-invoice.edit';
         case 'transfer':
             return 'transfer.edit';
+        case 'cheque_deposit':
+            return 'cheque-deposit.edit';
         default:
             return 'journal-entries.edit';
     }

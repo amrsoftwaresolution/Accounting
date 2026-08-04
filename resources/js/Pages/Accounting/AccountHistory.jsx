@@ -112,7 +112,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
         if (type === 'payment') {
             return route('payment.edit', tx.journal_entry_id);
         }
-        if (type === 'invoice') {
+        if (type === 'credit_invoice') {
             return route('credit-invoice.edit', tx.journal_entry_id);
         }
         if (type === 'bill') {
