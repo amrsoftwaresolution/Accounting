@@ -308,6 +308,14 @@ export default function CreditInvoiceForm({
                     setSavedEntryId(newId);
                 }
 
+                if (action === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (action === 'new') {
                     setSavedEntryId(null);
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;

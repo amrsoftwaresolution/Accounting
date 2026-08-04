@@ -199,6 +199,14 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
                     setSavedEntryId(newId);
                 }
 
+                if (actionType === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (actionType === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.reference || nextRef || '1001';

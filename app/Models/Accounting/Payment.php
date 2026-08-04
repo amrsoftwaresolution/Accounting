@@ -5,10 +5,11 @@ namespace App\Models\Accounting;
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Payment extends Model
+class Payment extends Model implements Auditable
 {
-    use HasUuids;
+    use HasUuids, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'payee_id', 'payee_type', 'payment_account_id',

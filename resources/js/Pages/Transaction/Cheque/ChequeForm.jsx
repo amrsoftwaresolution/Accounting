@@ -177,6 +177,14 @@ export default function ChequeForm({
                     setSavedEntryId(newId);
                 }
 
+                if (action === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (action === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.cheque_no || nextChequeNo || 'CHQ-0001';

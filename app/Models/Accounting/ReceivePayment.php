@@ -6,16 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Models\Customer;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class ReceivePayment extends Model
+class ReceivePayment extends Model implements Auditable
 {
-    use HasUuids;
+    use HasUuids, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'customer_id', 'amount', 'payment_date',
         'payment_method_id', 'deposit_to_account_id', 'reference_no', 'memo',
-        'check_date', 'check_number'
+        'check_date', 'check_number', 'cheque_deposit_id'
     ];
+
+    public function chequeDeposit()
+    {
+        return $this->belongsTo(ChequeDeposit::class);
+    }
 
     public function allocations()
     {

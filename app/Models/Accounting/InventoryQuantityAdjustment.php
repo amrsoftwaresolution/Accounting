@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class InventoryQuantityAdjustment extends Model
+class InventoryQuantityAdjustment extends Model implements Auditable
 {
-    use HasUuids;
+    use HasUuids, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'adjustment_date',

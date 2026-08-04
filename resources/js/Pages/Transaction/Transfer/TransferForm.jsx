@@ -89,6 +89,14 @@ export default function TransferForm({ transfer = null }) {
                     setSavedEntryId(newId);
                 }
 
+                if (type === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (type === 'new') {
                     setSavedEntryId(null);
                     reset();

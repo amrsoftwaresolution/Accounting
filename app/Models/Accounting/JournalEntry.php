@@ -5,10 +5,11 @@ namespace App\Models\Accounting;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Models\User;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class JournalEntry extends Model
+class JournalEntry extends Model implements Auditable
 {
-    use HasUuids;
+    use HasUuids, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'date',

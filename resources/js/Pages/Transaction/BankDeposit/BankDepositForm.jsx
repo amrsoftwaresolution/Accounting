@@ -179,10 +179,12 @@ export default function BankDepositForm({ auth, nextRef = "", deposit = null, on
                     try { onModeChange('edit', newId); } catch {}
                 }
 
-                // If caller requested close action, reload underlying list and call onClose if provided
                 if (action === 'close') {
-                    if (typeof onClose === 'function') onClose();
-                    router.reload({ preserveScroll: true });
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
                 }
 
                 if (action === 'new') {

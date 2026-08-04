@@ -442,4 +442,32 @@ class LookupController extends Controller
 
         return response()->json($vehicles);
     }
+    public function outstandingCheques(Request $request)
+    {
+        $chequeInHand = \App\Models\Accounting\ChartOfAcc::where('name', 'Cheque in Hand')->first();
+        if (!$chequeInHand) {
+            return response()->json([]);
+        }
+
+        $query = \App\Models\Accounting\ReceivePayment::with('customer')
+            ->where('deposit_to_account_id', $chequeInHand->id)
+            ->whereNull('cheque_deposit_id')
+            ->orderBy('payment_date', 'desc');
+
+        if ($request->has('cheque_deposit_id')) {
+            $query->orWhere('cheque_deposit_id', $request->cheque_deposit_id);
+        }
+
+        $cheques = $query->get()->map(fn($rp) => [
+            'id' => $rp->id,
+            'customer_name' => $rp->customer->display_name ?? $rp->customer->company_name ?? 'Unknown',
+            'check_date' => $rp->check_date,
+            'check_number' => $rp->check_number,
+            'reference_no' => $rp->reference_no,
+            'amount' => $rp->amount,
+            'payment_date' => $rp->payment_date,
+        ]);
+
+        return response()->json($cheques);
+    }
 }

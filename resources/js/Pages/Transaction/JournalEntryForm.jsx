@@ -251,6 +251,14 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
                     setSavedEntryId(page.props.flash.journal_entry_id);
                 }
 
+                if (type === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                }
+
                 if (type === 'new') {
                     setSavedEntryId(null); // reset for new entry
                     setItems([createBlankLine(), createBlankLine()]);

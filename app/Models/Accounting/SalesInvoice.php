@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Models\Customer;
 use App\Models\Vehicle;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class SalesInvoice extends Model
+class SalesInvoice extends Model implements Auditable
 {
-    use HasUuids;
+    use HasUuids, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'receipt_no', 'customer_id', 'email', 'receipt_date', 'payment_method_id',

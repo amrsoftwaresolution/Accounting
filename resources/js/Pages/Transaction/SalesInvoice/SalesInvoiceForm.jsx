@@ -240,6 +240,14 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 }
 
                 const serverNextNo = page.props.nextReceiptNo || "";
+                if (actionType === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (actionType === 'new') {
                     setSavedOnce(false);
                     setSavedEntryId(null);

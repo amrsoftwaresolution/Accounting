@@ -261,6 +261,16 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{journalEntry}', 'destroy')->name('destroy');
     });
 
+    // Accounting - Cheque Deposit
+    Route::controller(\App\Http\Controllers\Accounting\ChequeDepositController::class)
+        ->as('cheque-deposit.')->prefix('cheque-deposit')->group(function () {
+        Route::get('/', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{journalEntry}/edit', 'edit')->name('edit');
+        Route::patch('/{journalEntry}', 'update')->name('update');
+        Route::delete('/{journalEntry}', 'destroy')->name('destroy');
+    });
+
     // Reports
     Route::prefix('reports')->group(function () {
         Route::get('/', [\App\Http\Controllers\Accounting\ReportController::class, 'index'])->name('reports.index');

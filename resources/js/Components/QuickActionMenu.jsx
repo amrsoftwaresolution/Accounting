@@ -54,6 +54,7 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
             links: [
                 { name: "Add Account", action: 'account', isSolid: true },
                 { name: "Bank Deposit", href: route('bank-deposit.create') },
+                { name: "Cheque Deposit", href: route('cheque-deposit.create') },
                 { name: "Transfer", href: route('transfer.create') },
                 { name: "Journal entry", href: route('journal') },
                 { name: "Inventory Qty Adj", href: route('inventory-adjustment.create') },

@@ -5,10 +5,11 @@ namespace App\Models\Accounting;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Cheque extends Model
+class Cheque extends Model implements Auditable
 {
-    use HasUuids, SoftDeletes;
+    use HasUuids, \OwenIt\Auditing\Auditable, SoftDeletes;
 
     protected $fillable = [
         'payee_id',

@@ -332,6 +332,14 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                     setSavedEntryId(newId);
                 }
 
+                if (action === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (action === 'new') {
                     setSavedEntryId(null);
                     const num = parseInt(String(currentRef).replace(/[^0-9]/g, '')) || 1000;
@@ -475,6 +483,7 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                             error={errors.referenceNo}
                         />
                     </div>
+
                     <div className="w-[220px]">
                         <SearchableSelect
                             label="Deposit To"
@@ -488,6 +497,31 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
                             error={errors.depositTo}
                         />
                     </div>
+
+                    <div className="w-[180px]">
+    <CommonInput
+        label="Amount Received"
+        value={data.amountReceived}
+        onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9.]/g, '');
+            setData("amountReceived", raw);
+            setIsDirty(true);
+            autoApplyAmount(parseFloat(raw) || 0);
+        }}
+        onFocus={(e) => {
+            const val = String(data.amountReceived).replace(/,/g, '');
+            setData("amountReceived", val);
+            setTimeout(() => e.target.select(), 0);
+        }}
+        onBlur={(e) => {
+            const val = parseFloat(String(data.amountReceived).replace(/,/g, '')) || 0;
+            setData("amountReceived", val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        }}
+        size="sm"
+        inputClass="font-mono text-right"
+        error={errors.amountReceived}
+    />
+</div>
                 </div>
 
                 {/* ROW 3: Memo */}

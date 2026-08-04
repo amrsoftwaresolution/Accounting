@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Store modal last URL in session (namespaced by modal name)
     Route::post('/session/modal-last-url', [LookupController::class, 'storeModalLastUrl'])->name('api.session.modal_last_url');
     Route::get('/history/{transactionType}', [TransactionHistoryController::class, 'index'])->name('api.history');
+    Route::get('/outstanding-cheques', [LookupController::class, 'outstandingCheques'])->name('api.outstanding-cheques');
 
     Route::prefix('reports')->group(function () {
         Route::get('/profit-and-loss', [ReportsController::class, 'profitAndLoss'])->name('api.reports.profit-loss');

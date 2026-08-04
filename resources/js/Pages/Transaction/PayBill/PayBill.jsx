@@ -289,6 +289,14 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
             onSuccess: () => {
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
+                if (action === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (action === 'new') {
                     const num = parseInt(String(currentRefNo).replace(/[^0-9]/g, '')) || 0;
                     const nextNo = String(num + 1).padStart(4, '0');

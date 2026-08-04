@@ -326,6 +326,14 @@ export default function PaymentForm({
                     router.reload({ preserveScroll: true });
                 }
 
+                if (action === 'close') {
+                    if (typeof onClose === 'function') {
+                        onClose();
+                    } else {
+                        window.location.href = route('dashboard');
+                    }
+                }
+
                 if (action === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.ref || nextExpenseNo || 'EXP-0001';

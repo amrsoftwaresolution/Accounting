@@ -4,11 +4,12 @@ namespace App\Models\Accounting;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use OwenIt\Auditing\Contracts\Auditable;
 use App\Models\Supplier;
 
-class BillPayment extends Model
+class BillPayment extends Model implements Auditable
 {
-    use HasUuids;
+    use HasUuids, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'supplier_id', 'amount', 'payment_date',
