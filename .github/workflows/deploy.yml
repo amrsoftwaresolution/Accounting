@@ -31,28 +31,24 @@ jobs:
               echo "ftp_server=${{ secrets.FTP_SERVER_JOBALIGN }}" >> "$GITHUB_ENV"
               echo "ftp_username=${{ secrets.FTP_USERNAME_JOBALIGN }}" >> "$GITHUB_ENV"
               echo "ftp_password=${{ secrets.FTP_PASSWORD_JOBALIGN }}" >> "$GITHUB_ENV"
-              dir="${{ secrets.FTP_SERVER_DIR_JOBALIGN }}"
               ;;
             hallam-city-campus)
               echo "env_file=.env.prod.hallam-city-campus" >> "$GITHUB_OUTPUT"
               echo "ftp_server=${{ secrets.FTP_SERVER_HALLAM }}" >> "$GITHUB_ENV"
               echo "ftp_username=${{ secrets.FTP_USERNAME_HALLAM }}" >> "$GITHUB_ENV"
               echo "ftp_password=${{ secrets.FTP_PASSWORD_HALLAM }}" >> "$GITHUB_ENV"
-              dir="${{ secrets.FTP_SERVER_DIR_HALLAM }}"
               ;;
             steel-audit)
               echo "env_file=.env.prod.steel-audit" >> "$GITHUB_OUTPUT"
               echo "ftp_server=${{ secrets.FTP_SERVER_STEEL }}" >> "$GITHUB_ENV"
               echo "ftp_username=${{ secrets.FTP_USERNAME_STEEL }}" >> "$GITHUB_ENV"
               echo "ftp_password=${{ secrets.FTP_PASSWORD_STEEL }}" >> "$GITHUB_ENV"
-              dir="${{ secrets.FTP_SERVER_DIR_STEEL }}"
               ;;
             *)
               echo "env_file=.env.prod" >> "$GITHUB_OUTPUT"
               echo "ftp_server=${{ secrets.FTP_SERVER }}" >> "$GITHUB_ENV"
               echo "ftp_username=${{ secrets.FTP_USERNAME }}" >> "$GITHUB_ENV"
               echo "ftp_password=${{ secrets.FTP_PASSWORD }}" >> "$GITHUB_ENV"
-              dir="${{ secrets.FTP_SERVER_DIR }}"
               ;;
           esac
 
@@ -107,7 +103,7 @@ jobs:
           server: ${{ env.ftp_server }}
           username: ${{ env.ftp_username }}
           password: ${{ env.ftp_password }}
-          server-dir: ${{ env.ftp_server_dir }}
+          server-dir: /public_html/
           exclude: |
             **/resources/js/**
             **/node_modules/**
