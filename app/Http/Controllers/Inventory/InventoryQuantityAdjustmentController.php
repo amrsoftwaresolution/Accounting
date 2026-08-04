@@ -162,6 +162,8 @@ class InventoryQuantityAdjustmentController extends Controller
             }
 
             return redirect()->route('items.index')->with('success', 'Inventory quantity adjustment saved successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }
     
