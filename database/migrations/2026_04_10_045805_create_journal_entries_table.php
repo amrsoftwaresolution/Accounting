@@ -23,8 +23,8 @@ return new class extends Migration
             $table->string('payee_type')->nullable();
             $table->uuid('payment_method_id')->nullable();
 
-            $table->string('transaction_type')->nullable(); // e.g., 'invoice', 'payment', 'bill'
-            $table->nullableUuidMorphs('transactionable'); // Link to the specific transaction record
+            $table->string('transaction_type')->nullable();
+            $table->nullableUuidMorphs('transactionable');
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->string('status')->default('draft');
             $table->foreignUuid('created_by')->constrained('users');
