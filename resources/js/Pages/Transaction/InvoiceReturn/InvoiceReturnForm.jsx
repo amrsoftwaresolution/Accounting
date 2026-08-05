@@ -192,6 +192,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                 .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
                 .map(item => ({
                     ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
                     rate: String(item.rate).replace(/,/g, ''),
                     amount: String(item.amount).replace(/,/g, '')
                 }))

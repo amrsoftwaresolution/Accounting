@@ -186,6 +186,7 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
                 .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || parseCurrency(item.amount) > 0)
                 .map(item => ({
                     ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
                     rate: parseCurrency(item.rate),
                     amount: parseCurrency(item.amount)
                 }))

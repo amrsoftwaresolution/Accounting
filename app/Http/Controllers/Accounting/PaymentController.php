@@ -172,7 +172,7 @@ class PaymentController extends Controller
                     'date' => $paymentDate,
                     'reference' => $referenceNo,
                     'description' => $request->memo,
-                    'transaction_type' => 'payment',
+                    'transaction_type' => 'expense',
                     'payee_id' => $request->payee,
                     'payee_type' => $request->payeeType == 'customer' ? Customer::class : (\App\Models\Supplier::class),
                     'total_amount' => $totalAmount,

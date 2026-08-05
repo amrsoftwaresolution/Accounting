@@ -283,8 +283,16 @@ export default function CreditInvoiceForm({
         const currentNo = data.invoiceNo;
         const currentId = savedEntryId || invoice?.id;
 
-        // No frontend transform needed, backend CreditInvoiceRequest handles filtering empty rows.
-        data.action = action;
+        transform((currentData) => ({
+            ...currentData,
+            action: action,
+            items: currentData.items.map(item => ({
+                ...item,
+                qty: String(item.qty).replace(/,/g, ''),
+                rate: String(item.rate).replace(/,/g, ''),
+                amount: String(item.amount).replace(/,/g, '')
+            }))
+        }));
 
         const url = currentId ? route('credit-invoice.update', currentId) : route('credit-invoice.store');
         const method = currentId ? patch : post;
