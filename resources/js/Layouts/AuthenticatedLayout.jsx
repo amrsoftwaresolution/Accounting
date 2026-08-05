@@ -41,7 +41,7 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
     const allNavigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
         ...(page.props.auth.pos_layout_enabled ? [{ name: 'POS Billing', href: route('pos.index'), icon: 'pos' }] : []),
-        { name: 'Customer Registrations', href: route('customers.index'), icon: 'users' },
+        { name: 'Customer', href: route('customers.index'), icon: 'users' },
         { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle' },
         { name: 'Job Registrations', href: route('job-cards.index'), icon: 'document' },
         { name: 'Warranties', href: route('warranties.index'), icon: 'warranty' },
@@ -106,7 +106,7 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                                 </svg>
                             </button>
                         )}
-                        
+
                         {hideSidebar && (
                             <ApplicationLogo className="h-7 w-auto" />
                         )}

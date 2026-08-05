@@ -13,6 +13,8 @@ export const getEditRoute = (type) => {
 
         case 'bank_deposit': return 'bank-deposit.edit';
         case 'transfer': return 'transfer.edit';
+        case 'inventory_quantity_adjustment':
+        case 'inventory_adjustment': return 'inventory-adjustment.edit';
         default: return 'journal-entries.edit';
     }
 };

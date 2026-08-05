@@ -113,7 +113,6 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
 
         switch (type) {
             case 'pos':
-            case 'sales_receipt':
                 return route('pos.edit', id);
             case 'credit_invoice':
                 return route('credit-invoice.edit', id);
@@ -139,6 +138,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                 return route('cheque-deposit.edit', id);
             case 'cheque':
                 return route('cheque.edit', id);
+            case 'inventory_quantity_adjustment':
             case 'inventory_adjustment':
                 return route('inventory-adjustment.edit', id);
             default:
