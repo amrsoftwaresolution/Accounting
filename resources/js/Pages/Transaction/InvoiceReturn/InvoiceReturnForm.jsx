@@ -82,7 +82,12 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         memo: invoiceReturn?.memo || "",
         statementMessage: invoiceReturn?.statementMessage || "",
         action: 'save',
-        items: invoiceReturn?.items || [
+        items: invoiceReturn?.items ? invoiceReturn.items.map(i => ({
+            ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -98,7 +103,12 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                 reference: invoiceReturn.reference || "",
                 memo: invoiceReturn.memo || "",
                 statementMessage: invoiceReturn.statementMessage || "",
-                items: invoiceReturn.items || [
+                items: invoiceReturn.items ? invoiceReturn.items.map(i => ({
+                    ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ]
@@ -122,19 +132,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         clearErrors();
     }, [invoiceReturn?.id, nextRef]);
 
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: actionRef.current,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [transform]);
+
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -186,6 +184,20 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         actionRef.current = action;
 
         const currentId = savedEntryId || invoiceReturn?.id;
+        
+        transform((data) => ({
+            ...data,
+            action: action,
+            items: data.items
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
+                .map(item => ({
+                    ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
+        }));
+
         const url = currentId ? route('invoice-return.update', currentId) : route('invoice-return.store');
         const method = currentId ? patch : post;
 
@@ -203,15 +215,13 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                     setSavedEntryId(newId);
                 }
 
-                if (actionType === 'close') {
+                if (action === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
-                if (actionType === 'new') {
+                if (action === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.reference || '1001';
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;

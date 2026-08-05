@@ -74,7 +74,12 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
             { category: "", description: "", amount: "0.00" },
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: billReturn?.itemDetails?.length > 0 ? billReturn.itemDetails : [
+        itemDetails: billReturn?.itemDetails?.length > 0 ? billReturn.itemDetails.map(i => ({
+            ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -87,8 +92,13 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
                 date: billReturn.date || billReturn.date || "",
                 reference: billReturn.reference || billReturn.billReturn_no || "",
                 memo: billReturn.memo || "",
-                items: billReturn.items?.length > 0 ? billReturn.items : [{ category: "", description: "", amount: "0.00" }],
-                itemDetails: billReturn.itemDetails?.length > 0 ? billReturn.itemDetails : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                items: billReturn.items?.length > 0 ? billReturn.items.map(i => ({ ...i, amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })) : [{ category: "", description: "", amount: "0.00" }],
+                itemDetails: billReturn.itemDetails?.length > 0 ? billReturn.itemDetails.map(i => ({
+                    ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
             });
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -167,15 +177,16 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
             ...data,
             action: actionType,
             items: data.items
-                .filter(item => item.category && parseCurrency(item.amount) > 0)
+                .filter(item => item.category || item.description || parseCurrency(item.amount) > 0)
                 .map(item => ({
                     ...item,
                     amount: parseCurrency(item.amount)
                 })),
             itemDetails: data.itemDetails
-                .filter(item => item.product && parseCurrency(item.amount) > 0)
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || parseCurrency(item.amount) > 0)
                 .map(item => ({
                     ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
                     rate: parseCurrency(item.rate),
                     amount: parseCurrency(item.amount)
                 }))
@@ -202,9 +213,7 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
                 if (actionType === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (actionType === 'new') {

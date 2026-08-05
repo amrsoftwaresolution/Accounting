@@ -57,7 +57,7 @@ class PaymentController extends Controller
             ];
 
             return Inertia::render('Transaction/Payment/PaymentForm', [
-                'payment' => $expenseData,
+                'expense' => $expenseData,
                 'paymentMethods' => $this->paymentMethods(),
             ]);
         }
@@ -71,7 +71,7 @@ class PaymentController extends Controller
     private function getNextExpenseNo()
     {
         $last = JournalEntry::query()
-            ->where('transaction_type', 'payment')
+            ->where('transaction_type', 'expense')
             ->orderByRaw('CAST(REGEXP_REPLACE(reference, "[^0-9]", "") AS UNSIGNED) DESC')
             ->first();
 
@@ -172,7 +172,7 @@ class PaymentController extends Controller
                     'date' => $paymentDate,
                     'reference' => $referenceNo,
                     'description' => $request->memo,
-                    'transaction_type' => 'payment',
+                    'transaction_type' => 'expense',
                     'payee_id' => $request->payee,
                     'payee_type' => $request->payeeType == 'customer' ? Customer::class : (\App\Models\Supplier::class),
                     'total_amount' => $totalAmount,
@@ -228,7 +228,7 @@ class PaymentController extends Controller
 
             // No session saving needed
 
-            if ($action === 'close') { return back()->with(['success' => 'ReceivePayment saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'ReceivePayment saved successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('payment.create')->with('success', 'ReceivePayment saved successfully.');
@@ -281,7 +281,7 @@ class PaymentController extends Controller
                 Supplier::orderBy('display_name')->get()->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name, 'type' => 'supplier'])->toArray()
             ),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
-            'payment' => $expenseData,
+            'expense' => $expenseData,
             'paymentMethods' => $this->paymentMethods(),
         ]);
     }
@@ -435,7 +435,7 @@ class PaymentController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Payment updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Payment updated successfully.'); } elseif ($action === 'new') {
                 return redirect()->route('payment.create')->with('success', 'Payment updated successfully.');
             }
 

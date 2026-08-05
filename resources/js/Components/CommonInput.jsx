@@ -1,4 +1,6 @@
 import { forwardRef, useEffect, useRef, useState, useImperativeHandle } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 /**
  * A highly reusable, premium input component for JBooks.
@@ -26,7 +28,7 @@ export default forwardRef(function CommonInput(
 ) {
     const inputRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
-    const resolvedDateFormat = dateFormat || 'mm/dd/yyyy';
+    const resolvedDateFormat = dateFormat || 'DD/MM/YYYY';
 
     // Expose focus/select on the forwarded ref so parent components
     // (e.g. LineItemsTable) can programmatically focus this input.
@@ -118,7 +120,7 @@ export default forwardRef(function CommonInput(
     };
 
     const getDatePlaceholder = () => {
-        const format = String(resolvedDateFormat || 'mm/dd/yyyy').toLowerCase();
+        const format = String(resolvedDateFormat || 'DD/MM/YYYY').toLowerCase();
         if (format.includes('dd/mm')) return 'DD/MM/YYYY';
         if (format.includes('dd-mm')) return 'DD-MM-YYYY';
         if (format.includes('yyyy')) return 'YYYY-MM-DD';
@@ -152,6 +154,37 @@ export default forwardRef(function CommonInput(
 
     const normalizedValue = props.value ?? '';
 
+    let selectedDate = null;
+    if (normalizedValue && typeof normalizedValue === 'string') {
+        const parts = normalizedValue.split('-');
+        if (parts.length === 3) {
+            selectedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        } else {
+            const d = new Date(normalizedValue);
+            if (!isNaN(d.getTime())) selectedDate = d;
+        }
+    } else if (normalizedValue instanceof Date) {
+        selectedDate = normalizedValue;
+    }
+
+    const handleDateChange = (date) => {
+        if (props.onChange) {
+            let value = '';
+            if (date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                value = `${yyyy}-${mm}-${dd}`;
+            }
+            props.onChange({
+                target: {
+                    name: props.name,
+                    value: value
+                }
+            });
+        }
+    };
+
     return (
         <div
             className={`flex flex-col gap-0.5 ${containerClass} ${variant === 'table' ? 'h-full' : ''}`}
@@ -181,6 +214,85 @@ export default forwardRef(function CommonInput(
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
+                ) : type === 'date' ? (
+                    <div className="relative w-full h-full group">
+                        <DatePicker
+                            selected={selectedDate}
+                            onChange={handleDateChange}
+                            dateFormat={resolvedDateFormat.toLowerCase().replace(/m/g, 'M')}
+                            placeholderText={getDatePlaceholder()}
+                            className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} pr-8 focus:ring-2 focus:ring-green-500/20 focus:border-green-500`}
+                            isClearable={!required}
+                            autoComplete="off"
+                            name={props.name}
+                            id={props.id}
+                            disabled={props.disabled}
+                            readOnly={props.readOnly}
+                            required={props.required}
+                            onPaste={props.onPaste || handlePaste}
+                            renderCustomHeader={({
+                                date,
+                                changeYear,
+                                changeMonth,
+                                decreaseMonth,
+                                increaseMonth,
+                                prevMonthButtonDisabled,
+                                nextMonthButtonDisabled,
+                            }) => (
+                                <div className="flex items-center justify-between px-2 py-1">
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); decreaseMonth(); }}
+                                        disabled={prevMonthButtonDisabled}
+                                        type="button"
+                                        className="text-slate-500 hover:text-green-500 disabled:opacity-50 p-1"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                                    </button>
+
+                                    <div className="flex gap-1 items-center">
+                                        <select
+                                            value={date.getMonth()}
+                                            onChange={({ target: { value } }) => changeMonth(Number(value))}
+                                            className="react-datepicker__month-select"
+                                        >
+                                            {[
+                                                "January", "February", "March", "April", "May", "June",
+                                                "July", "August", "September", "October", "November", "December"
+                                            ].map((option, index) => (
+                                                <option key={option} value={index}>
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        <input
+                                            type="number"
+                                            value={date.getFullYear()}
+                                            onChange={({ target: { value } }) => {
+                                                if (value.length <= 4) {
+                                                    changeYear(Number(value));
+                                                }
+                                            }}
+                                            className="react-datepicker__year-select w-[42px] text-center"
+                                            style={{ MozAppearance: 'textfield' }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); increaseMonth(); }}
+                                        disabled={nextMonthButtonDisabled}
+                                        type="button"
+                                        className="text-slate-500 hover:text-green-500 disabled:opacity-50 p-1"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                    </button>
+                                </div>
+                            )}
+                            customInput={
+                                <input ref={inputRef} />
+                            }
+                        />
+                    </div>
                 ) : (
                     <input
                         {...props}
@@ -188,8 +300,8 @@ export default forwardRef(function CommonInput(
                         type={type === 'password' ? (showPassword ? 'text' : 'password') : type}
                         ref={inputRef}
                         onPaste={props.onPaste || handlePaste}
-                        placeholder={type === 'date' ? getDatePlaceholder() : props.placeholder}
-                        className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} ${(type === 'date' || type === 'password' || icon) ? 'pr-8' : ''}`}
+                        placeholder={props.placeholder}
+                        className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} ${(type === 'password' || icon) ? 'pr-8' : ''}`}
                     />
                 )}
                 {renderIcon()}

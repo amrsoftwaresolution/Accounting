@@ -113,7 +113,7 @@ export default function PaymentForm({
         ],
         itemDetails: expense?.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails.map(i => ({
             ...i,
-            qty: parseFloat(i.qty || 0).toLocaleString('en-US'),
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
             rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         })) : [
@@ -179,7 +179,7 @@ export default function PaymentForm({
                 ],
                 itemDetails: expense.itemDetails && expense.itemDetails.length > 0 ? expense.itemDetails.map(i => ({
                     ...i,
-                    qty: parseFloat(i.qty || 0).toLocaleString('en-US'),
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
                     rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                     amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 })) : [
@@ -215,13 +215,13 @@ export default function PaymentForm({
             ...data,
             action: actionRef.current,
             items: data.items
-                .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .filter(item => item.category || item.description || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
                 .map(item => ({
                     ...item,
                     amount: String(item.amount).replace(/,/g, '')
                 })),
             itemDetails: data.itemDetails
-                .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
                 .map(item => ({
                     ...item,
                     qty: String(item.qty).replace(/,/g, ''),
@@ -329,9 +329,7 @@ export default function PaymentForm({
                 if (action === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (action === 'new') {

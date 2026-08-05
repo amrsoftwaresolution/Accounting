@@ -173,7 +173,7 @@ class CreditInvoiceController extends Controller
 
         $action = $request->input('action', 'save');
 
-        if ($action === 'close') { return back()->with(['success' => 'credit Sale saved successfully.', 'close_window' => true]); }
+        if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'credit Sale saved successfully.'); }
 
         if ($action === 'new') {
             return redirect()->route('credit-invoice.create')->with('success', 'credit Sale saved successfully.');
@@ -276,6 +276,7 @@ class CreditInvoiceController extends Controller
             $totalAmount = collect($request->items)->sum(function ($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
+            \Log::info('CreditInvoiceController update - Request Items:', $request->items ?? []);
 
             // 1. Update Business Document
             $creditInvoice = \App\Models\Accounting\CreditInvoice::find($journalEntry->transactionable_id);
@@ -377,7 +378,7 @@ class CreditInvoiceController extends Controller
         });
 
         $action = $request->input('action', 'save');
-        if ($action === 'close') { return back()->with(['success' => 'CreditInvoice updated successfully.', 'close_window' => true]); }
+        if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'CreditInvoice updated successfully.'); }
         if ($action === 'new') {
             return redirect()->route('credit-invoice.create')->with('success', 'CreditInvoice updated successfully.');
         }

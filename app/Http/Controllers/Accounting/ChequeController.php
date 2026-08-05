@@ -164,7 +164,7 @@ class ChequeController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Cheque saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Cheque saved successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('cheque')->with('success', 'Cheque saved successfully.');
@@ -293,7 +293,7 @@ class ChequeController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Cheque updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Cheque updated successfully.'); } elseif ($action === 'new') {
                 return redirect()->route('cheque')->with('success', 'Cheque updated successfully.');
             }
 

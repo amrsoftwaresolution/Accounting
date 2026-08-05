@@ -322,7 +322,7 @@ export default function LineItemsTable({
                                                         : col.type === 'number'
                                                             ? (e) => {
                                                                 const num = parseFloat(String(e.target.value).replace(/,/g, ''));
-                                                                handleItemChange(index, col.key, isNaN(num) ? "" : String(num));
+                                                                handleItemChange(index, col.key, isNaN(num) ? "" : num.toLocaleString('en-US', { maximumFractionDigits: 4 }));
                                                             }
                                                             : undefined
                                                     }

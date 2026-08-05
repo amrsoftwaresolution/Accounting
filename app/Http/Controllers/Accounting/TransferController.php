@@ -73,7 +73,7 @@ class TransferController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Transfer saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Transfer saved successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('transfer.create')->with('success', 'Transfer saved successfully.');
@@ -157,7 +157,7 @@ class TransferController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Transfer updated successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Transfer updated successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('transfer.create')->with('success', 'Transfer updated successfully.');

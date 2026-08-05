@@ -75,7 +75,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 statementMessage: receipt.statementMessage || "",
                 checkDate: receipt.checkDate || "",
                 checkNumber: receipt.checkNumber || "",
-                items: receipt.items && receipt.items.length > 0 ? receipt.items.map(i => ({ ...i, warranty: i.warranty || false })) : [
+                items: receipt.items && receipt.items.length > 0 ? receipt.items.map(i => ({
+                    ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    warranty: i.warranty || false
+                })) : [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }
                 ],
                 action: 'save'
@@ -136,7 +142,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         statementMessage: receipt?.statementMessage || "",
         checkDate: receipt?.checkDate || "",
         checkNumber: receipt?.checkNumber || "",
-        items: receipt?.items ? receipt.items.map(i => ({ ...i, warranty: i.warranty || false })) : [
+        items: receipt?.items ? receipt.items.map(i => ({
+            ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            warranty: i.warranty || false
+        })) : [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
         ],
@@ -215,7 +227,14 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         transform((data) => ({
             ...data,
             action: actionType,
-            items: data.items.filter(item => item.product && item.product !== "")
+            items: data.items
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
+                .map(item => ({
+                    ...item,
+                    qty: String(item.qty).replace(/,/g, ''),
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
         }));
 
         const currentId = savedEntryId || receipt?.id;
@@ -229,9 +248,6 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
 
-                setSavedOnce(false);
-                setTimeout(() => setSavedOnce(true), 0);
-
                 const newId = page.props?.flash?.journal_entry_id
                     || page.props?.receipt?.id
                     || page.props?.record?.id;
@@ -243,13 +259,10 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 if (actionType === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (actionType === 'new') {
-                    setSavedOnce(false);
                     setSavedEntryId(null);
                     setData({
                         customer: "", email: "", billingAddress: "",

@@ -177,7 +177,6 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             onChange={(e) => {
                                 setStartDate(e.target.value);
                             }}
-                            onBlur={() => handleApply('custom', startDate, endDate)}
                         />
                     </div>
                     <div className="w-28">
@@ -187,7 +186,6 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
                             onChange={(e) => {
                                 setEndDate(e.target.value);
                             }}
-                            onBlur={() => handleApply('custom', startDate, endDate)}
                         />
                     </div>
                     <div>

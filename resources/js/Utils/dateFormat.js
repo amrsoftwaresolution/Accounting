@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react';
 
-const DEFAULT_DATE_FORMAT = 'MM/DD/YYYY';
+const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY';
 
 export function useDateFormat() {
     return DEFAULT_DATE_FORMAT;

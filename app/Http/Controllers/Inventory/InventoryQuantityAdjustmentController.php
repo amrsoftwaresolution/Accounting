@@ -158,7 +158,8 @@ class InventoryQuantityAdjustmentController extends Controller
             }
 
             if ($action === 'close') {
-                return redirect()->route('dashboard')->with('success', 'Inventory quantity adjustment saved successfully.');
+                $lastValidRoute = session('last_valid_route', route('dashboard'));
+                return redirect()->to($lastValidRoute)->with('success', 'Inventory quantity adjustment saved successfully.');
             }
 
             return redirect()->route('items.index')->with('success', 'Inventory quantity adjustment saved successfully.');
@@ -318,7 +319,8 @@ class InventoryQuantityAdjustmentController extends Controller
 
             $action = $request->input('action', 'save');
             if ($action === 'close') {
-                return redirect()->back()->with(['success' => 'Inventory quantity adjustment updated successfully.', 'close_window' => true]);
+                $lastValidRoute = session('last_valid_route', route('dashboard'));
+                return redirect()->to($lastValidRoute)->with('success', 'Inventory quantity adjustment updated successfully.');
             }
             if ($action === 'new') {
                 return redirect()->route('inventory-adjustment.create')->with('success', 'Inventory quantity adjustment updated successfully.');

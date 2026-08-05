@@ -95,7 +95,7 @@ class BankDepositController extends Controller
         });
 
         $action = $request->input('action', 'save');
-        if ($action === 'close') { return back()->with(['success' => 'Bank deposit saved successfully.', 'close_window' => true]); }
+        if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Bank deposit saved successfully.'); }
 
         if ($action === 'new') {
             return redirect()->route('bank-deposit.create')->with('success', 'Bank deposit saved successfully.');
@@ -202,7 +202,7 @@ class BankDepositController extends Controller
         });
 
         $action = $request->input('action', 'save');
-        if ($action === 'close') { return back()->with(['success' => 'Bank deposit updated successfully.', 'close_window' => true]); }
+        if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Bank deposit updated successfully.'); }
 
         if ($action === 'new') {
             return redirect()->route('bank-deposit.create')->with('success', 'Bank deposit updated successfully.');

@@ -158,6 +158,7 @@ export default function CreditInvoiceForm({
         action: 'save',
         items: invoice?.items ? invoice.items.map(i => ({
             ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
             rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         })) : [
@@ -166,19 +167,6 @@ export default function CreditInvoiceForm({
         ]
     });
 
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: actionRef.current,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [transform]);
 
     useEffect(() => {
         if (invoice) {
@@ -189,11 +177,12 @@ export default function CreditInvoiceForm({
                 billingAddress: invoice.billingAddress || "",
                 terms: invoice.terms || "Net 30",
                 invoiceDate: invoice.invoiceDate || "",
-                dueDate: invoice.dueDate || "",
+                dueDate: invoice.dueDate || calculateDueDate(invoice.invoiceDate, invoice.terms || "Net 30") || "",
                 invoiceNo: invoice.invoiceNo || "",
                 memo: invoice.memo || "",
                 items: invoice.items ? invoice.items.map(i => ({
                     ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
                     rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                     amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 })) : [
@@ -221,7 +210,7 @@ export default function CreditInvoiceForm({
             }));
         }
         clearErrors();
-    }, [invoice?.id, nextInvoiceNo]);
+    }, [invoice ? JSON.stringify(invoice) : null, nextInvoiceNo]);
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -293,6 +282,18 @@ export default function CreditInvoiceForm({
         actionRef.current = action;
         const currentNo = data.invoiceNo;
         const currentId = savedEntryId || invoice?.id;
+
+        transform((currentData) => ({
+            ...currentData,
+            action: action,
+            items: currentData.items.map(item => ({
+                ...item,
+                qty: String(item.qty).replace(/,/g, ''),
+                rate: String(item.rate).replace(/,/g, ''),
+                amount: String(item.amount).replace(/,/g, '')
+            }))
+        }));
+
         const url = currentId ? route('credit-invoice.update', currentId) : route('credit-invoice.store');
         const method = currentId ? patch : post;
 
@@ -311,9 +312,7 @@ export default function CreditInvoiceForm({
                 if (action === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (action === 'new') {
@@ -434,6 +433,7 @@ export default function CreditInvoiceForm({
                             value={data.dueDate}
                             onChange={(e) => { setData(prev => ({ ...prev, dueDate: e.target.value })); setIsDirty(true); }}
                             size="sm"
+                            error={errors.dueDate}
                         />
                     </div>
                     <div className="flex-1"></div>

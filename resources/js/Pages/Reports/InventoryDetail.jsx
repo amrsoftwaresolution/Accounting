@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getEditRoute } from '@/Utils/routeUtils';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
@@ -7,6 +8,15 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function InventoryDetail({ item, lines, filters, auth }) {
     const dateFormat = useDateFormat();
+
+    let runningQty = parseFloat(item.opening_qty || 0);
+    const linesWithTotal = lines.map(line => {
+        runningQty += parseFloat(line.qty_change || 0);
+        return {
+            ...line,
+            running_qty: runningQty
+        };
+    });
 
     const handleFilterChange = (newFilters) => {
         router.get(route('reports.inventory-detail', item.id), {
@@ -28,10 +38,10 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
         csvContent += `"Date Range: ${filters.start_date ? formatDate(filters.start_date, dateFormat) : 'All Time'} to ${filters.end_date ? formatDate(filters.end_date, dateFormat) : 'Present'}"\n\n`;
 
         // Headers
-        csvContent += `"Date","Transaction Type","Ref #","Memo","Qty Change"\n`;
+        csvContent += `"Date","Transaction Type","Ref #","Memo","Qty Change","Total Qty"\n`;
 
-        lines.forEach(line => {
-            csvContent += `"${formatDate(line.date, dateFormat)}","${line.transaction_type}","${line.reference || ''}","${line.memo || ''}",${line.qty_change}\n`;
+        linesWithTotal.forEach(line => {
+            csvContent += `"${formatDate(line.date, dateFormat)}","${line.transaction_type}","${line.reference || ''}","${line.memo || ''}",${line.qty_change},${line.running_qty}\n`;
         });
 
         // Create download blob
@@ -82,20 +92,25 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                             <th className="py-2.5 px-3 font-semibold text-gray-900">Ref #</th>
                             <th className="py-2.5 px-3 font-semibold text-gray-900 w-1/3">Memo / Description</th>
                             <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">Qty Change</th>
+                            <th className="py-2.5 px-3 font-semibold text-gray-900 text-right">Total Qty</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {lines.length === 0 ? (
+                        {linesWithTotal.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="py-8 text-center text-gray-500">No inventory transactions found for this period.</td>
+                                <td colSpan="6" className="py-8 text-center text-gray-500">No inventory transactions found for this period.</td>
                             </tr>
                         ) : (
-                            lines.map((line) => (
-                                <tr key={line.id} className="hover:bg-gray-50 transition-colors group">
+                            linesWithTotal.map((line) => (
+                                <tr 
+                                    key={line.id} 
+                                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                                    onClick={() => line.journal_entry_id && router.get(route(getEditRoute(line.transaction_type), line.journal_entry_id))}
+                                >
                                     <td className="py-2 px-3 text-gray-600 whitespace-nowrap">
                                         {formatDate(line.date, dateFormat)}
                                     </td>
-                                    <td className="py-2 px-3 text-gray-900 capitalize">
+                                    <td className="py-2 px-3 text-gray-900 capitalize group-hover:text-primary transition-colors">
                                         {line.transaction_type.replace('_', ' ')}
                                     </td>
                                     <td className="py-2 px-3 text-gray-600">
@@ -105,8 +120,13 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                                         {line.memo || '-'}
                                     </td>
                                     <td className="py-2 px-3 text-right tabular-nums font-medium">
-                                        <span className={line.qty_change > 0 ? 'text-green-600' : (line.qty_change < 0 ? 'text-red-600' : 'text-gray-900')}>
-                                            {line.qty_change > 0 ? '+' : ''}{line.qty_change}
+                                        <span className={line.qty_change < 0 ? 'text-red-600' : 'text-gray-900'}>
+                                            {parseFloat(line.qty_change || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}
+                                        </span>
+                                    </td>
+                                    <td className="py-2 px-3 text-right tabular-nums font-medium">
+                                        <span className={line.running_qty < 0 ? 'text-red-600' : 'text-gray-900'}>
+                                            {parseFloat(line.running_qty || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}
                                         </span>
                                     </td>
                                 </tr>

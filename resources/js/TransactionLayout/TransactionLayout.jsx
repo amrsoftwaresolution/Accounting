@@ -95,7 +95,7 @@ export default function TransactionLayout({
                 copyRoute: 'receive_payment',
                 deleteRoute: 'payment.destroy',
                 printRoute: 'payment.print',
-                recordId: props.payment?.id,
+                recordId: props.payment?.id || props.expense?.id,
                 listRoute: 'dashboard'
             };
         }
