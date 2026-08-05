@@ -22,36 +22,64 @@ class InventoryReportController extends Controller
 
         $invoices = DB::table('credit_invoice_items')
             ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
+            ->join('journal_entries', function($join) {
+                $join->on('credit_invoices.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\CreditInvoice');
+            })
             ->where('credit_invoices.invoice_date', '<=', $endDate)
             ->select('item_id', 'credit_invoices.invoice_date as date', DB::raw('-(quantity) as qty_change'));
 
         $salesInvoices = DB::table('sales_invoice_items')
             ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
+            ->join('journal_entries', function($join) {
+                $join->on('sales_invoices.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\SalesInvoice');
+            })
             ->where('sales_invoices.receipt_date', '<=', $endDate)
             ->select('item_id', 'sales_invoices.receipt_date as date', DB::raw('-(quantity) as qty_change'));
 
         $invoiceReturns = DB::table('invoice_return_items')
             ->join('invoice_returns', 'invoice_return_items.invoice_return_id', '=', 'invoice_returns.id')
+            ->join('journal_entries', function($join) {
+                $join->on('invoice_returns.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\InvoiceReturn');
+            })
             ->where('invoice_returns.date', '<=', $endDate)
             ->select('item_id', 'invoice_returns.date as date', 'quantity as qty_change');
 
         $payments = DB::table('payment_items')
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
+            ->join('journal_entries', function($join) {
+                $join->on('payments.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\Payment');
+            })
             ->where('payments.payment_date', '<=', $endDate)
             ->select('item_id', 'payments.payment_date as date', 'quantity as qty_change');
 
         $bills = DB::table('bill_items')
             ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->join('journal_entries', function($join) {
+                $join->on('bills.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\Bill');
+            })
             ->where('bills.bill_date', '<=', $endDate)
             ->select('item_id', 'bills.bill_date as date', 'quantity as qty_change');
 
         $billReturns = DB::table('bill_return_items')
             ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
+            ->join('journal_entries', function($join) {
+                $join->on('bill_returns.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\BillReturn');
+            })
             ->where('bill_returns.date', '<=', $endDate)
             ->select('item_id', 'bill_returns.date as date', DB::raw('-(quantity) as qty_change'));
 
         $adjustments = DB::table('inventory_quantity_adjustment_items')
             ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
+            ->join('journal_entries', function($join) {
+                $join->on('inventory_quantity_adjustments.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\InventoryQuantityAdjustment');
+            })
             ->where('inventory_quantity_adjustments.adjustment_date', '<=', $endDate)
             ->select('item_id', 'inventory_quantity_adjustments.adjustment_date as date', 'change_in_qty as qty_change');
 
@@ -643,3 +671,4 @@ class InventoryReportController extends Controller
         ]);
     }
 }
+
