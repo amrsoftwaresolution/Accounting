@@ -57,7 +57,7 @@ class PaymentController extends Controller
             ];
 
             return Inertia::render('Transaction/Payment/PaymentForm', [
-                'payment' => $expenseData,
+                'expense' => $expenseData,
                 'paymentMethods' => $this->paymentMethods(),
             ]);
         }
@@ -281,7 +281,7 @@ class PaymentController extends Controller
                 Supplier::orderBy('display_name')->get()->map(fn($s) => ['id' => $s->id, 'name' => $s->display_name, 'type' => 'supplier'])->toArray()
             ),
             'accounts' => ChartOfAcc::orderBy('account_code')->get(),
-            'payment' => $expenseData,
+            'expense' => $expenseData,
             'paymentMethods' => $this->paymentMethods(),
         ]);
     }
