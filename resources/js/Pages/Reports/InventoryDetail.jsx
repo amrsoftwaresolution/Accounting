@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTransactionModal } from '@/Hooks/useTransactionModal';
+import { getEditRoute } from '@/Utils/routeUtils';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
@@ -8,7 +8,6 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function InventoryDetail({ item, lines, filters, auth }) {
     const dateFormat = useDateFormat();
-    const { openModal } = useTransactionModal();
 
     const handleFilterChange = (newFilters) => {
         router.get(route('reports.inventory-detail', item.id), {
@@ -96,7 +95,7 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                                 <tr 
                                     key={line.id} 
                                     className="hover:bg-gray-50 transition-colors group cursor-pointer"
-                                    onClick={() => line.journal_entry_id && openModal({ id: line.journal_entry_id, transaction_type: line.transaction_type })}
+                                    onClick={() => line.journal_entry_id && router.get(route(getEditRoute(line.transaction_type), line.journal_entry_id))}
                                 >
                                     <td className="py-2 px-3 text-gray-600 whitespace-nowrap">
                                         {formatDate(line.date, dateFormat)}
