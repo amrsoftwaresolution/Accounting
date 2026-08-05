@@ -13,6 +13,32 @@ class HandleInertiaRequests extends Middleware
      */
     public function handle(Request $request, Closure $next)
     {
+        if ($request->isMethod('GET') && (!$request->ajax() || $request->header('X-Inertia'))) {
+            $routeName = $request->route()?->getName();
+            
+            if ($routeName) {
+                $transactionPrefixes = [
+                    'sales-invoice.', 'credit-invoice.', 'invoice-return.', 'receive-payment.', 
+                    'payment.', 'bill.', 'pay-bill.', 'bill-return.', 'cheque.', 
+                    'transfer.', 'bank-deposit.', 'cheque-deposit.', 'inventory-adjustment.'
+                ];
+                
+                $isTransactionForm = false;
+                foreach ($transactionPrefixes as $prefix) {
+                    if (str_starts_with($routeName, $prefix) && (str_ends_with($routeName, '.create') || str_ends_with($routeName, '.edit'))) {
+                        $isTransactionForm = true;
+                        break;
+                    }
+                }
+
+                $isAuthRoute = in_array($routeName, ['login', 'register', 'password.request', 'password.reset']);
+
+                if (!$isTransactionForm && !$isAuthRoute) {
+                    $request->session()->put('last_valid_route', $request->fullUrl());
+                }
+            }
+        }
+
         $response = parent::handle($request, $next);
 
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');

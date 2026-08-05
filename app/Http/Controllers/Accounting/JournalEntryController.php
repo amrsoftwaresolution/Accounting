@@ -128,7 +128,7 @@ class JournalEntryController extends Controller
         $entry->update(['total_amount' => $totalDebit]);
 
         $action = $request->input('action', 'save');
-        if ($action === 'close') { return back()->with(['success' => 'Journal Entry saved successfully.', 'close_window' => true]); }
+        if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Journal Entry saved successfully.'); }
         if ($action === 'new') {
             return redirect()->route('journal-entries.create')->with('success', 'Journal Entry saved successfully.');
         }
@@ -189,7 +189,7 @@ class JournalEntryController extends Controller
             $journalEntry->update(['total_amount' => $totalDebit]);
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Journal Entry updated successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Journal Entry updated successfully.'); }
             if ($action === 'new') {
                 return redirect()->route('journal-entries.create')->with('success', 'Journal Entry updated successfully.');
             }

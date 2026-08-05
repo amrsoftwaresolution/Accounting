@@ -144,9 +144,7 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
 
                 if (cart.length > 0 || repairingCostNum > 0) {
                     setIsExitModalOpen(true);
-                } else {
-                    window.location.href = route('dashboard');
-                }
+                } 
                 return;
             }
 

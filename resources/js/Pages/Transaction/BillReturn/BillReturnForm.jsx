@@ -213,9 +213,7 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
                 if (actionType === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (actionType === 'new') {

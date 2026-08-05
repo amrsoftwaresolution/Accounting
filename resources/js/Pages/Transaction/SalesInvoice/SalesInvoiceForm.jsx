@@ -248,9 +248,6 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 showToast('success', 'Record saved successfully.');
                 setIsDirty(false);
 
-                setSavedOnce(false);
-                setTimeout(() => setSavedOnce(true), 0);
-
                 const newId = page.props?.flash?.journal_entry_id
                     || page.props?.receipt?.id
                     || page.props?.record?.id;
@@ -262,13 +259,10 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 if (actionType === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (actionType === 'new') {
-                    setSavedOnce(false);
                     setSavedEntryId(null);
                     setData({
                         customer: "", email: "", billingAddress: "",

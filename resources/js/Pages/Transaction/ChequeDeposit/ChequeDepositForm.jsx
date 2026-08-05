@@ -157,9 +157,7 @@ export default function ChequeDepositForm({ auth, nextDepositNo = "", deposit = 
                 if (action === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
                 if (action === 'new') {

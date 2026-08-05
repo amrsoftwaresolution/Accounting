@@ -69,8 +69,8 @@ export default function EditAdjustment({ items, accounts, adjustment }) {
                 item_id: selectedItem.id,
                 sku: selectedItem.sku || '',
                 description: selectedItem.description || '',
-                qty_on_hand: selectedItem.quantity_on_hand || 0,
-                new_qty: selectedItem.quantity_on_hand || 0,
+                qty_on_hand: parseFloat(selectedItem.quantity_on_hand) || 0,
+                new_qty: parseFloat(selectedItem.quantity_on_hand) || 0,
                 change_in_qty: 0
             };
         } else {
@@ -84,17 +84,25 @@ export default function EditAdjustment({ items, accounts, adjustment }) {
 
     const handleNewQtyChange = (index, value) => {
         const newItems = [...data.items];
-        const newQty = parseFloat(value) || 0;
-        newItems[index].new_qty = newQty;
-        newItems[index].change_in_qty = newQty - newItems[index].qty_on_hand;
+        newItems[index].new_qty = value;
+        const parsedNewQty = parseFloat(value);
+        if (!isNaN(parsedNewQty)) {
+            newItems[index].change_in_qty = parsedNewQty - (parseFloat(newItems[index].qty_on_hand) || 0);
+        } else if (value === '') {
+            newItems[index].change_in_qty = 0 - (parseFloat(newItems[index].qty_on_hand) || 0);
+        }
         setData('items', newItems);
     };
 
     const handleChangeQtyChange = (index, value) => {
         const newItems = [...data.items];
-        const changeQty = parseFloat(value) || 0;
-        newItems[index].change_in_qty = changeQty;
-        newItems[index].new_qty = newItems[index].qty_on_hand + changeQty;
+        newItems[index].change_in_qty = value;
+        const parsedChangeQty = parseFloat(value);
+        if (!isNaN(parsedChangeQty)) {
+            newItems[index].new_qty = (parseFloat(newItems[index].qty_on_hand) || 0) + parsedChangeQty;
+        } else if (value === '') {
+            newItems[index].new_qty = parseFloat(newItems[index].qty_on_hand) || 0;
+        }
         setData('items', newItems);
     };
 
@@ -103,7 +111,11 @@ export default function EditAdjustment({ items, accounts, adjustment }) {
 
         transform((data) => ({
             ...data,
-            items: data.items.filter(item => item.item_id !== '')
+            items: data.items.filter(item => item.item_id !== '').map(item => ({
+                ...item,
+                new_qty: parseFloat(item.new_qty) || 0,
+                change_in_qty: parseFloat(item.change_in_qty) || 0,
+            }))
         }));
 
         patch(route('inventory-adjustment.update', { journalEntry: adjustment.id, action: actionType }));

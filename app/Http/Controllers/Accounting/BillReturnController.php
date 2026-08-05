@@ -212,7 +212,7 @@ class BillReturnController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Bill Return saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Bill Return saved successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('bill-return.create')->with('success', 'Bill Return saved successfully.');
@@ -406,7 +406,7 @@ class BillReturnController extends Controller
 
             $action = $request->input('action', 'save');
 
-            if ($action === 'close') { return back()->with(['success' => 'Bill Return updated successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Bill Return updated successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('bill-return.create')->with('success', 'Bill Return updated successfully.');

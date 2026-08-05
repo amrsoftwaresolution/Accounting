@@ -331,15 +331,13 @@ export default function BillForm({
                     setSavedEntryId(newId);
                 }
 
-                if (actionType === 'close') {
+                if (action === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
-                    } else {
-                        window.location.href = route('dashboard');
-                    }
+                    } 
                 }
 
-                if (actionType === 'new') {
+                if (action === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.billNo || '1001';
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;

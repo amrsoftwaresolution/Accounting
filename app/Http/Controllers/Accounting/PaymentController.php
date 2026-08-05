@@ -228,7 +228,7 @@ class PaymentController extends Controller
 
             // No session saving needed
 
-            if ($action === 'close') { return back()->with(['success' => 'ReceivePayment saved successfully.', 'close_window' => true]); }
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'ReceivePayment saved successfully.'); }
 
             if ($action === 'new') {
                 return redirect()->route('payment.create')->with('success', 'ReceivePayment saved successfully.');
@@ -435,7 +435,7 @@ class PaymentController extends Controller
             });
 
             $action = $request->input('action', 'save');
-            if ($action === 'close') { return back()->with(['success' => 'Payment updated successfully.', 'close_window' => true]); } elseif ($action === 'new') {
+            if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'Payment updated successfully.'); } elseif ($action === 'new') {
                 return redirect()->route('payment.create')->with('success', 'Payment updated successfully.');
             }
 
