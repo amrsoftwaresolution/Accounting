@@ -250,7 +250,7 @@ export default function InventorySummary({ reportData, filters = {}, auth }) {
                                                             );
                                                         })}
                                                         <td className="py-2 px-3 text-right tabular-nums text-gray-900 font-semibold border-l border-gray-100">
-                                                            {item.qty_on_hand}
+                                                            {parseFloat(item.qty_on_hand || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}
                                                         </td>
                                                         <td className="py-2 px-3 text-right tabular-nums">
                                                             <Currency value={item.avg_cost} />
@@ -262,7 +262,7 @@ export default function InventorySummary({ reportData, filters = {}, auth }) {
                                                 ) : (
                                                     <>
                                                         <td className="py-2 px-3 text-right tabular-nums text-gray-900 font-semibold">
-                                                            {item.qty_on_hand}
+                                                            {parseFloat(item.qty_on_hand || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}
                                                         </td>
                                                         <td className="py-2 px-3 text-right tabular-nums">
                                                             <Currency value={item.avg_cost} />

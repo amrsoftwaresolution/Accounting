@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
+import { formatDate } from '@/Utils/dateFormat';
 
 /**
  * A highly reusable, premium input component for JBooks.
@@ -173,6 +174,25 @@ export default forwardRef(function CommonInput(
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
+                ) : type === 'date' ? (
+                    <div className="relative w-full h-full group">
+                        <input
+                            type="text"
+                            value={normalizedValue ? formatDate(normalizedValue, resolvedDateFormat) : ''}
+                            placeholder={getDatePlaceholder()}
+                            readOnly
+                            tabIndex={-1}
+                            className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} pr-8 relative z-0 group-focus-within:ring-2 group-focus-within:ring-green-500/20 group-focus-within:border-green-500 pointer-events-none`}
+                        />
+                        <input
+                            {...props}
+                            value={normalizedValue}
+                            type="date"
+                            ref={inputRef}
+                            onPaste={props.onPaste || handlePaste}
+                            className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10`}
+                        />
+                    </div>
                 ) : (
                     <input
                         {...props}
@@ -180,8 +200,8 @@ export default forwardRef(function CommonInput(
                         type={type === 'password' ? (showPassword ? 'text' : 'password') : type}
                         ref={inputRef}
                         onPaste={props.onPaste || handlePaste}
-                        placeholder={type === 'date' ? getDatePlaceholder() : props.placeholder}
-                        className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} ${(type === 'date' || type === 'password' || icon) ? 'pr-8' : ''}`}
+                        placeholder={props.placeholder}
+                        className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} ${(type === 'password' || icon) ? 'pr-8' : ''}`}
                     />
                 )}
                 {renderIcon()}

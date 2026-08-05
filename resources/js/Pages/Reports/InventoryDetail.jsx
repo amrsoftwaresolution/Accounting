@@ -111,7 +111,7 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                                     </td>
                                     <td className="py-2 px-3 text-right tabular-nums font-medium">
                                         <span className={line.qty_change < 0 ? 'text-red-600' : 'text-gray-900'}>
-                                            {line.qty_change}
+                                            {parseFloat(line.qty_change || 0).toLocaleString('en-US', { maximumFractionDigits: 4 })}
                                         </span>
                                     </td>
                                 </tr>
