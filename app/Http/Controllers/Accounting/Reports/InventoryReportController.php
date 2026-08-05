@@ -25,17 +25,37 @@ class InventoryReportController extends Controller
             ->where('credit_invoices.invoice_date', '<=', $endDate)
             ->select('item_id', 'credit_invoices.invoice_date as date', DB::raw('-(quantity) as qty_change'));
 
+        $salesInvoices = DB::table('sales_invoice_items')
+            ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
+            ->where('sales_invoices.receipt_date', '<=', $endDate)
+            ->select('item_id', 'sales_invoices.receipt_date as date', DB::raw('-(quantity) as qty_change'));
+
+        $invoiceReturns = DB::table('invoice_return_items')
+            ->join('invoice_returns', 'invoice_return_items.invoice_return_id', '=', 'invoice_returns.id')
+            ->where('invoice_returns.date', '<=', $endDate)
+            ->select('item_id', 'invoice_returns.date as date', 'quantity as qty_change');
+
         $payments = DB::table('payment_items')
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
             ->where('payments.payment_date', '<=', $endDate)
             ->select('item_id', 'payments.payment_date as date', 'quantity as qty_change');
+
+        $bills = DB::table('bill_items')
+            ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->where('bills.bill_date', '<=', $endDate)
+            ->select('item_id', 'bills.bill_date as date', 'quantity as qty_change');
+
+        $billReturns = DB::table('bill_return_items')
+            ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
+            ->where('bill_returns.date', '<=', $endDate)
+            ->select('item_id', 'bill_returns.date as date', DB::raw('-(quantity) as qty_change'));
 
         $adjustments = DB::table('inventory_quantity_adjustment_items')
             ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
             ->where('inventory_quantity_adjustments.adjustment_date', '<=', $endDate)
             ->select('item_id', 'inventory_quantity_adjustments.adjustment_date as date', 'change_in_qty as qty_change');
 
-        $allLinesQuery = $invoices->unionAll($payments)->unionAll($adjustments);
+        $allLinesQuery = $invoices->unionAll($salesInvoices)->unionAll($invoiceReturns)->unionAll($payments)->unionAll($bills)->unionAll($billReturns)->unionAll($adjustments);
 
         $months = [];
         if ($displayBy === 'month') {
@@ -176,6 +196,44 @@ class InventoryReportController extends Controller
                 DB::raw('(credit_invoice_items.quantity * credit_invoice_items.rate) as credit')
             );
 
+        $salesInvoices = DB::table('sales_invoice_items')
+            ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
+            ->join('journal_entries', function($join) {
+                $join->on('sales_invoices.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\SalesInvoice');
+            })
+            ->select(
+                'sales_invoice_items.item_id',
+                'sales_invoices.receipt_date as date',
+                'sales_invoices.receipt_no as reference',
+                'sales_invoice_items.description as memo',
+                DB::raw('-(sales_invoice_items.quantity) as qty_change'),
+                'sales_invoice_items.rate',
+                DB::raw("'sales_invoice' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('0 as debit'),
+                DB::raw('(sales_invoice_items.quantity * sales_invoice_items.rate) as credit')
+            );
+
+        $invoiceReturns = DB::table('invoice_return_items')
+            ->join('invoice_returns', 'invoice_return_items.invoice_return_id', '=', 'invoice_returns.id')
+            ->join('journal_entries', function($join) {
+                $join->on('invoice_returns.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\InvoiceReturn');
+            })
+            ->select(
+                'invoice_return_items.item_id',
+                'invoice_returns.date as date',
+                DB::raw("'' as reference"),
+                'invoice_return_items.description as memo',
+                'invoice_return_items.quantity as qty_change',
+                'invoice_return_items.rate',
+                DB::raw("'invoice_return' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('(invoice_return_items.quantity * invoice_return_items.rate) as debit'),
+                DB::raw('0 as credit')
+            );
+
         $payments = DB::table('payment_items')
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
             ->join('journal_entries', function($join) {
@@ -193,6 +251,44 @@ class InventoryReportController extends Controller
                 'journal_entries.id as journal_entry_id',
                 DB::raw('(payment_items.quantity * payment_items.rate) as debit'),
                 DB::raw('0 as credit')
+            );
+
+        $bills = DB::table('bill_items')
+            ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->join('journal_entries', function($join) {
+                $join->on('bills.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\Bill');
+            })
+            ->select(
+                'bill_items.item_id',
+                'bills.bill_date as date',
+                'bills.bill_no as reference',
+                'bill_items.description as memo',
+                'bill_items.quantity as qty_change',
+                'bill_items.rate',
+                DB::raw("'bill' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('(bill_items.quantity * bill_items.rate) as debit'),
+                DB::raw('0 as credit')
+            );
+
+        $billReturns = DB::table('bill_return_items')
+            ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
+            ->join('journal_entries', function($join) {
+                $join->on('bill_returns.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\BillReturn');
+            })
+            ->select(
+                'bill_return_items.item_id',
+                'bill_returns.date as date',
+                DB::raw("'' as reference"),
+                'bill_return_items.description as memo',
+                DB::raw('-(bill_return_items.quantity) as qty_change'),
+                'bill_return_items.rate',
+                DB::raw("'bill_return' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('0 as debit'),
+                DB::raw('(bill_return_items.quantity * bill_return_items.rate) as credit')
             );
 
         $adjustments = DB::table('inventory_quantity_adjustment_items')
@@ -217,21 +313,33 @@ class InventoryReportController extends Controller
 
         if ($startDate) {
             $invoices->whereBetween('credit_invoices.invoice_date', [$startDate, $endDate]);
+            $salesInvoices->whereBetween('sales_invoices.receipt_date', [$startDate, $endDate]);
+            $invoiceReturns->whereBetween('invoice_returns.date', [$startDate, $endDate]);
             $payments->whereBetween('payments.payment_date', [$startDate, $endDate]);
+            $bills->whereBetween('bills.bill_date', [$startDate, $endDate]);
+            $billReturns->whereBetween('bill_returns.date', [$startDate, $endDate]);
             $adjustments->whereBetween('inventory_quantity_adjustments.adjustment_date', [$startDate, $endDate]);
         } else {
             $invoices->where('credit_invoices.invoice_date', '<=', $endDate);
+            $salesInvoices->where('sales_invoices.receipt_date', '<=', $endDate);
+            $invoiceReturns->where('invoice_returns.date', '<=', $endDate);
             $payments->where('payments.payment_date', '<=', $endDate);
+            $bills->where('bills.bill_date', '<=', $endDate);
+            $billReturns->where('bill_returns.date', '<=', $endDate);
             $adjustments->where('inventory_quantity_adjustments.adjustment_date', '<=', $endDate);
         }
 
         if (!empty($itemIds)) {
             $invoices->whereIn('credit_invoice_items.item_id', $itemIds);
+            $salesInvoices->whereIn('sales_invoice_items.item_id', $itemIds);
+            $invoiceReturns->whereIn('invoice_return_items.item_id', $itemIds);
             $payments->whereIn('payment_items.item_id', $itemIds);
+            $bills->whereIn('bill_items.item_id', $itemIds);
+            $billReturns->whereIn('bill_return_items.item_id', $itemIds);
             $adjustments->whereIn('inventory_quantity_adjustment_items.item_id', $itemIds);
         }
 
-        $allLines = $invoices->unionAll($payments)->unionAll($adjustments)
+        $allLines = $invoices->unionAll($salesInvoices)->unionAll($invoiceReturns)->unionAll($payments)->unionAll($bills)->unionAll($billReturns)->unionAll($adjustments)
             ->orderBy('date', 'asc')
             ->get();
 
@@ -316,6 +424,46 @@ class InventoryReportController extends Controller
                 DB::raw('(credit_invoice_items.quantity * credit_invoice_items.rate) as credit')
             );
 
+        $salesInvoices = DB::table('sales_invoice_items')
+            ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
+            ->join('journal_entries', function($join) {
+                $join->on('sales_invoices.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\SalesInvoice');
+            })
+            ->where('sales_invoice_items.item_id', $item->id)
+            ->select(
+                'sales_invoice_items.item_id',
+                'sales_invoices.receipt_date as date',
+                'sales_invoices.receipt_no as reference',
+                'sales_invoice_items.description as memo',
+                DB::raw('-(sales_invoice_items.quantity) as qty_change'),
+                'sales_invoice_items.rate',
+                DB::raw("'sales_invoice' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('0 as debit'),
+                DB::raw('(sales_invoice_items.quantity * sales_invoice_items.rate) as credit')
+            );
+
+        $invoiceReturns = DB::table('invoice_return_items')
+            ->join('invoice_returns', 'invoice_return_items.invoice_return_id', '=', 'invoice_returns.id')
+            ->join('journal_entries', function($join) {
+                $join->on('invoice_returns.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\InvoiceReturn');
+            })
+            ->where('invoice_return_items.item_id', $item->id)
+            ->select(
+                'invoice_return_items.item_id',
+                'invoice_returns.date as date',
+                DB::raw("'' as reference"),
+                'invoice_return_items.description as memo',
+                'invoice_return_items.quantity as qty_change',
+                'invoice_return_items.rate',
+                DB::raw("'invoice_return' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('(invoice_return_items.quantity * invoice_return_items.rate) as debit'),
+                DB::raw('0 as credit')
+            );
+
         $payments = DB::table('payment_items')
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
             ->join('journal_entries', function($join) {
@@ -334,6 +482,46 @@ class InventoryReportController extends Controller
                 'journal_entries.id as journal_entry_id',
                 DB::raw('(payment_items.quantity * payment_items.rate) as debit'),
                 DB::raw('0 as credit')
+            );
+
+        $bills = DB::table('bill_items')
+            ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+            ->join('journal_entries', function($join) {
+                $join->on('bills.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\Bill');
+            })
+            ->where('bill_items.item_id', $item->id)
+            ->select(
+                'bill_items.item_id',
+                'bills.bill_date as date',
+                'bills.bill_no as reference',
+                'bill_items.description as memo',
+                'bill_items.quantity as qty_change',
+                'bill_items.rate',
+                DB::raw("'bill' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('(bill_items.quantity * bill_items.rate) as debit'),
+                DB::raw('0 as credit')
+            );
+
+        $billReturns = DB::table('bill_return_items')
+            ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
+            ->join('journal_entries', function($join) {
+                $join->on('bill_returns.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\BillReturn');
+            })
+            ->where('bill_return_items.item_id', $item->id)
+            ->select(
+                'bill_return_items.item_id',
+                'bill_returns.date as date',
+                DB::raw("'' as reference"),
+                'bill_return_items.description as memo',
+                DB::raw('-(bill_return_items.quantity) as qty_change'),
+                'bill_return_items.rate',
+                DB::raw("'bill_return' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
+                DB::raw('0 as debit'),
+                DB::raw('(bill_return_items.quantity * bill_return_items.rate) as credit')
             );
 
         $adjustments = DB::table('inventory_quantity_adjustment_items')
@@ -364,11 +552,35 @@ class InventoryReportController extends Controller
                 ->where('credit_invoices.invoice_date', '<', $startDate)
                 ->sum(DB::raw('-(credit_invoice_items.quantity)'));
 
+            $salesInvQty = DB::table('sales_invoice_items')
+                ->join('sales_invoices', 'sales_invoice_items.sales_invoice_id', '=', 'sales_invoices.id')
+                ->where('sales_invoice_items.item_id', $item->id)
+                ->where('sales_invoices.receipt_date', '<', $startDate)
+                ->sum(DB::raw('-(sales_invoice_items.quantity)'));
+
+            $invRetQty = DB::table('invoice_return_items')
+                ->join('invoice_returns', 'invoice_return_items.invoice_return_id', '=', 'invoice_returns.id')
+                ->where('invoice_return_items.item_id', $item->id)
+                ->where('invoice_returns.date', '<', $startDate)
+                ->sum('invoice_return_items.quantity');
+
             $payQty = DB::table('payment_items')
                 ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
                 ->where('payment_items.item_id', $item->id)
                 ->where('payments.payment_date', '<', $startDate)
                 ->sum('payment_items.quantity');
+
+            $billQty = DB::table('bill_items')
+                ->join('bills', 'bill_items.bill_id', '=', 'bills.id')
+                ->where('bill_items.item_id', $item->id)
+                ->where('bills.bill_date', '<', $startDate)
+                ->sum('bill_items.quantity');
+
+            $billRetQty = DB::table('bill_return_items')
+                ->join('bill_returns', 'bill_return_items.bill_return_id', '=', 'bill_returns.id')
+                ->where('bill_return_items.item_id', $item->id)
+                ->where('bill_returns.date', '<', $startDate)
+                ->sum(DB::raw('-(bill_return_items.quantity)'));
 
             $adjQty = DB::table('inventory_quantity_adjustment_items')
                 ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
@@ -376,20 +588,28 @@ class InventoryReportController extends Controller
                 ->where('inventory_quantity_adjustments.adjustment_date', '<', $startDate)
                 ->sum('inventory_quantity_adjustment_items.change_in_qty');
 
-            $openingQty = (float)$invQty + (float)$payQty + (float)$adjQty;
+            $openingQty = (float)$invQty + (float)$salesInvQty + (float)$invRetQty + (float)$payQty + (float)$billQty + (float)$billRetQty + (float)$adjQty;
         }
 
         if ($startDate) {
             $invoices->whereBetween('credit_invoices.invoice_date', [$startDate, $endDate]);
+            $salesInvoices->whereBetween('sales_invoices.receipt_date', [$startDate, $endDate]);
+            $invoiceReturns->whereBetween('invoice_returns.date', [$startDate, $endDate]);
             $payments->whereBetween('payments.payment_date', [$startDate, $endDate]);
+            $bills->whereBetween('bills.bill_date', [$startDate, $endDate]);
+            $billReturns->whereBetween('bill_returns.date', [$startDate, $endDate]);
             $adjustments->whereBetween('inventory_quantity_adjustments.adjustment_date', [$startDate, $endDate]);
         } else {
             $invoices->where('credit_invoices.invoice_date', '<=', $endDate);
+            $salesInvoices->where('sales_invoices.receipt_date', '<=', $endDate);
+            $invoiceReturns->where('invoice_returns.date', '<=', $endDate);
             $payments->where('payments.payment_date', '<=', $endDate);
+            $bills->where('bills.bill_date', '<=', $endDate);
+            $billReturns->where('bill_returns.date', '<=', $endDate);
             $adjustments->where('inventory_quantity_adjustments.adjustment_date', '<=', $endDate);
         }
 
-        $lines = $invoices->unionAll($payments)->unionAll($adjustments)
+        $lines = $invoices->unionAll($salesInvoices)->unionAll($invoiceReturns)->unionAll($payments)->unionAll($bills)->unionAll($billReturns)->unionAll($adjustments)
             ->orderBy('date', 'asc')
             ->get()
             ->map(function ($line, $index) {

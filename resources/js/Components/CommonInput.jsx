@@ -27,6 +27,7 @@ export default forwardRef(function CommonInput(
     ref
 ) {
     const inputRef = useRef(null);
+    const datePickerRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
     const resolvedDateFormat = dateFormat || 'DD/MM/YYYY';
 
@@ -61,6 +62,10 @@ export default forwardRef(function CommonInput(
 
 
     const showPicker = () => {
+        if (type === 'date' && datePickerRef.current) {
+            datePickerRef.current.setOpen(true);
+            return;
+        }
         if (inputRef.current) {
             try {
                 inputRef.current.showPicker();
@@ -216,13 +221,18 @@ export default forwardRef(function CommonInput(
                     </select>
                 ) : type === 'date' ? (
                     <div className="relative w-full h-full group">
+                        <style>{`
+                            .react-datepicker__day--outside-month {
+                                visibility: hidden;
+                            }
+                        `}</style>
                         <DatePicker
+                            ref={datePickerRef}
                             selected={selectedDate}
                             onChange={handleDateChange}
                             dateFormat={resolvedDateFormat.toLowerCase().replace(/m/g, 'M')}
                             placeholderText={getDatePlaceholder()}
                             className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} pr-8 focus:ring-2 focus:ring-green-500/20 focus:border-green-500`}
-                            isClearable={!required}
                             autoComplete="off"
                             name={props.name}
                             id={props.id}
@@ -230,6 +240,7 @@ export default forwardRef(function CommonInput(
                             readOnly={props.readOnly}
                             required={props.required}
                             onPaste={props.onPaste || handlePaste}
+                            showOutsideDays={false}
                             renderCustomHeader={({
                                 date,
                                 changeYear,
@@ -265,17 +276,15 @@ export default forwardRef(function CommonInput(
                                             ))}
                                         </select>
 
-                                        <input
-                                            type="number"
+                                        <select
                                             value={date.getFullYear()}
-                                            onChange={({ target: { value } }) => {
-                                                if (value.length <= 4) {
-                                                    changeYear(Number(value));
-                                                }
-                                            }}
-                                            className="react-datepicker__year-select w-[42px] text-center"
-                                            style={{ MozAppearance: 'textfield' }}
-                                        />
+                                            onChange={({ target: { value } }) => changeYear(Number(value))}
+                                            className="react-datepicker__year-select"
+                                        >
+                                            {Array.from({ length: 61 }, (_, i) => new Date().getFullYear() - 30 + i).map(year => (
+                                                <option key={year} value={year}>{year}</option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <button
