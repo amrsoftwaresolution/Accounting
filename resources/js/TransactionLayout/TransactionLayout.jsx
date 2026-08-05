@@ -47,7 +47,7 @@ export default function TransactionLayout({
         if (currentPath.startsWith('/credit-invoice/')) {
             return {
                 copyRoute: 'credit-invoice.create',
-                deleteRoute: null,
+                deleteRoute: 'credit-invoice.destroy',
                 printRoute: 'credit-invoice.print',
                 recordId: props.invoice?.id,
                 listRoute: 'dashboard'
