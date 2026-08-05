@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Accounting;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PaymentRequest extends FormRequest
 {
