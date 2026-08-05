@@ -214,6 +214,7 @@ class InventoryReportController extends Controller
                 DB::raw('0 as credit')
             );
 
+
         if ($startDate) {
             $invoices->whereBetween('credit_invoices.invoice_date', [$startDate, $endDate]);
             $payments->whereBetween('payments.payment_date', [$startDate, $endDate]);
@@ -355,6 +356,29 @@ class InventoryReportController extends Controller
                 DB::raw('0 as credit')
             );
 
+        $openingQty = 0;
+        if ($startDate) {
+            $invQty = DB::table('credit_invoice_items')
+                ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
+                ->where('credit_invoice_items.item_id', $item->id)
+                ->where('credit_invoices.invoice_date', '<', $startDate)
+                ->sum(DB::raw('-(credit_invoice_items.quantity)'));
+
+            $payQty = DB::table('payment_items')
+                ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
+                ->where('payment_items.item_id', $item->id)
+                ->where('payments.payment_date', '<', $startDate)
+                ->sum('payment_items.quantity');
+
+            $adjQty = DB::table('inventory_quantity_adjustment_items')
+                ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
+                ->where('inventory_quantity_adjustment_items.item_id', $item->id)
+                ->where('inventory_quantity_adjustments.adjustment_date', '<', $startDate)
+                ->sum('inventory_quantity_adjustment_items.change_in_qty');
+
+            $openingQty = (float)$invQty + (float)$payQty + (float)$adjQty;
+        }
+
         if ($startDate) {
             $invoices->whereBetween('credit_invoices.invoice_date', [$startDate, $endDate]);
             $payments->whereBetween('payments.payment_date', [$startDate, $endDate]);
@@ -388,6 +412,7 @@ class InventoryReportController extends Controller
                 'id' => $item->id,
                 'name' => $item->name,
                 'sku' => $item->sku,
+                'opening_qty' => (float)$openingQty,
             ],
             'lines' => $lines,
             'filters' => [

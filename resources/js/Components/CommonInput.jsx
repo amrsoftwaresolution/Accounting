@@ -1,5 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { formatDate } from '@/Utils/dateFormat';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 /**
  * A highly reusable, premium input component for JBooks.
@@ -145,6 +147,37 @@ export default forwardRef(function CommonInput(
 
     const normalizedValue = props.value ?? '';
 
+    let selectedDate = null;
+    if (normalizedValue && typeof normalizedValue === 'string') {
+        const parts = normalizedValue.split('-');
+        if (parts.length === 3) {
+            selectedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        } else {
+            const d = new Date(normalizedValue);
+            if (!isNaN(d.getTime())) selectedDate = d;
+        }
+    } else if (normalizedValue instanceof Date) {
+        selectedDate = normalizedValue;
+    }
+
+    const handleDateChange = (date) => {
+        if (props.onChange) {
+            let value = '';
+            if (date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                value = `${yyyy}-${mm}-${dd}`;
+            }
+            props.onChange({
+                target: {
+                    name: props.name,
+                    value: value
+                }
+            });
+        }
+    };
+
     return (
         <div
             className={`flex flex-col gap-0.5 ${containerClass} ${variant === 'table' ? 'h-full' : ''}`}
@@ -176,21 +209,23 @@ export default forwardRef(function CommonInput(
                     </select>
                 ) : type === 'date' ? (
                     <div className="relative w-full h-full group">
-                        <input
-                            type="text"
-                            value={normalizedValue ? formatDate(normalizedValue, resolvedDateFormat) : ''}
-                            placeholder={getDatePlaceholder()}
-                            readOnly
-                            tabIndex={-1}
-                            className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} pr-8 relative z-0 group-focus-within:ring-2 group-focus-within:ring-green-500/20 group-focus-within:border-green-500 pointer-events-none`}
-                        />
-                        <input
-                            {...props}
-                            value={normalizedValue}
-                            type="date"
-                            ref={inputRef}
+                        <DatePicker
+                            selected={selectedDate}
+                            onChange={handleDateChange}
+                            dateFormat={resolvedDateFormat.toLowerCase().replace(/m/g, 'M')}
+                            placeholderText={getDatePlaceholder()}
+                            className={`${baseInputClasses} ${errorClasses} ${className} ${inputClass} pr-8 focus:ring-2 focus:ring-green-500/20 focus:border-green-500`}
+                            isClearable={!required}
+                            autoComplete="off"
+                            name={props.name}
+                            id={props.id}
+                            disabled={props.disabled}
+                            readOnly={props.readOnly}
+                            required={props.required}
                             onPaste={props.onPaste || handlePaste}
-                            className={`absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10`}
+                            customInput={
+                                <input ref={inputRef} />
+                            }
                         />
                     </div>
                 ) : (
