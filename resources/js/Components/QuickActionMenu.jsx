@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
  */
 export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
     const menuRef = useRef(null);
+    const page = usePage();
 
     // Close when clicking outside
     useEffect(() => {
@@ -29,7 +30,7 @@ export default function QuickActionMenu({ isOpen, onClose, onOpenQuickAdd }) {
             title: "Customers",
             links: [
                 { name: "Add Customer", action: 'customer', isSolid: true },
-                { name: "POS Billing", href: route('pos.index') },
+                ...(page.props.auth.pos_layout_enabled ? [{ name: "POS Billing", href: route('pos.index') }] : []),
                 { name: "Sales Invoice", href: route('sales-invoice.create') },
                 { name: "Credit Invoice", href: route('credit-invoice.create') },
                 { name: "Receive Payment", href: route('receive-payment.create') },

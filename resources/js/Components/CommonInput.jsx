@@ -29,7 +29,7 @@ export default forwardRef(function CommonInput(
 ) {
     const inputRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
-    const resolvedDateFormat = dateFormat || 'mm/dd/yyyy';
+    const resolvedDateFormat = dateFormat || 'DD/MM/YYYY';
 
     useEffect(() => {
         if (isFocused) {
@@ -113,7 +113,7 @@ export default forwardRef(function CommonInput(
     };
 
     const getDatePlaceholder = () => {
-        const format = String(resolvedDateFormat || 'mm/dd/yyyy').toLowerCase();
+        const format = String(resolvedDateFormat || 'DD/MM/YYYY').toLowerCase();
         if (format.includes('dd/mm')) return 'DD/MM/YYYY';
         if (format.includes('dd-mm')) return 'DD-MM-YYYY';
         if (format.includes('yyyy')) return 'YYYY-MM-DD';
@@ -223,6 +223,64 @@ export default forwardRef(function CommonInput(
                             readOnly={props.readOnly}
                             required={props.required}
                             onPaste={props.onPaste || handlePaste}
+                            renderCustomHeader={({
+                                date,
+                                changeYear,
+                                changeMonth,
+                                decreaseMonth,
+                                increaseMonth,
+                                prevMonthButtonDisabled,
+                                nextMonthButtonDisabled,
+                            }) => (
+                                <div className="flex items-center justify-between px-2 py-1">
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); decreaseMonth(); }}
+                                        disabled={prevMonthButtonDisabled}
+                                        type="button"
+                                        className="text-slate-500 hover:text-green-500 disabled:opacity-50 p-1"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                                    </button>
+                                    
+                                    <div className="flex gap-1 items-center">
+                                        <select
+                                            value={date.getMonth()}
+                                            onChange={({ target: { value } }) => changeMonth(Number(value))}
+                                            className="react-datepicker__month-select"
+                                        >
+                                            {[
+                                                "January", "February", "March", "April", "May", "June",
+                                                "July", "August", "September", "October", "November", "December"
+                                            ].map((option, index) => (
+                                                <option key={option} value={index}>
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        
+                                        <input
+                                            type="number"
+                                            value={date.getFullYear()}
+                                            onChange={({ target: { value } }) => {
+                                                if (value.length <= 4) {
+                                                    changeYear(Number(value));
+                                                }
+                                            }}
+                                            className="react-datepicker__year-select w-[42px] text-center"
+                                            style={{ MozAppearance: 'textfield' }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); increaseMonth(); }}
+                                        disabled={nextMonthButtonDisabled}
+                                        type="button"
+                                        className="text-slate-500 hover:text-green-500 disabled:opacity-50 p-1"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                    </button>
+                                </div>
+                            )}
                             customInput={
                                 <input ref={inputRef} />
                             }
