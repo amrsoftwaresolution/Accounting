@@ -82,7 +82,12 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         memo: invoiceReturn?.memo || "",
         statementMessage: invoiceReturn?.statementMessage || "",
         action: 'save',
-        items: invoiceReturn?.items || [
+        items: invoiceReturn?.items ? invoiceReturn.items.map(i => ({
+            ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -98,7 +103,12 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                 reference: invoiceReturn.reference || "",
                 memo: invoiceReturn.memo || "",
                 statementMessage: invoiceReturn.statementMessage || "",
-                items: invoiceReturn.items || [
+                items: invoiceReturn.items ? invoiceReturn.items.map(i => ({
+                    ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ]

@@ -71,7 +71,7 @@ class PaymentController extends Controller
     private function getNextExpenseNo()
     {
         $last = JournalEntry::query()
-            ->where('transaction_type', 'payment')
+            ->where('transaction_type', 'expense')
             ->orderByRaw('CAST(REGEXP_REPLACE(reference, "[^0-9]", "") AS UNSIGNED) DESC')
             ->first();
 

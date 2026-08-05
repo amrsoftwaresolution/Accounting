@@ -75,7 +75,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 statementMessage: receipt.statementMessage || "",
                 checkDate: receipt.checkDate || "",
                 checkNumber: receipt.checkNumber || "",
-                items: receipt.items && receipt.items.length > 0 ? receipt.items.map(i => ({ ...i, warranty: i.warranty || false })) : [
+                items: receipt.items && receipt.items.length > 0 ? receipt.items.map(i => ({
+                    ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    warranty: i.warranty || false
+                })) : [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }
                 ],
                 action: 'save'
@@ -136,7 +142,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         statementMessage: receipt?.statementMessage || "",
         checkDate: receipt?.checkDate || "",
         checkNumber: receipt?.checkNumber || "",
-        items: receipt?.items ? receipt.items.map(i => ({ ...i, warranty: i.warranty || false })) : [
+        items: receipt?.items ? receipt.items.map(i => ({
+            ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            warranty: i.warranty || false
+        })) : [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
         ],

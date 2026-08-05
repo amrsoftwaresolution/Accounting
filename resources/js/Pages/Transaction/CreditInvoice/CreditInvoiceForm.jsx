@@ -158,6 +158,7 @@ export default function CreditInvoiceForm({
         action: 'save',
         items: invoice?.items ? invoice.items.map(i => ({
             ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
             rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
             amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         })) : [
@@ -181,6 +182,7 @@ export default function CreditInvoiceForm({
                 memo: invoice.memo || "",
                 items: invoice.items ? invoice.items.map(i => ({
                     ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
                     rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                     amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 })) : [

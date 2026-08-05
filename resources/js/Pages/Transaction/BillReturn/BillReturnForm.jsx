@@ -74,7 +74,12 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
             { category: "", description: "", amount: "0.00" },
             { category: "", description: "", amount: "0.00" },
         ],
-        itemDetails: billReturn?.itemDetails?.length > 0 ? billReturn.itemDetails : [
+        itemDetails: billReturn?.itemDetails?.length > 0 ? billReturn.itemDetails.map(i => ({
+            ...i,
+            qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+            rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        })) : [
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
@@ -87,8 +92,13 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
                 date: billReturn.date || billReturn.date || "",
                 reference: billReturn.reference || billReturn.billReturn_no || "",
                 memo: billReturn.memo || "",
-                items: billReturn.items?.length > 0 ? billReturn.items : [{ category: "", description: "", amount: "0.00" }],
-                itemDetails: billReturn.itemDetails?.length > 0 ? billReturn.itemDetails : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
+                items: billReturn.items?.length > 0 ? billReturn.items.map(i => ({ ...i, amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })) : [{ category: "", description: "", amount: "0.00" }],
+                itemDetails: billReturn.itemDetails?.length > 0 ? billReturn.itemDetails.map(i => ({
+                    ...i,
+                    qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
+                    rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                })) : [{ product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }],
             });
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
