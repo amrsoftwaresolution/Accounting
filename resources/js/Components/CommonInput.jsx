@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState, useImperativeHandle } from 'react';
 
 /**
  * A highly reusable, premium input component for JBooks.
@@ -27,6 +27,14 @@ export default forwardRef(function CommonInput(
     const inputRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
     const resolvedDateFormat = dateFormat || 'mm/dd/yyyy';
+
+    // Expose focus/select on the forwarded ref so parent components
+    // (e.g. LineItemsTable) can programmatically focus this input.
+    useImperativeHandle(ref, () => ({
+        focus: () => inputRef.current?.focus(),
+        select: () => inputRef.current?.select(),
+        get value() { return inputRef.current?.value; },
+    }));
 
     useEffect(() => {
         if (isFocused) {

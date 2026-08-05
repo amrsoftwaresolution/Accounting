@@ -177,6 +177,39 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
         setData("amount", "0.00");
     };
 
+    // ── Auto-distribute a typed amount across outstanding bills ─────────────
+    const handleAmountChange = (rawValue) => {
+        // Strip anything that isn't a digit or decimal
+        const stripped = rawValue.replace(/[^0-9.]/g, '');
+        setData('amount', stripped);
+        setIsDirty(true);
+
+        const total = parseFloat(stripped) || 0;
+
+        if (bills.length === 0) return;
+
+        let remaining = total;
+        const updated = bills.map(bill => {
+            if (remaining <= 0) {
+                return { ...bill, applied: 0, checked: false };
+            }
+            const apply = Math.min(parseFloat(bill.open_balance) || 0, remaining);
+            remaining = Math.max(0, remaining - apply);
+            return { ...bill, applied: apply > 0 ? apply : 0, checked: apply > 0 };
+        });
+
+        setBills(updated);
+    };
+
+    const handleAmountBlur = (rawValue) => {
+        const num = parseFloat(String(rawValue).replace(/,/g, '')) || 0;
+        const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        setData('amount', formatted);
+        // Re-distribute using the formatted (numeric) value
+        handleAmountChange(String(num));
+    };
+
+
     const amountToApply = bills.reduce((sum, bill) => sum + (parseFloat(String(bill.applied).replace(/,/g, '')) || 0), 0);
     const amountVal = parseFloat(String(data.amount).replace(/,/g, '')) || 0;
     const amountToCredit = Math.max(0, amountVal - amountToApply);
@@ -447,6 +480,25 @@ export default function PayBill({ paymentMethods = [], payment = null }) {
                             placeholder="Select Account"
                             size="sm"
                             error={errors.paymentAccount}
+                        />
+                    </div>
+                    {/* Amount input — drives auto-distribution across bills */}
+                    <div className="w-[160px]">
+                        <CommonInput
+                            label="Amount"
+                            value={data.amount}
+                            onChange={(e) => handleAmountChange(e.target.value)}
+                            onFocus={(e) => {
+                                // Strip formatting so the user sees a plain number
+                                const plain = String(data.amount).replace(/,/g, '');
+                                setData('amount', plain === '0.00' ? '' : plain);
+                                setTimeout(() => e.target.select(), 0);
+                            }}
+                            onBlur={(e) => handleAmountBlur(e.target.value)}
+                            placeholder="0.00"
+                            size="sm"
+                            inputClass="font-mono text-right"
+                            error={errors.amount}
                         />
                     </div>
                 </div>

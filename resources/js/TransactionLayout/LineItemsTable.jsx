@@ -77,13 +77,36 @@ export default function LineItemsTable({
     const getVisibleColumns = () => columns.filter((col) => col.tabIndex !== -1);
 
     const handleFieldKeyDown = (e, index, colKey) => {
-        if (e.key !== 'Tab' || e.shiftKey) return;
-
         const visibleColumns = getVisibleColumns();
         const currentColumnIndex = visibleColumns.findIndex((column) => column.key === colKey);
+
+        // ── Shift+Tab: jump backward to previous row's last column ──────────
+        if (e.key === 'Tab' && e.shiftKey) {
+            // Only intercept when on the first column of a non-first row
+            if (currentColumnIndex === 0 && index > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                const lastCol = visibleColumns[visibleColumns.length - 1];
+                const prevField = inputRefs.current[`${index - 1}-${lastCol.key}`];
+                if (prevField) {
+                    prevField.focus?.();
+                    // If it's a SearchableSelect, open it so the user can see the value
+                    if (typeof prevField.open === 'function') {
+                        setTimeout(() => prevField.open(), 0);
+                    }
+                }
+            }
+            return; // let browser handle all other Shift+Tab cases
+        }
+
+        if (e.key !== 'Tab') return;
+
+        // ── Tab forward ──────────────────────────────────────────────────────
         const nextColumn = visibleColumns[currentColumnIndex + 1];
 
         if (nextColumn) {
+            // Moving to another column in the same row — let the browser Tab
+            // naturally land on the next SearchableSelect container, then open it.
             const nextField = inputRefs.current[`${index}-${nextColumn.key}`];
             if (nextField?.open) {
                 setTimeout(() => nextField.open?.(), 0);
@@ -91,23 +114,34 @@ export default function LineItemsTable({
             return;
         }
 
+        // Last column of this row — must move to next row's first column.
+        // We MUST prevent default here so the browser doesn't land on action buttons.
+        e.preventDefault();
+        e.stopPropagation();
+
         if (index !== items.length - 1) {
+            // Jump to first column of the next existing row
             const nextRowField = inputRefs.current[`${index + 1}-${visibleColumns[0].key}`];
-            if (nextRowField?.open) {
-                setTimeout(() => nextRowField.open?.(), 0);
+            if (nextRowField) {
+                nextRowField.focus?.();
+                if (typeof nextRowField.open === 'function') {
+                    setTimeout(() => nextRowField.open(), 0);
+                }
             }
             return;
         }
 
-        e.preventDefault();
+        // On the very last row — add a new row then focus its first column
         addRow?.();
 
         requestAnimationFrame(() => {
             const nextIndex = items.length;
             const field = inputRefs.current[`${nextIndex}-${visibleColumns[0].key}`];
-            field?.focus?.();
-            if (field?.open) {
-                setTimeout(() => field.open?.(), 0);
+            if (field) {
+                field.focus?.();
+                if (typeof field.open === 'function') {
+                    setTimeout(() => field.open(), 0);
+                }
             }
         });
     };
@@ -193,7 +227,60 @@ export default function LineItemsTable({
                                                     onSearch={col.onSearch}
                                                     hideChevron={col.hideChevron}
                                                     tabIndex={col.tabIndex ?? 0}
+                                                    noAutoSelectOnTab={col.noAutoSelectOnTab ?? false}
                                                     onKeyDown={(e) => handleFieldKeyDown(e, index, col.key)}
+                                                    onTabSelect={() => {
+                                                        // After Tab-select, navigate to the next field.
+                                                        // Priority 1: next column in the same row.
+                                                        const visibleColumns = getVisibleColumns();
+                                                        const currentColIdx = visibleColumns.findIndex(c => c.key === col.key);
+                                                        const nextCol = visibleColumns[currentColIdx + 1];
+
+                                                        if (nextCol) {
+                                                            // Delay to let React re-render after selection state update
+                                                            requestAnimationFrame(() => {
+                                                                setTimeout(() => {
+                                                                    const nextRef = inputRefs.current[`${index}-${nextCol.key}`];
+                                                                    if (nextRef) {
+                                                                        nextRef.focus?.();
+                                                                        if (typeof nextRef.open === 'function') {
+                                                                            nextRef.open();
+                                                                        }
+                                                                    }
+                                                                }, 50);
+                                                            });
+                                                            return;
+                                                        }
+
+                                                        // Priority 2: last column — move to next row's first column.
+                                                        requestAnimationFrame(() => {
+                                                            setTimeout(() => {
+                                                                if (index < items.length - 1) {
+                                                                    // Jump to the next existing row
+                                                                    const nextRef = inputRefs.current[`${index + 1}-${visibleColumns[0].key}`];
+                                                                    if (nextRef) {
+                                                                        nextRef.focus?.();
+                                                                        if (typeof nextRef.open === 'function') {
+                                                                            nextRef.open();
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    // Last row — add a new row then focus it
+                                                                    addRow?.();
+                                                                    requestAnimationFrame(() => {
+                                                                        const newIdx = items.length;
+                                                                        const newRef = inputRefs.current[`${newIdx}-${visibleColumns[0].key}`];
+                                                                        if (newRef) {
+                                                                            newRef.focus?.();
+                                                                            if (typeof newRef.open === 'function') {
+                                                                                setTimeout(() => newRef.open(), 0);
+                                                                            }
+                                                                        }
+                                                                    });
+                                                                }
+                                                            }, 50);
+                                                        });
+                                                    }}
                                                 />
                                             ) : col.type === 'checkbox' ? (
                                                 <div className="flex items-center justify-center h-full">

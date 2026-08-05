@@ -21,6 +21,8 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     onKeyDown: externalOnKeyDown,
     fetchUrl = null,
     multiple = false,
+    onTabSelect = null, // Callback after Tab-to-select; receives the selected option
+    noAutoSelectOnTab = false, // When true, Tab only confirms an arrow-key highlight; never silently picks the first item
 }, ref) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -33,6 +35,7 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     useImperativeHandle(ref, () => ({
         focus: () => containerRef.current?.focus(),
         open: () => setIsOpen(true),
+        getContainer: () => containerRef.current,
     }));
     const dropdownRef = useRef(null);
     const inputRef = useRef(null);
@@ -44,8 +47,8 @@ const SearchableSelect = forwardRef(function SearchableSelect({
     const selectedOptions = options.filter(opt => selectedValues.some(val => String(val) === String(opt.value)));
 
     const filteredOptions = isAsyncMode
-    ? searchResults.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()))
-    : options.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()));
+        ? searchResults.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()))
+        : options.filter(opt => (opt.label || "").toLowerCase().includes(search.toLowerCase()));
 
     const displayOptions = (search === "" && initialLimit && !isAsyncMode)
         ? filteredOptions.slice(0, initialLimit)
@@ -73,25 +76,25 @@ const SearchableSelect = forwardRef(function SearchableSelect({
         }
     }, [isOpen]);
 
-useEffect(() => {
-    if (!isOpen) return;
+    useEffect(() => {
+        if (!isOpen) return;
 
-    if (onSearch) {
-        const result = onSearch(search);
-        if (result && typeof result.then === 'function') {
+        if (onSearch) {
+            const result = onSearch(search);
+            if (result && typeof result.then === 'function') {
+                setIsAsyncMode(true);
+                result.then(data => setSearchResults(data || []));
+            } else {
+                setIsAsyncMode(false);
+            }
+        } else if (fetchUrl) {
             setIsAsyncMode(true);
-            result.then(data => setSearchResults(data || []));
-        } else {
-            setIsAsyncMode(false);
+            const separator = fetchUrl.includes('?') ? '&' : '?';
+            axios.get(`${fetchUrl}${separator}search=${encodeURIComponent(search)}`)
+                .then(res => setSearchResults(res.data || []))
+                .catch(() => setSearchResults([]));
         }
-    } else if (fetchUrl) {
-        setIsAsyncMode(true);
-        const separator = fetchUrl.includes('?') ? '&' : '?';
-        axios.get(`${fetchUrl}${separator}search=${encodeURIComponent(search)}`)
-            .then(res => setSearchResults(res.data || []))
-            .catch(() => setSearchResults([]));
-    }
-}, [search, isOpen, onSearch, fetchUrl]);
+    }, [search, isOpen, onSearch, fetchUrl]);
 
     useEffect(() => {
         const updatePosition = () => {
@@ -154,8 +157,46 @@ useEffect(() => {
             setSearch("");
             restoreFocus();
         } else if (e.key === 'Tab') {
-            setIsOpen(false);
-            setSearch("");
+            if (!e.shiftKey) {
+                // Determine which option to select.
+                // When noAutoSelectOnTab=true, only confirm an explicit arrow-key highlight.
+                // Otherwise fall back to auto-selecting the first visible option.
+                let targetOption = null;
+                if (activeIndex >= 0 && displayOptions[activeIndex]) {
+                    targetOption = displayOptions[activeIndex];
+                } else if (!noAutoSelectOnTab && displayOptions.length > 0) {
+                    targetOption = displayOptions[0];
+                }
+
+                // Auto-select if a valid real option exists (not multi-select mode)
+                if (targetOption && !isMulti) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedLabel(targetOption.label);
+                    onChange(targetOption.value, targetOption);
+                    setIsOpen(false);
+                    setSearch("");
+                    // Notify parent for focus management
+                    if (onTabSelect) {
+                        onTabSelect(targetOption);
+                    }
+                } else {
+                    // No selection made (no highlight, or noAutoSelectOnTab with no arrow-key pick).
+                    // Still prevent default and fire onTabSelect(null) so the table can
+                    // move focus to the next row without changing the field value.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    setSearch("");
+                    if (onTabSelect) {
+                        onTabSelect(null);
+                    }
+                }
+            } else {
+                // Shift+Tab: close dropdown, let browser handle backward navigation
+                setIsOpen(false);
+                setSearch("");
+            }
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             e.stopPropagation();
@@ -164,7 +205,7 @@ useEffect(() => {
             e.preventDefault();
             e.stopPropagation();
             setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
-            } else if (e.key === 'Enter' && activeIndex >= 0) {
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
             e.preventDefault();
             e.stopPropagation();
             const selected = displayOptions[activeIndex];
@@ -278,8 +319,8 @@ useEffect(() => {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             onKeyDown={(e) => {
-                            e.stopPropagation(); // stop it bubbling to the container
-                            handleKeyDown(e);
+                                e.stopPropagation(); // stop it bubbling to the container
+                                handleKeyDown(e);
                             }}
                             onClick={(e) => e.stopPropagation()}
                         />

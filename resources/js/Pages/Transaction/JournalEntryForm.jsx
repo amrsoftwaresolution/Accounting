@@ -56,7 +56,8 @@ export default function JournalEntryForm({ journalEntry = null, nextJournalNo = 
             onAddNew: () => setIsPayeeModalOpen(true),
             placeholder: "Select name",
             className: "w-[25%]",
-            tabIndex: 0
+            tabIndex: 0,
+            noAutoSelectOnTab: true,  // Tab without arrow-key selection → don't auto-pick first item
         },
     ];
 
