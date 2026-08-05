@@ -59,7 +59,7 @@ class InventoryQuantityAdjustmentController extends Controller
             $journalEntry = null;
             DB::transaction(function () use ($validated, &$journalEntry) {
                 $adjustment = InventoryQuantityAdjustment::create([
-                    'adjustment_date' => $validated['adjustment_date'],
+                    'adjustment_date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                     'reference_number' => $validated['reference_number'] ?? null,
                     'adjustment_reason' => $validated['adjustment_reason'],
                     'inventory_adjustment_account_id' => $validated['inventory_adjustment_account_id'],
@@ -135,7 +135,7 @@ class InventoryQuantityAdjustmentController extends Controller
                 // Create the Journal Entry if there is any adjustment value
                 if ($totalAmount > 0) {
                     $journalEntry = JournalEntry::create([
-                        'date' => $validated['adjustment_date'],
+                        'date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                         'reference' => $validated['reference_number'] ?? 'ADJ-' . time(),
                         'description' => $validated['memo'] ?? ('Inventory quantity adjustment - ' . $validated['adjustment_reason']),
                         'transaction_type' => 'inventory_adjustment',
@@ -238,7 +238,7 @@ class InventoryQuantityAdjustmentController extends Controller
 
                 // Update business document
                 $adjustment->update([
-                    'adjustment_date' => $validated['adjustment_date'],
+                    'adjustment_date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                     'reference_number' => $validated['reference_number'] ?? null,
                     'adjustment_reason' => $validated['adjustment_reason'],
                     'inventory_adjustment_account_id' => $validated['inventory_adjustment_account_id'],
@@ -304,7 +304,7 @@ class InventoryQuantityAdjustmentController extends Controller
                 }
 
                 $journalEntry->update([
-                    'date' => $validated['adjustment_date'],
+                    'date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                     'reference' => $validated['reference_number'] ?? 'ADJ-' . time(),
                     'description' => $validated['memo'] ?? ('Inventory quantity adjustment - ' . $validated['adjustment_reason']),
                     'total_amount' => $totalAmount,
