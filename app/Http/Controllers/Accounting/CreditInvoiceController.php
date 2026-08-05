@@ -276,6 +276,7 @@ class CreditInvoiceController extends Controller
             $totalAmount = collect($request->items)->sum(function ($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
+            \Log::info('CreditInvoiceController update - Request Items:', $request->items ?? []);
 
             // 1. Update Business Document
             $creditInvoice = \App\Models\Accounting\CreditInvoice::find($journalEntry->transactionable_id);

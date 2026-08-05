@@ -179,7 +179,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
             ...data,
             action: action,
             items: data.items
-                .filter(item => item.product)
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
                 .map(item => ({
                     ...item,
                     rate: String(item.rate).replace(/,/g, ''),

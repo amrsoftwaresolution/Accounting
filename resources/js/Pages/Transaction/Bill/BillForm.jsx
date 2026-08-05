@@ -210,13 +210,13 @@ export default function BillForm({
             ...data,
             action: actionRef.current,  // ADD THIS LINE
             items: data.items
-                .filter(item => item.category && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .filter(item => item.category || item.description || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
                 .map(item => ({
                     ...item,
                     amount: String(item.amount).replace(/,/g, '')
                 })),
             itemDetails: data.itemDetails
-                .filter(item => item.product && (parseFloat(String(item.amount).replace(/,/g, '')) > 0))
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
                 .map(item => ({
                     ...item,
                     qty: String(item.qty).replace(/,/g, ''),

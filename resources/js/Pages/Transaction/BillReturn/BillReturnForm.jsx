@@ -167,13 +167,13 @@ export default function BillReturnForm({ auth, nextRef = "", billReturn = null }
             ...data,
             action: actionType,
             items: data.items
-                .filter(item => item.category && parseCurrency(item.amount) > 0)
+                .filter(item => item.category || item.description || parseCurrency(item.amount) > 0)
                 .map(item => ({
                     ...item,
                     amount: parseCurrency(item.amount)
                 })),
             itemDetails: data.itemDetails
-                .filter(item => item.product && parseCurrency(item.amount) > 0)
+                .filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || parseCurrency(item.amount) > 0)
                 .map(item => ({
                     ...item,
                     rate: parseCurrency(item.rate),

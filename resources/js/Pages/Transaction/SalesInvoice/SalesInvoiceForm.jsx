@@ -215,7 +215,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         transform((data) => ({
             ...data,
             action: actionType,
-            items: data.items.filter(item => item.product && item.product !== "")
+            items: data.items.filter(item => item.product || item.description || (item.qty && item.qty !== "0" && item.qty !== "1") || (item.amount && item.amount !== "0.00" && item.amount !== "0"))
         }));
 
         const currentId = savedEntryId || receipt?.id;
