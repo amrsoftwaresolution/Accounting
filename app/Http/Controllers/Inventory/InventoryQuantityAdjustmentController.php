@@ -310,7 +310,7 @@ class InventoryQuantityAdjustmentController extends Controller
                     'total_amount' => $totalAmount,
                 ]);
 
-                $journalEntry->lines->each->delete();
+                $journalEntry->lines()->delete();
 
                 foreach ($journalLines as $line) {
                     $journalEntry->lines()->create($line);

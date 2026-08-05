@@ -84,25 +84,27 @@ export default function EditAdjustment({ items, accounts, adjustment }) {
 
     const handleNewQtyChange = (index, value) => {
         const newItems = [...data.items];
-        newItems[index].new_qty = value;
+        const item = { ...newItems[index], new_qty: value };
         const parsedNewQty = parseFloat(value);
         if (!isNaN(parsedNewQty)) {
-            newItems[index].change_in_qty = parsedNewQty - (parseFloat(newItems[index].qty_on_hand) || 0);
+            item.change_in_qty = parsedNewQty - (parseFloat(item.qty_on_hand) || 0);
         } else if (value === '') {
-            newItems[index].change_in_qty = 0 - (parseFloat(newItems[index].qty_on_hand) || 0);
+            item.change_in_qty = 0 - (parseFloat(item.qty_on_hand) || 0);
         }
+        newItems[index] = item;
         setData('items', newItems);
     };
 
     const handleChangeQtyChange = (index, value) => {
         const newItems = [...data.items];
-        newItems[index].change_in_qty = value;
+        const item = { ...newItems[index], change_in_qty: value };
         const parsedChangeQty = parseFloat(value);
         if (!isNaN(parsedChangeQty)) {
-            newItems[index].new_qty = (parseFloat(newItems[index].qty_on_hand) || 0) + parsedChangeQty;
+            item.new_qty = (parseFloat(item.qty_on_hand) || 0) + parsedChangeQty;
         } else if (value === '') {
-            newItems[index].new_qty = parseFloat(newItems[index].qty_on_hand) || 0;
+            item.new_qty = parseFloat(item.qty_on_hand) || 0;
         }
+        newItems[index] = item;
         setData('items', newItems);
     };
 
@@ -143,6 +145,12 @@ export default function EditAdjustment({ items, accounts, adjustment }) {
                             Delete
                         </button>
                     </div>
+
+                    {errors.error && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm font-bold">
+                            {errors.error}
+                        </div>
+                    )}
 
                     {/* Form Fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
