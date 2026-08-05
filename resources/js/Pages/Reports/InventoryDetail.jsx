@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTransactionModal } from '@/Hooks/useTransactionModal';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, router, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
@@ -7,6 +8,7 @@ import ReportDateFilter from '@/Components/ReportDateFilter';
 
 export default function InventoryDetail({ item, lines, filters, auth }) {
     const dateFormat = useDateFormat();
+    const { openModal } = useTransactionModal();
 
     const handleFilterChange = (newFilters) => {
         router.get(route('reports.inventory-detail', item.id), {
@@ -91,11 +93,15 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                             </tr>
                         ) : (
                             lines.map((line) => (
-                                <tr key={line.id} className="hover:bg-gray-50 transition-colors group">
+                                <tr 
+                                    key={line.id} 
+                                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                                    onClick={() => line.journal_entry_id && openModal({ id: line.journal_entry_id, transaction_type: line.transaction_type })}
+                                >
                                     <td className="py-2 px-3 text-gray-600 whitespace-nowrap">
                                         {formatDate(line.date, dateFormat)}
                                     </td>
-                                    <td className="py-2 px-3 text-gray-900 capitalize">
+                                    <td className="py-2 px-3 text-gray-900 capitalize group-hover:text-primary transition-colors">
                                         {line.transaction_type.replace('_', ' ')}
                                     </td>
                                     <td className="py-2 px-3 text-gray-600">
@@ -105,8 +111,8 @@ export default function InventoryDetail({ item, lines, filters, auth }) {
                                         {line.memo || '-'}
                                     </td>
                                     <td className="py-2 px-3 text-right tabular-nums font-medium">
-                                        <span className={line.qty_change > 0 ? 'text-green-600' : (line.qty_change < 0 ? 'text-red-600' : 'text-gray-900')}>
-                                            {line.qty_change > 0 ? '+' : ''}{line.qty_change}
+                                        <span className={line.qty_change < 0 ? 'text-red-600' : 'text-gray-900'}>
+                                            {line.qty_change}
                                         </span>
                                     </td>
                                 </tr>

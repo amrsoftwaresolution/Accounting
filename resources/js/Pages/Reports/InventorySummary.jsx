@@ -168,7 +168,7 @@ export default function InventorySummary({ reportData, filters = {}, auth }) {
                                     {monthCols.map(m => {
                                         const d = new Date(m + '-01');
                                         return (
-                                            <th key={m} className="py-2.5 px-3 font-semibold text-gray-900 text-right whitespace-nowrap min-w-[100px]">
+                                            <th key={m} className="py-2.5 px-6 font-semibold text-gray-900 text-right whitespace-nowrap min-w-[120px]">
                                                 {d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                             </th>
                                         );
@@ -244,7 +244,7 @@ export default function InventorySummary({ reportData, filters = {}, auth }) {
                                                         {monthCols.map(m => {
                                                             const mVal = item.monthly_balances?.[m] || 0;
                                                             return (
-                                                                <td key={m} className="py-2 px-3 text-right tabular-nums">
+                                                                <td key={m} className="py-2 px-6 text-right tabular-nums">
                                                                     <Currency value={mVal} />
                                                                 </td>
                                                             );

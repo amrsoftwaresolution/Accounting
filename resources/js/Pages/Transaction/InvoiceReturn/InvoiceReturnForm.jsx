@@ -122,19 +122,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         clearErrors();
     }, [invoiceReturn?.id, nextRef]);
 
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: actionRef.current,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [transform]);
+
 
     const totalAmount = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
@@ -186,6 +174,19 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         actionRef.current = action;
 
         const currentId = savedEntryId || invoiceReturn?.id;
+        
+        transform((data) => ({
+            ...data,
+            action: action,
+            items: data.items
+                .filter(item => item.product)
+                .map(item => ({
+                    ...item,
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
+        }));
+
         const url = currentId ? route('invoice-return.update', currentId) : route('invoice-return.store');
         const method = currentId ? patch : post;
 
@@ -203,7 +204,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                     setSavedEntryId(newId);
                 }
 
-                if (actionType === 'close') {
+                if (action === 'close') {
                     if (typeof onClose === 'function') {
                         onClose();
                     } else {
@@ -211,7 +212,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                     }
                 }
 
-                if (actionType === 'new') {
+                if (action === 'new') {
                     setSavedEntryId(null);
                     const currentNo = data.reference || '1001';
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;

@@ -159,6 +159,10 @@ class InventoryReportController extends Controller
 
         $invoices = DB::table('credit_invoice_items')
             ->join('credit_invoices', 'credit_invoice_items.credit_invoice_id', '=', 'credit_invoices.id')
+            ->join('journal_entries', function($join) {
+                $join->on('credit_invoices.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\CreditInvoice');
+            })
             ->select(
                 'credit_invoice_items.item_id',
                 'credit_invoices.invoice_date as date',
@@ -166,14 +170,18 @@ class InventoryReportController extends Controller
                 'credit_invoice_items.description as memo',
                 DB::raw('-(credit_invoice_items.quantity) as qty_change'),
                 'credit_invoice_items.rate',
-                DB::raw("'invoice' as transaction_type"),
-                'credit_invoices.id as journal_entry_id',
+                DB::raw("'credit_invoice' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
                 DB::raw('0 as debit'),
                 DB::raw('(credit_invoice_items.quantity * credit_invoice_items.rate) as credit')
             );
 
         $payments = DB::table('payment_items')
             ->join('payments', 'payment_items.payment_id', '=', 'payments.id')
+            ->join('journal_entries', function($join) {
+                $join->on('payments.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\Payment');
+            })
             ->select(
                 'payment_items.item_id',
                 'payments.payment_date as date',
@@ -182,13 +190,17 @@ class InventoryReportController extends Controller
                 'payment_items.quantity as qty_change',
                 'payment_items.rate',
                 DB::raw("'payment' as transaction_type"),
-                'payments.id as journal_entry_id',
+                'journal_entries.id as journal_entry_id',
                 DB::raw('(payment_items.quantity * payment_items.rate) as debit'),
                 DB::raw('0 as credit')
             );
 
         $adjustments = DB::table('inventory_quantity_adjustment_items')
             ->join('inventory_quantity_adjustments', 'inventory_quantity_adjustment_items.inventory_quantity_adjustment_id', '=', 'inventory_quantity_adjustments.id')
+            ->join('journal_entries', function($join) {
+                $join->on('inventory_quantity_adjustments.id', '=', 'journal_entries.transactionable_id')
+                     ->where('journal_entries.transactionable_type', '=', 'App\\Models\\Accounting\\InventoryQuantityAdjustment');
+            })
             ->select(
                 'inventory_quantity_adjustment_items.item_id',
                 'inventory_quantity_adjustments.adjustment_date as date',
@@ -196,8 +208,8 @@ class InventoryReportController extends Controller
                 'inventory_quantity_adjustments.memo as memo',
                 'inventory_quantity_adjustment_items.change_in_qty as qty_change',
                 DB::raw('0 as rate'),
-                DB::raw("'inventory_quantity_adjustment' as transaction_type"),
-                'inventory_quantity_adjustments.id as journal_entry_id',
+                DB::raw("'inventory_adjustment' as transaction_type"),
+                'journal_entries.id as journal_entry_id',
                 DB::raw('0 as debit'),
                 DB::raw('0 as credit')
             );

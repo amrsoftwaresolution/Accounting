@@ -166,19 +166,6 @@ export default function CreditInvoiceForm({
         ]
     });
 
-    useEffect(() => {
-        transform((data) => ({
-            ...data,
-            action: actionRef.current,
-            items: data.items
-                .filter(item => item.product)
-                .map(item => ({
-                    ...item,
-                    rate: String(item.rate).replace(/,/g, ''),
-                    amount: String(item.amount).replace(/,/g, '')
-                }))
-        }));
-    }, [transform]);
 
     useEffect(() => {
         if (invoice) {
@@ -293,6 +280,19 @@ export default function CreditInvoiceForm({
         actionRef.current = action;
         const currentNo = data.invoiceNo;
         const currentId = savedEntryId || invoice?.id;
+
+        transform((data) => ({
+            ...data,
+            action: action,
+            items: data.items
+                .filter(item => item.product)
+                .map(item => ({
+                    ...item,
+                    rate: String(item.rate).replace(/,/g, ''),
+                    amount: String(item.amount).replace(/,/g, '')
+                }))
+        }));
+
         const url = currentId ? route('credit-invoice.update', currentId) : route('credit-invoice.store');
         const method = currentId ? patch : post;
 
