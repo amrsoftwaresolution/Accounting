@@ -76,6 +76,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/time', 'updateTime')->name('time.settings.update');
             Route::post('/logo', 'uploadLogo')->name('logo.upload');
         });
+        
+        Route::post('/print', [PrintSettingController::class, 'update'])->name('print.settings.update');
+
         // Quick routes for settings-managed resources
         Route::post('/payment-methods', [\App\Http\Controllers\Settings\PaymentMethodController::class, 'store'])->name('payment-methods.store');
     });

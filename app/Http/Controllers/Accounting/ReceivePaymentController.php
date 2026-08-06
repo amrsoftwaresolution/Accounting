@@ -283,16 +283,21 @@ class ReceivePaymentController extends Controller
         $company = $receivePayment->company;
 
         $tableItems = [];
+        $totalInvoiceAmount = 0;
         if ($receivePayment->allocations && $receivePayment->allocations->count() > 0) {
             foreach ($receivePayment->allocations as $alloc) {
+                $invAmt = $alloc->invoice ? $alloc->invoice->total_amount : 0;
+                $totalInvoiceAmount += $invAmt;
                 $tableItems[] = [
-                    "Receive Payment applied to Credit Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
+                    "Payment applied to Credit Invoice #" . ($alloc->invoice->invoice_no ?? 'Unknown'),
+                    ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($invAmt, 2),
                     ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($alloc->amount, 2),
                 ];
             }
         } else {
             $tableItems[] = [
                 "Receive Payment Received",
+                "-",
                 ($company->home_currency_prefix ? $company->home_currency_prefix . ' ' : '') . number_format($receivePayment->amount, 2),
             ];
         }
@@ -315,9 +320,9 @@ class ReceivePaymentController extends Controller
             'dueDate' => null,
             'partyLabel' => 'Received From',
             'partyName' => $receivePayment->customer->display_name ?? $receivePayment->customer->company_name,
-            'partyAddress' => '',
+            'partyAddress' => $receivePayment->customer->billing_address ?? '',
             'partyEmail' => $receivePayment->customer->email ?? '',
-            'tableHeaders' => ['Description', 'Amount'],
+            'tableHeaders' => ['Description', 'Invoice Amount', 'Payment Amount'],
             'tableItems' => $tableItems,
             'totalAmount' => $receivePayment->amount,
             'memo' => $receivePayment->memo,
