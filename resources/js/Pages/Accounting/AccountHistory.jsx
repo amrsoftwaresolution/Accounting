@@ -53,9 +53,6 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
     }, [account, lines]);
 
     const isNormalDebit = ['asset', 'expense'].includes(account.account_type);
-    const isAssetOrExpense = isNormalDebit;
-    const col1Label = isAssetOrExpense ? "Increase (Deposit)" : "Decrease (Payment)";
-    const col2Label = isAssetOrExpense ? "Decrease (Payment)" : "Increase (Deposit)";
 
     // Fetch payees list
     const [payees, setPayees] = useState([]);
@@ -380,7 +377,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                                                             }}
                                                             className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right font-mono"
                                                         />
-                                                        <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Deposit' : 'Payment'}</span>
+                                                        <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Deposit' : 'Expense'}</span>
                                                     </div>
                                                 ) : (
                                                     <div className="text-right text-slate-400 py-1">-</div>
@@ -399,7 +396,7 @@ export default function AccountHistory({ account, lines = [], accounts = [], fil
                                                             }}
                                                             className="w-full px-2 py-1 border border-slate-300 rounded text-[11px] focus:ring-1 focus:ring-green-500 focus:border-green-500 text-right font-mono"
                                                         />
-                                                        <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Payment' : 'Deposit'}</span>
+                                                        <span className="text-[9px] font-bold text-slate-400 block text-right italic uppercase">{isNormalDebit ? 'Expense' : 'Deposit'}</span>
                                                     </div>
                                                 ) : (
                                                     <div className="text-right text-slate-400 py-1">-</div>

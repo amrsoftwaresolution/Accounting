@@ -22,7 +22,7 @@ export const accountDetailTypeOptions = {
         { value: 'other-income', label: 'Other income' },
     ],
     expense: [
-        { value: 'payment', label: 'Expense' },
+        { value: 'expense', label: 'Expense' },
         { value: 'cost-of-goods-sold', label: 'Cost of Goods Sold (COGS)' },
     ],
 };

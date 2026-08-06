@@ -56,7 +56,7 @@ class ChartOfAcc extends Model implements Auditable
         }
 
         $type = strtolower($this->account_type);
-        if (in_array($type, ['asset', 'payment', 'expense'])) {
+        if (in_array($type, ['asset', 'expense'])) {
             return $debit - $credit;
         } else {
             return $credit - $debit;

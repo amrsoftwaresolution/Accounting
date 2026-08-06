@@ -59,7 +59,7 @@ class InventoryQuantityAdjustmentController extends Controller
             $journalEntry = null;
             DB::transaction(function () use ($validated, &$journalEntry) {
                 $adjustment = InventoryQuantityAdjustment::create([
-                    'adjustment_date' => $validated['adjustment_date'],
+                    'adjustment_date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                     'reference_number' => $validated['reference_number'] ?? null,
                     'adjustment_reason' => $validated['adjustment_reason'],
                     'inventory_adjustment_account_id' => $validated['inventory_adjustment_account_id'],
@@ -135,7 +135,7 @@ class InventoryQuantityAdjustmentController extends Controller
                 // Create the Journal Entry if there is any adjustment value
                 if ($totalAmount > 0) {
                     $journalEntry = JournalEntry::create([
-                        'date' => $validated['adjustment_date'],
+                        'date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                         'reference' => $validated['reference_number'] ?? 'ADJ-' . time(),
                         'description' => $validated['memo'] ?? ('Inventory quantity adjustment - ' . $validated['adjustment_reason']),
                         'transaction_type' => 'inventory_adjustment',
@@ -154,7 +154,7 @@ class InventoryQuantityAdjustmentController extends Controller
             $action = $request->input('action', 'save');
 
             if ($action === 'new') {
-                return redirect()->route('inventory-adjustment')->with('success', 'Inventory quantity adjustment saved successfully.');
+                return redirect()->route('inventory-adjustment.create')->with('success', 'Inventory quantity adjustment saved successfully.');
             }
 
             if ($action === 'close') {
@@ -162,6 +162,9 @@ class InventoryQuantityAdjustmentController extends Controller
                 return redirect()->to($lastValidRoute)->with('success', 'Inventory quantity adjustment saved successfully.');
             }
 
+            if ($journalEntry) {
+                return redirect()->route('inventory-adjustment.edit', $journalEntry->id)->with('success', 'Inventory quantity adjustment saved successfully.');
+            }
             return redirect()->route('items.index')->with('success', 'Inventory quantity adjustment saved successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
@@ -238,7 +241,7 @@ class InventoryQuantityAdjustmentController extends Controller
 
                 // Update business document
                 $adjustment->update([
-                    'adjustment_date' => $validated['adjustment_date'],
+                    'adjustment_date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                     'reference_number' => $validated['reference_number'] ?? null,
                     'adjustment_reason' => $validated['adjustment_reason'],
                     'inventory_adjustment_account_id' => $validated['inventory_adjustment_account_id'],
@@ -304,13 +307,13 @@ class InventoryQuantityAdjustmentController extends Controller
                 }
 
                 $journalEntry->update([
-                    'date' => $validated['adjustment_date'],
+                    'date' => \Carbon\Carbon::parse($validated['adjustment_date'])->format('Y-m-d'),
                     'reference' => $validated['reference_number'] ?? 'ADJ-' . time(),
                     'description' => $validated['memo'] ?? ('Inventory quantity adjustment - ' . $validated['adjustment_reason']),
                     'total_amount' => $totalAmount,
                 ]);
 
-                $journalEntry->lines->each->delete();
+                $journalEntry->lines()->delete();
 
                 foreach ($journalLines as $line) {
                     $journalEntry->lines()->create($line);
