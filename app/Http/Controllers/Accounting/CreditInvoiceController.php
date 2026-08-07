@@ -33,6 +33,7 @@ class CreditInvoiceController extends Controller
             $invoiceData = [
                 'id' => null,
                 'customer' => $journalEntry->payee_id,
+                'prefix' => $creditInvoice?->prefix ?? '',
                 'email' => $creditInvoice?->email ?? '',
                 'billingAddress' => $creditInvoice?->billing_address ?? '',
                 'terms' => $creditInvoice?->terms ?? 'Net 30',
@@ -40,6 +41,7 @@ class CreditInvoiceController extends Controller
                 'invoiceDate' => $journalEntry->date,
                 'dueDate' => $journalEntry->due_date,
                 'memo' => $journalEntry->description,
+                'memo_on_statement' => $creditInvoice?->memo_on_statement ?? '',
                 'statementMessage' => $creditInvoice?->statement_message ?? '',
                 'items' => $creditInvoice?->items->map(function ($invoiceItem) {
                     return [
@@ -51,6 +53,8 @@ class CreditInvoiceController extends Controller
                         'rate' => $invoiceItem->rate,
                     ];
                 })->toArray() ?? [],
+                'discountType' => $creditInvoice?->discount_type ?? 'percent',
+                'discountValue' => (float) ($creditInvoice?->discount_value ?? 0),
             ];
 
             return Inertia::render('Transaction/CreditInvoice/CreditInvoiceForm', [
@@ -69,9 +73,24 @@ class CreditInvoiceController extends Controller
         $validated = $request->validated();
 
         $journalEntry = DB::transaction(function () use ($request) {
-            $totalAmount = collect($request->items)->sum(function ($item) {
+            $subtotal = collect($request->items)->sum(function ($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
+
+            $discountType = $request->discount_type ?? 'percent';
+            $discountValue = (float)($request->discount_value ?? 0);
+            
+            $discountAmount = 0;
+            if ($discountValue > 0) {
+                if ($discountType === 'percent') {
+                    $discountAmount = $subtotal * ($discountValue / 100);
+                } else {
+                    $discountAmount = $discountValue;
+                }
+            }
+            
+            $totalAmount = $subtotal - $discountAmount;
+
 
             // 1. Create Business Document (Invoice)
             $creditInvoice = \App\Models\Accounting\CreditInvoice::create([
@@ -84,9 +103,14 @@ class CreditInvoiceController extends Controller
                 'invoice_no' => $request->invoiceNo,
                 'total_amount' => $totalAmount,
                 'memo' => $request->memo,
+                'memo_on_statement' => $request->memo_on_statement,
                 'statement_message' => $request->statementMessage,
                 'status' => 'posted',
+                'prefix' => $request->prefix,
+                'discount_type' => $discountType,
+                'discount_value' => $discountValue,
             ]);
+
 
             foreach ($request->items as $lineItem) {
                 \App\Models\Accounting\CreditInvoiceItem::create([
@@ -168,6 +192,19 @@ class CreditInvoiceController extends Controller
                 'memo' => $request->memo,
             ]);
 
+            // Debit Discounts Given if discount exists
+            if ($discountAmount > 0) {
+                $discountAccount = ChartOfAcc::getOrCreateDefault('discounts-given');
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $discountAccount->id,
+                    'debit' => $discountAmount,
+                    'credit' => 0,
+                    'memo' => 'Discount for ' . $request->invoiceNo,
+                ]);
+            }
+
+
             return $journalEntry;
         });
 
@@ -191,6 +228,7 @@ class CreditInvoiceController extends Controller
         $invoiceData = [
             'id' => $journalEntry->id,
             'customer' => $journalEntry->payee_id,
+            'prefix' => $creditInvoice?->prefix ?? '',
             'email' => $creditInvoice?->email ?? '',
             'billingAddress' => $creditInvoice?->billing_address ?? '',
             'terms' => $creditInvoice?->terms ?? 'Net 30',
@@ -198,6 +236,7 @@ class CreditInvoiceController extends Controller
             'invoiceDate' => $journalEntry->date,
             'dueDate' => $journalEntry->due_date,
             'memo' => $journalEntry->description,
+            'memo_on_statement' => $creditInvoice?->memo_on_statement ?? '',
             'statementMessage' => $creditInvoice?->statement_message ?? '',
             'items' => $creditInvoice?->items->map(function ($invoiceItem) {
                 return [
@@ -209,6 +248,8 @@ class CreditInvoiceController extends Controller
                     'rate' => $invoiceItem->rate,
                 ];
             })->toArray() ?? [],
+            'discountType' => $creditInvoice?->discount_type ?? 'percent',
+            'discountValue' => (float) ($creditInvoice?->discount_value ?? 0),
         ];
 
         return Inertia::render('Transaction/CreditInvoice/CreditInvoiceForm', [
@@ -273,9 +314,23 @@ class CreditInvoiceController extends Controller
         $validated = $request->validated();
 
         DB::transaction(function () use ($request, $journalEntry) {
-            $totalAmount = collect($request->items)->sum(function ($item) {
+            $subtotal = collect($request->items)->sum(function ($item) {
                 return (float) str_replace(',', '', $item['amount']);
             });
+
+            $discountType = $request->discount_type ?? 'percent';
+            $discountValue = (float)($request->discount_value ?? 0);
+            
+            $discountAmount = 0;
+            if ($discountValue > 0) {
+                if ($discountType === 'percent') {
+                    $discountAmount = $subtotal * ($discountValue / 100);
+                } else {
+                    $discountAmount = $discountValue;
+                }
+            }
+            
+            $totalAmount = $subtotal - $discountAmount;
             \Log::info('CreditInvoiceController update - Request Items:', $request->items ?? []);
 
             // 1. Update Business Document
@@ -291,8 +346,13 @@ class CreditInvoiceController extends Controller
                     'invoice_no' => $request->invoiceNo,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
+                    'memo_on_statement' => $request->memo_on_statement,
                     'statement_message' => $request->statementMessage,
+                    'prefix' => $request->prefix,
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
                 ]);
+
 
                 foreach ($creditInvoice->items as $oldItem) {
                     $itemModel = \App\Models\Item::find($oldItem->item_id);
@@ -375,7 +435,20 @@ class CreditInvoiceController extends Controller
                 'credit' => 0,
                 'memo' => $request->memo,
             ]);
+
+            // Debit Discounts Given if discount exists
+            if ($discountAmount > 0) {
+                $discountAccount = ChartOfAcc::getOrCreateDefault('discounts-given');
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'chart_of_acc_id' => $discountAccount->id,
+                    'debit' => $discountAmount,
+                    'credit' => 0,
+                    'memo' => 'Discount for ' . $request->invoiceNo,
+                ]);
+            }
         });
+
 
         $action = $request->input('action', 'save');
         if ($action === 'close') { $lastValidRoute = session('last_valid_route', route('dashboard')); return redirect()->to($lastValidRoute)->with('success', 'CreditInvoice updated successfully.'); }

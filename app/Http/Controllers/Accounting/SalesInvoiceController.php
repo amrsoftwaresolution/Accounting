@@ -42,6 +42,7 @@ class SalesInvoiceController extends Controller
                 'id' => null,
                 'receipt_id' => null,
                 'customer' => $receipt->customer_id,
+                'prefix' => $receipt->prefix ?? '',
                 'email' => $receipt->email,
                 'billingAddress' => $billingAddress,
                 'receiptDate' => $receipt->receipt_date,
@@ -49,6 +50,7 @@ class SalesInvoiceController extends Controller
                 'paymentMethod' => $receipt->payment_method_id,
                 'depositTo' => $receipt->deposit_to_account_id,
                 'memo' => $receipt->memo,
+                'memo_on_statement' => $receipt->memo_on_statement ?? '',
                 'statementMessage' => $receipt->statement_message,
                 'items' => $receipt->items->map(function ($item) {
                     return [
@@ -60,6 +62,8 @@ class SalesInvoiceController extends Controller
                         'amount' => number_format($item->amount, 2, '.', ''),
                     ];
                 })->toArray(),
+                'discountType' => $receipt->discount_type ?? 'percent',
+                'discountValue' => (float)$receipt->discount_value,
             ];
 
             return Inertia::render('Transaction/SalesInvoice/SalesInvoiceForm', [
@@ -89,9 +93,24 @@ class SalesInvoiceController extends Controller
                     throw new \Exception('At least one item with product and amount is required.');
                 }
                 
-                $totalAmount = collect($items)->sum(function($item) {
+                $subtotal = collect($items)->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
                 });
+
+                $discountType = $request->discount_type ?? 'percent';
+                $discountValue = (float)($request->discount_value ?? 0);
+                
+                $discountAmount = 0;
+                if ($discountValue > 0) {
+                    if ($discountType === 'percent') {
+                        $discountAmount = $subtotal * ($discountValue / 100);
+                    } else {
+                        $discountAmount = $discountValue;
+                    }
+                }
+                
+                $totalAmount = $subtotal - $discountAmount;
+
 
                 $customerId = $request->customer;
                 if ($request->vehicle_id) {
@@ -112,11 +131,16 @@ class SalesInvoiceController extends Controller
                     'deposit_to_account_id' => $request->depositTo,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
+                    'memo_on_statement' => $request->memo_on_statement,
                     'statement_message' => $request->statementMessage,
                     'check_date' => $request->checkDate,
                     'check_number' => $request->checkNumber,
                     'status' => 'posted',
+                    'prefix' => $request->prefix,
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
                 ]);
+
 
                 foreach ($items as $itemData) {
                     $invoiceItem = SalesInvoiceItem::create([
@@ -161,6 +185,18 @@ class SalesInvoiceController extends Controller
                     'credit' => 0,
                     'memo' => $request->memo,
                 ]);
+
+                // Debit Discounts Given if discount exists
+                if ($discountAmount > 0) {
+                    $discountAccount = ChartOfAcc::getOrCreateDefault('discounts-given');
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $discountAccount->id,
+                        'debit' => $discountAmount,
+                        'credit' => 0,
+                        'memo' => 'Discount for ' . $request->receiptNo,
+                    ]);
+                }
 
                 // Credit Income accounts
                 foreach ($items as $itemData) {
@@ -236,6 +272,7 @@ class SalesInvoiceController extends Controller
             'id' => $journalEntry->id,
             'receipt_id' => $receipt->id,
             'customer' => $receipt->customer_id,
+            'prefix' => $receipt->prefix ?? '',
             'email' => $receipt->email,
             'billingAddress' => $billingAddress,
             'receiptDate' => $receipt->receipt_date,
@@ -243,6 +280,7 @@ class SalesInvoiceController extends Controller
             'paymentMethod' => $receipt->payment_method_id,
             'depositTo' => $receipt->deposit_to_account_id,
             'memo' => $receipt->memo,
+            'memo_on_statement' => $receipt->memo_on_statement ?? '',
             'statementMessage' => $receipt->statement_message,
             'checkDate' => $receipt->check_date,
             'checkNumber' => $receipt->check_number,
@@ -256,6 +294,8 @@ class SalesInvoiceController extends Controller
                     'amount' => number_format($item->amount, 2, '.', ''),
                 ];
             })->toArray(),
+            'discountType' => $receipt->discount_type ?? 'percent',
+            'discountValue' => (float)$receipt->discount_value,
         ];
 
         return Inertia::render('Transaction/SalesInvoice/SalesInvoiceForm', [
@@ -280,9 +320,24 @@ class SalesInvoiceController extends Controller
                     throw new \Exception('At least one item with product and amount is required.');
                 }
 
-                $totalAmount = collect($items)->sum(function($item) {
+                $subtotal = collect($items)->sum(function($item) {
                     return (float) str_replace(',', '', $item['amount']);
                 });
+
+                $discountType = $request->discount_type ?? 'percent';
+                $discountValue = (float)($request->discount_value ?? 0);
+                
+                $discountAmount = 0;
+                if ($discountValue > 0) {
+                    if ($discountType === 'percent') {
+                        $discountAmount = $subtotal * ($discountValue / 100);
+                    } else {
+                        $discountAmount = $discountValue;
+                    }
+                }
+                
+                $totalAmount = $subtotal - $discountAmount;
+
 
                 $customerId = $request->customer;
                 if ($request->vehicle_id) {
@@ -306,10 +361,15 @@ class SalesInvoiceController extends Controller
                     'deposit_to_account_id' => $request->depositTo,
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
+                    'memo_on_statement' => $request->memo_on_statement,
                     'statement_message' => $request->statementMessage,
                     'check_date' => $request->checkDate,
                     'check_number' => $request->checkNumber,
+                    'prefix' => $request->prefix,
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
                 ]);
+
 
                 foreach ($receipt->items as $oldItem) {
                     $itemModel = \App\Models\Item::find($oldItem->item_id);
@@ -357,6 +417,18 @@ class SalesInvoiceController extends Controller
                     'credit' => 0,
                     'memo' => $request->memo,
                 ]);
+
+                // Debit Discounts Given if discount exists
+                if ($discountAmount > 0) {
+                    $discountAccount = ChartOfAcc::getOrCreateDefault('discounts-given');
+                    JournalEntryLine::create([
+                        'journal_entry_id' => $journalEntry->id,
+                        'chart_of_acc_id' => $discountAccount->id,
+                        'debit' => $discountAmount,
+                        'credit' => 0,
+                        'memo' => 'Discount for ' . $request->receiptNo,
+                    ]);
+                }
 
                 // Credit Income accounts
                 foreach ($items as $itemData) {

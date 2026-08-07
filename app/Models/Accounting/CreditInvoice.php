@@ -15,7 +15,7 @@ class CreditInvoice extends Model implements Auditable
     protected $fillable = [
         'customer_id', 'email', 'billing_address', 'shipping_address',
         'terms', 'invoice_date', 'due_date', 'invoice_no', 'total_amount',
-        'memo', 'statement_message', 'status'
+        'memo', 'statement_message', 'status', 'discount_type', 'discount_value', 'prefix', 'memo_on_statement'
     ];
 
     public function items()

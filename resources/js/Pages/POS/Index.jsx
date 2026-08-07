@@ -9,9 +9,9 @@ import SearchableSelect from '@/Components/SearchableSelect';
 import Modal from '@/Components/Modal';
 import { showToast } from '@/Components/ToastNotification';
 
-export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies = [], nextReceiptNo, existingReceipt }) {
+export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies = [], nextReceiptNo, existingReceipt, defaultDepositAccount }) {
     const isEditMode = !!existingReceipt;
-    const currency = auth.company?.home_currency_prefix || '{currency}';
+    const currency = auth.currency_prefix || auth.company?.home_currency_prefix || '';
     const [cart, setCart] = useState(isEditMode ? existingReceipt.items.map(item => ({ ...item, warranty: item.warranty ?? null })) : []);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' or 'service'
@@ -49,7 +49,7 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
         receiptDate: isEditMode ? existingReceipt.receiptDate : new Date().toISOString().split('T')[0],
         receiptNo: isEditMode ? existingReceipt.receiptNo : nextReceiptNo,
         paymentMethod: isEditMode ? existingReceipt.paymentMethod : getDefaultCashPaymentMethod(),
-        depositTo: isEditMode ? existingReceipt.depositTo : '',
+        depositTo: isEditMode ? existingReceipt.depositTo : (defaultDepositAccount?.id || ''),
         memo: isEditMode ? existingReceipt.memo : 'POS Sale',
         statementMessage: isEditMode ? existingReceipt.statementMessage : '',
         repairingCost: isEditMode ? existingReceipt.repairingCost : 0,

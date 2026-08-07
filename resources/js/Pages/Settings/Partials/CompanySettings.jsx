@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
 
@@ -436,6 +438,73 @@ const handleAccountingSubmit = (e) => {
                             </label>
                         </div>
                     </div>
+
+                    <div className="space-y-3 pt-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-800">Warranty</h3>
+                                <p className="text-gray-400 text-[10px]">If enabled, only warranty will be shown in the sidebar and navbar.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={settings?.warranty_layout_enabled || false}
+                                    onChange={(e) => {
+                                        router.post(route('layout.warranty.update'), {
+                                            warranty_layout_enabled: e.target.checked
+                                        }, { preserveScroll: true });
+                                    }}
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-800">Job Registration</h3>
+                                <p className="text-gray-400 text-[10px]">If enabled, only job registration will be shown in the sidebar and navbar.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={settings?.job_layout_enabled || false}
+                                    onChange={(e) => {
+                                        router.post(route('layout.job.update'), {
+                                            job_layout_enabled: e.target.checked
+                                        }, { preserveScroll: true });
+                                    }}
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-800">Customer Modal Mode</h3>
+                                <p className="text-gray-400 text-[10px]">If disabled, Customer opens as a modal instead of a full page.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={settings?.customer_layout_modal || false}
+                                    onChange={(e) => {
+                                        router.post(route('layout.customer.update'), {
+                                            customer_layout_modal: e.target.checked
+                                        }, { preserveScroll: true });
+                                    }}
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>

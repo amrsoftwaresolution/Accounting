@@ -12,7 +12,7 @@
         paymentMethods, 
         processing,
         isEditMode,
-        currency = '{currency}',
+        currency = '',
         onPrint
     }) {
         if (!isOpen) return null;

@@ -44,6 +44,10 @@ class SalesInvoiceRequest extends FormRequest
             'items.*.warranty.start_date' => 'nullable|date',
             'action' => 'nullable|string',
             'repairingCost' => 'nullable|numeric',
+            'discount_type' => 'nullable|in:percent,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'prefix' => 'nullable|string',
+            'memo_on_statement' => 'nullable|string',
         ];
     }
 

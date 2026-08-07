@@ -33,6 +33,7 @@ class InvoiceReturnController extends Controller
             $invoiceReturnData = [
                 'id' => null,
                 'customer' => $invoiceReturn->customer_id,
+                'prefix' => $invoiceReturn->prefix ?? '',
                 'email' => $invoiceReturn->email,
                 'date' => $invoiceReturn->credit_note_date,
                 'ref' => $this->getNextNo(),
@@ -79,6 +80,7 @@ class InvoiceReturnController extends Controller
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
                     'status' => 'posted',
+                    'prefix' => $request->prefix,
                 ]);
 
                 foreach ($request->items as $itemData) {
@@ -168,6 +170,7 @@ class InvoiceReturnController extends Controller
         $invoiceReturnData = [
             'id' => $journalEntry->id,
             'customer' => $invoiceReturn->customer_id,
+            'prefix' => $invoiceReturn->prefix ?? '',
             'email' => $invoiceReturn->email,
             'date' => $invoiceReturn->date,
             'reference' => $journalEntry->reference,
@@ -209,6 +212,7 @@ class InvoiceReturnController extends Controller
                     'total_amount' => $totalAmount,
                     'memo' => $request->memo,
                     'statement_message' => $request->statementMessage,
+                    'prefix' => $request->prefix,
                 ]);
 
                 // Recreate items

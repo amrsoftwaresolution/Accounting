@@ -10,6 +10,9 @@ import QuickAddPayee from '@/Components/QuickAddPayee';
 import QuickAddAccount from '@/Components/QuickAddAccount';
 import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
 import Sidebar from './Partials/Sidebar';
+import Modal from '@/Components/Modal';
+import CustomerIndexContent from '@/Pages/Contacts/CustomerIndexContent';
+import axios from 'axios';
 
 export default function AuthenticatedLayout({ header, children, hideSidebar = false }) {
     const page = usePage();
@@ -37,22 +40,37 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
     const [quickAddType, setQuickAddType] = useState(null);
+    const [customerModalOpen, setCustomerModalOpen] = useState(false);
+    const [modalCustomers, setModalCustomers] = useState([]);
 
-    const allNavigation = [
+    const fetchModalCustomers = () => {
+        axios.get(route('customers.index'), { headers: { 'Accept': 'application/json' } })
+            .then(res => setModalCustomers(res.data))
+            .catch(err => console.error(err));
+    };
+
+    const handleCustomerClick = (e) => {
+        if (!page.props.auth.customer_layout_modal) {
+            e.preventDefault();
+            fetchModalCustomers();
+            setCustomerModalOpen(true);
+        }
+    };
+
+    const navigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
-        ...(page.props.auth.pos_layout_enabled ? [{ name: 'POS Billing', href: route('pos.index'), icon: 'pos' }] : []),
-        { name: 'Customer', href: route('customers.index'), icon: 'users' },
+        ...(page.props.auth.pos_layout_enabled ? [{ name: 'POS Billing', href: route('pos.index'), icon: 'pos', isPos: true }] : []),
+        { name: 'Customer', href: route('customers.index'), icon: 'users', onClick: handleCustomerClick },
         { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle' },
-        { name: 'Job Registrations', href: route('job-cards.index'), icon: 'document' },
-        { name: 'Warranties', href: route('warranties.index'), icon: 'warranty' },
+        ...(page.props.auth.job_enabled ? [{ name: 'Jobs', href: route('job-cards.index'), icon: 'job', isJob: true }] : []),
+        ...(page.props.auth.warranties_enabled ? [{ name: 'Warranties', href: route('warranties.index'), icon: 'warranty', isWarranty: true }] : []),
         { name: 'Products & Services', href: route('items.index'), icon: 'inventory' },
         { name: 'Chart of Accounts', href: route('chart-of-account.index'), icon: 'accounting' },
         { name: 'Suppliers', href: route('suppliers.index'), icon: 'supplier' },
+        { name: 'Employee', href: route('employees.index'), icon: 'users' },
         { name: 'Reports', href: route('reports.index'), adminOnly: true, icon: 'finance' },
         { name: 'User Management', href: route('users.index'), adminOnly: true, icon: 'users' },
     ];
-
-    const navigation = allNavigation;
 
     return (
         <div className={`bg-[#f8fafc] ${hideSidebar ? 'h-screen overflow-hidden flex flex-col' : 'min-h-screen'}`}>
@@ -136,6 +154,20 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
                             </Link>
                         )}
 
+                        {/* warranties Billing Shortcut */}
+                        {page.props.auth.warranties_enabled && (
+                            <Link href={route('warranties.index')} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative" title="warranties Billing">
+                                <span className="material-symbols-outlined text-[20px] leading-none block">shield</span>
+                            </Link>
+                        )}
+
+                        {/* job Shortcut */}
+                        {page.props.auth.job_enabled && (
+                            <Link href={route('job-cards.index')} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative" title="Job Registrations">
+                                <span className="material-symbols-outlined text-[20px] leading-none block">work</span>
+                            </Link>
+                        )}
+
                         {/* Notifications (Mock) */}
                         <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
                             <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-primary-500 border-2 border-white" />
@@ -204,6 +236,18 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
             />
 
             <ToastNotification />
+            {/* Customer Modal */}
+            <Modal show={customerModalOpen} onClose={() => setCustomerModalOpen(false)} maxWidth="5xl">
+                <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="font-bold text-lg text-slate-800 tracking-tight">Customers</h2>
+                        <button onClick={() => setCustomerModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <CustomerIndexContent customers={modalCustomers} />
+                </div>
+            </Modal>
         </div>
     );
 }

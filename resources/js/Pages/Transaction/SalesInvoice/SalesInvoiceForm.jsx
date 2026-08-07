@@ -72,6 +72,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 paymentMethod: receipt.paymentMethod || "",
                 depositTo: receipt.depositTo || "",
                 memo: receipt.memo || "",
+                memo_on_statement: receipt.memo_on_statement || "",
                 statementMessage: receipt.statementMessage || "",
                 checkDate: receipt.checkDate || "",
                 checkNumber: receipt.checkNumber || "",
@@ -96,6 +97,7 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 paymentMethod: getDefaultCashPaymentMethod() || "",
                 depositTo: "",
                 memo: "",
+                memo_on_statement: "",
                 statementMessage: "",
                 checkDate: "",
                 checkNumber: "",
@@ -103,8 +105,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
                 ],
+                discount_type: 'percent',
+                discount_value: '0',
+                prefix: '',
+                memo_on_statement: '',
                 action: 'save'
             });
+
         }
         clearErrors();
     }, [receipt?.id]);
@@ -152,8 +159,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
         ],
+        discount_type: receipt?.discountType || 'percent',
+        discount_value: receipt?.discountValue !== undefined ? String(receipt.discountValue) : '0',
+        prefix: receipt?.prefix || '',
+        memo_on_statement: receipt?.memo_on_statement || '',
         action: 'save'
     });
+
 
     const handlePaymentMethodChange = (val) => {
         const selectedMethod = paymentMethods.find((method) => String(method.id) === String(val));
@@ -180,7 +192,18 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-    const totalAmount = data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0).toFixed(2);
+    const subtotal = data.items.reduce((sum, item) => sum + parseCurrency(item.amount), 0);
+    
+    let discountAmount = 0;
+    const dVal = parseFloat(data.discount_value || 0);
+    if (dVal > 0) {
+        if (data.discount_type === 'percent') {
+            discountAmount = subtotal * (dVal / 100);
+        } else {
+            discountAmount = dVal;
+        }
+    }
+    const totalAmount = (subtotal - discountAmount).toFixed(2);
 
     const handleItemChange = (index, field, value) => {
         const updated = [...data.items];
@@ -272,8 +295,13 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
                         ],
+                        discount_type: 'percent',
+                        discount_value: '0',
+                        prefix: '',
+                        memo_on_statement: '',
                         action: 'save'
                     });
+
                     reset();
                     clearErrors();
                     setIsDirty(false);
@@ -311,7 +339,24 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
             <div className="py-6 px-1 space-y-8">
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
-                        <div className="w-[320px]">
+                        <div className="w-[120px]">
+                            <SearchableSelect
+                                label="Prefix"
+                                value={data.prefix}
+                                onChange={(val) => { setData("prefix", val); setIsDirty(true); }}
+                                options={[
+                                    { label: 'None', value: '' },
+                                    { label: 'Mr', value: 'Mr' },
+                                    { label: 'Mrs', value: 'Mrs' },
+                                    { label: 'Miss', value: 'Miss' },
+                                    { label: 'Director', value: 'Director' },
+                                    { label: 'Manager', value: 'Manager' },
+                                ]}
+                                size="sm"
+                                hideAddNew={true}
+                            />
+                        </div>
+                        <div className="w-[280px]">
                             <SearchableSelect
                                 label="Customer"
                                 placeholder="Select a customer"
@@ -463,10 +508,18 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 currencyPrefix={currencyPrefix}
                 hideActions={true}
                 errors={errors}
+                subtotal={subtotal}
+                discountValue={data.discount_value}
+                discountType={data.discount_type}
+                onDiscountChange={(val, type) => {
+                    setData(prev => ({ ...prev, discount_value: val, discount_type: type }));
+                    setIsDirty(true);
+                }}
             />
 
+
             <div className="grid grid-cols-2 gap-10 mt-8">
-                <div className="w-[400px]">
+                <div className="w-[400px] flex flex-col gap-4">
                     <CommonInput
                         type="textarea"
                         label="Memo"
@@ -476,6 +529,15 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                         size="sm"
                         className="h-24"
                         error={errors.memo}
+                    />
+                    <CommonInput
+                        type="textarea"
+                        label="Memo on Statement"
+                        placeholder="This will show up on the customer Statement."
+                        value={data.memo_on_statement}
+                        onChange={(e) => { setData('memo_on_statement', e.target.value); setIsDirty(true); }}
+                        size="sm"
+                        className="h-24"
                     />
                 </div>
             </div>

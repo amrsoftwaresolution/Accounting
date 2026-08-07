@@ -14,7 +14,7 @@ class InvoiceReturn extends Model implements Auditable
 
     protected $fillable = [
         'customer_id', 'email', 'date', 
-        'total_amount', 'memo', 'statement_message', 'status'
+        'total_amount', 'memo', 'statement_message', 'status', 'prefix'
     ];
 
     public function items()

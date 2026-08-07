@@ -155,10 +155,18 @@ class ContactBalanceController extends Controller
 
         $allLines = $query->orderBy('journal_entries.date', 'asc')
             ->orderBy('journal_entries.id', 'asc')
-            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date', 'journal_entries.payee_id')
+            ->select(
+                'journal_entry_lines.*',
+                'journal_entries.date',
+                'journal_entries.reference',
+                'journal_entries.transaction_type',
+                'journal_entries.due_date',
+                'journal_entries.payee_id',
+                'journal_entries.id as journal_entry_id',
+                'journal_entries.description as memo'
+            )
             ->get()
             ->groupBy('payee_id');
-
         $reportData = $customers->map(function ($customer) use ($allLines) {
             $lines = $allLines->get($customer->id, collect());
             return [
@@ -180,18 +188,50 @@ class ContactBalanceController extends Controller
         ]);
     }
 
-    public function customerDetail($customerId)
+    public function customerDetail(Request $request, $customerId)
     {
-        $details = JournalEntryLine::query()
+        $customer = Customer::findOrFail($customerId);
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entries.payee_type', Customer::class)
             ->where('journal_entries.payee_id', $customerId)
-            ->where('chart_of_accs.sub_type', 'accounts-receivable')
-            ->select('journal_entry_lines.*', 'journal_entries.*')
+            ->where('chart_of_accs.sub_type', 'accounts-receivable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query
+            ->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select(
+                'journal_entry_lines.*',
+                'journal_entries.date',
+                'journal_entries.due_date',
+                'journal_entries.reference',
+                'journal_entries.transaction_type',
+                'journal_entries.payee_id',
+                'journal_entries.id as journal_entry_id',
+                'journal_entries.description as memo'
+            )
             ->get();
 
-        return Inertia::render('Reports/CustomerDetail', ['details' => $details]);
+        return Inertia::render('Reports/ContactBalanceDetail', [
+            'contact'     => $customer,
+            'contactType' => 'Customer',
+            'lines'       => $lines,
+            'filters'     => [
+                'start_date' => $startDate ?? '',
+                'end_date'   => $endDate,
+                'type'       => $request->query('type') ?? 'custom',
+            ],
+        ]);
     }
 
     public function supplierBalance(Request $request)
@@ -334,10 +374,18 @@ class ContactBalanceController extends Controller
 
         $allLines = $query->orderBy('journal_entries.date', 'asc')
             ->orderBy('journal_entries.id', 'asc')
-            ->select('journal_entry_lines.*', 'journal_entries.date', 'journal_entries.reference', 'journal_entries.transaction_type', 'journal_entries.due_date', 'journal_entries.payee_id')
+            ->select(
+                'journal_entry_lines.*',
+                'journal_entries.date',
+                'journal_entries.reference',
+                'journal_entries.transaction_type',
+                'journal_entries.due_date',
+                'journal_entries.payee_id',
+                'journal_entries.id as journal_entry_id',
+                'journal_entries.description as memo'
+            )
             ->get()
             ->groupBy('payee_id');
-
         $reportData = $suppliers->map(function ($supplier) use ($allLines) {
             $lines = $allLines->get($supplier->id, collect());
             return [
@@ -359,17 +407,49 @@ class ContactBalanceController extends Controller
         ]);
     }
 
-    public function supplierDetail($supplierId)
+    public function supplierDetail(Request $request, $supplierId)
     {
-        $details = JournalEntryLine::query()
+        $supplier = Supplier::findOrFail($supplierId);
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $query = JournalEntryLine::query()
             ->join('journal_entries', 'journal_entry_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accs', 'journal_entry_lines.chart_of_acc_id', '=', 'chart_of_accs.id')
             ->where('journal_entries.payee_type', Supplier::class)
             ->where('journal_entries.payee_id', $supplierId)
-            ->where('chart_of_accs.sub_type', 'accounts-payable')
-            ->select('journal_entry_lines.*', 'journal_entries.*')
+            ->where('chart_of_accs.sub_type', 'accounts-payable');
+
+        if ($startDate) {
+            $query->whereBetween('journal_entries.date', [$startDate, $endDate]);
+        } else {
+            $query->where('journal_entries.date', '<=', $endDate);
+        }
+
+        $lines = $query
+            ->orderBy('journal_entries.date', 'asc')
+            ->orderBy('journal_entries.id', 'asc')
+            ->select(
+                'journal_entry_lines.*',
+                'journal_entries.date',
+                'journal_entries.due_date',
+                'journal_entries.reference',
+                'journal_entries.transaction_type',
+                'journal_entries.payee_id',
+                'journal_entries.id as journal_entry_id',
+                'journal_entries.description as memo'
+            )
             ->get();
 
-        return Inertia::render('Reports/SupplierDetail', ['details' => $details]);
+        return Inertia::render('Reports/ContactBalanceDetail', [
+            'contact'     => $supplier,
+            'contactType' => 'Supplier',
+            'lines'       => $lines,
+            'filters'     => [
+                'start_date' => $startDate ?? '',
+                'end_date'   => $endDate,
+                'type'       => $request->query('type') ?? 'custom',
+            ],
+        ]);
     }
 }

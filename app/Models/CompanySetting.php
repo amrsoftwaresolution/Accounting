@@ -20,9 +20,15 @@ class CompanySetting extends Model
         'warn_dup_journal',
         'sign_out_inactive',
         'pos_layout_enabled',
+        'warranty_layout_enabled',
+        'job_layout_enabled',
+        'customer_layout_modal',
     ];
 
     protected $casts = [
         'pos_layout_enabled' => 'boolean',
+        'warranty_layout_enabled' => 'boolean',
+        'job_layout_enabled' => 'boolean',
+        'customer_layout_modal' => 'boolean',
     ];
 }

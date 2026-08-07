@@ -86,7 +86,7 @@ export default function AllContactBalanceDetail({ reportData = [], contactType, 
         const prefix = currencyPrefix ? `${currencyPrefix} ` : '';
         if (val < 0) return <span className="text-red-600">{currencyPrefix ? `${currencyPrefix} -` : '-'}{Math.abs(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
         return <span>{prefix}{val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
-    };  
+    };
 
     return (
         <ReportLayout

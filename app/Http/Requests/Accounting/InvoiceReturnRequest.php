@@ -18,6 +18,7 @@ class InvoiceReturnRequest extends FormRequest
             'date' => 'required|date',
             'reference' => 'required',
             'items' => 'required|array|min:1',
+            'prefix' => 'nullable|string',
         ];
     }
 }

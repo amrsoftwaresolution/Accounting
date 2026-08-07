@@ -155,6 +155,7 @@ export default function CreditInvoiceForm({
         dueDate: initialDueDate,
         invoiceNo: invoice?.invoiceNo || nextInvoiceNo || "0001",
         memo: invoice?.memo || "",
+        memo_on_statement: invoice?.memo_on_statement || "",
         action: 'save',
         items: invoice?.items ? invoice.items.map(i => ({
             ...i,
@@ -164,7 +165,10 @@ export default function CreditInvoiceForm({
         })) : [
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-        ]
+        ],
+        discount_type: invoice?.discountType || 'percent',
+        discount_value: invoice?.discountValue !== undefined ? String(invoice.discountValue) : '0',
+        prefix: invoice?.prefix || ''
     });
 
 
@@ -180,6 +184,7 @@ export default function CreditInvoiceForm({
                 dueDate: invoice.dueDate || calculateDueDate(invoice.invoiceDate, invoice.terms || "Net 30") || "",
                 invoiceNo: invoice.invoiceNo || "",
                 memo: invoice.memo || "",
+                memo_on_statement: invoice.memo_on_statement || "",
                 items: invoice.items ? invoice.items.map(i => ({
                     ...i,
                     qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
@@ -188,7 +193,10 @@ export default function CreditInvoiceForm({
                 })) : [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ]
+                ],
+                discount_type: invoice.discountType || 'percent',
+                discount_value: invoice.discountValue !== undefined ? String(invoice.discountValue) : '0',
+                prefix: invoice.prefix || ''
             }));
         } else {
             const cachedDate = localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0];
@@ -203,19 +211,34 @@ export default function CreditInvoiceForm({
                 dueDate: calculateDueDate(cachedDate, termsVal),
                 invoiceNo: nextInvoiceNo || "0001",
                 memo: "",
+                memo_on_statement: "",
                 items: [
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                ]
+                ],
+                discount_type: 'percent',
+                discount_value: '0',
+                prefix: ''
             }));
         }
         clearErrors();
     }, [invoice ? JSON.stringify(invoice) : null, nextInvoiceNo]);
 
-    const totalAmount = data.items.reduce(
+    const subtotal = data.items.reduce(
         (sum, item) => sum + (parseFloat(String(item.amount).replace(/,/g, '')) || 0),
         0
-    ).toFixed(2);
+    );
+
+    let discountAmount = 0;
+    const dVal = parseFloat(data.discount_value || 0);
+    if (dVal > 0) {
+        if (data.discount_type === 'percent') {
+            discountAmount = subtotal * (dVal / 100);
+        } else {
+            discountAmount = dVal;
+        }
+    }
+    const totalAmount = (subtotal - discountAmount).toFixed(2);
 
     const parseCurrency = (val) => parseFloat(String(val).replace(/,/g, "")) || 0;
     const formatCurrencyValue = (val) => val.toLocaleString('en-US', { minimumFractionDigits: 2 });
@@ -325,11 +348,14 @@ export default function CreditInvoiceForm({
                         invoiceDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                         dueDate: "",
                         invoiceNo: nextNo,
-                        memo: "", action: 'save',
+                        memo: "", memo_on_statement: "", action: 'save',
                         items: [
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                             { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
-                        ]
+                        ],
+                        discount_type: 'percent',
+                        discount_value: '0',
+                        prefix: ''
                     });
                     clearErrors();
                     setIsDirty(false);
@@ -362,7 +388,24 @@ export default function CreditInvoiceForm({
                 {/* ROW 1: Customer & Email & Balance */}
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
-                        <div className="w-[320px]">
+                        <div className="w-[120px]">
+                            <SearchableSelect
+                                label="Prefix"
+                                value={data.prefix}
+                                onChange={(val) => { setData("prefix", val); setIsDirty(true); }}
+                                options={[
+                                    { label: 'None', value: '' },
+                                    { label: 'Mr', value: 'Mr' },
+                                    { label: 'Mrs', value: 'Mrs' },
+                                    { label: 'Miss', value: 'Miss' },
+                                    { label: 'Director', value: 'Director' },
+                                    { label: 'Manager', value: 'Manager' },
+                                ]}
+                                size="sm"
+                                hideAddNew={true}
+                            />
+                        </div>
+                        <div className="w-[280px]">
                             <SearchableSelect
                                 label="Customer"
                                 placeholder="Select a customer"
@@ -478,16 +521,33 @@ export default function CreditInvoiceForm({
                 totals={{ "Total": totalAmount }}
                 currencyPrefix={currencyPrefix}
                 hideActions={true}
+                subtotal={subtotal}
+                discountValue={data.discount_value}
+                discountType={data.discount_type}
+                onDiscountChange={(val, type) => {
+                    setData(prev => ({ ...prev, discount_value: val, discount_type: type }));
+                    setIsDirty(true);
+                }}
             />
 
+
             <div className="grid grid-cols-2 gap-10 mt-8">
-                <div className="w-[400px]">
+                <div className="w-[400px] flex flex-col gap-4">
                     <CommonInput
                         type="textarea"
                         label="Memo"
                         placeholder="This will show up on the Credit Sale."
                         value={data.memo}
                         onChange={(e) => { setData('memo', e.target.value); setIsDirty(true); }}
+                        size="sm"
+                        className="h-24"
+                    />
+                    <CommonInput
+                        type="textarea"
+                        label="Memo on Statement"
+                        placeholder="This will show up on the customer Statement."
+                        value={data.memo_on_statement}
+                        onChange={(e) => { setData('memo_on_statement', e.target.value); setIsDirty(true); }}
                         size="sm"
                         className="h-24"
                     />

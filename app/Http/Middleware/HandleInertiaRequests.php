@@ -72,9 +72,13 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user'    => $request->user(),
                 'company' => $request->user()?->currentCompany(),
-                'pos_layout_enabled' => class_exists(\App\Models\CompanySetting::class) ? (bool) \App\Models\CompanySetting::first()?->pos_layout_enabled : false,
+                'pos_layout_enabled'      => class_exists(\App\Models\CompanySetting::class) ? (bool) \App\Models\CompanySetting::first()?->pos_layout_enabled : false,
+                'warranties_enabled'      => class_exists(\App\Models\CompanySetting::class) ? (bool) \App\Models\CompanySetting::first()?->warranty_layout_enabled : false,
+                'job_enabled'             => class_exists(\App\Models\CompanySetting::class) ? (bool) \App\Models\CompanySetting::first()?->job_layout_enabled : false,
+                'customer_layout_modal'   => class_exists(\App\Models\CompanySetting::class) ? (bool) \App\Models\CompanySetting::first()?->customer_layout_modal : false,
+                'currency_prefix'         => $request->user()?->currentCompany()?->home_currency_prefix ?? '',
             ],
             'appName' => config('app.name'),
             'flash' => [

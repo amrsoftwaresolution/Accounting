@@ -33,7 +33,12 @@ class CreditInvoiceRequest extends FormRequest
             'dueDate' => 'required|date',
             'items' => 'required|array|min:1',
             'items.*.product' => 'required',
+            'items.*.rate' => 'required',
             'items.*.amount' => 'required',
+            'discount_type' => 'nullable|in:percent,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'prefix' => 'nullable|string',
+            'memo_on_statement' => 'nullable|string',
         ];
     }
 

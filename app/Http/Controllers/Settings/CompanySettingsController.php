@@ -147,6 +147,36 @@ public function updateAccounting(Request $request)
         return back()->with('message', 'Layout settings updated successfully.');
     }
 
+    public function updateWarrantyLayout(Request $request)
+    {
+        $validated = $request->validate([
+            'warranty_layout_enabled' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+        return back()->with('message', 'Warranty layout settings updated successfully.');
+    }
+
+    public function updateJobLayout(Request $request)
+    {
+        $validated = $request->validate([
+            'job_layout_enabled' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+        return back()->with('message', 'Job layout settings updated successfully.');
+    }
+
+    public function updateCustomerLayout(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_layout_modal' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+        return back()->with('message', 'Customer layout settings updated successfully.');
+    }
+
     /**
      * Handle Logo Upload
      */

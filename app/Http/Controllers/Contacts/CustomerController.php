@@ -18,9 +18,12 @@ class CustomerController extends Controller
         return $max ? $max + 1 : self::STARTING_CUSTOMER_NUMBER;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $customers = Customer::orderBy('display_name')->get();
+        if ($request->wantsJson()) {
+            return response()->json($customers);
+        }
         return Inertia::render('Contacts/CustomerIndex', [
             'customers' => $customers
         ]);

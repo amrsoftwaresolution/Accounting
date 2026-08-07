@@ -22,18 +22,13 @@ use App\Http\Requests\Accounting\SalesInvoiceRequest;
 
 class POSController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            $settings = \App\Models\CompanySetting::first();
-            if (!$settings || !$settings->pos_layout_enabled) {
-                abort(403, 'POS feature is disabled. Enable it from Layout Settings.');
-            }
-            return $next($request);
-        });
-    }
     public function index()
     {
+        $settings = \App\Models\CompanySetting::first();
+        if (!$settings || !$settings->pos_layout_enabled) {
+            abort(403, 'POS feature is disabled. Enable it from Layout Settings.');
+        }
+
         // Fetch Items (Inventory, Service, Bundle, Non-Inventory)
         $items = Item::query()
             ->whereIn('type', ['inventory', 'service', 'bundle', 'non-inventory'])
@@ -46,12 +41,19 @@ class POSController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'applies_to', 'duration_days', 'duration_km', 'expiry_rule']);
 
+        // Pre-select default deposit account (first bank or asset account)
+        $defaultDepositAccount = ChartOfAcc::query()
+            ->whereIn('account_type', ['bank', 'asset'])
+            ->orderBy('id')
+            ->first(['id', 'name']);
+
         return Inertia::render('POS/Index', [
-            'items' => $items,
-            'paymentMethods' => $paymentMethods,
-            'warrantyPolicies' => $warrantyPolicies,
-            'nextReceiptNo' => $this->getNextReceiptNo(),
-            'existingReceipt' => null,
+            'items'                 => $items,
+            'paymentMethods'        => $paymentMethods,
+            'warrantyPolicies'      => $warrantyPolicies,
+            'nextReceiptNo'         => $this->getNextReceiptNo(),
+            'existingReceipt'       => null,
+            'defaultDepositAccount' => $defaultDepositAccount,
         ]);
     }
 

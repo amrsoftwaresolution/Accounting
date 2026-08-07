@@ -81,6 +81,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
         reference: invoiceReturn?.reference || (nextRef ? String(parseInt(nextRef)).padStart(4, '0') : "1001"),
         memo: invoiceReturn?.memo || "",
         statementMessage: invoiceReturn?.statementMessage || "",
+        prefix: invoiceReturn?.prefix || "",
         action: 'save',
         items: invoiceReturn?.items ? invoiceReturn.items.map(i => ({
             ...i,
@@ -103,6 +104,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                 reference: invoiceReturn.reference || "",
                 memo: invoiceReturn.memo || "",
                 statementMessage: invoiceReturn.statementMessage || "",
+                prefix: invoiceReturn.prefix || "",
                 items: invoiceReturn.items ? invoiceReturn.items.map(i => ({
                     ...i,
                     qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
@@ -123,6 +125,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                 reference: nextRef ? String(parseInt(nextRef)).padStart(4, '0') : "1001",
                 memo: "",
                 statementMessage: "",
+                prefix: "",
                 items: [
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                     { product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
@@ -227,7 +230,7 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
                     const num = parseInt(String(currentNo).replace(/[^0-9]/g, '')) || 1000;
                     const nextNo = String(num + 1).padStart(4, '0');
                     setData({
-                        customer: "", email: "",
+                        customer: "", email: "", prefix: "",
                         date: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                         reference: nextNo, memo: "", statementMessage: "", action: 'save',
                         items: [
@@ -265,7 +268,24 @@ export default function InvoiceReturnForm({ auth, nextRef = "", invoiceReturn = 
             <div className="py-6 px-1 space-y-8">
                 <div className="flex items-start justify-between gap-8">
                     <div className="flex items-start gap-6 flex-1">
-                        <div className="w-[320px]">
+                        <div className="w-[120px]">
+                            <SearchableSelect
+                                label="Prefix"
+                                value={data.prefix}
+                                onChange={(val) => { setData("prefix", val); setIsDirty(true); }}
+                                options={[
+                                    { label: 'None', value: '' },
+                                    { label: 'Mr', value: 'Mr' },
+                                    { label: 'Mrs', value: 'Mrs' },
+                                    { label: 'Miss', value: 'Miss' },
+                                    { label: 'Director', value: 'Director' },
+                                    { label: 'Manager', value: 'Manager' },
+                                ]}
+                                size="sm"
+                                hideAddNew={true}
+                            />
+                        </div>
+                        <div className="w-[280px]">
                             <SearchableSelect
                                 label="Customer"
                                 placeholder="Select a customer"
