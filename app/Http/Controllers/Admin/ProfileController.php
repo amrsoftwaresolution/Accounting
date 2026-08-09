@@ -26,9 +26,16 @@ class ProfileController extends Controller
         // Fetch SSO companies from Auth Server
         $ssoCompanies = Cache::remember('sso_companies_' . $user->id, 3600, function () use ($user) {
             try {
-                $authServerUrl = rtrim(config('sso.auth_server_url'), '/');
-                $secret = config('sso.client_secret');
+                $authServerUrl = config('sso.auth_server_url') ?: env('SSO_AUTH_SERVER_URL', 'https://jbooks.cloud');
+                $authServerUrl = rtrim($authServerUrl, '/');
                 
+                $secret = config('sso.client_secret') ?: env('SSO_CLIENT_SECRET');
+                
+                if (empty($secret)) {
+                    \Illuminate\Support\Facades\Log::error('SSO Client Secret is empty. Cannot fetch companies.');
+                    return [];
+                }
+
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $secret,
                     'Accept' => 'application/json',
@@ -39,9 +46,11 @@ class ProfileController extends Controller
 
                 if ($response->successful()) {
                     return $response->json('companies') ?? [];
+                } else {
+                    \Illuminate\Support\Facades\Log::error('SSO fetch failed with status ' . $response->status() . ': ' . $response->body());
                 }
             } catch (\Exception $e) {
-                // Log or ignore if auth server is down
+                \Illuminate\Support\Facades\Log::error('SSO Companies Fetch Error: ' . $e->getMessage());
             }
             return [];
         });

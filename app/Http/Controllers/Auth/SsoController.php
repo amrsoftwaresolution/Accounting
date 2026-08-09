@@ -24,8 +24,10 @@ class SsoController extends Controller
         ]);
 
         $targetDomain = rtrim($request->target_domain, '/');
-        $authServerUrl = rtrim(config('sso.auth_server_url'), '/');
-        $secret = config('sso.client_secret');
+        $authServerUrl = config('sso.auth_server_url') ?: env('SSO_AUTH_SERVER_URL', 'https://jbooks.cloud');
+        $authServerUrl = rtrim($authServerUrl, '/');
+        
+        $secret = config('sso.client_secret') ?: env('SSO_CLIENT_SECRET');
         $user = Auth::user();
 
         // Request a short-lived token from the central auth server
@@ -56,8 +58,10 @@ class SsoController extends Controller
             abort(400, 'Missing SSO token.');
         }
 
-        $authServerUrl = rtrim(config('sso.auth_server_url'), '/');
-        $secret = config('sso.client_secret');
+        $authServerUrl = config('sso.auth_server_url') ?: env('SSO_AUTH_SERVER_URL', 'https://jbooks.cloud');
+        $authServerUrl = rtrim($authServerUrl, '/');
+        
+        $secret = config('sso.client_secret') ?: env('SSO_CLIENT_SECRET');
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $secret,
