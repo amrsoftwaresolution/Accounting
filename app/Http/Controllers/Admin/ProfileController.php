@@ -9,6 +9,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,9 +21,35 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        
+        // Fetch SSO companies from Auth Server
+        $ssoCompanies = Cache::remember('sso_companies_' . $user->id, 3600, function () use ($user) {
+            try {
+                $authServerUrl = rtrim(config('sso.auth_server_url'), '/');
+                $secret = config('sso.client_secret');
+                
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $secret,
+                    'Accept' => 'application/json',
+                    'Connection' => 'keep-alive',
+                ])->post($authServerUrl . '/api/sso/user-companies', [
+                    'email' => $user->email,
+                ]);
+
+                if ($response->successful()) {
+                    return $response->json('companies') ?? [];
+                }
+            } catch (\Exception $e) {
+                // Log or ignore if auth server is down
+            }
+            return [];
+        });
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'sso_companies' => $ssoCompanies,
         ]);
     }
 
