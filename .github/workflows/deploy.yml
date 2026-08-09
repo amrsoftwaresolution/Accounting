@@ -52,14 +52,14 @@ jobs:
               set_env "ftp_server" "$FTP_SERVER_JOBALIGN"
               set_env "ftp_username" "$FTP_USERNAME_JOBALIGN"
               set_env "ftp_password" "$FTP_PASSWORD_JOBALIGN"
-              dir="/public_html/"
+              dir="/"
               ;;
             hallam-city-campus)
               echo "env_file=env/.env.prod.hallam-city-campus" >> "$GITHUB_OUTPUT"
               set_env "ftp_server" "$FTP_SERVER_HALLAM"
               set_env "ftp_username" "$FTP_USERNAME_HALLAM"
               set_env "ftp_password" "$FTP_PASSWORD_HALLAM"
-              dir="/public_html/"
+              dir="/"
               ;;
             steel-audit)
               echo "env_file=env/.env.prod.steel-audit" >> "$GITHUB_OUTPUT"
