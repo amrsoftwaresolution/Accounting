@@ -43,3 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/purchase-by-supplier', [ReportsController::class, 'purchaseBySupplier'])->name('api.reports.purchase-by-supplier');
     });
 });
+
+// SSO Server Endpoints
+use App\Http\Controllers\Auth\SsoController;
+Route::post('/sso/generate-token', [SsoController::class, 'generateToken']);
+Route::post('/sso/validate-token', [SsoController::class, 'validateToken']);
