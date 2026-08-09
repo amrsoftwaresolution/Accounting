@@ -11,7 +11,6 @@ import QuickAddAccount from '@/Components/QuickAddAccount';
 import InventoryItemSidePanel from '@/Components/InventoryItemSidePanel';
 import Sidebar from './Partials/Sidebar';
 import Modal from '@/Components/Modal';
-import CustomerIndexContent from '@/Pages/Contacts/CustomerIndexContent';
 import axios from 'axios';
 
 export default function AuthenticatedLayout({ header, children, hideSidebar = false }) {
@@ -40,27 +39,11 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
     const [isSidebarVisible, setIsSidebarVisible] = useState(true);
     const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
     const [quickAddType, setQuickAddType] = useState(null);
-    const [customerModalOpen, setCustomerModalOpen] = useState(false);
-    const [modalCustomers, setModalCustomers] = useState([]);
-
-    const fetchModalCustomers = () => {
-        axios.get(route('customers.index'), { headers: { 'Accept': 'application/json' } })
-            .then(res => setModalCustomers(res.data))
-            .catch(err => console.error(err));
-    };
-
-    const handleCustomerClick = (e) => {
-        if (!page.props.auth.customer_layout_modal) {
-            e.preventDefault();
-            fetchModalCustomers();
-            setCustomerModalOpen(true);
-        }
-    };
 
     const navigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'dashboard' },
         ...(page.props.auth.pos_layout_enabled ? [{ name: 'POS Billing', href: route('pos.index'), icon: 'pos', isPos: true }] : []),
-        { name: 'Customer', href: route('customers.index'), icon: 'users', onClick: handleCustomerClick },
+        { name: 'Customer', href: route('customers.index'), icon: 'users' },
         { name: 'Vehicles', href: route('vehicles.index'), icon: 'vehicle' },
         ...(page.props.auth.job_enabled ? [{ name: 'Jobs', href: route('job-cards.index'), icon: 'job', isJob: true }] : []),
         ...(page.props.auth.warranties_enabled ? [{ name: 'Warranties', href: route('warranties.index'), icon: 'warranty', isWarranty: true }] : []),
@@ -236,18 +219,6 @@ export default function AuthenticatedLayout({ header, children, hideSidebar = fa
             />
 
             <ToastNotification />
-            {/* Customer Modal */}
-            <Modal show={customerModalOpen} onClose={() => setCustomerModalOpen(false)} maxWidth="5xl">
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="font-bold text-lg text-slate-800 tracking-tight">Customers</h2>
-                        <button onClick={() => setCustomerModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                            <span className="material-symbols-outlined">close</span>
-                        </button>
-                    </div>
-                    <CustomerIndexContent customers={modalCustomers} />
-                </div>
-            </Modal>
         </div>
     );
 }

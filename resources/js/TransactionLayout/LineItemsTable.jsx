@@ -342,28 +342,32 @@ export default function LineItemsTable({
                                 {/* Actions */}
                                 <td className="px-1 py-0.5 align-middle w-20 text-right">
                                     <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button
+                                        <CommonButton
                                             type="button"
                                             tabIndex={-1}
+                                            variant="ghost"
+                                            size="xs"
                                             onClick={() => duplicateRow?.(index)}
-                                            className="p-1 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded transition-all"
+                                            className="!p-1 hover:text-green-600 hover:bg-green-50"
                                             title="Duplicate Row"
                                         >
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 00-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                             </svg>
-                                        </button>
-                                        <button
+                                        </CommonButton>
+                                        <CommonButton
                                             type="button"
                                             tabIndex={-1}
+                                            variant="ghost"
+                                            size="xs"
                                             onClick={() => removeRow(index)}
-                                            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                                            className="!p-1 hover:text-red-500 hover:bg-red-50"
                                             title="Remove Row"
                                         >
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
-                                        </button>
+                                        </CommonButton>
                                     </div>
                                 </td>
                             </tr>

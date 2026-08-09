@@ -22,6 +22,6 @@ class CreditInvoiceItem extends Model implements Auditable
 
     public function invoice()
     {
-        return $this->belongsTo(CreditInvoice::class);
+        return $this->belongsTo(CreditInvoice::class, 'credit_invoice_id');
     }
 }

@@ -55,7 +55,7 @@ export default function ItemList({ items, filters, counts }) {
 
     const handleDelete = (id) => {
         if (confirm('Are you sure you want to delete this item?')) {
-            destroy(route('items.destroy', id));
+            destroy(route('items.destroy', { item: id, redirect_to: window.location.href }));
         }
     };
 
@@ -159,9 +159,9 @@ export default function ItemList({ items, filters, counts }) {
                             <option value="service">Service</option>
                         </CommonInput>
                     </div>
-                    <button onClick={handleSearch} className="px-4 py-1.5 bg-slate-900 text-white rounded-md text-xs font-bold mt-1">Filter</button>
+                    <CommonButton onClick={handleSearch} variant="primary" className="!bg-slate-900 hover:!bg-slate-800 mt-1">Filter</CommonButton>
                     {(stockFilter || typeFilter !== 'all' || searchTerm) && (
-                        <button onClick={() => { setStockFilter(''); setTypeFilter('all'); setSearchTerm(''); router.get(route('items.index')); }} className="px-3 py-1.5 text-slate-500 hover:text-slate-700 text-xs font-bold mt-1">Clear</button>
+                        <CommonButton onClick={() => { setStockFilter(''); setTypeFilter('all'); setSearchTerm(''); router.get(route('items.index')); }} variant="ghost" className="mt-1">Clear</CommonButton>
                     )}
                 </div>
 

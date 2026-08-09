@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
 import QuickAddAccount from '@/Components/QuickAddAccount';
+import Modal from '@/Components/Modal';
 
 const Toggle = ({ checked, onChange, label, description }) => (
     <label className="flex items-start gap-3 cursor-pointer select-none group">
@@ -63,6 +64,7 @@ export default function ItemForm({
     const [isLoadingOptions, setIsLoadingOptions] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [accountModalType, setAccountModalType] = useState('asset');
+    const [showHistoricalConfirm, setShowHistoricalConfirm] = useState(false);
 
     const findDefaultAccounts = () => {
         let defaultInventoryId = '';
@@ -257,17 +259,41 @@ export default function ItemForm({
         setData('bundle_items', updated);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const submitForm = (updateHistorical = false) => {
         if (isEdit) {
-            transform((data) => ({
-                ...data,
-                _method: 'PUT'
+            transform((formData) => ({
+                ...formData,
+                _method: 'PUT',
+                update_historical: updateHistorical
             }));
-            post(route('items.update', item.id));
+            post(route('items.update', item.id), {
+                onFinish: () => setShowHistoricalConfirm(false)
+            });
         } else {
             post(route('items.store'));
         }
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        
+        if (isEdit) {
+            let changed = false;
+            
+            const showSales = data.type === 'inventory' || data.type === 'bundle' || ((data.type === 'service' || data.type === 'non-inventory') && data.is_sold);
+            const showPurchases = data.type === 'inventory' || ((data.type === 'service' || data.type === 'non-inventory') && data.is_purchased);
+            const showInventory = data.type === 'inventory';
+
+            if (showSales && data.income_account_id != item.income_account_id) changed = true;
+            if (showPurchases && data.expense_account_id != item.expense_account_id) changed = true;
+            if (showInventory && data.inventory_account_id != item.inventory_account_id) changed = true;
+
+            if (changed) {
+                setShowHistoricalConfirm(true);
+                return;
+            }
+        }
+        submitForm(false);
     };
 
     // Conditional visibility check
@@ -709,6 +735,47 @@ export default function ItemForm({
                     onSuccess={(newAcc) => handleAccountSuccess(newAcc, accountModalType)}
                 />
             )}
+
+            <Modal show={showHistoricalConfirm} onClose={() => setShowHistoricalConfirm(false)} maxWidth="md">
+                <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800">Update Account</h3>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-6">
+                        You've changed the account for this product/service. Do you want to update historical transactions with this new account? If you select 'Also Update Old Ones', past transactions will use the new account. Otherwise, only new transactions will use the new account.
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <CommonButton
+                            type="button"
+                            onClick={() => setShowHistoricalConfirm(false)}
+                            disabled={processing}
+                            variant="ghost"
+                        >
+                            Cancel
+                        </CommonButton>
+                        <CommonButton
+                            type="button"
+                            onClick={() => submitForm(false)}
+                            disabled={processing}
+                            variant="secondary"
+                            className="!bg-slate-600 !text-white hover:!bg-slate-700"
+                        >
+                            Only New Ones
+                        </CommonButton>
+                        <CommonButton
+                            type="button"
+                            onClick={() => submitForm(true)}
+                            disabled={processing}
+                            variant="primary"
+                        >
+                            Also Update Old Ones
+                        </CommonButton>
+                    </div>
+                </div>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

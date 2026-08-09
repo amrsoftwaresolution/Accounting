@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
 
 export default function ReportsIndex() {
     const [searchTerm, setSearchTerm] = useState('');
@@ -82,9 +83,9 @@ export default function ReportsIndex() {
                             <h3 className="mt-2 text-sm font-semibold text-gray-900">No reports found</h3>
                             <p className="mt-1 text-sm text-gray-500">Try adjusting your search term.</p>
                             <div className="mt-6">
-                                <button onClick={() => setSearchTerm('')} type="button" className="text-sm font-medium text-primary hover:text-primary-600">
+                                <CommonButton onClick={() => setSearchTerm('')} type="button" variant="ghost">
                                     Clear search
-                                </button>
+                                </CommonButton>
                             </div>
                         </div>
                     ) : (

@@ -9,6 +9,7 @@ import QuickAddPaymentMethod from "@/Components/QuickAddPaymentMethod";
 import { showToast } from "@/Components/ToastNotification";
 import QuickAddAccount from "@/Components/QuickAddAccount";
 import { useDateFormat, formatDate } from "@/Utils/dateFormat";
+import CommonButton from "@/Components/CommonButton";
 
 export default function ReceivePaymentForm({ paymentMethods = [], payment = null, nextPaymentNo = "" }) {
     const { auth } = usePage().props;
@@ -660,13 +661,14 @@ export default function ReceivePaymentForm({ paymentMethods = [], payment = null
 
                         {credit_invoices.length > 0 && (
                             <div className="flex justify-between items-start pt-4">
-                                <button
+                                <CommonButton
                                     type="button"
                                     onClick={handleClearPayment}
-                                    className="px-3.5 py-1.5 rounded-md border border-green-600 text-green-600 font-bold text-xs hover:bg-green-50 transition-all uppercase tracking-wider shadow-sm"
+                                    variant="ghost"
+                                    className="!border-green-600 !text-green-600 hover:!bg-green-50"
                                 >
                                     Clear Payment
-                                </button>
+                                </CommonButton>
                                 <div className="text-right space-y-1.5 font-bold">
                                     <div className="flex justify-end items-center gap-10 text-[10px] text-slate-400 uppercase tracking-wider">
                                         <span>Amount to Apply</span>

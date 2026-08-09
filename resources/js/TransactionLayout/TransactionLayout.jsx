@@ -4,6 +4,7 @@ import { router, usePage } from '@inertiajs/react';
 import SplitSaveButton from "@/Components/SplitSaveButton";
 import ToastNotification from "@/Components/ToastNotification";
 import MoreOptionsMenu from "@/Components/MoreOptionsMenu";
+import CommonButton from "@/Components/CommonButton";
 
 export default function TransactionLayout({
     title,
@@ -266,32 +267,35 @@ export default function TransactionLayout({
             <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 px-8 py-1 flex items-center justify-between shadow-2xl z-50">
                 {/* Left - Actions */}
                 <div className="flex items-center gap-4">
-                    <button
+                    <CommonButton
+                        variant="ghost"
                         onClick={handleClose}
-                        className="px-4 py-2 border border-primary-600 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-100 hover:bg-primary-600 transition-all"
+                        className="!border-primary-600 !text-primary-100 hover:!bg-primary-600 hover:!text-white !rounded-lg !px-4 !py-2"
                     >
                         Cancel
-                    </button>
+                    </CommonButton>
 
                     <div className="h-4 w-[1px] bg-slate-700 mx-2"></div>
 
                     {onAddLine && (
-                        <button
+                        <CommonButton
                             type="button"
+                            variant="ghost"
                             onClick={onAddLine}
-                            className="px-4 py-2 border border-primary-600 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-100 hover:bg-primary-600 transition-all"
+                            className="!border-primary-600 !text-primary-100 hover:!bg-primary-600 hover:!text-white !rounded-lg !px-4 !py-2"
                         >
                             Add lines
-                        </button>
+                        </CommonButton>
                     )}
                     {onClearRows && (
-                        <button
+                        <CommonButton
                             type="button"
+                            variant="ghost"
                             onClick={onClearRows}
-                            className="px-4 py-2 border border-primary-600 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary-100 hover:bg-primary-600 transition-all"
+                            className="!border-primary-600 !text-primary-100 hover:!bg-primary-600 hover:!text-white !rounded-lg !px-4 !py-2"
                         >
                             Clear all lines
-                        </button>
+                        </CommonButton>
                     )}
                 </div>
 

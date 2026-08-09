@@ -6,6 +6,7 @@ import CommonButton from './CommonButton';
 import SearchableSelect from './SearchableSelect';
 import ItemCategorySidePanel from './ItemCategorySidePanel';
 import QuickAddAccount from './QuickAddAccount';
+import Modal from './Modal';
 
 const Toggle = ({ checked, onChange, label, description }) => (
     <label className="flex items-start gap-3 cursor-pointer select-none group">
@@ -157,8 +158,7 @@ export default function InventoryItemSidePanel({
     };
 
     useEffect(() => {
-        setShowHistoricalModal(false);
-        setPendingAccountId(null);
+        setShowHistoricalConfirm(false);
         if (isOpen) {
             setIsLoadingOptions(true);
             axios.get(route('api.items.create-options'))
@@ -331,15 +331,14 @@ export default function InventoryItemSidePanel({
         setData('bundle_items', updated);
     };
 
-    const submit = (e) => {
-        e.preventDefault();
-
+    const processSubmit = (updateHistorical = false) => {
         const payload = {
             ...data,
             sale_price: String(data.sale_price).replace(/,/g, ''),
             purchase_price: String(data.purchase_price).replace(/,/g, ''),
             quantity_on_hand: String(data.quantity_on_hand).replace(/,/g, ''),
             reorder_point: String(data.reorder_point).replace(/,/g, ''),
+            update_historical: updateHistorical,
         };
 
         if (onSuccess) {
@@ -359,7 +358,7 @@ export default function InventoryItemSidePanel({
                             formData.append(`bundle_items[${index}][quantity]`, item.quantity);
                         });
                     } else if (payload[key] !== null && payload[key] !== undefined) {
-                        formData.append(key, payload[key]);
+                        formData.append(key, typeof payload[key] === 'boolean' ? (payload[key] ? 1 : 0) : payload[key]);
                     }
                 });
                 requestPayload = formData;
@@ -372,10 +371,12 @@ export default function InventoryItemSidePanel({
 
             request.then(res => {
                 setIsSubmitting(false);
+                setShowHistoricalConfirm(false);
                 onClose();
                 onSuccess(res.data.item);
             }).catch(err => {
                 setIsSubmitting(false);
+                setShowHistoricalConfirm(false);
                 if (err.response && err.response.data && err.response.data.errors) {
                     const serverErrors = err.response.data.errors;
                     Object.keys(serverErrors).forEach(key => {
@@ -388,21 +389,45 @@ export default function InventoryItemSidePanel({
         } else {
             const options = {
                 onSuccess: (page) => {
+                    setShowHistoricalConfirm(false);
                     onClose();
                     if (onSuccess) onSuccess(page);
                 },
             };
 
             if (isEdit) {
-                transform((data) => ({
-                    ...data,
-                    _method: 'PATCH'
+                transform((formData) => ({
+                    ...formData,
+                    _method: 'PATCH',
+                    update_historical: updateHistorical
                 }));
-                post(route('items.update', item.id), options);
+                post(route('items.update', { item: item.id, redirect_to: window.location.href }), options);
             } else {
-                post(route('items.store'), options);
+                post(route('items.store', { redirect_to: window.location.href }), options);
             }
         }
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+
+        if (isEdit) {
+            let changed = false;
+            
+            const showSales = data.type === 'inventory' || data.type === 'bundle' || ((data.type === 'service' || data.type === 'non-inventory') && data.is_sold);
+            const showPurchases = data.type === 'inventory' || ((data.type === 'service' || data.type === 'non-inventory') && data.is_purchased);
+            const showInventory = data.type === 'inventory';
+
+            if (showSales && data.income_account_id != item.income_account_id) changed = true;
+            if (showPurchases && data.expense_account_id != item.expense_account_id) changed = true;
+            if (showInventory && data.inventory_account_id != item.inventory_account_id) changed = true;
+
+            if (changed) {
+                setShowHistoricalConfirm(true);
+                return;
+            }
+        }
+        processSubmit(false);
     };
 
     // Conditional visibility checkers
@@ -412,9 +437,7 @@ export default function InventoryItemSidePanel({
     const showBundleSection = data.type === 'bundle';
     const showToggles = data.type === 'service' || data.type === 'non-inventory';
 
-    //inventory account change alert
-    const [showHistoricalModal, setShowHistoricalModal] = useState(false);
-    const [pendingAccountId, setPendingAccountId] = useState(null);
+    const [showHistoricalConfirm, setShowHistoricalConfirm] = useState(false);
 
     return (
         <SlideOver
@@ -613,14 +636,7 @@ export default function InventoryItemSidePanel({
                             <SearchableSelect
                                 options={localInventoryAccounts.map(acc => ({ value: acc.id, label: `${acc.account_code} - ${acc.name}` }))}
                                 value={data.inventory_account_id}
-                                onChange={val => {
-                                    if (isEdit) {
-                                        setPendingAccountId(val);
-                                        setShowHistoricalModal(true);
-                                    } else {
-                                        setData('inventory_account_id', val);
-                                    }
-                                }}
+                                onChange={val => setData('inventory_account_id', val)}
                                 placeholder="Link to Inventory Asset"
                                 onAddNew={() => {
                                     setAccountModalType('asset');
@@ -836,51 +852,6 @@ export default function InventoryItemSidePanel({
                         </div>
                     )} */}
 
-                {/* // alert msg for inventory account change */}
-                {showHistoricalModal && (
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
-                        <div className="bg-white rounded-lg shadow-xl w-[400px] p-6 border border-slate-200">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                                    <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-sm font-bold text-slate-800">Update Historical Transactions?</h3>
-                            </div>
-                            <p className="text-xs text-slate-600 mb-5 leading-relaxed">
-                                Do you want past credit_invoices and bills to use the new account?
-                                <span className="block mt-1 text-amber-700 font-semibold">Warning: This will affect past financial reports.</span>
-                            </p>
-                            <div className="flex justify-end gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setData('inventory_account_id', pendingAccountId);
-                                        setData('update_historical', false);
-                                        setShowHistoricalModal(false);
-                                        setPendingAccountId(null);
-                                    }}
-                                    className="px-4 py-1.5 text-xs font-bold border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50 transition-all"
-                                >
-                                    No, Keep Old
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setData('inventory_account_id', pendingAccountId);
-                                        setData('update_historical', true);
-                                        setShowHistoricalModal(false);
-                                        setPendingAccountId(null);
-                                    }}
-                                    className="px-4 py-1.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-all"
-                                >
-                                    Yes, Update All
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
                     <CommonButton variant="ghost" onClick={onClose} type="button" size="sm">Cancel</CommonButton>
@@ -905,6 +876,47 @@ export default function InventoryItemSidePanel({
                     onSuccess={(newAcc) => handleAccountSuccess(newAcc, accountModalType)}
                 />
             )}
+
+            <Modal show={showHistoricalConfirm} onClose={() => setShowHistoricalConfirm(false)} maxWidth="md">
+                <div className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                            <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800">Update Account</h3>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-6">
+                        You've changed the account for this product/service. Do you want to update historical transactions with this new account? If you select 'Also Update Old Ones', past transactions will use the new account. Otherwise, only new transactions will use the new account.
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <CommonButton
+                            type="button"
+                            onClick={() => setShowHistoricalConfirm(false)}
+                            disabled={processing || isSubmitting}
+                            variant="ghost"
+                        >
+                            Cancel
+                        </CommonButton>
+                        <CommonButton
+                            type="button"
+                            onClick={() => processSubmit(false)}
+                            disabled={processing || isSubmitting}
+                            variant="secondary"
+                            className="!bg-slate-600 !text-white hover:!bg-slate-700"
+                        >
+                            Only New Ones
+                        </CommonButton>
+                        <CommonButton
+                            type="button"
+                            onClick={() => processSubmit(true)}
+                            disabled={processing || isSubmitting}
+                            variant="primary"
+                        >
+                            Also Update Old Ones
+                        </CommonButton>
+                    </div>
+                </div>
+            </Modal>
         </SlideOver>
     );
 }

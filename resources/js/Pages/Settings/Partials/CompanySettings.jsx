@@ -2,6 +2,8 @@
 
 import React, { useState, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
+import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
 
 export default function CompanySettings({ settings, currencies = [] }) {
     // 1. Logic for Company Info Text (Edit Mode)
@@ -144,7 +146,7 @@ const handleAccountingSubmit = (e) => {
                                 <h2 className="text-sm font-bold text-gray-800">Company info</h2>
                                 <p className="text-gray-400 text-[10px]">This info may be used for billing purposes.</p>
                             </div>
-                            <button onClick={() => setIsEditing(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
+                            <CommonButton variant="ghost" size="xs" onClick={() => setIsEditing(true)}>Edit</CommonButton>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -181,36 +183,46 @@ const handleAccountingSubmit = (e) => {
                     <form onSubmit={handleInfoSubmit} className="p-6">
                         <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Company info</h2>
                         <div className="space-y-3">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Name</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.company_name} onChange={e => infoForm.setData('company_name', e.target.value)} />
-                            </div>
+                            <CommonInput 
+                                label="Company Name" 
+                                value={infoForm.data.company_name} 
+                                onChange={e => infoForm.setData('company_name', e.target.value)} 
+                            />
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Email</label>
-                                    <input type="email" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.company_email} onChange={e => infoForm.setData('company_email', e.target.value)} />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</label>
-                                    <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.phone} onChange={e => infoForm.setData('phone', e.target.value)} />
-                                </div>
+                                <CommonInput 
+                                    type="email" 
+                                    label="Company Email" 
+                                    value={infoForm.data.company_email} 
+                                    onChange={e => infoForm.setData('company_email', e.target.value)} 
+                                />
+                                <CommonInput 
+                                    label="Phone" 
+                                    value={infoForm.data.phone} 
+                                    onChange={e => infoForm.setData('phone', e.target.value)} 
+                                />
                             </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</label>
-                                <textarea className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" rows="2" value={infoForm.data.address} onChange={e => infoForm.setData('address', e.target.value)}></textarea>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Website</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.website} onChange={e => infoForm.setData('website', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currency Prefix</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={infoForm.data.home_currency_prefix} onChange={e => infoForm.setData('home_currency_prefix', e.target.value)} placeholder="e.g. $" />
-                            </div>
+                            <CommonInput 
+                                type="textarea" 
+                                label="Address" 
+                                value={infoForm.data.address} 
+                                onChange={e => infoForm.setData('address', e.target.value)} 
+                                rows="2" 
+                            />
+                            <CommonInput 
+                                label="Website" 
+                                value={infoForm.data.website} 
+                                onChange={e => infoForm.setData('website', e.target.value)} 
+                            />
+                            <CommonInput 
+                                label="Currency Prefix" 
+                                value={infoForm.data.home_currency_prefix} 
+                                onChange={e => infoForm.setData('home_currency_prefix', e.target.value)} 
+                                placeholder="e.g. $" 
+                            />
                         </div>
                         <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                            <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
-                            <button type="submit" disabled={infoForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
+                            <CommonButton type="button" variant="secondary" onClick={() => setIsEditing(false)}>Cancel</CommonButton>
+                            <CommonButton type="submit" variant="primary" processing={infoForm.processing}>Save</CommonButton>
                         </div>
                     </form>
                 )}
@@ -226,7 +238,7 @@ const handleAccountingSubmit = (e) => {
                     <h2 className="text-sm font-bold text-gray-800">Accounting</h2>
                     <p className="text-gray-400 text-[10px]">These settings affect how your books are kept.</p>
                 </div>
-                <button onClick={() => setIsEditingAccounting(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
+                <CommonButton variant="ghost" size="xs" onClick={() => setIsEditingAccounting(true)}>Edit</CommonButton>
             </div>
             <div className="space-y-3">
                 <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -251,30 +263,49 @@ const handleAccountingSubmit = (e) => {
         <form onSubmit={handleAccountingSubmit} className="p-6">
             <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Accounting</h2>
             <div className="space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                    <span>First month of financial year</span>
-                    <select value={accountingForm.data.fin_year_start} onChange={e => accountingForm.setData('fin_year_start', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
-                        <option>January</option><option>February</option><option>March</option>
-                        <option>April</option><option>May</option><option>June</option>
-                        <option>July</option><option>August</option><option>September</option>
-                        <option>October</option><option>November</option><option>December</option>
-                    </select>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                    <span>First month of tax year</span>
-                    <select value={accountingForm.data.tax_year_start} onChange={e => accountingForm.setData('tax_year_start', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
-                        <option>Same as financial year</option><option>January</option>
-                    </select>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                    <span>Accounting method</span>
-                    <select value={accountingForm.data.acct_method} onChange={e => accountingForm.setData('acct_method', e.target.value)} className="border border-gray-300 rounded p-1.5 w-44 text-xs text-gray-700 outline-none focus:border-green-600 bg-white">
-                        <option>Accrual</option><option>Cash</option>
-                    </select>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                    <span>Close the books</span>
-                    <label className="relative inline-flex items-center cursor-pointer scale-90">
+                <CommonInput
+                    type="select"
+                    label="First month of financial year"
+                    value={accountingForm.data.fin_year_start}
+                    onChange={e => accountingForm.setData('fin_year_start', e.target.value)}
+                    options={[
+                        { label: 'January', value: 'January' },
+                        { label: 'February', value: 'February' },
+                        { label: 'March', value: 'March' },
+                        { label: 'April', value: 'April' },
+                        { label: 'May', value: 'May' },
+                        { label: 'June', value: 'June' },
+                        { label: 'July', value: 'July' },
+                        { label: 'August', value: 'August' },
+                        { label: 'September', value: 'September' },
+                        { label: 'October', value: 'October' },
+                        { label: 'November', value: 'November' },
+                        { label: 'December', value: 'December' },
+                    ]}
+                />
+                <CommonInput
+                    type="select"
+                    label="First month of tax year"
+                    value={accountingForm.data.tax_year_start}
+                    onChange={e => accountingForm.setData('tax_year_start', e.target.value)}
+                    options={[
+                        { label: 'Same as financial year', value: 'Same as financial year' },
+                        { label: 'January', value: 'January' },
+                    ]}
+                />
+                <CommonInput
+                    type="select"
+                    label="Accounting method"
+                    value={accountingForm.data.acct_method}
+                    onChange={e => accountingForm.setData('acct_method', e.target.value)}
+                    options={[
+                        { label: 'Accrual', value: 'Accrual' },
+                        { label: 'Cash', value: 'Cash' },
+                    ]}
+                />
+                <div className="pt-2">
+                    <label className="font-bold text-slate-600 ml-0.5 text-xs mb-1 block">Close the books</label>
+                    <label className="relative inline-flex items-center cursor-pointer scale-90 ml-0.5">
                         <input
                             type="checkbox"
                             className="sr-only peer"
@@ -286,8 +317,8 @@ const handleAccountingSubmit = (e) => {
                 </div>
             </div>
             <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                <button type="button" onClick={() => setIsEditingAccounting(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
-                <button type="submit" disabled={accountingForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
+                <CommonButton type="button" variant="secondary" onClick={() => setIsEditingAccounting(false)}>Cancel</CommonButton>
+                <CommonButton type="submit" variant="primary" processing={accountingForm.processing}>Save</CommonButton>
             </div>
         </form>
     )}
@@ -302,7 +333,7 @@ const handleAccountingSubmit = (e) => {
                                 <h2 className="text-sm font-bold text-gray-800">Legal info</h2>
                                 <p className="text-gray-400 text-[10px]">This is the info your business uses for tax purposes.</p>
                             </div>
-                            <button onClick={() => setIsEditingLegal(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
+                            <CommonButton variant="ghost" size="xs" onClick={() => setIsEditingLegal(true)}>Edit</CommonButton>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -327,31 +358,39 @@ const handleAccountingSubmit = (e) => {
                     <form onSubmit={handleLegalSubmit} className="p-6">
                         <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Legal info</h2>
                         <div className="space-y-3">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Legal Business Name</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={legalForm.data.legal_name} onChange={e => legalForm.setData('legal_name', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">VAT/GST/TAX ID number</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={legalForm.data.tax_id} onChange={e => legalForm.setData('tax_id', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Business type</label>
-                                <select className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5 bg-white" value={legalForm.data.business_type} onChange={e => legalForm.setData('business_type', e.target.value)}>
-                                    <option value="">Select type</option>
-                                    <option value="Sole trader">Sole trader</option>
-                                    <option value="Partnership or limited liability company">Partnership or limited liability company</option>
-                                    <option value="Small business Corporation">Small business Corporation</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Legal address</label>
-                                <textarea className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" rows="2" value={legalForm.data.legal_address} onChange={e => legalForm.setData('legal_address', e.target.value)}></textarea>
-                            </div>
+                            <CommonInput
+                                label="Legal Business Name"
+                                value={legalForm.data.legal_name}
+                                onChange={e => legalForm.setData('legal_name', e.target.value)}
+                            />
+                            <CommonInput
+                                label="VAT/GST/TAX ID number"
+                                value={legalForm.data.tax_id}
+                                onChange={e => legalForm.setData('tax_id', e.target.value)}
+                            />
+                            <CommonInput
+                                type="select"
+                                label="Business type"
+                                value={legalForm.data.business_type}
+                                onChange={e => legalForm.setData('business_type', e.target.value)}
+                                options={[
+                                    { label: 'Select type', value: '' },
+                                    { label: 'Sole trader', value: 'Sole trader' },
+                                    { label: 'Partnership or limited liability company', value: 'Partnership or limited liability company' },
+                                    { label: 'Small business Corporation', value: 'Small business Corporation' },
+                                ]}
+                            />
+                            <CommonInput
+                                type="textarea"
+                                label="Legal address"
+                                value={legalForm.data.legal_address}
+                                onChange={e => legalForm.setData('legal_address', e.target.value)}
+                                rows="2"
+                            />
                         </div>
                         <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                            <button type="button" onClick={() => setIsEditingLegal(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
-                            <button type="submit" disabled={legalForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
+                            <CommonButton type="button" variant="secondary" onClick={() => setIsEditingLegal(false)}>Cancel</CommonButton>
+                            <CommonButton type="submit" variant="primary" processing={legalForm.processing}>Save</CommonButton>
                         </div>
                     </form>
                 )}
@@ -363,7 +402,7 @@ const handleAccountingSubmit = (e) => {
                     <div className="p-6">
                         <div className="flex justify-between items-center mb-3">
                             <h2 className="text-sm font-bold text-gray-800">Alerts & Notifications</h2>
-                            <button onClick={() => setIsEditingAlerts(true)} className="text-primary-600 hover:underline text-xs font-semibold">Edit</button>
+                            <CommonButton variant="ghost" size="xs" onClick={() => setIsEditingAlerts(true)}>Edit</CommonButton>
                         </div>
                         <div className="space-y-3">
                             <div className="grid grid-cols-12 border-b border-gray-100 pb-2">
@@ -385,24 +424,36 @@ const handleAccountingSubmit = (e) => {
                         <h2 className="text-sm font-bold text-gray-800 mb-4">Edit Alerts Configuration</h2>
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alert To Emails</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={alertsForm.data.low_stock_to_emails} onChange={e => alertsForm.setData('low_stock_to_emails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
-                                <p className="text-[10px] text-gray-500 mt-1">Separate multiple emails with commas</p>
+                                <CommonInput
+                                    label="Low Stock Alert To Emails"
+                                    value={alertsForm.data.low_stock_to_emails}
+                                    onChange={e => alertsForm.setData('low_stock_to_emails', e.target.value)}
+                                    placeholder="email1@example.com, email2@example.com"
+                                />
+                                <p className="text-[10px] text-gray-500 mt-1 ml-0.5">Separate multiple emails with commas</p>
                             </div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alert CC Emails</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={alertsForm.data.low_stock_cc_emails} onChange={e => alertsForm.setData('low_stock_cc_emails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
-                                <p className="text-[10px] text-gray-500 mt-1">Separate multiple emails with commas</p>
+                                <CommonInput
+                                    label="Low Stock Alert CC Emails"
+                                    value={alertsForm.data.low_stock_cc_emails}
+                                    onChange={e => alertsForm.setData('low_stock_cc_emails', e.target.value)}
+                                    placeholder="email1@example.com, email2@example.com"
+                                />
+                                <p className="text-[10px] text-gray-500 mt-1 ml-0.5">Separate multiple emails with commas</p>
                             </div>
                             <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Low Stock Alert BCC Emails</label>
-                                <input type="text" className="w-full border-gray-300 rounded mt-1 focus:border-green-600 focus:ring-0 text-xs py-1.5" value={alertsForm.data.low_stock_bcc_emails} onChange={e => alertsForm.setData('low_stock_bcc_emails', e.target.value)} placeholder="email1@example.com, email2@example.com" />
-                                <p className="text-[10px] text-gray-500 mt-1">Separate multiple emails with commas</p>
+                                <CommonInput
+                                    label="Low Stock Alert BCC Emails"
+                                    value={alertsForm.data.low_stock_bcc_emails}
+                                    onChange={e => alertsForm.setData('low_stock_bcc_emails', e.target.value)}
+                                    placeholder="email1@example.com, email2@example.com"
+                                />
+                                <p className="text-[10px] text-gray-500 mt-1 ml-0.5">Separate multiple emails with commas</p>
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4">
-                            <button type="button" onClick={() => setIsEditingAlerts(false)} className="px-4 py-1.5 border border-gray-300 rounded-full font-bold text-xs hover:bg-gray-50 text-gray-700">Cancel</button>
-                            <button type="submit" disabled={alertsForm.processing} className="px-5 py-1.5 bg-green-700 text-white rounded-full font-bold text-xs hover:bg-green-800 disabled:opacity-50">Save</button>
+                            <CommonButton type="button" variant="secondary" onClick={() => setIsEditingAlerts(false)}>Cancel</CommonButton>
+                            <CommonButton type="submit" variant="primary" processing={alertsForm.processing}>Save</CommonButton>
                         </div>
                     </form>
                 )}
