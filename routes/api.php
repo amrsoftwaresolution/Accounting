@@ -48,3 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
 use App\Http\Controllers\Auth\SsoController;
 Route::post('/sso/generate-token', [SsoController::class, 'generateToken']);
 Route::post('/sso/validate-token', [SsoController::class, 'validateToken']);
+
+// Hub Sync Routes
+use App\Http\Controllers\Api\HubSyncController;
+Route::get('/hub/export', [HubSyncController::class, 'export']);
+Route::post('/hub/import-user', [HubSyncController::class, 'importUser']);
