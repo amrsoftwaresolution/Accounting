@@ -79,10 +79,12 @@ class SsoController extends Controller
                 Auth::login($user);
                 return redirect()->route('dashboard');
             } else {
+                \Illuminate\Support\Facades\Log::error('SSO Callback Failed: User with email ' . $email . ' not found in local database.');
                 return redirect()->route('login')->with('error', 'User not found in this company.');
             }
         }
 
+        \Illuminate\Support\Facades\Log::error('SSO Callback Failed: Validate token API failed with status ' . $response->status() . ' and body ' . $response->body());
         return redirect()->route('login')->with('error', 'Invalid or expired SSO token.');
     }
 }
