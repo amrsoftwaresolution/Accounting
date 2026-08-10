@@ -141,7 +141,7 @@ export default function PrintSettings({ settings }) {
                     <CommonButton
                         type="submit"
                         disabled={processing}
-                        variant="success"
+                        variant="primary"
                     >
                         Save Print Settings
                     </CommonButton>

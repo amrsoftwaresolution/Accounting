@@ -625,24 +625,27 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
                     <h2 className="text-base font-bold text-slate-900">Active order detected</h2>
                     <p className="mt-2 text-sm text-slate-600">You have an active order in POS. Save it to Hold before leaving, or discard it?</p>
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-                        <button
+                        <CommonButton
                             onClick={() => handleExitChoice('discard')}
-                            className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-sm"
+                            variant="ghost"
+                            className="w-full sm:w-auto justify-center"
                         >
                             Discard & Leave
-                        </button>
-                        <button
+                        </CommonButton>
+                        <CommonButton
                             onClick={() => handleExitChoice('hold')}
-                            className="w-full sm:w-auto px-3 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 text-sm"
+                            variant="primary"
+                            className="w-full sm:w-auto justify-center"
                         >
                             Save to Hold & Leave
-                        </button>
-                        <button
+                        </CommonButton>
+                        <CommonButton
                             onClick={() => setIsExitModalOpen(false)}
-                            className="w-full sm:w-auto px-3 py-2 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-sm"
+                            variant="secondary"
+                            className="w-full sm:w-auto justify-center"
                         >
                             Continue POS
-                        </button>
+                        </CommonButton>
                     </div>
                 </div>
             </Modal>

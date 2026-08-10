@@ -21,7 +21,7 @@ class BalanceSheetController extends Controller
     {
         $displayBy = $request->get('display_by', 'total');
         $start = $request->has('start_date') ? $request->get('start_date') : date('Y-01-01');
-        $end = $request->has('end_date') ? $request->get('end_date') : date('Y-m-d');
+        $end = $request->has('end_date') ? $request->get('end_date') : date('Y-12-31');
 
         $sql = 'select journal_entry_lines.chart_of_acc_id, ';
         if ($displayBy === 'month') {

@@ -193,7 +193,8 @@ class ItemController extends Controller
             ]);
         }
 
-        return redirect()->route('items.index')->with('success', 'Item created successfully');
+        $redirectUrl = $request->query('redirect_to', route('items.index'));
+        return redirect()->to($redirectUrl)->with('success', 'Item created successfully');
     }
 
     public function edit(Item $item)
@@ -293,7 +294,7 @@ class ItemController extends Controller
                     foreach ($billItems as $bi) {
                         $bi->update(['chart_of_acc_id' => $item->expense_account_id]);
                         // Bill creates JournalEntry where transactionable is the Bill. We find the JournalEntryLine with old account
-                        $je = $bi->bill->journalEntry;
+                        $je = $bi->bill?->journalEntry;
                         if ($je) {
                             JournalEntryLine::where('journal_entry_id', $je->id)
                                 ->where('chart_of_acc_id', $oldExpenseAccount)
@@ -305,7 +306,7 @@ class ItemController extends Controller
                     $expenseItems = PaymentItem::where('item_id', $item->id)->where('chart_of_acc_id', $oldExpenseAccount)->get();
                     foreach ($expenseItems as $ei) {
                         $ei->update(['chart_of_acc_id' => $item->expense_account_id]);
-                        $je = $ei->expense->journalEntry;
+                        $je = $ei->expense?->journalEntry;
                         if ($je) {
                             JournalEntryLine::where('journal_entry_id', $je->id)
                                 ->where('chart_of_acc_id', $oldExpenseAccount)
@@ -321,7 +322,7 @@ class ItemController extends Controller
                     
                     $invoiceItems = CreditInvoiceItem::where('item_id', $item->id)->get();
                     foreach ($invoiceItems as $ii) {
-                        $je = $ii->invoice->journalEntry;
+                        $je = $ii->invoice?->journalEntry;
                         if ($je) {
                             if ($oldIncomeAccount && $oldIncomeAccount !== $item->income_account_id) {
                                 JournalEntryLine::where('journal_entry_id', $je->id)
@@ -346,7 +347,8 @@ class ItemController extends Controller
             }
         });
 
-        return redirect()->route('items.index')->with('success', 'Item updated successfully');
+        $redirectUrl = $request->query('redirect_to', route('items.index'));
+        return redirect()->to($redirectUrl)->with('success', 'Item updated successfully');
     }
 
     public function printBarcode(Request $request, Item $item)
@@ -361,6 +363,7 @@ class ItemController extends Controller
     public function destroy(Item $item)
     {
         $item->delete();
-        return redirect()->route('items.index')->with('success', 'Item deleted successfully');
+        $redirectUrl = $request->query('redirect_to', route('items.index'));
+        return redirect()->to($redirectUrl)->with('success', 'Item deleted successfully');
     }
 }

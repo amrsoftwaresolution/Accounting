@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
+import CommonButton from '@/Components/CommonButton';
 
 const TimeSection = ({ title, isEditing, onEdit, onCancel, onSave, children }) => (
     <div className={`py-4 border-b border-gray-100 last:border-0 relative group ${isEditing ? 'bg-gray-55 -mx-6 px-6' : ''}`}>
@@ -15,18 +16,18 @@ const TimeSection = ({ title, isEditing, onEdit, onCancel, onSave, children }) =
 
                 {isEditing && (
                     <div className="mt-4 flex space-x-2">
-                        <button
+                        <CommonButton
                             onClick={onCancel}
-                            className="px-5 py-1 border border-green-700 text-green-700 font-bold rounded-full text-xs hover:bg-green-50 transition-colors"
+                            variant="secondary"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </CommonButton>
+                        <CommonButton
                             onClick={onSave}
-                            className="px-6 py-1 bg-green-700 text-white font-bold rounded-full text-xs hover:bg-green-800 transition-colors"
+                            variant="primary"
                         >
                             Save
-                        </button>
+                        </CommonButton>
                     </div>
                 )}
             </div>

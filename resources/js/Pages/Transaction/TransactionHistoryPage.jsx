@@ -2,6 +2,7 @@ import { router, usePage, Head } from '@inertiajs/react';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 import { getEditRoute } from '@/Utils/routeUtils';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import CommonButton from '@/Components/CommonButton';
 
 const typeLabel = (type = '') => {
     return String(type || '')
@@ -25,13 +26,13 @@ export default function TransactionHistoryPage() {
                         <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">History</p>
                         <h1 className="text-lg font-semibold text-slate-800">{typeLabel(transactionType)} history</h1>
                     </div>
-                    <button
+                    <CommonButton
                         type="button"
                         onClick={() => window.history.back()}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-600 hover:bg-slate-100"
+                        variant="secondary"
                     >
                         Back
-                    </button>
+                    </CommonButton>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -76,13 +77,14 @@ export default function TransactionHistoryPage() {
                                                 {record.credit > 0 ? parseFloat(record.credit).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '-'}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <button
+                                                <CommonButton
                                                     type="button"
                                                     onClick={() => router.visit(route(getEditRoute(transactionType), record.id))}
-                                                    className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl text-[10px] font-bold text-slate-600 transition-all shadow-sm"
+                                                    variant="secondary"
+                                                    size="xs"
                                                 >
                                                     View
-                                                </button>
+                                                </CommonButton>
                                             </td>
                                         </tr>
                                     ))}

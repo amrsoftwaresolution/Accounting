@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import ReportLayout from '@/Layouts/ReportLayout';
 import { Head, Link, router } from '@inertiajs/react';
+import CommonButton from '@/Components/CommonButton';
 import ReportDateFilter from '@/Components/ReportDateFilter';
 import { useDateFormat, formatDate } from '@/Utils/dateFormat';
 import { getEditRoute } from '@/Utils/routeUtils';
@@ -113,13 +114,14 @@ export default function SalesByItem({ reportData, filters, auth }) {
                 currentFilter={{ start_date: filters.start_date, end_date: filters.end_date, type: filters.type }}
                 onFilterChange={handleFilterChange}
             />
-            <button
+            <CommonButton
                 onClick={toggleDisplayBy}
-                className="flex items-center gap-1.5 hover:text-gray-900 transition-colors h-[30px] px-3 border border-slate-300 rounded-sm text-xs text-slate-700 bg-white shadow-sm hover:bg-slate-50 focus:ring-2 focus:ring-green-500/20 focus:border-green-500 mb-[1px]"
+                variant="secondary"
+                className="h-[30px] !px-3 mb-[1px]"
             >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
                 {displayBy === 'month' ? 'View Totals' : 'View by Month'}
-            </button>
+            </CommonButton>
         </div>
     );
 

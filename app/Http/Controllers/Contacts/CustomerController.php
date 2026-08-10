@@ -52,7 +52,7 @@ class CustomerController extends Controller
             'company_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
-            'nic' => 'required|string|max:50',
+            'nic' => 'nullable|string|max:50',
             'passport' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'opening_balance' => 'nullable|numeric',
@@ -78,7 +78,7 @@ class CustomerController extends Controller
             'company_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:255',
-            'nic' => 'required|string|max:50',
+            'nic' => 'nullable|string|max:50',
             'passport' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
         ]);
