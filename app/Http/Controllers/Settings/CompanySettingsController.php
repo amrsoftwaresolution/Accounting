@@ -177,6 +177,26 @@ public function updateAccounting(Request $request)
         return back()->with('message', 'Customer layout settings updated successfully.');
     }
 
+    public function updateReportsDisplayStyle(Request $request)
+    {
+        $validated = $request->validate([
+            'reports_display_as_buttons' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+        return back()->with('message', 'Reports display style updated successfully.');
+    }
+
+    public function updateVehiclesEnabled(Request $request)
+    {
+        $validated = $request->validate([
+            'vehicles_enabled' => 'required|boolean',
+        ]);
+
+        $this->getSettings()->update($validated);
+        return back()->with('message', 'Vehicles setting updated successfully.');
+    }
+
     /**
      * Handle Logo Upload
      */

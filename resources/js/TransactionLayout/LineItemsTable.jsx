@@ -372,33 +372,10 @@ export default function LineItemsTable({
                 </table>
             </div>
 
-            {/* Footer / Actions */}
-            <div className="px-3 py-2 bg-slate-50/30 flex justify-between items-center border-t border-slate-200">
-                <div className="flex gap-2">
-                    {addRow && (
-                        <CommonButton
-                            variant="secondary"
-                            size="sm"
-                            onClick={addRow}
-                            className="gap-1.5"
-                        >
-                            Add Row
-                        </CommonButton>
-                    )}
-                    {clearRows && (
-                        <CommonButton
-                            variant="secondary"
-                            size="sm"
-                            onClick={clearRows}
-                            className="gap-1.5"
-                        >
-                            Clear All
-                        </CommonButton>
-                    )}
-                </div>
-
+            {/* Totals Section - Directly below table */}
+            <div className="flex justify-end py-4 pr-11 bg-white border-t border-slate-100">
                 {onDiscountChange ? (
-                    <div className="flex flex-col items-end gap-2 pr-4 min-w-[280px]">
+                    <div className="flex flex-col items-end gap-3 min-w-[300px]">
                         {/* Subtotal */}
                         <div className="flex justify-between items-center w-full">
                             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Subtotal</span>
@@ -448,7 +425,7 @@ export default function LineItemsTable({
                         </div>
 
                         {/* Total (computed and passed via totals object, but we can just use the first entry or "Total") */}
-                        <div className="flex justify-between items-center w-full mt-2 pt-2 border-t border-slate-200">
+                        <div className="flex justify-between items-center w-full mt-2 pt-3 border-t border-slate-200">
                             <span className="text-sm font-black text-slate-800 uppercase tracking-widest">Total</span>
                             <span className="text-lg font-black text-slate-900 flex items-center gap-1">
                                 <span className="text-xs font-bold text-slate-400">{currencyPrefix}</span>
@@ -470,6 +447,30 @@ export default function LineItemsTable({
                             ))}
                         </div>
                     )
+                )}
+            </div>
+
+            {/* Footer / Actions */}
+            <div className="px-3 py-3 bg-slate-50/50 flex gap-2 border-t border-slate-200">
+                {addRow && (
+                    <CommonButton
+                        variant="secondary"
+                        size="sm"
+                        onClick={addRow}
+                        className="gap-1.5 bg-white"
+                    >
+                        Add Row
+                    </CommonButton>
+                )}
+                {clearRows && (
+                    <CommonButton
+                        variant="secondary"
+                        size="sm"
+                        onClick={clearRows}
+                        className="gap-1.5 bg-white"
+                    >
+                        Clear All
+                    </CommonButton>
                 )}
 
             </div>

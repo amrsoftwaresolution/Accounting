@@ -152,14 +152,6 @@ class SalesInvoiceController extends Controller
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                         'service_date' => $itemData['serviceDate'] ?? null,
                     ]);
-
-                    $this->createWarrantyForInvoiceItem(
-                        $invoiceItem,
-                        $request->vehicle_id,
-                        $customerId,
-                        $request->receiptDate,
-                        $itemData['warranty'] ?? false
-                    );
                 }
 
                 // 2. Save Financial Truth (Journal Entry)
@@ -388,14 +380,6 @@ class SalesInvoiceController extends Controller
                         'amount' => (float) str_replace(',', '', $itemData['amount']),
                         'service_date' => $itemData['serviceDate'] ?? null,
                     ]);
-
-                    $this->createWarrantyForInvoiceItem(
-                        $invoiceItem,
-                        $request->vehicle_id,
-                        $customerId,
-                        $request->receiptDate,
-                        $itemData['warranty'] ?? false
-                    );
                 }
 
                 // 2. Update Financial Truth (Journal Entry)

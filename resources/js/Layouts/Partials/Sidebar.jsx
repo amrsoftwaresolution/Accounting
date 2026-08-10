@@ -95,12 +95,17 @@ export default function Sidebar({ navigation, user, onQuickMenuOpen }) {
                                     key={`${item.name}-${item.href}`}
                                     href={item.href}
                                     onClick={item.onClick ? item.onClick : undefined}
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${route().current(item.href.split('/').pop()) || (item.name === 'Dashboard' && route().current('dashboard'))
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group ${
+                                        (item.activeRoutes ? item.activeRoutes.some(r => route().current(r)) : (route().current(item.href.split('/').pop()) || (item.name === 'Dashboard' && route().current('dashboard'))))
                                         ? 'bg-[#00713D] text-white shadow-md shadow-[#00713D]/20'
                                         : 'text-slate-400 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
-                                    <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md transition-colors ${route().current() === item.href ? 'text-white' : 'group-hover:text-white'}`}>
+                                    <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md transition-colors ${
+                                        (item.activeRoutes ? item.activeRoutes.some(r => route().current(r)) : route().current() === item.href) 
+                                        ? 'text-white' 
+                                        : 'group-hover:text-white'
+                                        }`}>
                                         <SidebarIcon name={item.icon} />
                                     </span>
                                     <span className="text-xs font-bold leading-none whitespace-nowrap">{item.name}</span>

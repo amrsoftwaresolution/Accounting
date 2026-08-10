@@ -133,6 +133,7 @@ const handleAccountingSubmit = (e) => {
                         <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     </div>
                 </div>
+
             </div>
 
             {/* Company Info Card */}
@@ -497,6 +498,50 @@ const handleAccountingSubmit = (e) => {
                                     onChange={(e) => {
                                         router.post(route('layout.customer.update'), {
                                             customer_layout_modal: e.target.checked
+                                        }, { preserveScroll: true });
+                                    }}
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-800">Reports & Quick Action Style</h3>
+                                <p className="text-gray-400 text-[10px]">If enabled, Reports Center and Quick Action Menu items are shown as buttons; otherwise shown as links.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={settings?.reports_display_as_buttons ?? true}
+                                    onChange={(e) => {
+                                        router.post(route('layout.reports.update'), {
+                                            reports_display_as_buttons: e.target.checked
+                                        }, { preserveScroll: true });
+                                    }}
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-3">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-800">Vehicles</h3>
+                                <p className="text-gray-400 text-[10px]">If enabled, Vehicles will be shown in the sidebar, Reports Center, and POS.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={settings?.vehicles_enabled ?? true}
+                                    onChange={(e) => {
+                                        router.post(route('layout.vehicles.update'), {
+                                            vehicles_enabled: e.target.checked
                                         }, { preserveScroll: true });
                                     }}
                                 />

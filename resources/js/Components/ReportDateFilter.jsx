@@ -31,6 +31,25 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
         };
     };
 
+    // ── sessionStorage helpers ────────────────────────────────────────────────
+    const SESSION_KEY = 'reportDateFilter';
+
+    const saveToSession = (type, start, end) => {
+        try {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify({ type, start_date: start, end_date: end }));
+        } catch (_) {}
+    };
+
+    const loadFromSession = () => {
+        try {
+            const raw = sessionStorage.getItem(SESSION_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (_) {
+            return null;
+        }
+    };
+    // ─────────────────────────────────────────────────────────────────────────
+
     const handleApply = (type, customStart, customEnd) => {
         let start = '';
         let end = '';
@@ -110,26 +129,43 @@ export default function ReportDateFilter({ currentFilter, onFilterChange }) {
         setStartDate(start);
         setEndDate(end);
 
+        // Persist the selection so switching to another report keeps it applied
+        saveToSession(type, start, end);
+
         if (onFilterChange) {
             onFilterChange({ start_date: start, end_date: end, type: type });
         }
     };
 
-    // Determine default filter type based on props
+    // On mount: initialise local state. If the server provided an explicit filter
+    // type via URL params, honour it. Otherwise restore the last filter the user
+    // chose in another report (sessionStorage), so the date doesn't reset when
+    // switching between reports. Falls back to current-month if nothing is saved.
     useEffect(() => {
         if (currentFilter) {
             if (currentFilter.type) {
+                // Server-driven filter (user navigated with query params) — honour it.
                 setFilterType(currentFilter.type);
+                const defaultRange = getCurrentMonthRange();
+                setStartDate(currentFilter.start_date ?? defaultRange.start);
+                setEndDate(currentFilter.end_date ?? defaultRange.end);
+                return;
             }
 
-            const defaultRange = getCurrentMonthRange();
-            const incomingStart = currentFilter.start_date ?? defaultRange.start;
-            const incomingEnd = currentFilter.end_date ?? defaultRange.end;
+            // No explicit type from server — try to restore the previously saved filter.
+            const saved = loadFromSession();
+            if (saved && saved.type) {
+                // Auto-apply so the report re-fetches with the persisted dates.
+                handleApply(saved.type, saved.start_date, saved.end_date);
+                return;
+            }
 
-            setStartDate(incomingStart);
-            setEndDate(incomingEnd);
+            // No saved filter — fall back to current-month defaults.
+            const defaultRange = getCurrentMonthRange();
+            setStartDate(currentFilter.start_date ?? defaultRange.start);
+            setEndDate(currentFilter.end_date ?? defaultRange.end);
         }
-    }, [currentFilter]);
+    }, []); // Run only on mount — each Inertia navigation creates a fresh component instance
 
     return (
         <div className="flex flex-row items-center gap-2 flex-wrap">

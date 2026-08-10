@@ -23,6 +23,8 @@ class CompanySetting extends Model
         'warranty_layout_enabled',
         'job_layout_enabled',
         'customer_layout_modal',
+        'reports_display_as_buttons',
+        'vehicles_enabled',
     ];
 
     protected $casts = [
@@ -30,5 +32,7 @@ class CompanySetting extends Model
         'warranty_layout_enabled' => 'boolean',
         'job_layout_enabled' => 'boolean',
         'customer_layout_modal' => 'boolean',
+        'reports_display_as_buttons' => 'boolean',
+        'vehicles_enabled' => 'boolean',
     ];
 }

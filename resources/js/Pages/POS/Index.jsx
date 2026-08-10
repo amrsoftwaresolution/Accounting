@@ -25,6 +25,8 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
     const [isExitModalOpen, setIsExitModalOpen] = useState(false);
     const [isRepairCostExpanded, setIsRepairCostExpanded] = useState(false);
     const [selectedVehicleLabel, setSelectedVehicleLabel] = useState(isEditMode ? existingReceipt.vehicle?.vehicle_no : '');
+    const [selectedCustomerLabel, setSelectedCustomerLabel] = useState(isEditMode ? existingReceipt.customer?.display_name : '');
+    const [posSelectorMode, setPosSelectorMode] = useState(auth.vehicles_enabled !== false ? 'vehicle' : 'customer');
 
     const getDefaultCashPaymentMethod = () => {
         const cashMethod = paymentMethods.find(pm => pm.name?.toLowerCase() === 'cash' || pm.slug?.toLowerCase() === 'cash');
@@ -44,6 +46,7 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         vehicle_id: isEditMode ? existingReceipt.vehicle_id : '',
+        customer: isEditMode ? existingReceipt.customer_id : '',
         email: isEditMode ? existingReceipt.email : '',
         billingAddress: isEditMode ? existingReceipt.billingAddress : '',
         receiptDate: isEditMode ? existingReceipt.receiptDate : new Date().toISOString().split('T')[0],
@@ -212,8 +215,12 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
             showToast('error', 'Cart is empty! Add items before checkout.');
             return;
         }
-        if (!data.vehicle_id) {
+        if (posSelectorMode === 'vehicle' && !data.vehicle_id) {
             showToast('error', 'Please select a vehicle before completing the sale.');
+            return;
+        }
+        if (posSelectorMode === 'customer' && !data.customer) {
+            showToast('error', 'Please select a customer before completing the sale.');
             return;
         }
 
@@ -259,7 +266,9 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
                         showToast('success', 'Sale completed successfully!');
                     }
                     setCart([]);
-                    reset('vehicle_id', 'email', 'billingAddress', 'repairingCost', 'action');
+                    reset('vehicle_id', 'customer', 'email', 'billingAddress', 'repairingCost', 'action');
+                    setSelectedVehicleLabel('');
+                    setSelectedCustomerLabel('');
                     setIsCheckoutModalOpen(false);
                 },
                 preserveScroll: true
@@ -272,15 +281,22 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
             showToast('error', 'Nothing to hold. Add items or repair cost before holding.');
             return false;
         }
-        if (!data.vehicle_id) {
+        if (posSelectorMode === 'vehicle' && !data.vehicle_id) {
             showToast('error', 'Please select a vehicle before holding the sale.');
-            return false;
+            return;
+        }
+        if (posSelectorMode === 'customer' && !data.customer) {
+            showToast('error', 'Please select a customer before holding the sale.');
+            return;
         }
         const draft = {
             id: Date.now().toString(),
             date: new Date().toLocaleString(),
+            pos_mode: posSelectorMode,
             vehicle_id: data.vehicle_id,
             vehicle_label: selectedVehicleLabel,
+            customer: data.customer,
+            customer_label: selectedCustomerLabel,
             repairingCost: data.repairingCost,
             cart: cart,
             total: totalAmount
@@ -289,7 +305,9 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
         localStorage.setItem('pos_drafts', JSON.stringify(updatedDrafts));
         setDrafts(updatedDrafts);
         setCart([]);
-        reset('vehicle_id', 'repairingCost');
+        reset('vehicle_id', 'customer', 'repairingCost');
+        setSelectedVehicleLabel('');
+        setSelectedCustomerLabel('');
         showToast('success', 'Sale saved to Hold/Drafts.');
         return true;
     };
@@ -306,8 +324,11 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
     const restoreDraft = (draftId) => {
         const draft = drafts.find(d => d.id === draftId);
         if (draft) {
+            setPosSelectorMode(draft.pos_mode || 'vehicle');
             setData('vehicle_id', draft.vehicle_id || '');
+            setData('customer', draft.customer || '');
             setSelectedVehicleLabel(draft.vehicle_label || '');
+            setSelectedCustomerLabel(draft.customer_label || '');
             setData('repairingCost', draft.repairingCost || 0);
             setCart(draft.cart || []);
 
@@ -428,17 +449,50 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
                     </div>
 
                     <div className="p-3 border-b border-slate-200 bg-white space-y-2">
+                        {auth.vehicles_enabled !== false && (
+                            <div className="flex bg-slate-100 p-1 rounded-md mb-2">
+                                <button
+                                    className={`flex-1 text-xs py-1 px-2 rounded-sm font-medium transition-colors ${posSelectorMode === 'vehicle' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                                    onClick={() => setPosSelectorMode('vehicle')}
+                                >
+                                    Vehicle
+                                </button>
+                                <button
+                                    className={`flex-1 text-xs py-1 px-2 rounded-sm font-medium transition-colors ${posSelectorMode === 'customer' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                                    onClick={() => setPosSelectorMode('customer')}
+                                >
+                                    Customer
+                                </button>
+                            </div>
+                        )}
                         <div className="mb-2">
-                            <SearchableSelect
-                                placeholder="Select a vehicle"
-                                value={data.vehicle_id}
-                                onChange={(val, opt) => {
-                                    setData('vehicle_id', val);
-                                    setSelectedVehicleLabel(opt ? opt.label : '');
-                                }}
-                                fetchUrl={route('api.vehicles')}
-                                hideLabel={true}
-                            />
+                            {posSelectorMode === 'vehicle' ? (
+                                <SearchableSelect
+                                    placeholder="Select a vehicle"
+                                    value={data.vehicle_id}
+                                    onChange={(val, opt) => {
+                                        setData('vehicle_id', val);
+                                        setSelectedVehicleLabel(opt ? opt.label : '');
+                                        // Auto-set customer if backend provides it (LookupController vehicles returns customer_id)
+                                        if (opt && opt.customer_id) {
+                                            setData('customer', opt.customer_id);
+                                        }
+                                    }}
+                                    fetchUrl={route('api.vehicles')}
+                                    hideLabel={true}
+                                />
+                            ) : (
+                                <SearchableSelect
+                                    placeholder="Select a customer"
+                                    value={data.customer}
+                                    onChange={(val, opt) => {
+                                        setData('customer', val);
+                                        setSelectedCustomerLabel(opt ? opt.label : '');
+                                    }}
+                                    fetchUrl={route('api.customers')}
+                                    hideLabel={true}
+                                />
+                            )}
                         </div>
                     </div>
 
@@ -533,12 +587,14 @@ export default function POSIndex({ auth, items, paymentMethods, warrantyPolicies
                             ) : (
                                 <div className="space-y-3">
                                     {drafts.map(draft => {
-                                        const vehicleStr = draft.vehicle_label || (draft.vehicle_id ? `Vehicle #${draft.vehicle_id}` : 'Walk-in Customer');
+                                        const entityStr = draft.pos_mode === 'customer' 
+                                            ? (draft.customer_label || (draft.customer ? `Customer #${draft.customer}` : 'Walk-in Customer'))
+                                            : (draft.vehicle_label || (draft.vehicle_id ? `Vehicle #${draft.vehicle_id}` : 'Walk-in Customer'));
                                         return (
                                             <div key={draft.id} className="border border-slate-200 rounded-lg p-3 hover:border-primary-300 transition-colors">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
-                                                        <div className="font-bold text-sm text-slate-800">{vehicleStr}</div>
+                                                        <div className="font-bold text-sm text-slate-800">{entityStr}</div>
                                                         <div className="text-[10px] text-slate-500">{draft.date}</div>
                                                     </div>
                                                     <div className="font-black text-primary-600 text-sm">{currency} {Number(draft.total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>

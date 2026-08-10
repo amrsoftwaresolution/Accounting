@@ -80,10 +80,9 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                     ...i,
                     qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
                     rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                    warranty: i.warranty || false
+                    amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 })) : [
-                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }
                 ],
                 action: 'save'
             });
@@ -102,13 +101,12 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 checkDate: "",
                 checkNumber: "",
                 items: [
-                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
-                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                    { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                 ],
                 discount_type: 'percent',
                 discount_value: '0',
                 prefix: '',
-                memo_on_statement: '',
                 action: 'save'
             });
 
@@ -134,7 +132,6 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
         { key: "qty", label: "Qty", type: "number", min: "0", width: "80px", className: "text-right" },
         { key: "rate", label: "Rate", type: "currency", width: "120px", className: "text-right", inputClass: "text-right" },
         { key: "amount", label: "Amount", type: "currency", width: "140px", className: "text-right", inputClass: "text-right" },
-        { key: "warranty", label: "Warranty", type: "checkbox", width: "90px", className: "text-center" },
     ];
 
     const { data, setData, post, patch, processing, errors, reset, clearErrors, transform } = useForm({
@@ -153,11 +150,10 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
             ...i,
             qty: i.qty ? parseFloat(i.qty).toLocaleString('en-US', { maximumFractionDigits: 4 }) : "1",
             rate: parseFloat(i.rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            warranty: i.warranty || false
+            amount: parseFloat(i.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         })) : [
-            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
-            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
+            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
         ],
         discount_type: receipt?.discountType || 'percent',
         discount_value: receipt?.discountValue !== undefined ? String(receipt.discountValue) : '0',
@@ -292,8 +288,8 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                         receiptDate: localStorage.getItem('last_transaction_date') || new Date().toISOString().split('T')[0],
                         receiptNo: serverNextNo, paymentMethod: getDefaultCashPaymentMethod() || "", depositTo: "", memo: "", statementMessage: "",
                         items: [
-                            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
-                            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false },
+                            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
+                            { serviceDate: "", product: "", description: "", qty: "1", rate: "0.00", amount: "0.00" },
                         ],
                         discount_type: 'percent',
                         discount_value: '0',
@@ -321,10 +317,10 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
             onSaveAndClose={() => handleSave('close')}
             onSaveAndNew={() => handleSave('new')}
             onAddLine={() => {
-                setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }]);
+                setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
             onClearRows={() => {
-                setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }]);
+                setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }]);
             }}
         >
             <Head title="Cash sale" />
@@ -501,9 +497,9 @@ export default function SalesInvoiceForm({ auth, paymentMethods = [], nextReceip
                 columns={COLUMNS}
                 items={data.items}
                 handleItemChange={handleItemChange}
-                addRow={() => setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }])}
+                addRow={() => setData("items", [...data.items, { product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
                 removeRow={(index) => setData("items", data.items.filter((_, i) => i !== index))}
-                clearRows={() => setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00", warranty: false }])}
+                clearRows={() => setData("items", [{ product: "", serviceDate: "", description: "", qty: "1", rate: "0.00", amount: "0.00" }])}
                 totals={{ "Total": totalAmount }}
                 currencyPrefix={currencyPrefix}
                 hideActions={true}

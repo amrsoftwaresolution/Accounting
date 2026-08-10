@@ -417,6 +417,8 @@ class LookupController extends Controller
      */
     public function vehicles(Request $request)
     {
+        abort_if(!class_exists(\App\Models\CompanySetting::class) || !(\App\Models\CompanySetting::first()?->vehicles_enabled ?? true), 403, 'Vehicles feature is disabled.');
+
         $search = $request->query('search');
         
         $vehicles = \App\Models\Vehicle::with('customer')

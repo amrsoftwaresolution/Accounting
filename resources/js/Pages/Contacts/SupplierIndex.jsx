@@ -6,6 +6,8 @@ import CommonInput from '@/Components/CommonInput';
 import CommonButton from '@/Components/CommonButton';
 import AddressForm from '@/Components/AddressForm';
 
+import ContactsTabs from '@/Components/ContactsTabs';
+
 export default function SupplierIndex({ suppliers = [] }) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -82,12 +84,14 @@ export default function SupplierIndex({ suppliers = [] }) {
     return (
         <AuthenticatedLayout
             header={
-                <h2 className="font-bold text-lg text-slate-800 tracking-tight">Suppliers</h2>
+                <h2 className="font-bold text-lg text-slate-800 tracking-tight">Contacts</h2>
             }
         >
-            <Head title="Suppliers" />
+            <Head title="Contacts - Suppliers" />
 
-            <div className="p-6">
+            <ContactsTabs />
+
+            <div className="p-6 pt-0">
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     {/* Toolbar */}
                     <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between gap-4">

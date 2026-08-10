@@ -75,6 +75,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/warranty-layout', 'updateWarrantyLayout')->name('layout.warranty.update');
             Route::post('/job-layout', 'updateJobLayout')->name('layout.job.update');
             Route::post('/customer-layout', 'updateCustomerLayout')->name('layout.customer.update');
+            Route::post('/reports-display-style', 'updateReportsDisplayStyle')->name('layout.reports.update');
+            Route::post('/vehicles-layout', 'updateVehiclesEnabled')->name('layout.vehicles.update');
             Route::post('/alerts', 'updateAlerts')->name('alerts.update');
             Route::post('/time', 'updateTime')->name('time.settings.update');
             Route::post('/logo', 'uploadLogo')->name('logo.upload');
