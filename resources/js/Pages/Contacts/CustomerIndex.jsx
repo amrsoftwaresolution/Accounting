@@ -1,7 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { useState } from 'react';
+import { useForm, Head } from '@inertiajs/react';
 import CustomerIndexContent from './CustomerIndexContent';
 
+import SlideOver from '@/Components/SlideOver';
+import CommonInput from '@/Components/CommonInput';
+import CommonButton from '@/Components/CommonButton';
 import ContactsTabs from '@/Components/ContactsTabs';
 
 export default function CustomerIndex({ customers = [] }) {
@@ -92,7 +96,14 @@ export default function CustomerIndex({ customers = [] }) {
             <ContactsTabs />
 
             <div className="p-6 pt-0">
-                <CustomerIndexContent customers={customers} />
+                <CustomerIndexContent
+                    customers={filteredCustomers}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onOpenCreate={handleOpenCreate}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                />
             </div>
 
             <SlideOver
